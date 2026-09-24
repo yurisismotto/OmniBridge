@@ -22,5 +22,6 @@ alternatives that were actually considered, and what the decision costs.
 | [0015](ADR-0015-notification-access.md) | Android notification access and the `notifications.v1` security boundary | Accepted |
 | [0016](ADR-0016-notification-identity.md) | `notifications.v1` opaque notification identity | Accepted |
 | [0017](ADR-0017-capability-roles.md) | Runtime-narrowable capability roles | Accepted |
-| [0018](ADR-0018-rename-to-omnibridge.md) | Rename to OmniBridge | Accepted · supersedes 0011's identifier tables |
-| [0019](ADR-0019-android-app-signing.md) | Android app signing: maintainer-owned key, Play App Signing, separate upload key | Accepted |
+| [0018](ADR-0018-rename-to-omnibridge.md) | Rename to OmniBridge | Accepted · supersedes 0011's identifier tables · identifier tables and no-dual-stack rule superseded by 0020 once implemented |
+| [0019](ADR-0019-android-app-signing.md) | Android app signing: maintainer-owned key, Play App Signing, separate upload key | Accepted · signing identity amended by 0020 (custody model unchanged) |
+| [0020](ADR-0020-rename-to-pliwee.md) | Rename to Pliwee: identity layers, legacy wire profile, state migration | Accepted · not yet implemented |
