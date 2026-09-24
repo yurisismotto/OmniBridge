@@ -111,9 +111,14 @@ notifications an app has marked as secret on the lock screen.
 **While your phone is locked**, only the app's name is sent by default. You can
 change this to send everything or nothing.
 
-**When it runs:** OmniBridge reads notifications only while your phone is
+**When it runs:** OmniBridge sends notifications only while your phone is
 connected to a computer you allowed for this. That can happen while the app is
-in the background. While connected, OmniBridge appears in Android's list of
+in the background. OmniBridge asks Android to attach its notification reader
+only while such a computer is connected, and to detach it afterwards. One
+exception has been observed: if OmniBridge is force-stopped while attached,
+Android may re-attach the reader and keep it attached until notification access
+is turned off and on again. While no allowed computer is connected, nothing is
+sent anywhere. While connected, OmniBridge appears in Android's list of
 active apps, and shows an ongoing notification if you allow notifications.
 Notifications are not stored on your phone. The OmniBridge desktop software
 shows them and does not save them.
