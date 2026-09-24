@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "io.github.yurisismotto.omnibridge"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.github.yurisismotto.omnibridge"
@@ -18,9 +18,13 @@ android {
         // default and where SSLParameters.setApplicationProtocols (ALPN)
         // became available. Below that we could not speak the protocol at all.
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36
+        // versionName is the public semantic release version and follows
+        // OmniBridge's. versionCode is Play's ordering key: it must rise for
+        // every upload to any Play track, and a code Play has seen once can
+        // never be reused — not even for a bundle that was rejected.
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
