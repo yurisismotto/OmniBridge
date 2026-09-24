@@ -93,3 +93,11 @@ only the link target changes — never the link text, which is part of the recor
 Three links still point at AnyFlow-era paths (`packaging/fedora/anyflow.spec`
 and two `io.github.yurisismotto.anyflow` Kotlin sources). They are deliberately
 left broken, because those paths are the evidence.
+
+**Repository recreation, 2026-09-24.** Everything written before that date was
+measured on the repository now named `yurisismotto/omnibridge-history`. This
+repository was recreated with a new history starting from a byte-identical
+tree, so the commit and tag SHAs, PR numbers, issue numbers and Actions run
+links those documents quote resolve **there**, not here — including links that
+still say `yurisismotto/omnibridge` or `yurisismotto/anyflow`. They are left
+as written.

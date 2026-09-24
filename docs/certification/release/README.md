@@ -34,6 +34,13 @@ document's §3, and **through GA unchanged** — see the GA document's §11, whi
 records why D-12 is not closed by publishing SBOMs once and why D-14 is not
 closed by a favourable observation.
 
+> **SUPERSEDED 2026-09-24, by the clean-repository republication.** The
+> paragraph below describes the pre-recreation repository, now
+> `yurisismotto/omnibridge-history`: the SHA it names is not in this history,
+> and the release URL now resolves to the v1.0.0 release **rebuilt** on the
+> recreated `yurisismotto/omnibridge` — same source tree, same signing
+> identity, new commit, new artifact digests. It is kept as written.
+
 **v1.0.0 is released.** `main` carries it at
 `67cbf8b169b294b358efc857aa18a305860e14a3`, the `v1.0.0` tag points there, and
 <https://github.com/yurisismotto/omnibridge/releases/tag/v1.0.0> publishes the
