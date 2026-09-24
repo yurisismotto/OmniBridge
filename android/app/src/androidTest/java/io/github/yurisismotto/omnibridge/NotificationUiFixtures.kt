@@ -164,6 +164,7 @@ object NotificationUiFixtures {
             onSetNotificationsGrant = { _, granted -> grants += granted },
             onSetNotificationPolicy = { _, policy -> policies += policy },
             onOpenNotificationAccess = { settingsOpened += 1 },
+            onOpenPrivacyPolicy = {},
             loadNotificationApps = {
                 appsLoaded += 1
                 apps

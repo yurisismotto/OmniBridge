@@ -18,6 +18,7 @@ import io.github.yurisismotto.omnibridge.R
 import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeBrandMark
 import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeCard
 import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeFingerprint
+import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecondaryButton
 import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSectionLabel
 import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecurityNotice
 import io.github.yurisismotto.omnibridge.ui.components.omniBridgeContentColumn
@@ -84,9 +85,21 @@ fun SettingsScreen(
         OmniBridgeSectionLabel("Privacy")
         OmniBridgeSecurityNotice(
             title = "Nothing leaves your network",
-            body = "OmniBridge has no account, no cloud service and no analytics. " +
-                "Clipboard text is never written to disk, and transfers are not logged.",
+            // Every clause is a property of the code, checked for the Play v1
+            // privacy policy. The earlier "transfers are not logged" was not
+            // true: file names went to the system log (audit F5).
+            body = "OmniBridge has no account, no cloud service, no ads and no analytics. " +
+                "It talks only to the computers you pair. Clipboard text, notification " +
+                "content and file names are never written to this device's storage or " +
+                "its system log, and no transfer history is kept.",
             icon = R.drawable.ic_shield_check,
+        )
+        // The privacy policy, published with the source (Play v1 audit F4).
+        // Google Play requires it to be reachable from inside the app.
+        OmniBridgeSecondaryButton(
+            text = "Privacy policy",
+            icon = R.drawable.ic_shield,
+            onClick = actions.onOpenPrivacyPolicy,
         )
 
         Spacer(Modifier.height(OmniBridgeSpacing.lg))

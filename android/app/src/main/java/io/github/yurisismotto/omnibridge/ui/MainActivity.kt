@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.journeyapps.barcodescanner.ScanContract
 import io.github.yurisismotto.omnibridge.OmniBridgeApp
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
                 // it the new peer would be trusted and unreachable behind
                 // whichever entry the store happened to hold first.
                 .onSuccess { outcome ->
+                    requestNotificationPermissionInContext()
                     ConnectionService.start(this@MainActivity, outcome.peer.fingerprint)
                     // Says which of the two things happened. A scan against a
                     // computer that still trusts this phone is a reconnection
@@ -118,6 +120,30 @@ class MainActivity : ComponentActivity() {
 
     private val notificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    /**
+     * Asks for POST_NOTIFICATIONS at the moment it starts to matter: when the
+     * person connects to a computer, which is what posts the connection
+     * notification and, later, "clipboard received" prompts.
+     *
+     * It used to be asked on every `onCreate`, before the person had done
+     * anything that needed it (Play v1 audit F2). Denying it costs nothing
+     * but those notifications; the connection works either way. Asked at most
+     * once per Activity instance, and Android itself stops showing the dialog
+     * after the person has declined it twice.
+     */
+    private var notificationPermissionAsked = false
+
+    private fun requestNotificationPermissionInContext() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || notificationPermissionAsked) return
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+        if (granted) return
+        notificationPermissionAsked = true
+        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
 
     private val cameraPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -181,9 +207,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
         // Restored *before* the launch intent is looked at, and that order is
         // the whole of test F12. A configuration change recreates this
         // Activity and `getIntent()` still returns the tile's intent, so
@@ -334,7 +357,10 @@ class MainActivity : ComponentActivity() {
         // The fingerprint of the row that was tapped, carried into the start
         // intent. This is the seam the certified defect fell through: the
         // action used to take nothing, and the service picked a peer itself.
-        onConnect = { peer -> ConnectionService.start(this, peer) },
+        onConnect = { peer ->
+            requestNotificationPermissionInContext()
+            ConnectionService.start(this, peer)
+        },
         onDisconnect = { ConnectionService.stop(this) },
         onRevoke = { peer ->
             // `revokePeer` drops the choice with the trust, so the next
@@ -383,6 +409,13 @@ class MainActivity : ComponentActivity() {
         onOpenNotificationAccess = {
             runCatching { startActivity(NotificationAccess.settingsIntent(this)) }
                 .onFailure { showError("Could not open Android's notification settings.") }
+        },
+        onOpenPrivacyPolicy = {
+            // The only web address OmniBridge ever opens, and it opens it in
+            // the person's own browser: the app itself makes no HTTP request.
+            runCatching {
+                startActivity(Intent(Intent.ACTION_VIEW, PrivacyPolicy.URL.toUri()))
+            }.onFailure { showError("No browser is available to open ${PrivacyPolicy.URL}") }
         },
         loadNotificationApps = { peer ->
             installedApps.load(

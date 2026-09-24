@@ -6,6 +6,7 @@ import android.content.IntentFilter
 import android.os.BatteryManager
 import android.util.Log
 import com.google.protobuf.ByteString
+import io.github.yurisismotto.omnibridge.identity.Fingerprint
 import io.github.yurisismotto.omnibridge.proto.capabilities.BatteryState
 import io.github.yurisismotto.omnibridge.proto.capabilities.ChargingState
 import java.util.concurrent.atomic.AtomicReference
@@ -17,9 +18,22 @@ import java.util.concurrent.atomic.AtomicReference
  * Nothing is persisted. A battery history is a usage-and-movement log of the
  * person holding the phone, and there is no reason to keep one.
  */
-class BatteryCapability(
-    private val appContext: Context,
+class BatteryCapability internal constructor(
+    /**
+     * Whether this phone's battery may be sent to [peer] — the `battery.v1`
+     * grant, re-read from the trust store at the moment of sending.
+     *
+     * Negotiation says what both sides *support*; only this says what the
+     * person *allowed*. Before this existed the Battery switch on the device
+     * card changed the trust record and nothing read it, so the reading left
+     * the phone on every connect whatever the switch said (Play v1 audit F1).
+     */
+    private val isSharingAllowed: (Fingerprint) -> Boolean,
+    private val localReading: () -> Reading?,
 ) : Capability {
+
+    constructor(appContext: Context, isSharingAllowed: (Fingerprint) -> Boolean) :
+        this(isSharingAllowed, { readLocal(appContext) })
 
     override val id: String = ID
 
@@ -36,8 +50,13 @@ class BatteryCapability(
 
     override suspend fun onPeerConnected(context: CapabilityContext) {
         // Send once on connect so the desktop shows something immediately
-        // rather than waiting for the next battery broadcast.
-        readLocal()?.let { context.send(ID, encode(it)) }
+        // rather than waiting for the next battery broadcast — and only to a
+        // computer the person has allowed to see it.
+        if (!isSharingAllowed(context.peer)) {
+            Log.d(TAG, "battery not shared with ${context.peer.toDisplayShort()}: no battery.v1 grant")
+            return
+        }
+        localReading()?.let { context.send(ID, encode(it)) }
     }
 
     override suspend fun onMessage(context: CapabilityContext, payload: ByteString) {
@@ -46,40 +65,40 @@ class BatteryCapability(
         remote.set(reading)
     }
 
-    override suspend fun onPeerDisconnected(peer: io.github.yurisismotto.omnibridge.identity.Fingerprint) {
+    override suspend fun onPeerDisconnected(peer: Fingerprint) {
         remote.set(null)
-    }
-
-    /** Reads the current battery level from the platform. */
-    fun readLocal(): Reading? {
-        val intent: Intent = appContext.registerReceiver(
-            null,
-            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
-        ) ?: return null
-
-        val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-        val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-        if (level < 0 || scale <= 0) return null
-
-        val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
-        return Reading(
-            percentage = (level * 100 / scale).coerceIn(0, 100),
-            chargingState = when (status) {
-                BatteryManager.BATTERY_STATUS_CHARGING -> ChargingState.CHARGING_STATE_CHARGING
-                BatteryManager.BATTERY_STATUS_DISCHARGING ->
-                    ChargingState.CHARGING_STATE_DISCHARGING
-                BatteryManager.BATTERY_STATUS_FULL -> ChargingState.CHARGING_STATE_FULL
-                BatteryManager.BATTERY_STATUS_NOT_CHARGING ->
-                    ChargingState.CHARGING_STATE_NOT_CHARGING
-                else -> ChargingState.CHARGING_STATE_UNSPECIFIED
-            },
-            peerTimestampUnixMs = System.currentTimeMillis(),
-        )
     }
 
     companion object {
         const val ID = "battery.v1"
         private const val TAG = "BatteryCapability"
+
+        /** Reads the current battery level from the platform. */
+        fun readLocal(appContext: Context): Reading? {
+            val intent: Intent = appContext.registerReceiver(
+                null,
+                IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+            ) ?: return null
+
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+            if (level < 0 || scale <= 0) return null
+
+            val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+            return Reading(
+                percentage = (level * 100 / scale).coerceIn(0, 100),
+                chargingState = when (status) {
+                    BatteryManager.BATTERY_STATUS_CHARGING -> ChargingState.CHARGING_STATE_CHARGING
+                    BatteryManager.BATTERY_STATUS_DISCHARGING ->
+                        ChargingState.CHARGING_STATE_DISCHARGING
+                    BatteryManager.BATTERY_STATUS_FULL -> ChargingState.CHARGING_STATE_FULL
+                    BatteryManager.BATTERY_STATUS_NOT_CHARGING ->
+                        ChargingState.CHARGING_STATE_NOT_CHARGING
+                    else -> ChargingState.CHARGING_STATE_UNSPECIFIED
+                },
+                peerTimestampUnixMs = System.currentTimeMillis(),
+            )
+        }
 
         fun encode(reading: Reading): ByteString =
             BatteryState.newBuilder()

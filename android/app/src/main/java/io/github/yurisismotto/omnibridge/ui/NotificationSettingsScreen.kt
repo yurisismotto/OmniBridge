@@ -18,9 +18,11 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -172,6 +174,7 @@ fun NotificationSettingsScreen(
         }
 
         // --- gate 2: this computer ----------------------------------------
+        var disclosureOpen by remember(fingerprintHex) { mutableStateOf(false) }
         OmniBridgeSectionLabel(stringResource(R.string.notif_screen_title))
         OmniBridgeCard {
             OmniBridgeCapabilityRow(
@@ -180,7 +183,21 @@ fun NotificationSettingsScreen(
                 icon = R.drawable.ic_notifications,
                 accent = colors.accentViolet,
                 checked = granted,
-                onCheckedChange = { actions.onSetNotificationsGrant(peer, it) },
+                // ON goes through the disclosure; OFF is immediate. Taking a
+                // permission away must never cost more than one tap.
+                onCheckedChange = { on ->
+                    if (on) disclosureOpen = true else actions.onSetNotificationsGrant(peer, false)
+                },
+            )
+        }
+        if (disclosureOpen) {
+            NotificationDisclosureDialog(
+                computer = peer.deviceName,
+                onAllow = {
+                    disclosureOpen = false
+                    actions.onSetNotificationsGrant(peer, true)
+                },
+                onDecline = { disclosureOpen = false },
             )
         }
 
@@ -596,3 +613,47 @@ private fun DiagnosticRow(label: String, value: String) {
         Text(value, style = OmniBridgeType.label, color = colors.textPrimary)
     }
 }
+
+/**
+ * The prominent disclosure for notification mirroring (Play v1 audit F3).
+ *
+ * Google Play's User Data policy asks for an in-app disclosure, in the normal
+ * flow rather than a settings page or the privacy policy, that says what is
+ * accessed, how it is used and where it goes — and an affirmative action
+ * before any access. This is that: it stands between the switch and the
+ * grant, and the grant is what makes Android's notification-access screen
+ * reachable at all, so nothing can be read before "Allow".
+ *
+ * Dismissing it — back, a tap outside, "Not now" — writes nothing. Only the
+ * confirm button grants, and it says "Allow" rather than "OK" because it is
+ * a permission and should read as one.
+ */
+@Composable
+private fun NotificationDisclosureDialog(
+    computer: String,
+    onAllow: () -> Unit,
+    onDecline: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDecline,
+        title = { Text(stringResource(R.string.notif_disclosure_title, computer)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.sm),
+            ) {
+                Text(stringResource(R.string.notif_disclosure_what))
+                Text(stringResource(R.string.notif_disclosure_where, computer))
+                Text(stringResource(R.string.notif_disclosure_when, computer))
+                Text(stringResource(R.string.notif_disclosure_next))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onAllow) { Text(stringResource(R.string.notif_disclosure_allow)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDecline) { Text(stringResource(R.string.notif_disclosure_decline)) }
+        },
+    )
+}
+
