@@ -1,5 +1,12 @@
 # Pliwee rebrand — Wave 0: Brand asset foundation
 
+> **Final visual review, 2026-09-24: superseding note.** After review of
+> `194f5bf` the owner approved the geometry of all five masters and changed
+> one thing, the wordmark ink: "Pliwee" is now **Pliwee Wordmark Ink
+> `#030D25`** (board-derived), not Dark `#0B1020`. [§R3](#r3--final-visual-review-2026-09-24)
+> supersedes §R2.4 item 5 and §R2.8 item 2. Status is still **READY FOR FINAL
+> HUMAN BRAND APPROVAL**.
+
 > **Review 2, 2026-09-24: superseding note.** After human review of `c6fbe99`
 > the status is **READY FOR FINAL HUMAN BRAND APPROVAL** (not BRAND
 > APPROVED). The owner approved the Flow Monogram's geometry and colour, and
@@ -634,3 +641,84 @@ What the owner is asked to confirm in the final pass: the traced wordmark
 (`pliwee-wordmark-comparison.png`), the regenerated lockup
 (`pliwee-lockup-comparison.png`), the single-ink mono and the tonal cut
 (`pliwee-mark-variants.png`), and R2.8 item 2. Wave 1 does not start before that.
+
+---
+
+## R3 — Final visual review (2026-09-24)
+
+**Status: READY FOR FINAL HUMAN BRAND APPROVAL.** Not BRAND APPROVED: that is
+the owner's call. Wave 1 has not started.
+
+### R3.1 Owner decision
+
+The geometry of `pliwee-mark.svg`, `pliwee-wordmark.svg`, `pliwee-lockup.svg`,
+`pliwee-mark-mono.svg` and `pliwee-mark-tonal.svg` (as of `194f5bf`) is
+**approved**. The one correction: the "Pliwee" lettering in the colour masters
+is painted **`#030D25`**, the ink measured on the canonical board, and
+documented as **Pliwee Wordmark Ink** (a brand-asset-specific, board-derived
+colour), under the same rule as the Flow Monogram's gradient stops and the
+tagline's `#314871`. `#0B1020` remains the UI's Dark token.
+
+### R3.2 Files
+
+| File | Change |
+| --- | --- |
+| `docs/design/assets/pliwee-wordmark.svg` | `<g id="wordmark" fill>`: `#0B1020` → `#030D25`. Nothing else. |
+| `docs/design/assets/pliwee-lockup.svg` | `<g id="wordmark" fill>`: `#0B1020` → `#030D25`. Nothing else. |
+| `docs/design/BRAND.md` | *Colour: brand assets have their own inks*: Pliwee Wordmark Ink documented, the three brand-asset colours tabulated; status note |
+| `desktop/gui/tests/brand_assets.rs` | new `the_pliwee_lettering_uses_its_board_derived_inks` |
+| `docs/reports/branding/pliwee-wave-0/pliwee-wordmark-comparison.png` | regenerated (the ink is visible in B and C) |
+| `docs/reports/branding/pliwee-wave-0/pliwee-lockup-comparison.png` | regenerated (same reason) |
+| `docs/reports/branding/pliwee-wave-0/tooling/make_sheets2.py` | footer text names the new ink |
+| this report | this note and §R3 |
+
+**Not changed:** `pliwee-mark.svg`, `pliwee-mark-mono.svg`,
+`pliwee-mark-tonal.svg` (byte-identical to `194f5bf`), every path, viewBox,
+transform and the lockup's mark placement, `pliwee-mark-comparison.png` and
+`pliwee-mark-variants.png` (they contain no lettering), the rest of the
+palette, product code.
+
+### R3.3 Zero geometric change
+
+Measured against `194f5bf` (`tooling/verify_ink.py` pattern):
+
+| # | Check | Result |
+| --- | --- | --- |
+| 1 | Flow Monogram geometry | FNV-1a 64 `0xd69183f798800e87`, the approved digest; `pliwee-mark.svg` byte-identical |
+| 2 | wordmark geometry | every `d=` identical in `pliwee-wordmark.svg` and `pliwee-lockup.svg`; viewBoxes `0 0 321 86` / `0 0 490 143` unchanged; transforms and `<use href="#mark">` placement unchanged |
+| 3 | only the colour wordmark's paint changed | both files are **byte-identical to `194f5bf`** once the one `wordmark` fill is set back; `diff` shows one line per file |
+| 4 | lockup "Pliwee" ink | `#030D25` |
+| 5 | tagline | `#314871`, unchanged |
+| 6 | mono | byte-identical; paints `{currentColor}` only, no gradient or mask in the file |
+| 7 | tonal | byte-identical |
+| 8 | brand tests | 25 / 25 pass (R3.5) |
+
+### R3.4 Wordmark colour against the board
+
+Median CIEDE2000 over the interior (2 px eroded) pixels of the lettering, in
+the horizontal lockup board's frame:
+
+| | ΔE2000 median |
+| --- | --: |
+| `194f5bf`: Dark `#0B1020` | 3.45 |
+| **now: Pliwee Wordmark Ink `#030D25`** | **0.33** |
+
+The remaining 0.33 is the board's own pixel noise around its mean ink; it is
+below what can be seen. Geometry metrics are unchanged by construction:
+wordmark IoU 0.9960, tagline 0.9831, mark 0.9663 (the same as §R2.5).
+
+### R3.5 Tests
+
+| Command | Result |
+| --- | --- |
+| `cargo test -p omnibridge-gui --test brand_assets` (in `desktop/`) | **25 passed**, 0 failed |
+| `cargo fmt -p omnibridge-gui -- --check` | clean |
+
+New test `the_pliwee_lettering_uses_its_board_derived_inks` asserts the
+`wordmark` group fill is `#030D25` in both the wordmark and the lockup, and the
+lockup's `tagline` fill is `#314871`. Shown to fail: with the lockup's
+wordmark reverted to `#0B1020` it is **red**, and with the tagline recoloured
+it is **red** (file restored and `cmp`-verified after each).
+
+No Android resource and no product code changed, so the Android suites were
+not re-run for this review; their last run (§R2.7) stands.

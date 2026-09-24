@@ -611,6 +611,37 @@ fn the_pliwee_wordmark_is_outlined_and_shared_with_the_lockup() {
     );
 }
 
+/// The lettering is painted with its board-derived inks, not with UI tokens.
+///
+/// Like the Flow Monogram's gradient stops, these are brand-asset colours
+/// measured on the canonical board and approved by the owner: the Pliwee
+/// Wordmark Ink `#030D25` and the lockup tagline `#314871`. The UI's Dark
+/// token (`#0B1020`) is a different colour for a different job, and a
+/// derivative that "tidies" the wordmark onto it changes the approved logo.
+#[test]
+fn the_pliwee_lettering_uses_its_board_derived_inks() {
+    let fill_of = |svg: &str, group: &str| -> String {
+        let open = format!("<g id=\"{group}\"");
+        let at = svg
+            .find(&open)
+            .unwrap_or_else(|| panic!("no {group} group"));
+        let tag = svg[at..].split('>').next().expect("the group opens");
+        attr(tag, "fill").unwrap_or_else(|| panic!("the {group} group has no fill"))
+    };
+    for name in ["pliwee-wordmark.svg", "pliwee-lockup.svg"] {
+        assert_eq!(
+            fill_of(&read(name), "wordmark"),
+            "#030D25",
+            "{name} does not paint Pliwee with the Pliwee Wordmark Ink"
+        );
+    }
+    assert_eq!(
+        fill_of(&read("pliwee-lockup.svg"), "tagline"),
+        "#314871",
+        "the lockup's tagline is not the approved lockup tagline colour"
+    );
+}
+
 /// No Pliwee master carries a retired identity — and the lockup carries the
 /// adopted tagline.
 ///

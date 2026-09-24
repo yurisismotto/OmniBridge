@@ -149,7 +149,7 @@ sheet([[tile(rw, 'A  reference board — "Pliwee"', TW)], [tile(nw, 'B  new pliw
        [tile(diffmap(r_m, p_m), 'F  for contrast: c6fbe99 (Inter 900, rejected) against the board', TW)]],
       'Pliwee wordmark — board lettering reconstruction vs. board',
       ['New:      ' + fmt(m),
-       f'          fill #0B1020 (Dark) vs board ink #030D25: dE2000 median {m["deltaE2000_median"]:.2f}',
+       f'          fill #030D25 (Pliwee Wordmark Ink, board-derived) vs board ink: dE2000 median {m["deltaE2000_median"]:.2f}',
        'c6fbe99:  ' + fmt(pm), STATUS], f'{DEST}/pliwee-wordmark-comparison.png')
 
 # ---- lockup ----------------------------------------------------------------

@@ -71,9 +71,10 @@ onto it. There is no remaining delta between the brand and the interface.
 > **Status: READY FOR FINAL HUMAN BRAND APPROVAL.** The files below are a
 > *controlled vector reconstruction* of the owner-supplied board, made in
 > Wave 0 of the [Pliwee rebrand plan](../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md).
-> The owner approved the Flow Monogram's **geometry** and its **colour** on
-> 2026-09-24 (Wave 0 review 2); the set as a whole awaits final brand
-> approval. No platform derives anything from them before that, and until
+> The owner approved the Flow Monogram's **geometry** and **colour** (Wave 0
+> review 2) and the **geometry of all five masters** (final visual review),
+> both on 2026-09-24; the one remaining change, the wordmark ink, is applied,
+> and the set awaits final brand approval. No platform derives anything from them before that, and until
 > the platform waves (W6 Android, W7 Linux) re-point their derivatives, the
 > product keeps shipping the OmniBridge artwork above.
 
@@ -112,7 +113,7 @@ How they are built, what was measured against the board and every known
 difference are recorded in
 [`reports/branding/PLIWEE-WAVE-0-BRAND-ASSET-FOUNDATION.md`](../reports/branding/PLIWEE-WAVE-0-BRAND-ASSET-FOUNDATION.md).
 
-### Colour: the mark has its own gradient
+### Colour: brand assets have their own inks
 
 * `#4F6BFF`, `#18B8C9`, `#7C5CFC`, `#0B1020` and `#F7F9FC` remain the
   **official product palette**: UI, tokens, text, surfaces.
@@ -123,10 +124,25 @@ difference are recorded in
 * **No platform may rebuild the mark's gradient from the UI tokens.** A
   derivative takes the stops, vectors and overlays from `pliwee-mark.svg`
   as they are.
+* **Pliwee Wordmark Ink `#030D25`** paints the "Pliwee" lettering in every
+  colour master (`pliwee-wordmark.svg`, `pliwee-lockup.svg`). It is a
+  **brand-asset-specific, board-derived colour**, measured on the canonical
+  board and approved by the owner. It sits very close to Dark `#0B1020`, but
+  it is **not** the Dark token and does not replace it: Dark stays the UI's
+  text and surface colour, and a derivative may not "tidy" the wordmark onto it.
 * `#314871`, the tagline colour of the light lockup, is a **lockup-specific,
   derived brand colour**, measured on the board and approved. It is not a UI
   token and does not replace one.
-* The lettering of the light lockup is Dark `#0B1020`.
+* The rule is the same for all three (the mark's gradient stops, the Wordmark
+  Ink and the tagline colour): they belong to the logo, come from the board,
+  and are asserted by `desktop/gui/tests/brand_assets.rs`, not re-derived from
+  the product palette.
+
+| Brand-asset colour | Value | Used in |
+| --- | --- | --- |
+| Flow Monogram gradient | stops in `pliwee-mark.svg` | the symbol, every colour cut |
+| Pliwee Wordmark Ink | `#030D25` | "Pliwee" in `pliwee-wordmark.svg` and `pliwee-lockup.svg` |
+| Lockup tagline | `#314871` | *One flow. Any device.* in `pliwee-lockup.svg` |
 
 ### Mono and tonal
 
