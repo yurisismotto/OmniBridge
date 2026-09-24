@@ -157,7 +157,9 @@ class OmniBridgeApp : Application() {
         super.onCreate()
         trustStore = TrustStore(this)
         identity = DeviceIdentity.loadOrCreate(trustStore.deviceId)
-        battery = BatteryCapability(this)
+        // Same rule as files and clipboard below: the grant is re-read on every
+        // question, so the Battery switch on the device card is what decides.
+        battery = BatteryCapability(this) { peer -> isBatterySharingAllowed(peer) }
 
         // The grant is re-read from the trust store on every question rather
         // than captured once, so revoking `files.v1` — or forgetting the
@@ -222,6 +224,12 @@ class OmniBridgeApp : Application() {
                 "(strongbox=${identity.isStrongBoxBacked})",
         )
     }
+
+    /** Whether this phone's battery may be sent to a computer, right now. */
+    private fun isBatterySharingAllowed(peer: io.github.yurisismotto.omnibridge.identity.Fingerprint):
+        Boolean = runCatching {
+        trustStore.peer(peer)?.allows(BatteryCapability.ID) == true
+    }.getOrDefault(false)
 
     /**
      * Whether a computer may transfer files with this phone, right now.

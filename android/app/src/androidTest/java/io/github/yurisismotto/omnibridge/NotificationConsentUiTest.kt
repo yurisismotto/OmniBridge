@@ -152,6 +152,9 @@ class NotificationConsentUiTest {
         show(Fx.state(Fx.peer(granted = false)), recorder)
 
         switchFor("Share notifications with this computer").assertIsOff().performClick()
+        // The disclosure stands between the switch and the grant (F3).
+        assertTrue("the switch alone granted", recorder.grants.isEmpty())
+        compose.onNodeWithText("Allow").performClick()
         assertEquals(listOf(true), recorder.grants)
         // The critical N3 property: granting is not selecting. Nothing in the
         // grant path writes an application into the policy.
@@ -159,6 +162,50 @@ class NotificationConsentUiTest {
             "granting an application-less computer wrote a policy",
             recorder.policies.none { it.allowedApps.isNotEmpty() },
         )
+    }
+
+    // --- the prominent disclosure (Play v1 audit F3) ------------------------
+
+    @Test
+    fun turning_the_switch_on_shows_the_disclosure_before_anything_is_granted() {
+        val recorder = Fx.Recorder()
+        show(Fx.state(Fx.peer(granted = false)), recorder)
+
+        switchFor("Share notifications with this computer").performClick()
+
+        compose.onNodeWithText("What is sent", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Where it goes", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("When: only while", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Never to the developers of OmniBridge", substring = true)
+            .assertIsDisplayed()
+        assertTrue("granted before the person answered", recorder.grants.isEmpty())
+        // Android's access screen is not on offer until the grant exists.
+        compose.onAllNodesWithText("Open Android settings").assertCountEquals(0)
+    }
+
+    @Test
+    fun declining_the_disclosure_writes_nothing() {
+        val recorder = Fx.Recorder()
+        show(Fx.state(Fx.peer(granted = false)), recorder)
+
+        switchFor("Share notifications with this computer").performClick()
+        compose.onNodeWithText("Not now").performClick()
+
+        compose.onAllNodesWithText("What is sent", substring = true).assertCountEquals(0)
+        switchFor("Share notifications with this computer").assertIsOff()
+        assertTrue(recorder.grants.isEmpty())
+        assertTrue(recorder.policies.isEmpty())
+    }
+
+    @Test
+    fun turning_the_switch_off_needs_no_confirmation() {
+        val recorder = Fx.Recorder()
+        show(Fx.state(Fx.peer(granted = true)), recorder)
+
+        switchFor("Share notifications with this computer").performClick()
+
+        compose.onAllNodesWithText("What is sent", substring = true).assertCountEquals(0)
+        assertEquals(listOf(false), recorder.grants)
     }
 
     // --- gate 1: Android's own permission ----------------------------------

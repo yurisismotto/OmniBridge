@@ -244,6 +244,8 @@ data class MainActions(
      * comes back rather than assumed from the fact that they left.
      */
     val onOpenNotificationAccess: () -> Unit,
+    /** Opens [PrivacyPolicy.URL] in the person's browser (Play v1 audit F4). */
+    val onOpenPrivacyPolicy: () -> Unit,
     /**
      * The picker's list for one computer.
      *

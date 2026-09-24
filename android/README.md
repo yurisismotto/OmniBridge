@@ -5,12 +5,19 @@ network access beyond the LAN socket to the paired computer.
 
 ## Build
 
-Requires **JDK 21** and the **Android SDK, platform 35** with build-tools
-35.0.0. Point Gradle at them with `JAVA_HOME` and `ANDROID_HOME`, or with an
-untracked `android/local.properties`.
+Requires **JDK 21** and the **Android SDK, platform 36** with build-tools
+35.0.0 (platform 35 as well if you build the test-only `:fixture`). Point
+Gradle at them with `JAVA_HOME` and `ANDROID_HOME`, or with an untracked
+`android/local.properties`.
 
-JDK 21 specifically: AGP 8.8 does not support running on JDK 25, which is what
-Fedora 44 ships as its default `java`.
+`:app` compiles against and targets API 36 because Google Play requires new
+apps and updates submitted after 2026-08-31 to target Android 16. AGP 8.10 is
+the first plugin line that supports API 36, which is the only reason it moved
+from 8.8.
+
+JDK 21 specifically: it is the runtime this build is verified on. AGP 8.8 did
+not support running on JDK 25, which is what Fedora 44 ships as its default
+`java`, and AGP 8.10 has not been verified there.
 
 ```bash
 export JAVA_HOME=/path/to/jdk-21
@@ -76,3 +83,10 @@ project does not require root and does not use ADB.
 
 The Gradle protobuf plugin compiles `../../protocol/proto` directly — the same
 files the Rust daemon compiles. There is no second copy to drift.
+
+## Release signing
+
+Model and custody: [ADR-0019](../docs/adr/ADR-0019-android-app-signing.md).
+`signing/provision-signing-keys.sh` provisions the app signing and upload keys
+once, outside this repository; `signing/tests/provision-selftest.sh` rehearses
+it with throwaway keys. No keystore, private key or password is ever committed.

@@ -66,6 +66,137 @@ onto it. There is no remaining delta between the brand and the interface.
 
 ---
 
+## Pliwee vector masters
+
+> **Status: BRAND APPROVED — canonical and frozen.** Final human brand
+> approval was granted on **2026-09-24** for commit **`1ea65e6`**. The five
+> masters below are a *controlled vector reconstruction* of the owner-supplied
+> board, made in Wave 0 of the
+> [Pliwee rebrand plan](../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md),
+> and they are now the **canonical Pliwee brand assets**. Their geometry,
+> paths, viewBoxes, gradients, lettering, proportions, spacing and colours
+> are **frozen**: any change requires an explicit branding decision by the
+> owner, recorded here, and never happens as a fix, a cleanup or a
+> re-export. Until the platform waves (W6 Android, W7 Linux) re-point their
+> derivatives, the product keeps shipping the OmniBridge artwork above.
+
+**Approved identity:** Product **Pliwee** · Tagline *One flow. Any device.* ·
+canonical mark [`pliwee-mark.svg`](assets/pliwee-mark.svg) · Pliwee Wordmark
+Ink `#030D25` · lockup tagline `#314871` · UI Dark `#0B1020`. The UI palette
+and the brand-asset inks are distinct (see *Colour* below).
+
+The Pliwee identity is fixed by [ADR-0020 §D8](../adr/ADR-0020-rename-to-pliwee.md):
+**Pliwee** · *One flow. Any device.* · Inter · Primary Blue `#4F6BFF` ·
+Flow Cyan `#18B8C9` · Accent Violet `#7C5CFC` · Dark `#0B1020` · Surface
+`#F7F9FC` · symbol: the **Flow Monogram**. The "Connected Nodes" concept is
+**not** the mark.
+
+### References, and which one wins
+
+The owner-supplied board is stored byte-for-byte in
+[`references/`](references/README.md). The images are references, never
+runtime assets. Where the board contradicts itself, this order decides:
+
+1. [`pliwee-brand-board-symbol.png`](references/pliwee-brand-board-symbol.png),
+   the standalone symbol, is the authority on **Flow Monogram geometry**. The
+   board draws the mark again in its lockup, slightly differently; that
+   second drawing is not used anywhere.
+2. [`pliwee-brand-board-lockup.png`](references/pliwee-brand-board-lockup.png),
+   the horizontal lockup, is the authority on **proportion and placement, the
+   wordmark and the tagline**.
+3. The board as a whole is the general visual reference.
+
+### The masters
+
+| Role | Master | viewBox |
+| --- | --- | --- |
+| **Symbol, colour**: the Flow Monogram, board-derived gradient | [`assets/pliwee-mark.svg`](assets/pliwee-mark.svg) | `0 0 276 255` |
+| **Symbol, mono**: one ink, `currentColor` | [`assets/pliwee-mark-mono.svg`](assets/pliwee-mark-mono.svg) | `0 0 276 255` |
+| **Symbol, tonal**: one colour with tonal face separation (optional) | [`assets/pliwee-mark-tonal.svg`](assets/pliwee-mark-tonal.svg) | `0 0 276 255` |
+| **Wordmark**: "Pliwee", custom brand lettering | [`assets/pliwee-wordmark.svg`](assets/pliwee-wordmark.svg) | `0 0 321 86` |
+| **Lockup**: Flow Monogram + Pliwee + *One flow. Any device.* | [`assets/pliwee-lockup.svg`](assets/pliwee-lockup.svg) | `0 0 490 143` |
+
+How they are built, what was measured against the board and every known
+difference are recorded in
+[`reports/branding/PLIWEE-WAVE-0-BRAND-ASSET-FOUNDATION.md`](../reports/branding/PLIWEE-WAVE-0-BRAND-ASSET-FOUNDATION.md).
+
+### Colour: brand assets have their own inks
+
+* `#4F6BFF`, `#18B8C9`, `#7C5CFC`, `#0B1020` and `#F7F9FC` remain the
+  **official product palette**: UI, tokens, text, surfaces.
+* The Flow Monogram has **its own gradient stops**, derived from the pixels of
+  the canonical board and approved by the owner. They are part of the logo,
+  and they are not tokens. The board's cyan in particular is brighter than
+  Flow Cyan, and that is intended.
+* **No platform may rebuild the mark's gradient from the UI tokens.** A
+  derivative takes the stops, vectors and overlays from `pliwee-mark.svg`
+  as they are.
+* **Pliwee Wordmark Ink `#030D25`** paints the "Pliwee" lettering in every
+  colour master (`pliwee-wordmark.svg`, `pliwee-lockup.svg`). It is a
+  **brand-asset-specific, board-derived colour**, measured on the canonical
+  board and approved by the owner. It sits very close to Dark `#0B1020`, but
+  it is **not** the Dark token and does not replace it: Dark stays the UI's
+  text and surface colour, and a derivative may not "tidy" the wordmark onto it.
+* `#314871`, the tagline colour of the light lockup, is a **lockup-specific,
+  derived brand colour**, measured on the board and approved. It is not a UI
+  token and does not replace one.
+* The rule is the same for all three (the mark's gradient stops, the Wordmark
+  Ink and the tagline colour): they belong to the logo, come from the board,
+  and are asserted by `desktop/gui/tests/brand_assets.rs`, not re-derived from
+  the product palette.
+
+| Brand-asset colour | Value | Used in |
+| --- | --- | --- |
+| Flow Monogram gradient | stops in `pliwee-mark.svg` | the symbol, every colour cut |
+| Pliwee Wordmark Ink | `#030D25` | "Pliwee" in `pliwee-wordmark.svg` and `pliwee-lockup.svg` |
+| Lockup tagline | `#314871` | *One flow. Any device.* in `pliwee-lockup.svg` |
+
+### Mono and tonal
+
+| Cut | What it is | Rule |
+| --- | --- | --- |
+| **colour** | the official gradient | the default wherever colour is available |
+| **mono** | one ink: the silhouette in `currentColor` | no tones, no opacity, no mask, no gradient. Works on any foreground; this is the cut for single-colour uses (themed/monochrome icons, one-colour print, system tints). Being one ink, it does not show the internal crossings. |
+| **tonal** | one colour, faces separated by tone (`currentColor` at 1.00 / 0.77 / 0.63 / 0.50, from each face's lightness on the board) | optional. **Not a platform requirement**; no platform is obliged to ship it. |
+
+All three cuts carry the same geometry, byte for byte.
+
+### The wordmark is custom brand lettering
+
+"Pliwee" is proprietary lettering, **not** a font setting. Its typographic
+origin is Inter, the product's typeface, but the approved form is the board's
+own, which is wider and heavier than any Inter instance. The outlines are
+traced from the horizontal lockup board, so width, height, baseline and
+spacing are the board's. The tagline in the lockup is traced from the same
+board in the same way. Neither depends on a font being installed. Product
+**text** that says "Pliwee" is still set in Inter; only the logo is lettering.
+
+### The derivation rule
+
+* `pliwee-mark.svg` is the single source of the symbol's geometry. It
+  defines four faces once each (`silhouette`, `face-loop`, `face-tail`,
+  `face-sweep`) and paints them by reference. The geometry is **pinned by
+  digest** in `desktop/gui/tests/brand_assets.rs`: changing it is a brand
+  decision, never a fix for a red test.
+* `pliwee-mark-mono.svg` and `pliwee-mark-tonal.svg` carry **the same four
+  paths, byte for byte**, and differ only in paint. The same test fails if
+  either drifts.
+* `pliwee-lockup.svg` places the same mark symbol (same paths, same test)
+  beside the same lettering outlines that `pliwee-wordmark.svg` carries.
+* **Every future derivative** (app icon, hicolor icon, Android adaptive
+  foreground and monochrome layers, the in-app brand drawable, Play icon and
+  feature graphic) is produced **from these masters** in the wave that owns
+  it (W6, W7, W10), and is asserted against them by geometry, as the
+  OmniBridge derivatives are today.
+* **No platform redraws the symbol independently.** No retrace, no
+  simplification, no "optical adjustment", no second monogram, no Connected
+  Nodes. A platform that cannot render a master's construct (for example a
+  VectorDrawable, which has no `<mask>`) converts it mechanically and proves
+  the outline unchanged; it does not redraw.
+* The masters may change only by owner decision, and only here.
+
+---
+
 ## The idea
 
 OmniBridge moves what matters between the machines a person already owns, over
@@ -353,6 +484,7 @@ No screen contains a literal hex value.
 | [`omnibridge-wordmark.svg`](assets/omnibridge-wordmark.svg) | Wordmark |
 | [`omnibridge-logo-lockup.svg`](assets/omnibridge-logo-lockup.svg) | Mark + wordmark + tagline |
 | [`assets/icons/`](assets/icons/) | The 28-glyph OmniBridge icon family — brand-neutral UI glyphs, carried over unchanged |
+| `assets/pliwee-*.svg` | The five Pliwee masters — **BRAND APPROVED, canonical and frozen** (2026-09-24, `1ea65e6`); not yet used by any build (W6/W7 derive from them); see [Pliwee vector masters](#pliwee-vector-masters) |
 
 Android adaptive icon: `res/mipmap-anydpi-v26/ic_launcher.xml` with a Dark
 (`#0B1020`) background, the mark as the adaptive foreground inside the 72 dp

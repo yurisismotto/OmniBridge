@@ -148,8 +148,13 @@ fun PeerDetailScreen(
         OmniBridgeSectionLabel("Permissions")
         OmniBridgeCard {
             Text(
+                // Pairing allows files and battery (SensitiveCapabilities says
+                // why); saying "nothing is granted automatically" here was
+                // untrue (Play v1 audit F1).
                 "Choose what ${peer.deviceName} can do with this device. " +
-                    "Nothing is granted automatically.",
+                    "Files and battery are allowed when you pair, and every " +
+                    "incoming file still asks you first. Clipboard and " +
+                    "notifications stay off until you turn them on.",
                 style = OmniBridgeType.caption,
                 color = colors.textSecondary,
             )

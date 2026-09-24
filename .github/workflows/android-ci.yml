@@ -25,15 +25,17 @@
 #
 # Everything below is derived from the repository, not remembered
 # ---------------------------------------------------------------
-#   android/gradle/libs.versions.toml   agp = "8.8.0", kotlin = "2.1.0"
+#   android/gradle/libs.versions.toml   agp = "8.10.1", kotlin = "2.1.0"
 #   android/gradle/wrapper/…            gradle-8.11.1, SHA-256 pinned
-#   android/app/build.gradle.kts        compileSdk 35, targetSdk 35, minSdk 29
+#   android/app/build.gradle.kts        compileSdk 36, targetSdk 36, minSdk 29
+#   android/fixture/build.gradle.kts    compileSdk 35 (test-only; never shipped)
 #                                       source/targetCompatibility VERSION_17
 #                                       kotlinOptions.jvmTarget = "17"
 #
 # So: **JDK 17** (what the module declares it compiles against, and the minimum
-# AGP 8.8 accepts), the **repository's own Gradle wrapper**, and **SDK platform
-# 35** because that is what `compileSdk` names. The steps below re-read
+# AGP 8.10 accepts), the **repository's own Gradle wrapper**, and **every SDK
+# platform a module's `compileSdk` names** — 36 for `:app`, 35 for the
+# `:fixture`. The steps below re-read
 # `compileSdk` and the Java level out of the build file at run time and fail if
 # they have moved, so this header cannot quietly become a lie.
 #
@@ -82,7 +84,7 @@ env:
 
 jobs:
   build-and-test:
-    name: assembleDebug + testDebugUnitTest · JDK 17, AGP 8.8
+    name: assembleDebug + testDebugUnitTest · JDK 17, AGP 8.10
     runs-on: ubuntu-24.04
     timeout-minutes: 45
 
@@ -128,27 +130,34 @@ jobs:
             gradle/wrapper/gradle-wrapper.properties
           ./gradlew --version
 
-      # The runner image ships an Android SDK; only the platform `compileSdk`
-      # names has to be guaranteed present. Installed through the SDK's own
+      # The runner image ships an Android SDK; only the platforms the modules'
+      # `compileSdk` values name have to be guaranteed present. `:app` and the
+      # test-only `:fixture` are read separately because they need not agree:
+      # the Play target moved `:app` to 36 and left the fixture where its
+      # certification runs were measured. Installed through the SDK's own
       # `sdkmanager` rather than by downloading an archive from anywhere.
-      - name: Android SDK platform · exactly the compileSdk this project declares
+      - name: Android SDK platforms · exactly the compileSdk each module declares
         run: |
           set -eu
           : "${ANDROID_HOME:?the runner image must provide an Android SDK}"
-          compile_sdk=$(sed -n 's/^ *compileSdk *= *\([0-9][0-9]*\).*/\1/p' app/build.gradle.kts | head -1)
-          if [ -z "${compile_sdk}" ]; then
-            echo "::error::could not read compileSdk from app/build.gradle.kts."
-            echo "::error::This job derives the SDK platform from the build file on purpose;"
-            echo "::error::fix the parse rather than hard-coding a version here."
-            exit 1
-          fi
-          echo "compileSdk declared: ${compile_sdk}"
           sdkmanager="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
           test -x "${sdkmanager}" || sdkmanager=$(command -v sdkmanager)
           yes | "${sdkmanager}" --licenses > /dev/null 2>&1 || true
-          "${sdkmanager}" "platforms;android-${compile_sdk}"
-          test -d "${ANDROID_HOME}/platforms/android-${compile_sdk}"
-          echo "ANDROID_COMPILE_SDK=${compile_sdk}" >> "${GITHUB_ENV}"
+          for module in app fixture; do
+            compile_sdk=$(sed -n 's/^ *compileSdk *= *\([0-9][0-9]*\).*/\1/p' "${module}/build.gradle.kts" | head -1)
+            if [ -z "${compile_sdk}" ]; then
+              echo "::error::could not read compileSdk from ${module}/build.gradle.kts."
+              echo "::error::This job derives the SDK platform from the build file on purpose;"
+              echo "::error::fix the parse rather than hard-coding a version here."
+              exit 1
+            fi
+            echo "${module}: compileSdk declared: ${compile_sdk}"
+            "${sdkmanager}" "platforms;android-${compile_sdk}"
+            test -d "${ANDROID_HOME}/platforms/android-${compile_sdk}"
+            if [ "${module}" = app ]; then
+              echo "ANDROID_COMPILE_SDK=${compile_sdk}" >> "${GITHUB_ENV}"
+            fi
+          done
 
       # ------------------------------------------------------------------ 1 --
       # Compilation. `:app` is the product; `:fixture` is the test-only
@@ -170,6 +179,32 @@ jobs:
       # be hidden by a number that was never updated.
       - name: testDebugUnitTest · the JVM suites
         run: ./gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
+
+      # ADR-0019. Rehearses the signing-key provisioning procedure with
+      # THROWAWAY keys under a scratch root, including every refusal. No
+      # secret is read and no real key exists here: this proves the procedure,
+      # it does not sign anything.
+      - name: Signing-key provisioning procedure · self-test (throwaway keys)
+        run: signing/tests/provision-selftest.sh
+
+      # ADR-0019: a release artifact without the upload key must be refused,
+      # not silently produced unsigned or debug-signed. The guard fires when
+      # the task graph is ready, before anything compiles, so this is cheap.
+      # It must fail, AND fail for this reason — any other failure would make
+      # a broken build look like a working guard.
+      - name: Release guard · bundleRelease without signing is refused
+        run: |
+          set -u
+          if ./gradlew --no-daemon --max-workers=2 :app:bundleRelease > guard.log 2>&1; then
+            echo "::error::bundleRelease succeeded with no upload key configured"
+            exit 1
+          fi
+          if ! grep -q 'OmniBridge release signing is not configured' guard.log; then
+            echo "::error::bundleRelease failed, but not because of the signing guard:"
+            tail -40 guard.log
+            exit 1
+          fi
+          grep 'OmniBridge release signing is not configured' guard.log
 
       # Evidence, not a gate. Prints what actually ran so a reviewer can see
       # the P1/P2/P3 regression suites in the log without downloading anything.

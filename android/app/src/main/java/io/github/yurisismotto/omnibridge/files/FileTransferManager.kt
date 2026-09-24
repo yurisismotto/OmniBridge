@@ -374,7 +374,9 @@ class FileTransferManager(
         transfers[id] = transfer
         publishState()
 
-        Log.i(TAG, "offering ${transfer.filename} (${size}B) as ${id.take(8)}")
+        // No filename in the log: a name can say as much as the file (Play v1
+        // audit F5). The id is what ties a log line to a row.
+        Log.i(TAG, "offering ${id.take(8)} (${size}B)")
 
         val sent = sendControl(
             FileControl.newBuilder().setOffer(
@@ -487,7 +489,7 @@ class FileTransferManager(
         publishState()
 
         // The sanitized name is logged; the raw one never is, at any level.
-        Log.i(TAG, "incoming ${transfer.filename} (${offer.sizeBytes}B) as ${id.take(8)}")
+        Log.i(TAG, "incoming ${id.take(8)} (${offer.sizeBytes}B)")
 
         // Asking the user must not block the session's message loop: pings,
         // battery updates and an unpair all have to keep working while a
@@ -754,7 +756,7 @@ class FileTransferManager(
 
         if (!transition(transfer, TransferState.COMPLETED)) return
         publishState()
-        Log.i(TAG, "received and verified ${transfer.id.take(8)} as $actualName")
+        Log.i(TAG, "received and verified ${transfer.id.take(8)}")
 
         sendControl(
             FileControl.newBuilder().setComplete(

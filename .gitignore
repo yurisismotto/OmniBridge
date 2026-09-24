@@ -23,6 +23,17 @@
 .vscode/
 *.swp
 
+# Android signing material — never committed, whatever the signing model.
+# The repository describes how signing is supplied; it never holds the key,
+# its password, or a properties file that names either.
+*.jks
+*.keystore
+*.p12
+*.pfx
+key.properties
+keystore.properties
+signing.properties
+
 # Runtime state — never commit an identity or a trust store
 *.key
 state.json

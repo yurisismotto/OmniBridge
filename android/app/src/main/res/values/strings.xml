@@ -68,6 +68,21 @@
     <!-- Gate 2 — the per-peer grant. -->
     <string name="notif_share_title">Share notifications with this computer</string>
     <string name="notif_share_description">Off until you turn it on. Turning it on shares nothing by itself — you choose which apps next.</string>
+
+    <!--
+      Prominent disclosure (Google Play User Data policy; Play v1 audit F3).
+      Shown when the per-computer switch is turned ON, before the grant is
+      written and before Android's notification-access screen is offered.
+      Every clause is checked against NotificationWire / NotificationFilter /
+      NotificationPolicy: change the code and this text together.
+    -->
+    <string name="notif_disclosure_title">Share notifications with %1$s?</string>
+    <string name="notif_disclosure_what">What is sent: for each notification from an app you choose — the app\'s name and package name, the title and text, when it was posted, its category, importance and progress, and whether it is ongoing or can be dismissed. Pictures, icons, action buttons and replies are never sent.</string>
+    <string name="notif_disclosure_where">Where it goes: only to %1$s, directly over your local network, on an encrypted connection pinned to that computer. Never to the developers of OmniBridge or to any cloud service — OmniBridge has none. No notification is stored on this device.</string>
+    <string name="notif_disclosure_when">When: only while this device is connected to %1$s — including while OmniBridge is in the background. While connected, OmniBridge appears in Android\'s list of active apps, and as an ongoing notification if you allow notifications. While this device is locked, only the app\'s name is sent unless you change that.</string>
+    <string name="notif_disclosure_next">Nothing is shared yet. You will also need to allow Android notification access and pick the apps. You can stop at any time here, in Android settings, or by removing the computer.</string>
+    <string name="notif_disclosure_allow">Allow</string>
+    <string name="notif_disclosure_decline">Not now</string>
     <string name="notif_mirror_title">Mirroring</string>
     <string name="notif_mirror_description">Pause without changing anything else</string>
 

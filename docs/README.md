@@ -22,6 +22,7 @@ its filename looks like.
 | a final PASS/FAIL gate with its evidence | [`certification/<area>/`](certification/) | `certification/clipboard/` |
 | a sprint result, implementation report or hardening report | [`reports/<area>/`](reports/) | `reports/notifications/` |
 | a record of a rename, port or data migration | [`migrations/`](migrations/) | `migrations/MIGRATION-ANYFLOW-TO-OMNIBRIDGE.md` |
+| a public-facing policy the app or a store links to | [`policy/`](policy/) | `policy/PRIVACY-POLICY.md` |
 
 The three that are easiest to confuse:
 
@@ -40,14 +41,17 @@ belongs beside its siblings.
 
 ```
 docs/
-├── adr/                        18 decisions, ADR-0001 … ADR-0018 — see adr/README.md
+├── adr/                        20 decisions, ADR-0001 … ADR-0020 — see adr/README.md
 ├── architecture/               how the system works now: OVERVIEW, PROTOCOL, CLIPBOARD, FILES, NOTIFICATIONS
-├── design/                     BRAND, UI-GUIDELINES, tokens.json, assets/ (the build reads the app icon here)
+├── design/                     BRAND, UI-GUIDELINES, PLAY-STORE-LISTING, tokens.json, assets/ (the build reads the app icon here),
+│                               references/ (owner-supplied boards; never read by a build)
 ├── security/                   THREAT_MODEL
 ├── research/
 │   ├── platform-expansion/     cross-platform feasibility and the Wave 0 spec — 29 docs + README
-│   └── notifications-v1/       notifications.v1 specification and its PoCs
+│   ├── notifications-v1/       notifications.v1 specification and its PoCs
+│   └── pliwee-rebrand/         the wave-by-wave implementation plan for ADR-0020
 ├── audits/
+│   ├── android/                Android / Google Play v1 readiness (PLAY0 → PLAY4) and Play Console declarations
 │   ├── linux-compat/           Ubuntu / Debian compatibility, U0 → U2 — see its README
 │   ├── packaging/              Linux packaging readiness, build foundation, systemd unit — see its README
 │   ├── release/                Release Readiness v1 — baseline, signing foundation, harness hardening
@@ -68,7 +72,8 @@ docs/
 │   ├── notifications/          notifications.v1 N0 → N5 waves — see its README
 │   ├── security/               trust-store and device-revocation work
 │   └── ux/                     UX hardening and debt cleanup
-└── migrations/                 AnyFlow → OmniBridge
+├── migrations/                 AnyFlow → OmniBridge
+└── policy/                     public policies the app links to: PRIVACY-POLICY (its URL is compiled into the app)
 ```
 
 A directory holding several related historical documents carries its own
