@@ -114,3 +114,36 @@ the same time. That step is an operator action at PLAY18.
 * The help centre does not state whether a developer-supplied key receives the
   hybrid (RSA-4096 + ML-DSA-65) signing Google-generated keys get by default;
   what Play Console shows at PEPK time is recorded when it happens.
+
+## Provisioned identity (public)
+
+Provisioned by the operator on 2026-09-24 with the procedure above; both
+offline backups restore-verified at 2026-09-24T05:05:45Z. The certificates
+are committed as public files in
+[`android/signing/certs/`](../../android/signing/certs/).
+
+| Key | Certificate SHA-256 | SHA-1 | Valid |
+| --- | --- | --- | --- |
+| app signing (`omnibridge-app-signing`) | `AB:B6:2F:53:CB:63:32:6D:AE:3D:02:A2:5C:76:CA:45:CA:2B:95:B5:63:8A:95:5B:BB:7B:45:20:B0:23:AC:49` | `73:EB:FB:A7:90:50:7F:0D:E5:99:2A:AE:8E:69:EF:CE:91:CD:D6:F0` | 2026-09-24 → 2056-09-23 |
+| upload (`omnibridge-upload`) | `75:FC:88:B5:20:72:47:EF:21:50:6B:D5:F6:EB:87:A8:15:AE:C0:13:87:41:83:30:3E:42:6A:92:7E:2F:BA:47` | `9D:65:32:06:A1:0E:77:C6:09:23:CA:32:20:AB:91:B1:BA:9B:2C:C0` | 2026-09-24 → 2056-09-23 |
+
+After the PEPK step, Play Console's *App signing* page must show the app
+signing SHA-256 above and the upload SHA-256 above. Any other value there
+means a different key reached Play, and nothing is published until it is
+explained.
+
+## Building a release
+
+`android/signing/build-release-bundle.sh` prompts for the upload keystore
+password (hidden), passes it to one `--no-daemon` Gradle run through the
+environment, refuses a dirty working tree, checks the password did not reach
+the bundle, and runs `android/signing/verify-release-bundle.sh`, which fails
+unless the bundle has exactly one signer whose certificate is the committed
+upload certificate, is not debug-signed, verifies under `jarsigner`, and
+carries the expected package, minSdk, targetSdk ≥ 36, no `debuggable`,
+exactly the expected permissions, no key material, and an R8 mapping.
+
+In `app/build.gradle.kts`, any task producing a release APK or bundle fails
+when `OMNIBRIDGE_UPLOAD_KEYSTORE` / `OMNIBRIDGE_UPLOAD_KEYSTORE_PASSWORD` are
+absent or the keystore lies inside the repository. Android CI asserts that
+refusal.
