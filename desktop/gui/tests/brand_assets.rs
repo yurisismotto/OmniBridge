@@ -331,6 +331,257 @@ fn no_active_asset_carries_the_pre_rename_identity() {
 }
 
 // ===========================================================================
+// PLIWEE-W0 — the Pliwee vector masters (ADR-0020 D8)
+// ===========================================================================
+//
+// The four Pliwee masters sit beside the OmniBridge artwork above and do not
+// replace it yet: nothing is compiled from them until the platform waves (W6,
+// W7) derive their icons, so `ASSETS` — the artwork the application ships —
+// is left exactly as it was, dead list included.
+//
+// The masters are a controlled vector reconstruction of the owner-supplied
+// board (`docs/design/references/`), AWAITING HUMAN BRAND APPROVAL. These
+// tests do not approve anything. They pin what a machine can pin: that the
+// files are self-contained vectors, that the monochrome cut and the lockup
+// carry the colour mark's geometry byte for byte, and that the wordmark is
+// outlines rather than a font request.
+
+/// The Pliwee masters, named one by one for the same reason `ASSETS` is.
+const PLIWEE_MASTERS: [&str; 4] = [
+    "pliwee-mark.svg",
+    "pliwee-mark-mono.svg",
+    "pliwee-wordmark.svg",
+    "pliwee-lockup.svg",
+];
+
+/// Every `<path id="…" d="…"/>` a Pliwee master defines, as (id, d).
+///
+/// The Pliwee masters define each ribbon face once, by id, and paint it by
+/// reference — so this list *is* the mark's geometry.
+fn pliwee_geometry(svg: &str) -> Vec<(String, String)> {
+    svg.match_indices("<path id=\"")
+        .map(|(at, open)| {
+            let rest = &svg[at + open.len()..];
+            let id = rest.split('"').next().expect("an id").to_string();
+            let d = attr(rest, "d").unwrap_or_else(|| panic!("path {id} has no d"));
+            (id, d)
+        })
+        .collect()
+}
+
+/// The Pliwee masters pass every structural check the shipped artwork passes.
+///
+/// The checks are the ones above, reused rather than restated, so a master
+/// cannot be held to a weaker standard than the artwork it will replace.
+#[test]
+fn every_pliwee_master_is_a_self_contained_vector() {
+    for name in PLIWEE_MASTERS {
+        let svg = read(name);
+        let lower = svg.to_lowercase();
+        assert!(
+            svg.contains("xmlns=\"http://www.w3.org/2000/svg\"")
+                && svg.trim_end().ends_with("</svg>"),
+            "{name} is not an SVG document"
+        );
+        assert_eq!(
+            svg.matches("<svg").count(),
+            1,
+            "{name} has more than one root"
+        );
+        assert!(attr(&svg, "viewBox").is_some(), "{name} has no viewBox");
+        for forbidden in [
+            "<image",
+            "data:",
+            "<script",
+            "@font-face",
+            "<font",
+            ".ttf",
+            ".woff",
+            "<text",
+            "font-family",
+            "<filter",
+            "<foreignobject",
+        ] {
+            assert!(
+                !lower.contains(forbidden),
+                "{name} contains {forbidden:?}; a master is plain vector geometry and paint"
+            );
+        }
+        for (index, _) in lower.match_indices("href=\"") {
+            assert!(
+                lower[index + 6..].starts_with('#'),
+                "{name} references something outside the file"
+            );
+        }
+        let http: Vec<&str> = lower
+            .match_indices("http")
+            .map(|(i, _)| &lower[i..(i + 40).min(lower.len())])
+            .filter(|s| !s.starts_with("http://www.w3.org/2000/svg"))
+            .collect();
+        assert!(http.is_empty(), "{name} references the network: {http:?}");
+        for leak in [
+            "/home/",
+            "/users/",
+            "file://",
+            "c:\\",
+            "sodipodi",
+            "inkscape:",
+        ] {
+            assert!(!lower.contains(leak), "{name} leaks {leak:?}");
+        }
+        for (index, _) in svg.match_indices("url(#") {
+            let id: String = svg[index + 5..].chars().take_while(|c| *c != ')').collect();
+            assert!(
+                svg.contains(&format!("id=\"{id}\"")),
+                "{name} paints with url(#{id}), which it never defines"
+            );
+        }
+        let mut seen: Vec<String> = Vec::new();
+        for (index, _) in svg.match_indices(" id=\"") {
+            let id: String = svg[index + 5..].chars().take_while(|c| *c != '"').collect();
+            assert!(!seen.contains(&id), "{name} defines id {id:?} twice");
+            seen.push(id);
+        }
+    }
+}
+
+/// The monochrome mark is the colour mark's geometry with different paint.
+///
+/// Not "similar": the same face paths, same ids, same bytes. The mono cut
+/// may only change how those faces are painted.
+#[test]
+fn the_pliwee_mono_mark_is_the_colour_mark_repainted() {
+    let colour = pliwee_geometry(&read("pliwee-mark.svg"));
+    let mono = pliwee_geometry(&read("pliwee-mark-mono.svg"));
+    let ids: Vec<&str> = colour.iter().map(|(id, _)| id.as_str()).collect();
+    assert_eq!(
+        ids,
+        ["silhouette", "face-loop", "face-tail", "face-sweep"],
+        "the colour mark no longer defines the four Flow Monogram faces"
+    );
+    let total: usize = colour.iter().map(|(_, d)| d.len()).sum();
+    assert!(
+        total > 20_000,
+        "the mark's geometry is implausibly short ({total} chars), so equality proves nothing"
+    );
+    assert_eq!(
+        colour, mono,
+        "the mono mark does not carry the colour mark's geometry"
+    );
+
+    // And it really is monochrome: what the mono file draws inherits the
+    // text colour and never reaches for a gradient.
+    let svg = read("pliwee-mark-mono.svg");
+    let drawn = svg
+        .split("<symbol id=\"markMono\"")
+        .nth(1)
+        .and_then(|s| s.split("</symbol>").next())
+        .expect("the mono cut defines a markMono symbol");
+    assert!(
+        drawn.contains("fill=\"currentColor\""),
+        "the mono cut does not inherit currentColor"
+    );
+    assert!(
+        !drawn.contains("url(#paint"),
+        "the mono cut paints with a gradient"
+    );
+    assert!(
+        svg.contains("<use href=\"#markMono\""),
+        "the mono file does not draw the mono cut"
+    );
+}
+
+/// The lockup places the same mark; it does not carry a second drawing of it.
+#[test]
+fn the_pliwee_lockup_carries_the_mark_geometry() {
+    let mark = pliwee_geometry(&read("pliwee-mark.svg"));
+    let lockup = read("pliwee-lockup.svg");
+    for (id, d) in &mark {
+        assert!(
+            lockup.contains(&format!("<path id=\"{id}\" d=\"{d}\"")),
+            "the lockup's {id} is not the mark's"
+        );
+    }
+    assert!(
+        lockup.contains("href=\"#mark\""),
+        "the lockup does not place the mark symbol"
+    );
+}
+
+/// The wordmark and the lockup's lettering are outlines.
+///
+/// `<text>` and `font-family` are already refused above; this asserts the
+/// positive half — there is lettering, drawn as paths — and that the wordmark
+/// and the lockup set "Pliwee" with the same outlines.
+#[test]
+fn the_pliwee_wordmark_is_outlined_and_shared_with_the_lockup() {
+    let wordmark = read("pliwee-wordmark.svg");
+    let lockup = read("pliwee-lockup.svg");
+    let glyphs: Vec<String> = wordmark
+        .match_indices("<path ")
+        .filter_map(|(at, _)| attr(&wordmark[at..], "d"))
+        .collect();
+    assert_eq!(
+        glyphs.len(),
+        6,
+        "the wordmark is six outlined letters: P l i w e e"
+    );
+    let word_group = |svg: &str| -> String {
+        svg.split("<g id=\"wordmark\"")
+            .nth(1)
+            .and_then(|s| s.split("</g>").next())
+            .expect("a wordmark group")
+            .split_once('>')
+            .expect("the group opens")
+            .1
+            .to_string()
+    };
+    assert_eq!(
+        word_group(&wordmark),
+        word_group(&lockup),
+        "the lockup sets Pliwee with different outlines than the wordmark"
+    );
+}
+
+/// No Pliwee master carries a retired identity — and the lockup carries the
+/// adopted tagline.
+///
+/// This is the one place the dead list differs from `ASSETS`', and the
+/// difference is ADR-0020 D8, not a relaxation: *One flow. Any device.* was
+/// AnyFlow's tagline, is Pliwee's by decision, and so leaves this list;
+/// `omnibridge` and `one bridge` join it. The AnyFlow fragments that were
+/// never the tagline (`flow a`, `flow-a`, `flow_a`, `flowing`) stay dead, and
+/// the masters' names and ids avoid them rather than removing them.
+#[test]
+fn no_pliwee_master_carries_a_retired_identity() {
+    for name in PLIWEE_MASTERS {
+        let lower = read(name).to_lowercase();
+        for dead in [
+            "anyflow",
+            "flow a",
+            "flow-a",
+            "flow_a",
+            "flowing",
+            "fedroid",
+            "omnibridge",
+            "one bridge",
+        ] {
+            assert!(
+                !lower.contains(dead),
+                "{name} carries the retired identity {dead:?}"
+            );
+        }
+    }
+    // The re-adoption is asserted, not merely permitted: the lockup names the
+    // tagline it draws, exactly as approved.
+    let lockup = read("pliwee-lockup.svg");
+    assert!(
+        lockup.contains("aria-label=\"Pliwee — One flow. Any device.\""),
+        "the lockup does not declare the approved tagline"
+    );
+}
+
+// ===========================================================================
 // BRAND-POLISH-01 — the application icon, as the desktop resolves it
 // ===========================================================================
 //

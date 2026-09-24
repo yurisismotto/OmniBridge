@@ -66,6 +66,64 @@ onto it. There is no remaining delta between the brand and the interface.
 
 ---
 
+## Pliwee vector masters
+
+> **Status: AWAITING HUMAN BRAND APPROVAL.** The four files below are a
+> *controlled vector reconstruction* of the owner-supplied board, made in
+> Wave 0 of the [Pliwee rebrand plan](../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md).
+> They are not canonical until the owner approves them, and no platform
+> derives anything from them before that. Until the platform waves (W6
+> Android, W7 Linux) re-point their derivatives, the product keeps shipping
+> the OmniBridge artwork above.
+
+The Pliwee identity is fixed by [ADR-0020 §D8](../adr/ADR-0020-rename-to-pliwee.md):
+**Pliwee** · *One flow. Any device.* · Inter · Primary Blue `#4F6BFF` ·
+Flow Cyan `#18B8C9` · Accent Violet `#7C5CFC` · Dark `#0B1020` · Surface
+`#F7F9FC` · symbol: the **Flow Monogram**. The "Connected Nodes" concept is
+**not** the mark.
+
+**Visual reference:** the owner-supplied board in
+[`references/`](references/README.md) —
+[`pliwee-brand-board-symbol.png`](references/pliwee-brand-board-symbol.png) and
+[`pliwee-brand-board-lockup.png`](references/pliwee-brand-board-lockup.png),
+stored byte-for-byte. They are references, never runtime assets.
+
+| Role | Master | viewBox |
+| --- | --- | --- |
+| **Symbol** — the Flow Monogram, full colour | [`assets/pliwee-mark.svg`](assets/pliwee-mark.svg) | `0 0 276 255` |
+| **Symbol, monochrome** — same geometry, `currentColor` | [`assets/pliwee-mark-mono.svg`](assets/pliwee-mark-mono.svg) | `0 0 276 255` |
+| **Wordmark** — "Pliwee", outlined Inter | [`assets/pliwee-wordmark.svg`](assets/pliwee-wordmark.svg) | `0 0 316 82` |
+| **Lockup** — Flow Monogram + Pliwee + *One flow. Any device.* | [`assets/pliwee-lockup.svg`](assets/pliwee-lockup.svg) | `0 0 489 143` |
+
+How they are built, what was measured against the board and every known
+difference are recorded in
+[`reports/branding/PLIWEE-WAVE-0-BRAND-ASSET-FOUNDATION.md`](../reports/branding/PLIWEE-WAVE-0-BRAND-ASSET-FOUNDATION.md).
+
+### The derivation rule
+
+* `pliwee-mark.svg` is the single source of the symbol's geometry. It
+  defines four faces once each — `silhouette`, `face-loop`, `face-tail`,
+  `face-sweep` — and paints them by reference.
+* `pliwee-mark-mono.svg` carries **the same four paths, byte for byte**, and
+  only paints them differently: `currentColor` at tones taken from each
+  face's lightness on the board. `desktop/gui/tests/brand_assets.rs` fails if
+  the geometry of either file drifts from the other.
+* `pliwee-lockup.svg` places the same mark symbol (same paths, same test)
+  beside the same wordmark outlines that `pliwee-wordmark.svg` carries.
+* **Every future derivative** — app icon, hicolor icon, Android adaptive
+  foreground and monochrome layers, the in-app brand drawable, Play icon and
+  feature graphic — is produced **from these masters** in the wave that owns
+  it (W6, W7, W10), and is asserted against them by geometry, as the
+  OmniBridge derivatives are today.
+* **No platform redraws the symbol independently.** No retrace, no
+  simplification, no "optical adjustment", no second monogram, no Connected
+  Nodes. A platform that cannot render a master's construct (for example a
+  VectorDrawable, which has no `<mask>`) converts it mechanically and proves
+  the outline unchanged; it does not redraw.
+* The masters may change only by owner decision, and only here.
+
+---
+
 ## The idea
 
 OmniBridge moves what matters between the machines a person already owns, over
@@ -353,6 +411,7 @@ No screen contains a literal hex value.
 | [`omnibridge-wordmark.svg`](assets/omnibridge-wordmark.svg) | Wordmark |
 | [`omnibridge-logo-lockup.svg`](assets/omnibridge-logo-lockup.svg) | Mark + wordmark + tagline |
 | [`assets/icons/`](assets/icons/) | The 28-glyph OmniBridge icon family — brand-neutral UI glyphs, carried over unchanged |
+| `assets/pliwee-*.svg` | The four Pliwee masters — **awaiting approval**, not yet used by any build; see [Pliwee vector masters](#pliwee-vector-masters) |
 
 Android adaptive icon: `res/mipmap-anydpi-v26/ic_launcher.xml` with a Dark
 (`#0B1020`) background, the mark as the adaptive foreground inside the 72 dp
