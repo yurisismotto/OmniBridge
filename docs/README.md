@@ -43,13 +43,13 @@ belongs beside its siblings.
 docs/
 ├── adr/                        19 decisions, ADR-0001 … ADR-0019 — see adr/README.md
 ├── architecture/               how the system works now: OVERVIEW, PROTOCOL, CLIPBOARD, FILES, NOTIFICATIONS
-├── design/                     BRAND, UI-GUIDELINES, tokens.json, assets/ (the build reads the app icon here)
+├── design/                     BRAND, UI-GUIDELINES, PLAY-STORE-LISTING, tokens.json, assets/ (the build reads the app icon here)
 ├── security/                   THREAT_MODEL
 ├── research/
 │   ├── platform-expansion/     cross-platform feasibility and the Wave 0 spec — 29 docs + README
 │   └── notifications-v1/       notifications.v1 specification and its PoCs
 ├── audits/
-│   ├── android/                Android / Google Play v1 readiness (PLAY0 → PLAY4)
+│   ├── android/                Android / Google Play v1 readiness (PLAY0 → PLAY4) and Play Console declarations
 │   ├── linux-compat/           Ubuntu / Debian compatibility, U0 → U2 — see its README
 │   ├── packaging/              Linux packaging readiness, build foundation, systemd unit — see its README
 │   ├── release/                Release Readiness v1 — baseline, signing foundation, harness hardening
