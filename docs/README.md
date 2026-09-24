@@ -48,6 +48,7 @@ docs/
 │   ├── platform-expansion/     cross-platform feasibility and the Wave 0 spec — 29 docs + README
 │   └── notifications-v1/       notifications.v1 specification and its PoCs
 ├── audits/
+│   ├── android/                Android / Google Play v1 readiness (PLAY0 → PLAY4)
 │   ├── linux-compat/           Ubuntu / Debian compatibility, U0 → U2 — see its README
 │   ├── packaging/              Linux packaging readiness, build foundation, systemd unit — see its README
 │   ├── release/                Release Readiness v1 — baseline, signing foundation, harness hardening
