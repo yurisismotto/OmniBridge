@@ -23,3 +23,4 @@ alternatives that were actually considered, and what the decision costs.
 | [0016](ADR-0016-notification-identity.md) | `notifications.v1` opaque notification identity | Accepted |
 | [0017](ADR-0017-capability-roles.md) | Runtime-narrowable capability roles | Accepted |
 | [0018](ADR-0018-rename-to-omnibridge.md) | Rename to OmniBridge | Accepted · supersedes 0011's identifier tables |
+| [0019](ADR-0019-android-app-signing.md) | Android app signing: maintainer-owned key, Play App Signing, separate upload key | Accepted |

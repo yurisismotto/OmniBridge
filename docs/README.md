@@ -40,7 +40,7 @@ belongs beside its siblings.
 
 ```
 docs/
-├── adr/                        18 decisions, ADR-0001 … ADR-0018 — see adr/README.md
+├── adr/                        19 decisions, ADR-0001 … ADR-0019 — see adr/README.md
 ├── architecture/               how the system works now: OVERVIEW, PROTOCOL, CLIPBOARD, FILES, NOTIFICATIONS
 ├── design/                     BRAND, UI-GUIDELINES, tokens.json, assets/ (the build reads the app icon here)
 ├── security/                   THREAT_MODEL

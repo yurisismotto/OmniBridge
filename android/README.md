@@ -83,3 +83,10 @@ project does not require root and does not use ADB.
 
 The Gradle protobuf plugin compiles `../../protocol/proto` directly — the same
 files the Rust daemon compiles. There is no second copy to drift.
+
+## Release signing
+
+Model and custody: [ADR-0019](../docs/adr/ADR-0019-android-app-signing.md).
+`signing/provision-signing-keys.sh` provisions the app signing and upload keys
+once, outside this repository; `signing/tests/provision-selftest.sh` rehearses
+it with throwaway keys. No keystore, private key or password is ever committed.

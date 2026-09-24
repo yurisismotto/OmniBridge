@@ -180,6 +180,13 @@ jobs:
       - name: testDebugUnitTest · the JVM suites
         run: ./gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
 
+      # ADR-0019. Rehearses the signing-key provisioning procedure with
+      # THROWAWAY keys under a scratch root, including every refusal. No
+      # secret is read and no real key exists here: this proves the procedure,
+      # it does not sign anything.
+      - name: Signing-key provisioning procedure · self-test (throwaway keys)
+        run: signing/tests/provision-selftest.sh
+
       # Evidence, not a gate. Prints what actually ran so a reviewer can see
       # the P1/P2/P3 regression suites in the log without downloading anything.
       - name: What ran
