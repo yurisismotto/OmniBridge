@@ -101,3 +101,27 @@ it.
 **Do not weaken a gate to make it pass.** If a gate cannot be measured, record
 it as not executed with the reason. `n/a` with an explanation is evidence;
 a green tick over nothing is not.
+
+## Git Authorship Policy
+
+AI agents are development tools, not repository contributors.
+
+Agents MUST NOT modify Git author or committer identity.
+
+All commits must use the repository owner's configured Git identity.
+
+Never add AI attribution trailers, including:
+
+- Co-Authored-By: Claude
+- Co-Authored-By: Anthropic
+- Generated-By
+- AI-generated attribution
+- agent authorship or co-authorship
+
+Before every commit, verify:
+
+    git config user.name
+    git config user.email
+
+If the configured identity is not the repository owner's configured identity,
+STOP. The agent must not repair, replace, or override it automatically.
