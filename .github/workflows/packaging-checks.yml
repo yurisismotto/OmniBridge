@@ -32,6 +32,11 @@
 # below read it. A version bump there with no matching edit to the spec is
 # exactly the drift the version check exists to catch, and it would not
 # otherwise trigger this workflow.
+#
+# `README.md` is in the path filter for the same reason:
+# `release-signing-tests.sh` asserts the README's release-verification recipe
+# (published fingerprint, `--fingerprint`, where to obtain the key). A
+# README-only pull request could otherwise break that recipe with zero checks.
 
 name: Packaging · checks
 
@@ -41,6 +46,7 @@ on:
     paths:
       - 'packaging/**'
       - 'desktop/Cargo.toml'
+      - 'README.md'
       - '.github/workflows/packaging-checks.yml'
   # Deliberately NOT `feature/**`, matching the discipline in the other four
   # workflows: a feature branch with an open PR would otherwise run this twice
@@ -50,6 +56,7 @@ on:
     paths:
       - 'packaging/**'
       - 'desktop/Cargo.toml'
+      - 'README.md'
       - '.github/workflows/packaging-checks.yml'
   workflow_dispatch:
 
