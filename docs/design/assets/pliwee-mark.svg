@@ -18,9 +18,6 @@
 <radialGradient id="paint-sweep-1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(210.95 174.62) rotate(-43.0) scale(99.83 83.88)"><stop offset="0" stop-color="#9958FF" stop-opacity="0.97"/><stop offset="1" stop-color="#9958FF" stop-opacity="0"/></radialGradient>
 <radialGradient id="paint-sweep-2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(133.91 80.48) rotate(107.6) scale(118.48 52.53)"><stop offset="0" stop-color="#1252FB" stop-opacity="0.49"/><stop offset="1" stop-color="#1252FB" stop-opacity="0"/></radialGradient>
 <radialGradient id="paint-sweep-3" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(223.53 70.71) rotate(25.0) scale(23035315.03 36.55)"><stop offset="0" stop-color="#1034CB" stop-opacity="0.95"/><stop offset="1" stop-color="#1034CB" stop-opacity="0"/></radialGradient>
-<mask id="only-inner" maskUnits="userSpaceOnUse" x="0" y="0" width="276" height="255"><use href="#silhouette" fill="#FFFFFF"/><use href="#face-loop" fill="#000000"/></mask>
-<mask id="only-loop" maskUnits="userSpaceOnUse" x="0" y="0" width="276" height="255"><use href="#face-loop" fill="#FFFFFF"/><use href="#face-tail" fill="#000000"/></mask>
-<mask id="only-tail" maskUnits="userSpaceOnUse" x="0" y="0" width="276" height="255"><use href="#face-tail" fill="#FFFFFF"/><use href="#face-sweep" fill="#000000"/></mask>
 <symbol id="mark" viewBox="0 0 276 255">
 <use href="#silhouette" fill="url(#paint-inner)"/>
 <g clip-path="url(#clip)">
@@ -36,14 +33,6 @@
 <use href="#face-sweep" fill="url(#paint-sweep-1)"/>
 <use href="#face-sweep" fill="url(#paint-sweep-2)"/>
 <use href="#face-sweep" fill="url(#paint-sweep-3)"/>
-</g>
-</symbol>
-<symbol id="markMono" viewBox="0 0 276 255">
-<g clip-path="url(#clip)" fill="currentColor">
-<use href="#silhouette" fill-opacity="0.5" mask="url(#only-inner)"/>
-<use href="#face-loop" fill-opacity="1.0" mask="url(#only-loop)"/>
-<use href="#face-tail" fill-opacity="0.63" mask="url(#only-tail)"/>
-<use href="#face-sweep" fill-opacity="0.77"/>
 </g>
 </symbol>
 </defs>

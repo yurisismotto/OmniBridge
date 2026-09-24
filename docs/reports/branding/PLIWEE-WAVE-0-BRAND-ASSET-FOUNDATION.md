@@ -1,5 +1,14 @@
 # Pliwee rebrand — Wave 0: Brand asset foundation
 
+> **Review 2, 2026-09-24: superseding note.** After human review of `c6fbe99`
+> the status is **READY FOR FINAL HUMAN BRAND APPROVAL** (not BRAND
+> APPROVED). The owner approved the Flow Monogram's geometry and colour, and
+> rejected the Inter wordmark. [§R2](#r2--review-2-2026-09-24) below records
+> what changed and supersedes, where they conflict: the status above,
+> §2 (files), §4.1–4.5 on the mono cut, wordmark and lockup, §6.2, §6.3
+> items 1–3, §7 and §8. The original text is left standing as the record of
+> `c6fbe99`.
+
 | | |
 | --- | --- |
 | **Status** | **AWAITING HUMAN BRAND APPROVAL** |
@@ -426,3 +435,202 @@ desktop app id, Play listing, repository, remote, certificate or signing key.
 No platform icon sizes were generated. `omnibridge-*` artwork is not retired;
 it is retired by the wave that re-points the last derivative at an
 **approved** Pliwee master.
+
+---
+
+## R2 — Review 2 (2026-09-24)
+
+**Status after this review: READY FOR FINAL HUMAN BRAND APPROVAL.** Not
+BRAND APPROVED: that is the owner's call.
+
+### R2.1 Owner decisions recorded
+
+| # | Decision |
+| --- | --- |
+| 1 | `pliwee-mark.svg` **geometry approved** as the canonical Flow Monogram. The standalone symbol board wins wherever the board draws the mark differently. |
+| 2 | Mark **colour approved** as derived from the board. The mark has its own gradient stops; the five UI tokens stay the product palette; platforms may not rebuild the gradient from tokens. |
+| 3 | Inter wordmark **rejected** (too narrow). "Pliwee" is **custom brand lettering**, to be reconstructed from the board's raster by a controlled process, with no redrawing, no look-alike font and no unmeasured stretch. |
+| 4 | `pliwee-mark-mono.svg` must be **single-colour** (`currentColor` only). The previous tonal cut may live on as `pliwee-mark-tonal.svg`, and is not a platform requirement. |
+| 5 | Tagline colour **`#314871` approved** as a lockup-specific derived brand colour, not a UI token. The tagline may also be traced from the board. |
+| 6 | Lockup **composition approved**; the file must be regenerated with the corrected wordmark and must use the approved mark geometry, not the board's lockup-mark outline. Hierarchy: symbol board → lockup board → full board. |
+
+### R2.2 Files
+
+| File | Change |
+| --- | --- |
+| `docs/design/assets/pliwee-mark.svg` | **Technical cleanup only, no visual change.** It carried the tonal cut's three `<mask>`s and its `markMono` symbol as unreferenced definitions from the shared template; they were removed. Geometry, gradients, clip and the `#mark` symbol are byte-identical to `c6fbe99` (see R2.3). |
+| `docs/design/assets/pliwee-mark-mono.svg` | now **one ink**: the silhouette in `currentColor`; no gradients, masks or tones in the file |
+| `docs/design/assets/pliwee-mark-tonal.svg` | **new**: the previous tonal cut, renamed; renders pixel-identically to `c6fbe99`'s mono |
+| `docs/design/assets/pliwee-wordmark.svg` | **rebuilt**: board lettering traced, 6 letters |
+| `docs/design/assets/pliwee-lockup.svg` | **regenerated**: approved mark (placement refit), traced wordmark, traced tagline |
+| `docs/design/BRAND.md` | Pliwee section rewritten: status, reference hierarchy, five masters, colour policy, mono/tonal, custom lettering, pinned geometry |
+| `desktop/gui/tests/brand_assets.rs` | see R2.6 |
+| `docs/reports/branding/pliwee-wave-0/pliwee-wordmark-comparison.png` | **new** |
+| `docs/reports/branding/pliwee-wave-0/pliwee-lockup-comparison.png` | regenerated |
+| `docs/reports/branding/pliwee-wave-0/pliwee-mark-variants.png` | regenerated: colour, mono (3 inks), tonal (2) |
+| `docs/reports/branding/pliwee-wave-0/pliwee-mark-comparison.png` | **not regenerated**: the mark's pixels did not change (R2.3), so the `c6fbe99` sheet still describes it exactly |
+| `docs/reports/branding/pliwee-wave-0/tooling/` | added `trace_lettering.py`, `measure_lettering.py`, `emit_lockup_board_lettering.py`, `make_sheets2.py`, `verify_unchanged.py`; `emit_mark.py` and `validate.py` updated. `fit_wordmark.py`, `fit_tag2.py` and `emit_lockup.py` are kept as the record of the rejected Inter setting. |
+
+### R2.3 `pliwee-mark.svg` is intact
+
+Measured by `tooling/verify_unchanged.py` against `c6fbe99`:
+
+| Check | Result |
+| --- | --- |
+| 4 geometry paths (`silhouette`, `face-loop`, `face-tail`, `face-sweep`) | byte-identical |
+| 4 linear + 9 radial gradients, `clipPath`, `<symbol id="mark">`, root `<use>` | byte-identical |
+| removed | `mask#only-inner`, `mask#only-loop`, `mask#only-tail`, `symbol#markMono`, none of them referenced by what the file draws |
+| resvg render at 276×255, 1104×1020, 2208×2040 | **0 differing pixels** |
+| librsvg 2.62.3 render at 1104 px | **0 differing pixels** |
+| viewBox | `0 0 276 255`, unchanged |
+
+The geometry is now pinned: FNV-1a 64 of the four `id\nd\n` records is
+`0xd69183f798800e87` (36 282 characters of path data), asserted by
+`the_pliwee_mark_geometry_is_the_approved_geometry`.
+
+### R2.4 The wordmark, reconstructed from the board
+
+`tooling/trace_lettering.py`, the same kind of process as the Flow Monogram:
+
+1. **Letters** are the connected components of the lockup board's alpha > 0.5
+   in the lettering area. "Pliwee" has 7 components (P, l, i dot, i stem, w,
+   e, e); a component lying over another is an `i` dot and joins its stem,
+   giving 6 letters. The tagline has 19 components → 18 letters and dots.
+2. **Outline**: alpha supersampled 4× (bicubic), smoothed with a symmetric
+   Gaussian of σ = 0.6 board px, thresholded at 0.5, traced by potrace
+   (`alphamax` 1.0, `opttolerance` 0.4).
+3. **Cleanup**, the only one: the board has about 12 600 near-transparent
+   speckle pixels (alpha < 0.5) around the text, which belong to no letter
+   and are dropped. The σ = 0.6 px smoothing removes raster stair-steps. A
+   0.5 threshold of a symmetric blur leaves straight edges where they are,
+   and it was measured to cost ≤ 0.005 IoU (σ 0 / 0.4 / 0.6 / 0.8 compared).
+4. **Nothing drawn by hand**: no point was placed or moved, no font was
+   substituted, and no stretch was applied. The width is the board's because
+   the outline is the board's.
+5. **Colour**: "Pliwee" is Dark `#0B1020` (the board measures `#030D25`,
+   ΔE2000 3.45); the tagline is `#314871` (ΔE2000 0.48 against the board).
+
+Topology is correct for every letter: counters in P, e, O, o, A and d; the
+`i` as dot + stem.
+
+### R2.5 New metrics
+
+All in the horizontal lockup board's own frame (2172 × 724 px); boundary
+distances in board pixels.
+
+**Wordmark** (`pliwee-wordmark-comparison.png`: reference, new SVG, 50 %
+blend, edge overlay, difference map, and the rejected `c6fbe99` for contrast)
+
+| | `c6fbe99` (Inter 900) | **Review 2 (board lettering)** |
+| --- | --: | --: |
+| IoU | 0.8322 | **0.9960** |
+| boundary mean / p99 / max | 5.15 / 21.4 / 26.8 px | **0.12 / 1.0 / 1.41 px** |
+| ink width (board 1249 px) | 1232 px | **1249 px** |
+| ink height (board 309 px) | 295 px | **309 px** |
+| left / top edge | 41 / 171 | **41 / 163** (board 41 / 163) |
+
+The visible width difference is gone: width, height, left edge and baseline
+land on the board's pixels.
+
+**Lockup** (`pliwee-lockup-comparison.png`, the same six panels)
+
+| Zone | `c6fbe99` IoU | **Review 2 IoU** | Notes |
+| --- | --: | --: | --- |
+| mark | 0.9536 | **0.9663** | approved geometry; placement refit (scale 0.5312 of the symbol board, +0.5 / +3.5 px); ΔE2000 median 1.73 |
+| wordmark | 0.8322 | **0.9960** | boundary mean 0.12 px |
+| tagline | 0.8984 | **0.9831** | boundary mean 0.11 px, max 1.0 px; width 1286 = 1286 px |
+
+The mark's remaining 3.4 % is not an error in the lockup. The lockup board
+draws its mark slightly differently from the symbol board (visible at the top
+of the loop and the tail's lower edge in panel E), and review 2 ruled that
+the symbol board wins.
+
+**Dimensions**: wordmark viewBox `0 0 321 86` (was 316 × 82), lockup `0 0 490 143`
+(was 489 × 143); mark, mono and tonal `0 0 276 255`.
+
+| File | Bytes | SHA-256 (review 2) |
+| --- | --: | --- |
+| `pliwee-mark.svg` | 41 394 | `b1d927564f25c8c59361eb3a7a5cad845ce18428421a053b25cbe1943440519c` |
+| `pliwee-mark-mono.svg` | 36 723 | `15120dd82ba288f51854baec6820f93f72d78bcc1d029451d3b88691cb510fdf` |
+| `pliwee-mark-tonal.svg` | 37 554 | `99201df067a31aed898f45d31b0d04a01e430a6d4f4e7c595357996428d7ee1b` |
+| `pliwee-wordmark.svg` | 11 115 | `8e7a09a3b717b340fe195e6adc3f813cd713a19d09f3b6ff776b7b163dad02f4` |
+| `pliwee-lockup.svg` | 69 457 | `bb7d573a46031317b2b67bfeea894015a4cc0c35bb023f0fae0a96451847502b` |
+
+### R2.6 Mono and tonal, final definition
+
+| Cut | File | Paint |
+| --- | --- | --- |
+| colour | `pliwee-mark.svg` | the approved board-derived gradient |
+| **mono** | `pliwee-mark-mono.svg` | **one ink**: `<use href="#silhouette" fill="currentColor"/>`. The silhouette is, by construction, the union of every face (each face is clipped to it). No opacity, mask, gradient or stroke anywhere in the file. |
+| tonal | `pliwee-mark-tonal.svg` | `currentColor` at 1.00 / 0.77 / 0.63 / 0.50 per face, with white/black masks; optional, **not a platform requirement** |
+
+All three carry the four geometry paths byte for byte. The mono cut still
+defines the face paths it does not paint, so every cut carries the complete
+approved geometry and can be checked against it.
+
+What single ink means visually (see `pliwee-mark-variants.png`): the mono
+mark is the Flow Monogram's silhouette with its hole. The over/under
+crossings are not visible, because one ink cannot show them without changing
+the geometry. That is the tonal cut's job.
+
+### R2.7 Tests
+
+`desktop/gui/tests/brand_assets.rs`. The OmniBridge `ASSETS` checks are still
+untouched.
+
+| Change | Why |
+| --- | --- |
+| `PLIWEE_MASTERS` gains `pliwee-mark-tonal.svg` | a new master is held to the same structural checks |
+| **new** `the_pliwee_mark_geometry_is_the_approved_geometry` | pins the approved geometry by digest (decision 1) |
+| `the_pliwee_mono_mark_is_the_colour_mark_repainted` → **`the_pliwee_mono_and_tonal_cuts_repaint_the_colour_geometry`** | mono and tonal both carry the colour geometry |
+| **new** `the_pliwee_mono_mark_is_a_single_ink` | every fill in `markMono` is `currentColor`; no opacity, mask, `url(#`, stroke; no gradient or mask anywhere in the mono file (decision 4). The tonal file draws `markTonal` in `currentColor` without the brand gradient. |
+| `the_pliwee_wordmark_…` doc comment | the lettering is custom, traced from the board; the assertion (6 outlined letters, wordmark = lockup lettering) is unchanged |
+
+Proof the new assertions can fail (`mutate2.sh` pattern, file restored and
+`cmp`-verified after each):
+
+| Mutation | Test | Result |
+| --- | --- | --- |
+| segment prepended to `face-sweep` in the mark | approved geometry | **red** |
+| one silhouette digit changed in the mark | approved geometry | **red** |
+| tonal `face-loop` drifts | mono/tonal geometry | **red** |
+| mono `face-tail` drifts | mono/tonal geometry | **red** |
+| mono silhouette gets `fill-opacity="0.6"` | single ink | **red** |
+| mono draws the sweep in `#4F6BFF` | single ink | **red** |
+| mono gets a mask | single ink | **red** |
+| mono file gains a gradient | single ink | **red** |
+| tonal painted with a `paint-*` gradient | single ink / tonal | **red** |
+| a wordmark letter changes | wordmark = lockup | **red** |
+
+10 of 10 turned red.
+
+**Executed**
+
+| Command | Result |
+| --- | --- |
+| `cargo test -p omnibridge-gui --test brand_assets` (in `desktop/`) | **24 passed**, 0 failed |
+| `cargo fmt -p omnibridge-gui -- --check` | clean |
+| `./gradlew :app:testDebugUnitTest --tests …BrandingResourcesTest --tests …DesignTokensTest` (JDK 21) | **BrandingResourcesTest 12/12, DesignTokensTest 16/16**, 0 failures (run 2026-09-24T19:44:46) |
+| `tooling/validate.py` (5 masters) | all PASS; colour = mono = tonal = lockup geometry; mono paint `{currentColor}` only; wordmark lettering = lockup lettering |
+| `tooling/verify_unchanged.py` | R2.3 |
+
+### R2.8 Known differences still open
+
+1. **Mark in the lockup**: IoU 0.966 against the lockup board, because the
+   board's own lockup mark differs from the symbol board. Accepted by rule 1
+   of the hierarchy.
+2. **Wordmark colour** is the Dark token, ΔE2000 3.45 from the board's
+   `#030D25`. It is not separately approved; the lettering's colour was not
+   among the review-2 decisions, and Dark is ADR-0020's text colour.
+3. **Lettering micro-detail**: tracing a raster keeps the board's own
+   sub-pixel irregularities. At 4× board resolution a few corners show
+   ≤ 0.3 px chamfers and the P bowl has faint faceting. None of it is visible
+   at the board's size or smaller.
+4. **Mono** shows no crossings (R2.6). That is intended.
+
+### R2.9 For the final approval
+
+What the owner is asked to confirm in the final pass: the traced wordmark
+(`pliwee-wordmark-comparison.png`), the regenerated lockup
+(`pliwee-lockup-comparison.png`), the single-ink mono and the tonal cut
+(`pliwee-mark-variants.png`), and R2.8 item 2. Wave 1 does not start before that.

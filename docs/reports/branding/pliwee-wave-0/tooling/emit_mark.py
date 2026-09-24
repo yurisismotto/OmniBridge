@@ -1,8 +1,10 @@
-"""Emit pliwee-mark.svg and pliwee-mark-mono.svg from mark.json.
+"""Emit the three cuts of the Flow Monogram from mark.json.
 
-The two files are generated from ONE template and differ only in the root
-<use> target and the default colour: the geometry (the <path id=...> elements
-in <defs>) is literally the same bytes in both.
+Each file carries the SAME geometry block (the four <path id> elements,
+byte-identical) and only the paint its own cut needs:
+  pliwee-mark.svg        colour: the approved board-derived gradients
+  pliwee-mark-mono.svg   single colour: currentColor, one ink, no tones
+  pliwee-mark-tonal.svg  one colour with tonal face separation (optional cut)
 """
 import json
 import sys
@@ -36,65 +38,78 @@ def overlay_uses(face, href):
             for i in range(len(G[face].get('overlays', [])))]
 
 
-def defs():
-    return '\n'.join([
-        '<defs>',
-        # --- geometry: defined once, painted twice ---------------------------
-        f'<path id="silhouette" d="{P["silhouette"]}"/>',
-        f'<path id="face-loop" d="{P["loop"]}"/>',
-        f'<path id="face-tail" d="{P["tail"]}"/>',
-        f'<path id="face-sweep" d="{P["sweep"]}"/>',
-        '<clipPath id="clip"><use href="#silhouette"/></clipPath>',
-        # --- colour paint ------------------------------------------------------
-        grad('paint-inner', G['inner']),
-        grad('paint-loop', G['loop']),
-        grad('paint-tail', G['tail']),
-        grad('paint-sweep', G['sweep']),
-        *overlay_grads('inner'), *overlay_grads('loop'),
-        *overlay_grads('tail'), *overlay_grads('sweep'),
-        # --- mono paint: each face keeps only its visible part, so a tone is
-        #     never composited over another; pure white/black masks only ------
-        '<mask id="only-inner" maskUnits="userSpaceOnUse" x="0" y="0" '
-        f'width="{W}" height="{H}"><use href="#silhouette" fill="#FFFFFF"/>'
-        '<use href="#face-loop" fill="#000000"/></mask>',
-        '<mask id="only-loop" maskUnits="userSpaceOnUse" x="0" y="0" '
-        f'width="{W}" height="{H}"><use href="#face-loop" fill="#FFFFFF"/>'
-        '<use href="#face-tail" fill="#000000"/></mask>',
-        '<mask id="only-tail" maskUnits="userSpaceOnUse" x="0" y="0" '
-        f'width="{W}" height="{H}"><use href="#face-tail" fill="#FFFFFF"/>'
-        '<use href="#face-sweep" fill="#000000"/></mask>',
-        # --- the two cuts ------------------------------------------------------
-        f'<symbol id="mark" viewBox="0 0 {W} {H}">',
-        '<use href="#silhouette" fill="url(#paint-inner)"/>',
-        *overlay_uses('inner', 'silhouette'),
-        '<g clip-path="url(#clip)">',
-        '<use href="#face-loop" fill="url(#paint-loop)"/>',
-        *overlay_uses('loop', 'face-loop'),
-        '<use href="#face-tail" fill="url(#paint-tail)"/>',
-        *overlay_uses('tail', 'face-tail'),
-        '<use href="#face-sweep" fill="url(#paint-sweep)"/>',
-        *overlay_uses('sweep', 'face-sweep'),
-        '</g>',
-        '</symbol>',
-        f'<symbol id="markMono" viewBox="0 0 {W} {H}">',
-        '<g clip-path="url(#clip)" fill="currentColor">',
-        f'<use href="#silhouette" fill-opacity="{T["inner"]}" mask="url(#only-inner)"/>',
-        f'<use href="#face-loop" fill-opacity="{T["loop"]}" mask="url(#only-loop)"/>',
-        f'<use href="#face-tail" fill-opacity="{T["tail"]}" mask="url(#only-tail)"/>',
-        f'<use href="#face-sweep" fill-opacity="{T["sweep"]}"/>',
-        '</g>',
-        '</symbol>',
-        '</defs>',
-    ])
+GEOMETRY = [
+    f'<path id="silhouette" d="{P["silhouette"]}"/>',
+    f'<path id="face-loop" d="{P["loop"]}"/>',
+    f'<path id="face-tail" d="{P["tail"]}"/>',
+    f'<path id="face-sweep" d="{P["sweep"]}"/>',
+]
+CLIP = ['<clipPath id="clip"><use href="#silhouette"/></clipPath>']
+
+COLOUR = [
+    grad('paint-inner', G['inner']),
+    grad('paint-loop', G['loop']),
+    grad('paint-tail', G['tail']),
+    grad('paint-sweep', G['sweep']),
+    *overlay_grads('inner'), *overlay_grads('loop'),
+    *overlay_grads('tail'), *overlay_grads('sweep'),
+    f'<symbol id="mark" viewBox="0 0 {W} {H}">',
+    '<use href="#silhouette" fill="url(#paint-inner)"/>',
+    *overlay_uses('inner', 'silhouette'),
+    '<g clip-path="url(#clip)">',
+    '<use href="#face-loop" fill="url(#paint-loop)"/>',
+    *overlay_uses('loop', 'face-loop'),
+    '<use href="#face-tail" fill="url(#paint-tail)"/>',
+    *overlay_uses('tail', 'face-tail'),
+    '<use href="#face-sweep" fill="url(#paint-sweep)"/>',
+    *overlay_uses('sweep', 'face-sweep'),
+    '</g>',
+    '</symbol>',
+]
+
+# One ink. The silhouette is, by construction, the union of every face (each
+# face is clipped to it), so painting it once in currentColor is the whole
+# mark in a single colour -- no tone, no opacity, no mask.
+MONO = [
+    f'<symbol id="markMono" viewBox="0 0 {W} {H}">',
+    '<use href="#silhouette" fill="currentColor"/>',
+    '</symbol>',
+]
+
+# One colour, tonal: each face keeps only its visible part (pure white/black
+# masks built from the same ids), so a tone is never composited over another.
+TONAL = [
+    '<mask id="only-inner" maskUnits="userSpaceOnUse" x="0" y="0" '
+    f'width="{W}" height="{H}"><use href="#silhouette" fill="#FFFFFF"/>'
+    '<use href="#face-loop" fill="#000000"/></mask>',
+    '<mask id="only-loop" maskUnits="userSpaceOnUse" x="0" y="0" '
+    f'width="{W}" height="{H}"><use href="#face-loop" fill="#FFFFFF"/>'
+    '<use href="#face-tail" fill="#000000"/></mask>',
+    '<mask id="only-tail" maskUnits="userSpaceOnUse" x="0" y="0" '
+    f'width="{W}" height="{H}"><use href="#face-tail" fill="#FFFFFF"/>'
+    '<use href="#face-sweep" fill="#000000"/></mask>',
+    f'<symbol id="markTonal" viewBox="0 0 {W} {H}">',
+    '<g clip-path="url(#clip)" fill="currentColor">',
+    f'<use href="#silhouette" fill-opacity="{T["inner"]}" mask="url(#only-inner)"/>',
+    f'<use href="#face-loop" fill-opacity="{T["loop"]}" mask="url(#only-loop)"/>',
+    f'<use href="#face-tail" fill-opacity="{T["tail"]}" mask="url(#only-tail)"/>',
+    f'<use href="#face-sweep" fill-opacity="{T["sweep"]}"/>',
+    '</g>',
+    '</symbol>',
+]
 
 
-def document(which, extra_root='', title='Pliwee'):
+def document(defs, which, extra_root='', title='Pliwee'):
+    body = '\n'.join(['<defs>', *defs, '</defs>'])
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
             f'viewBox="0 0 {W} {H}"{extra_root} role="img" aria-label="{title}">'
-            f'<title>{title}</title>\n{defs()}\n<use href="#{which}" width="{W}" height="{H}"/></svg>\n')
+            f'<title>{title}</title>\n{body}\n<use href="#{which}" width="{W}" height="{H}"/></svg>\n')
 
 
-out = sys.argv[1]
-open(f'{out}/pliwee-mark.svg', 'w').write(document('mark'))
-open(f'{out}/pliwee-mark-mono.svg', 'w').write(document('markMono', ' color="#0B1020"'))
-print('written')
+if __name__ == '__main__':
+    out = sys.argv[1]
+    open(f'{out}/pliwee-mark.svg', 'w').write(document(GEOMETRY + CLIP + COLOUR, 'mark'))
+    open(f'{out}/pliwee-mark-mono.svg', 'w').write(document(GEOMETRY + MONO, 'markMono', ' color="#0B1020"'))
+    open(f'{out}/pliwee-mark-tonal.svg', 'w').write(
+        document(GEOMETRY + CLIP + TONAL, 'markTonal', ' color="#0B1020"'))
+    print('written')

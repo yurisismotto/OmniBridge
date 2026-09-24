@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 
 D = sys.argv[1]
 NS = '{http://www.w3.org/2000/svg}'
-names = ['pliwee-mark.svg', 'pliwee-mark-mono.svg', 'pliwee-wordmark.svg', 'pliwee-lockup.svg']
+names = ['pliwee-mark.svg', 'pliwee-mark-mono.svg', 'pliwee-mark-tonal.svg', 'pliwee-wordmark.svg', 'pliwee-lockup.svg']
 fail = 0
 for n in names:
     p = f'{D}/{n}'
@@ -43,5 +43,18 @@ print('lockup geometry == colour geometry:', c == l)
 a, b = open(f'{D}/pliwee-mark.svg').read(), open(f'{D}/pliwee-mark-mono.svg').read()
 da = a[a.index('<defs>'):a.index('</defs>')]
 db = b[b.index('<defs>'):b.index('</defs>')]
-print('mono <defs> byte-identical to colour <defs>:', da == db)
+t = geo(open(f'{D}/pliwee-mark-tonal.svg').read())
+print('tonal geometry == colour geometry:', c == t)
+mono_sym = re.search(r'<symbol id="markMono".*?</symbol>', b, re.S).group(0)
+paints = set(re.findall(r'fill="([^"]+)"', mono_sym))
+print('mono visible paint:', paints, '| opacity/mask/url in mono symbol:',
+      bool(re.search(r'opacity|mask=|url\(', mono_sym)), '| gradients/masks anywhere in mono file:',
+      bool(re.search(r'<linearGradient|<radialGradient|<mask', b)))
+for name in ('pliwee-wordmark.svg', 'pliwee-lockup.svg'):
+    s2 = open(f'{D}/{name}').read()
+    g = re.search(r'<g id="wordmark"[^>]*>(.*?)</g>', s2, re.S).group(1)
+    print(name, 'wordmark letters:', len(re.findall('<path ', g)), 'path chars:', len(g))
+w = re.search(r'<g id="wordmark"[^>]*>(.*?)</g>', open(f'{D}/pliwee-wordmark.svg').read(), re.S).group(1)
+l = re.search(r'<g id="wordmark"[^>]*>(.*?)</g>', open(f'{D}/pliwee-lockup.svg').read(), re.S).group(1)
+print('wordmark lettering == lockup lettering:', w == l)
 sys.exit(fail)

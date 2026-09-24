@@ -37,3 +37,24 @@ python validate.py out       # structural checks + geometry equality
 | `fit_paint.py` | every gradient stop, vector and overlay, by least squares against the board's pixels |
 | `fit_wordmark.py`, `fit_tag2.py` | the Inter instance, scale and glyph positions, by IoU against the board's ink |
 | `emit_*.py` | nothing — serialisation only |
+
+## Review 2 (2026-09-24)
+
+The Inter wordmark was rejected and the mono cut redefined. The scripts
+above that set Inter (`fit_wordmark.py`, `fit_tag2.py`, `emit_lockup.py`) are
+kept as the record of `c6fbe99`. The current masters come from:
+
+```sh
+python emit_mark.py out                  # mark (colour), mark-mono (one ink), mark-tonal
+python trace_lettering.py                # board lettering -> lettering.json (SIGMA=0.6 OPTTOL=0.4)
+python emit_lockup_board_lettering.py out  # wordmark + lockup from the traced lettering
+python measure_lettering.py              # traced vs Inter vs board (needs the c6fbe99 lockup in out-c6fbe99/)
+python verify_unchanged.py OLD/pliwee-mark.svg out/pliwee-mark.svg OLD/pliwee-mark-mono.svg out/pliwee-mark-tonal.svg
+python make_sheets2.py out OLD/pliwee-lockup.svg sheets   # wordmark, lockup, variants sheets
+python validate.py out
+```
+
+| Script | Decides |
+| --- | --- |
+| `trace_lettering.py` | the lettering outlines: board alpha, 4x, sigma 0.6 px, threshold 0.5, potrace; letters = alpha components (the i's dot joins its stem) |
+| `emit_lockup_board_lettering.py` | the mark's placement in the lockup (scale/offset refit to the lockup board's mark by IoU); nothing else |
