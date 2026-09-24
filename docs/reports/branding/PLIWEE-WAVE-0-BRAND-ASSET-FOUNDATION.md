@@ -1,5 +1,13 @@
 # Pliwee rebrand — Wave 0: Brand asset foundation
 
+> **CLOSED: BRAND APPROVED, 2026-09-24.** Final human brand approval was
+> granted for commit **`1ea65e6`**. The five masters are **canonical and
+> frozen**. See [§R4](#r4--closure-brand-approved-2026-09-24), which
+> supersedes every earlier status line in this report. The notes below and
+> §R2/§R3 are kept as the record of each review. The "STATUS" line printed
+> inside the comparison PNGs is the status on the day each sheet was made,
+> and is left as generated.
+
 > **Final visual review, 2026-09-24: superseding note.** After review of
 > `194f5bf` the owner approved the geometry of all five masters and changed
 > one thing, the wordmark ink: "Pliwee" is now **Pliwee Wordmark Ink
@@ -18,7 +26,7 @@
 
 | | |
 | --- | --- |
-| **Status** | **AWAITING HUMAN BRAND APPROVAL** |
+| **Status** | ~~AWAITING HUMAN BRAND APPROVAL~~ → **BRAND APPROVED** (2026-09-24, `1ea65e6`; see §R4) |
 | **Date** | 2026-09-24 |
 | **Branch** | `worktree-pliwee-wave0-brand-assets`, based on `663eb59` (implementation plan) |
 | **Plan** | [PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md § Wave 0](../../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md#wave-0--brand-asset-foundation) |
@@ -722,3 +730,78 @@ it is **red** (file restored and `cmp`-verified after each).
 
 No Android resource and no product code changed, so the Android suites were
 not re-run for this review; their last run (§R2.7) stands.
+
+---
+
+## R4 — Closure: BRAND APPROVED (2026-09-24)
+
+**Wave 0 — Brand asset foundation: BRAND APPROVED.**
+
+| | |
+| --- | --- |
+| **Decision** | final human brand approval, granted by the owner |
+| **Date** | 2026-09-24 |
+| **Approved commit** | `1ea65e6` (`feat(brand): Pliwee Wordmark Ink #030D25 from the board`) |
+| **Gate G0 (artwork provenance)** | closed: masters committed, reference board stored with SHA-256, every master traced to the board by the measurements in §6, §R2.5 and §R3.4, and pinned by `desktop/gui/tests/brand_assets.rs` |
+| **Plan blockers** | B1 (mark masters) and B2 (wordmark and lockup) resolved by this approval |
+
+### R4.1 The approved identity
+
+| | |
+| --- | --- |
+| Product | **Pliwee** |
+| Tagline | *One flow. Any device.* |
+| Canonical mark | [`pliwee-mark.svg`](../../design/assets/pliwee-mark.svg), geometry FNV-1a 64 `0xd69183f798800e87` |
+| Wordmark ink | `#030D25` (Pliwee Wordmark Ink, brand-asset-specific) |
+| Lockup tagline | `#314871` (lockup-specific) |
+| UI Dark | `#0B1020` (product palette token) |
+
+The UI palette (`#4F6BFF`, `#18B8C9`, `#7C5CFC`, `#0B1020`, `#F7F9FC`) and the
+brand-asset inks (the mark's gradient stops, `#030D25`, `#314871`) stay
+distinct, as [`BRAND.md`](../../design/BRAND.md#pliwee-vector-masters) records.
+
+### R4.2 The canonical, frozen masters
+
+| Master | SHA-256 at `1ea65e6` |
+| --- | --- |
+| `docs/design/assets/pliwee-mark.svg` | `b1d927564f25c8c59361eb3a7a5cad845ce18428421a053b25cbe1943440519c` |
+| `docs/design/assets/pliwee-mark-mono.svg` | `15120dd82ba288f51854baec6820f93f72d78bcc1d029451d3b88691cb510fdf` |
+| `docs/design/assets/pliwee-mark-tonal.svg` | `99201df067a31aed898f45d31b0d04a01e430a6d4f4e7c595357996428d7ee1b` |
+| `docs/design/assets/pliwee-wordmark.svg` | `6220f2e8d275357f010c9456ca75bddfccfe25ea587969fa61933d4aeeafaf13` |
+| `docs/design/assets/pliwee-lockup.svg` | `78792f3e978bdc97b7f16efbdcd92d08f9e1771f6ad5d674ff0c9ea0423245de` |
+
+These files are **frozen**. Their geometry, paths, viewBoxes, gradients,
+lettering, proportions, spacing, colours, mono cut, tonal cut and lockup
+arrangement do not change except by an explicit branding decision by the
+owner, recorded in `BRAND.md` and in a report of its own. A red brand test is
+never a reason to edit a master, and never a reason to re-pin its digest.
+
+### R4.3 Rules for everything after Wave 0
+
+* **Every future derivative starts from these masters**: app icon, hicolor
+  icon, Android adaptive foreground and monochrome layers, the in-app brand
+  drawable, Play icon, feature graphic, and the branding in screenshots.
+  Each is produced in the wave that owns it (W6, W7, W10) and asserted
+  against the masters by geometry.
+* **No platform may redraw or reinterpret the symbol**: no retrace,
+  simplification, optical adjustment, re-colouring from UI tokens, second
+  monogram or "Connected Nodes". A platform that cannot express a master's
+  construct converts it mechanically and proves the outline unchanged.
+* **The lettering is fixed as well.** "Pliwee" and the lockup tagline are
+  the approved outlines. They are not re-set from a font, stretched, or
+  re-inked.
+* **Changes to geometry or lettering require an explicit branding decision.**
+
+### R4.4 Closure checks (this commit)
+
+This commit changes documentation only.
+
+| Check | Result |
+| --- | --- |
+| SVG masters changed | **none**: no diff under `docs/design/assets/` against `1ea65e6`; SHA-256 values as in R4.2 |
+| product code changed | none |
+| `cargo test -p omnibridge-gui --test brand_assets` | **25 passed**, 0 failed |
+| `cargo fmt -p omnibridge-gui -- --check` | clean |
+| relative Markdown links in the changed documents | all resolve |
+
+Wave 1 has not started.

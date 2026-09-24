@@ -551,6 +551,13 @@ Only these block part of the implementation; everything else above is decided.
    monochrome form to derive from; the artwork step (and the Play graphics
    and screenshots after it) cannot start without it.
 
+   > **Resolved 2026-09-24.** The canonical Flow Monogram source is
+   > `docs/design/assets/pliwee-mark.svg` (with `-mono`, `-tonal`,
+   > `pliwee-wordmark.svg` and `pliwee-lockup.svg`). It is a controlled vector
+   > reconstruction of the owner-supplied board that received final human
+   > brand approval at commit `1ea65e6`, and it is frozen. See
+   > [`BRAND.md`](../design/BRAND.md#pliwee-vector-masters).
+
 ## Unresolved risks (not blocking)
 
 * **Package-name claim window.** The Play app for

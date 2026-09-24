@@ -340,9 +340,9 @@ fn no_active_asset_carries_the_pre_rename_identity() {
 // is left exactly as it was, dead list included.
 //
 // The masters are a controlled vector reconstruction of the owner-supplied
-// board (`docs/design/references/`). The Flow Monogram's geometry and colour
-// were approved by the owner in the second Wave 0 review; the set as a whole
-// is READY FOR FINAL HUMAN BRAND APPROVAL. These tests do not approve
+// board (`docs/design/references/`). They are BRAND APPROVED (final human
+// brand approval, 2026-09-24, commit 1ea65e6): canonical and frozen, and
+// every future derivative starts from them. These tests do not approve
 // anything. They pin what a machine can pin: that the files are
 // self-contained vectors, that the approved geometry has not moved, that
 // every cut and the lockup carry it byte for byte, that the mono cut is one

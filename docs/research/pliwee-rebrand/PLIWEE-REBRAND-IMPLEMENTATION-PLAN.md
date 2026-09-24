@@ -166,6 +166,15 @@ protobuf field numbers and types, the frozen DER vectors and their KATs
 
 ## Wave 0 — Brand asset foundation
 
+> **Closed 2026-09-24: BRAND APPROVED** at commit `1ea65e6`. The five
+> masters (`pliwee-mark.svg`, `-mono`, `-tonal`, `pliwee-wordmark.svg`,
+> `pliwee-lockup.svg`) are canonical and frozen. They are a controlled
+> reconstruction of the owner's raster board, approved by the owner, rather
+> than supplied SVGs; B1 and B2 are resolved by that approval. Derivatives
+> (W6, W7, W10) start from them. See
+> [the Wave 0 report §R4](../../reports/branding/PLIWEE-WAVE-0-BRAND-ASSET-FOUNDATION.md#r4--closure-brand-approved-2026-09-24)
+> and [`BRAND.md`](../../design/BRAND.md#pliwee-vector-masters).
+
 | | |
 | --- | --- |
 | **Objective** | Install the owner-approved vector masters as the single source of truth, and re-point every derivative and every outline-equality test at them. |
@@ -596,6 +605,9 @@ stated reason (the log line) and not for another one.
 | B7 | W10 | when the operator creates the Play Console app (package registration) |
 
 B5–B7 are execution choices inside their wave, not blockers of the plan.
+
+> **2026-09-24:** B1 and B2 are **resolved**. Wave 0 closed BRAND APPROVED at
+> `1ea65e6`, and the approved masters are in `docs/design/assets/`.
 
 ---
 

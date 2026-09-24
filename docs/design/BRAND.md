@@ -68,15 +68,22 @@ onto it. There is no remaining delta between the brand and the interface.
 
 ## Pliwee vector masters
 
-> **Status: READY FOR FINAL HUMAN BRAND APPROVAL.** The files below are a
-> *controlled vector reconstruction* of the owner-supplied board, made in
-> Wave 0 of the [Pliwee rebrand plan](../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md).
-> The owner approved the Flow Monogram's **geometry** and **colour** (Wave 0
-> review 2) and the **geometry of all five masters** (final visual review),
-> both on 2026-09-24; the one remaining change, the wordmark ink, is applied,
-> and the set awaits final brand approval. No platform derives anything from them before that, and until
-> the platform waves (W6 Android, W7 Linux) re-point their derivatives, the
-> product keeps shipping the OmniBridge artwork above.
+> **Status: BRAND APPROVED — canonical and frozen.** Final human brand
+> approval was granted on **2026-09-24** for commit **`1ea65e6`**. The five
+> masters below are a *controlled vector reconstruction* of the owner-supplied
+> board, made in Wave 0 of the
+> [Pliwee rebrand plan](../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md),
+> and they are now the **canonical Pliwee brand assets**. Their geometry,
+> paths, viewBoxes, gradients, lettering, proportions, spacing and colours
+> are **frozen**: any change requires an explicit branding decision by the
+> owner, recorded here, and never happens as a fix, a cleanup or a
+> re-export. Until the platform waves (W6 Android, W7 Linux) re-point their
+> derivatives, the product keeps shipping the OmniBridge artwork above.
+
+**Approved identity:** Product **Pliwee** · Tagline *One flow. Any device.* ·
+canonical mark [`pliwee-mark.svg`](assets/pliwee-mark.svg) · Pliwee Wordmark
+Ink `#030D25` · lockup tagline `#314871` · UI Dark `#0B1020`. The UI palette
+and the brand-asset inks are distinct (see *Colour* below).
 
 The Pliwee identity is fixed by [ADR-0020 §D8](../adr/ADR-0020-rename-to-pliwee.md):
 **Pliwee** · *One flow. Any device.* · Inter · Primary Blue `#4F6BFF` ·
@@ -477,7 +484,7 @@ No screen contains a literal hex value.
 | [`omnibridge-wordmark.svg`](assets/omnibridge-wordmark.svg) | Wordmark |
 | [`omnibridge-logo-lockup.svg`](assets/omnibridge-logo-lockup.svg) | Mark + wordmark + tagline |
 | [`assets/icons/`](assets/icons/) | The 28-glyph OmniBridge icon family — brand-neutral UI glyphs, carried over unchanged |
-| `assets/pliwee-*.svg` | The five Pliwee masters — **ready for final brand approval**, not yet used by any build; see [Pliwee vector masters](#pliwee-vector-masters) |
+| `assets/pliwee-*.svg` | The five Pliwee masters — **BRAND APPROVED, canonical and frozen** (2026-09-24, `1ea65e6`); not yet used by any build (W6/W7 derive from them); see [Pliwee vector masters](#pliwee-vector-masters) |
 
 Android adaptive icon: `res/mipmap-anydpi-v26/ic_launcher.xml` with a Dark
 (`#0B1020`) background, the mark as the adaptive foreground inside the 72 dp
