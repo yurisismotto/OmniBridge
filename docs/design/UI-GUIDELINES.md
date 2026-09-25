@@ -210,9 +210,19 @@ platform's own widgets.
 the mark + wordmark) → `AdwNavigationSplitView` (sidebar + content) → a
 `GtkStack` of pages, with a status strip pinned along the bottom.
 
-**Navigation.** Dashboard · Files · Clipboard · Devices · Trusted peers ·
+**Navigation.** Dashboard · Files · Clipboard · Notifications · Devices ·
 Settings. The selected row is a tinted rounded rectangle in the corrected
 blue.
+
+**Devices.** One page for every known device and the trust store behind it.
+Trusted peers used to be a page of its own, and Pliwee Wave 2 folded it in
+(ADR-0020, P4). Each card always shows name, platform, live status, trust state
+(*Trusted* or *Revoked*) and a summary of granted capabilities. Its **Details
+and controls** disclosure holds the capability switches, the full fingerprint,
+the device id, connection facts, **Revoke this device** and, on a revoked card,
+**Remove from list**. **Remove all revoked devices** stays at page level. Revoked
+devices stay listed and marked. Every destructive action is confirmed, with
+Cancel as the default. `--page peers` still opens this page.
 
 **Sidebar footer.** Network state and this computer's own name and short
 fingerprint. The fingerprint is there, not buried in Settings, because it is

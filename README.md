@@ -120,7 +120,8 @@ the next step, and this is where the link will appear.
    See [Pairing](#pairing) for what happens underneath.
 5. **Grant only what you want.** A newly paired device can do nothing yet.
    Allow files, clipboard or battery for that phone on the desktop app's
-   **Trusted peers** page, or with `omnibridge grant <device> <capability>`.
+   **Devices** page (open the phone's **Details and controls**), or with
+   `omnibridge grant <device> <capability>`.
    Notification mirroring needs both ends: on the phone, give OmniBridge
    Android's notification access, turn sharing on for this computer and pick
    the apps; on the desktop, switch on **Receive notifications from this

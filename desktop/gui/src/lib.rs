@@ -251,6 +251,10 @@ fn install_icons() {
     gtk::Window::set_default_icon_name(APP_ID);
 }
 
+/// The route the Trusted peers page had. Accepted by [`Page::from_name`] and
+/// owned by no page.
+const LEGACY_PEERS_PAGE: &str = "peers";
+
 /// Which page the Settings content pane is showing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Page {
@@ -259,18 +263,16 @@ pub enum Page {
     Clipboard,
     Notifications,
     Devices,
-    TrustedPeers,
     Settings,
 }
 
 impl Page {
-    const ALL: [Page; 7] = [
+    const ALL: [Page; 6] = [
         Page::Dashboard,
         Page::Files,
         Page::Clipboard,
         Page::Notifications,
         Page::Devices,
-        Page::TrustedPeers,
         Page::Settings,
     ];
 
@@ -281,7 +283,6 @@ impl Page {
             Page::Clipboard => "Clipboard",
             Page::Notifications => "Notifications",
             Page::Devices => "Devices",
-            Page::TrustedPeers => "Trusted peers",
             Page::Settings => "Settings",
         }
     }
@@ -293,14 +294,20 @@ impl Page {
             Page::Clipboard => "edit-paste-symbolic",
             Page::Notifications => "preferences-system-notifications-symbolic",
             Page::Devices => "computer-symbolic",
-            Page::TrustedPeers => "system-users-symbolic",
             // One action, one metaphor. See `widgets::SETTINGS_ICON`.
             Page::Settings => crate::widgets::SETTINGS_ICON,
         }
     }
 
     /// Parses the `--page` argument.
+    ///
+    /// `peers` was the Trusted peers page until Pliwee Wave 2 folded it into
+    /// Devices. An old `.desktop` action or script that still names it lands
+    /// on Devices, where every one of its controls now lives.
     pub fn from_name(name: &str) -> Option<Page> {
+        if name == LEGACY_PEERS_PAGE {
+            return Some(Page::Devices);
+        }
         Page::ALL.into_iter().find(|p| p.name() == name)
     }
 
@@ -311,7 +318,6 @@ impl Page {
             Page::Clipboard => "clipboard",
             Page::Notifications => "notifications",
             Page::Devices => "devices",
-            Page::TrustedPeers => "peers",
             Page::Settings => "settings",
         }
     }
@@ -913,13 +919,42 @@ mod tests {
         );
         assert_eq!(
             Launch::parse(&["omnibridge-gui", "--page=peers"]),
-            Launch::Settings(Some(Page::TrustedPeers))
+            Launch::Settings(Some(Page::Devices))
         );
         // An unknown page is not worth refusing to open a window over.
         assert_eq!(
             Launch::parse(&["omnibridge-gui", "--page", "nonsense"]),
             Launch::Settings(None)
         );
+    }
+
+    /// Trusted peers is part of Devices now, and its old route still works in
+    /// both spellings, so nothing that named it breaks.
+    #[test]
+    fn the_old_trusted_peers_route_opens_devices() {
+        assert_eq!(Page::from_name("peers"), Some(Page::Devices));
+        assert_eq!(
+            Launch::parse(&["omnibridge-gui", "--page", "peers"]),
+            Launch::Settings(Some(Page::Devices))
+        );
+        assert_eq!(
+            Launch::parse(&["omnibridge-gui", "--page=peers"]),
+            Launch::Settings(Some(Page::Devices))
+        );
+        assert_eq!(Page::from_name("devices"), Some(Page::Devices));
+    }
+
+    /// One sidebar entry for devices. The alias is not a page: no sidebar row
+    /// and no stack child is called `peers` or titled "Trusted peers".
+    #[test]
+    fn the_sidebar_has_one_devices_entry_and_no_trusted_peers() {
+        assert_eq!(Page::ALL.iter().filter(|p| **p == Page::Devices).count(), 1);
+        assert_eq!(Page::ALL.len(), 6);
+        for page in Page::ALL {
+            assert_ne!(page.name(), LEGACY_PEERS_PAGE, "{page:?}");
+            assert_ne!(page.title(), "Trusted peers", "{page:?}");
+            assert_eq!(Page::from_name(page.name()), Some(page));
+        }
     }
 
     /// `--quick-panel` wins wherever it appears: a tray that also passes a

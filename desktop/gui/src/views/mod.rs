@@ -27,7 +27,7 @@
 //! data leaves the widget tree untouched* — without a diffing layer and
 //! without any special case for accessibility. It is not a notifications fix:
 //! every page gets it, and the pages that carry controls (Notifications,
-//! Trusted peers, Clipboard) are the ones it matters most for.
+//! Devices, Clipboard) are the ones it matters most for.
 
 mod clipboard;
 mod dashboard;
@@ -35,7 +35,6 @@ mod devices;
 mod files;
 mod notifications;
 mod pairing;
-mod peers;
 mod settings;
 
 pub use notifications::Readiness;
@@ -67,6 +66,7 @@ mod display_gate {
     fn every_page_widget_tree() {
         super::notifications::tests::the_notifications_page_widget_tree();
         super::clipboard::tests::the_clipboard_page_widget_tree();
+        super::devices::tests::the_devices_page_widget_tree();
         crate::panel::tests::the_quick_panel_widget_tree();
         crate::application_gate::the_application_window_behaviour();
     }
@@ -77,6 +77,7 @@ use omnibridge_control::{
     ClipboardStatusReport, NotificationsStatusReport, StatusReport, TransferReport,
 };
 use std::cell::RefCell;
+use std::collections::BTreeSet;
 use std::rc::Rc;
 
 use crate::selection::Selection;
@@ -96,6 +97,10 @@ pub struct Pages {
     pub selection: Rc<Selection>,
     /// What each page was last drawn from. See [`Pages::render`].
     drawn: Rc<RefCell<Drawn>>,
+    /// The fingerprints whose Devices disclosure is open. The page is rebuilt
+    /// whenever the daemon's status changes, and this is what keeps an open
+    /// card open under the person using it.
+    expanded: Rc<RefCell<BTreeSet<String>>>,
     /// Asks the daemon again. Installed by the application, because the poll
     /// it triggers has to hold a `Pages` of its own.
     refresh: Refresh,
@@ -107,7 +112,6 @@ pub struct Pages {
     clipboard: gtk::Box,
     notifications: gtk::Box,
     devices: gtk::Box,
-    peers: gtk::Box,
     settings: gtk::Box,
     /// The identity and network block pinned to the bottom of the sidebar.
     pub sidebar_footer: gtk::Box,
@@ -184,6 +188,7 @@ impl Pages {
             state,
             selection,
             drawn: Rc::new(RefCell::new(Drawn::default())),
+            expanded: Rc::new(RefCell::new(BTreeSet::new())),
             refresh: Rc::new(RefCell::new(None)),
             redraw: Rc::new(RefCell::new(None)),
             dashboard: page_box(),
@@ -191,7 +196,6 @@ impl Pages {
             clipboard: page_box(),
             notifications: page_box(),
             devices: page_box(),
-            peers: page_box(),
             settings: page_box(),
             sidebar_footer: widgets::column(SPACING_XS),
             statusbar: widgets::row(SPACING_XS),
@@ -201,7 +205,6 @@ impl Pages {
         stack.add_named(&pages.clipboard, Some(Page::Clipboard.name()));
         stack.add_named(&pages.notifications, Some(Page::Notifications.name()));
         stack.add_named(&pages.devices, Some(Page::Devices.name()));
-        stack.add_named(&pages.peers, Some(Page::TrustedPeers.name()));
         stack.add_named(&pages.settings, Some(Page::Settings.name()));
 
         pages.sidebar_footer.set_margin_start(SPACING_SM);
@@ -245,6 +248,21 @@ impl Pages {
     /// state is the one that asks.
     pub fn forget_peer_choice(&self, fingerprint: &str) {
         self.selection.forget_if(fingerprint);
+    }
+
+    /// Whether the Devices card for this fingerprint was left open.
+    pub(crate) fn is_expanded(&self, fingerprint: &str) -> bool {
+        self.expanded.borrow().contains(fingerprint)
+    }
+
+    /// Remembers whether the Devices card for this fingerprint is open.
+    pub(crate) fn set_expanded(&self, fingerprint: &str, open: bool) {
+        let mut expanded = self.expanded.borrow_mut();
+        if open {
+            expanded.insert(fingerprint.to_string());
+        } else {
+            expanded.remove(fingerprint);
+        }
     }
 
     /// Redraws unconditionally, for a change [`Pages::render`] cannot see.
@@ -337,8 +355,7 @@ impl Pages {
             notifications::render(&self.notifications, &state, self);
         }
         if changed.status {
-            devices::render(&self.devices, &state);
-            peers::render(&self.peers, &state, self);
+            devices::render(&self.devices, &state, self);
             settings::render(&self.settings, &state);
         }
         if changed.status || changed.error {
