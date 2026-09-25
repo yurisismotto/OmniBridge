@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# OmniBridge — Android signing key provisioning (ADR-0019).
+# Pliwee — Android signing key provisioning (ADR-0019, ADR-0020 §D3).
 #
 # ONE resumable procedure. Run it in your own terminal — never through an
 # assistant's shell — because it prints passwords once, for you alone.
@@ -24,14 +24,21 @@
 #                manager, proves each private key signs, and compares every
 #                byte with what was generated
 #   5 install    puts the UPLOAD keystore (only) in
-#                ~/.local/share/omnibridge-android-signing/, with the public
+#                ~/.local/share/pliwee-android-signing/, with the public
 #                certificates; the app signing key stays offline
 #   6 destroy    shreds the tmpfs directory and records the PUBLIC result in
-#                ~/.local/state/omnibridge-android-signing/PROVISIONED
+#                ~/.local/state/pliwee-android-signing/PROVISIONED
 #
 # It never writes a private key or a password inside the repository, never
 # sends anything anywhere, and refuses to run again once provisioning is
-# complete: a second app signing key would be a second app.
+# complete: a second app signing key would be a second app. That refusal is
+# per applicationId (ADR-0020 §D3): one signing identity per product.
+#
+# The retired OmniBridge identity (ADR-0019) is not touched. Its record, its
+# installed upload keystore and its backup directory on the media live under
+# `omnibridge-android-signing` names; every path here is derived from the
+# product identity below, and a check refuses any that is an OmniBridge path.
+# Nothing here reads, overwrites or removes them.
 #
 # Nothing here is uploaded to Play. Supplying the app signing key to Play App
 # Signing (PEPK, with Play's per-app encryption key) is a later, separate step.
@@ -40,31 +47,44 @@ set -euo pipefail
 umask 077
 
 readonly VERSION=1
-readonly APP_ALIAS=omnibridge-app-signing
-readonly UPLOAD_ALIAS=omnibridge-upload
-readonly APP_DNAME="CN=OmniBridge, OU=Android App Signing"
-readonly UPLOAD_DNAME="CN=OmniBridge, OU=Android Upload"
+
+# ------------------------------------------------------- product identity --
+# Data, not logic (ADR-0020 §D3). These are the only lines that name a
+# product; the procedure below is the one ADR-0019 approved, unchanged.
+readonly PRODUCT="Pliwee"
+readonly SLUG=pliwee
+readonly PACKAGE=io.github.yurisismotto.pliwee
+readonly APP_ALIAS=$SLUG-app-signing
+readonly UPLOAD_ALIAS=$SLUG-upload
+readonly APP_DNAME="CN=$PRODUCT, OU=Android App Signing"
+readonly UPLOAD_DNAME="CN=$PRODUCT, OU=Android Upload"
+# The retired identity. Only ever compared against, never opened.
+readonly RETIRED_SLUG=omnibridge
+
 # 30 years. Play requires the app signing certificate to be valid until at
 # least 2033-10-22; an app signing key cannot be replaced for older Android
 # releases, so it is made to outlive the project.
 readonly VALIDITY_DAYS=10957
-readonly BUNDLE=omnibridge-android-signing-v${VERSION}.tar.gpg
-readonly MEDIA_DIR=omnibridge-android-signing
+readonly BUNDLE=$SLUG-android-signing-v${VERSION}.tar.gpg
+readonly MEDIA_DIR=$SLUG-android-signing
 
 # The self-test (android/signing/tests/provision-selftest.sh) confines every
 # path under one scratch root and accepts plain directories as "media". It
 # exists to prove this procedure before it is run for real; it cannot touch a
-# real state directory, because every path moves under the root.
-SELFTEST_ROOT="${OMNIBRIDGE_SIGNING_SELFTEST_ROOT:-}"
+# real state directory, because every path moves under the root. Under the
+# root the layout mirrors the real one (runtime/, state/, share/, each holding
+# a per-product directory), so the self-test can place a retired identity
+# beside this one and prove it is left alone.
+SELFTEST_ROOT="${PLIWEE_SIGNING_SELFTEST_ROOT:-}"
 if [[ -n "$SELFTEST_ROOT" ]]; then
-    WORK="$SELFTEST_ROOT/runtime/omnibridge-android-signing"
-    STATE_DIR="$SELFTEST_ROOT/state"
-    INSTALL_DIR="$SELFTEST_ROOT/share"
+    WORK="$SELFTEST_ROOT/runtime/$SLUG-android-signing"
+    STATE_DIR="$SELFTEST_ROOT/state/$SLUG-android-signing"
+    INSTALL_DIR="$SELFTEST_ROOT/share/$SLUG-android-signing"
 else
     : "${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR is not set — this needs a per-user tmpfs}"
-    WORK="$XDG_RUNTIME_DIR/omnibridge-android-signing"
-    STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/omnibridge-android-signing"
-    INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/omnibridge-android-signing"
+    WORK="$XDG_RUNTIME_DIR/$SLUG-android-signing"
+    STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/$SLUG-android-signing"
+    INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/$SLUG-android-signing"
 fi
 readonly WORK STATE_DIR INSTALL_DIR
 readonly RECORD="$STATE_DIR/PROVISIONED"
@@ -72,6 +92,15 @@ readonly RECORD="$STATE_DIR/PROVISIONED"
 die() { printf '\n\033[1;31mSTOP:\033[0m %s\n' "$*" >&2; exit 1; }
 say() { printf '\033[1m==>\033[0m %s\n' "$*"; }
 note() { printf '    %s\n' "$*"; }
+
+# The retired identity's paths are never ours. A check rather than a belief:
+# a product identity edited to the retired slug stops here, before anything —
+# even --status — looks at a path.
+[[ "$SLUG" != "$RETIRED_SLUG" ]] || die "the product identity is the retired $RETIRED_SLUG identity"
+for p in "$WORK" "$STATE_DIR" "$INSTALL_DIR" "$MEDIA_DIR" "$BUNDLE"; do
+    [[ "$p" != *"$RETIRED_SLUG-android-signing"* ]] \
+        || die "refusing a path of the retired $RETIRED_SLUG signing identity: $p"
+done
 
 stage_done() { [[ -f "$WORK/stage.$1" ]]; }
 mark() { : > "$WORK/stage.$1"; }
@@ -106,7 +135,7 @@ fi
 # ---------------------------------------------------------------- preflight --
 if [[ -f "$RECORD" ]]; then
     cat "$RECORD"
-    die "Android signing keys are already provisioned (record above). This script
+    die "$PRODUCT Android signing keys are already provisioned (record above). This script
       never makes a second app signing key. Restore from the offline backup instead."
 fi
 
@@ -184,7 +213,7 @@ export GNUPGHOME="$WORK/gnupg"; mkdir -p "$GNUPGHOME"; chmod 700 "$GNUPGHOME"
 export TMPDIR="$WORK/tmp"; mkdir -p "$TMPDIR"
 trap 'gpgconf --kill gpg-agent >/dev/null 2>&1 || true' EXIT
 
-say "OmniBridge Android signing provisioning — $( [[ -n "$SELFTEST_ROOT" ]] && echo 'SELF-TEST (throwaway keys)' || echo 'PRODUCTION' )"
+say "$PRODUCT Android signing provisioning — $( [[ -n "$SELFTEST_ROOT" ]] && echo 'SELF-TEST (throwaway keys)' || echo 'PRODUCTION' )"
 note "working directory (tmpfs): $WORK"
 note "media A: $MEDIA_A  ($(findmnt -no SOURCE --target "$MEDIA_A" 2>/dev/null || echo '?'))"
 note "media B: $MEDIA_B  ($(findmnt -no SOURCE --target "$MEDIA_B" 2>/dev/null || echo '?'))"
@@ -206,19 +235,19 @@ if ! stage_done generate; then
     rm -f "$WORK"/*.p12 "$WORK"/*.pem "$WORK"/pw.*
     newpass > "$WORK/pw.app"; newpass > "$WORK/pw.upload"; newpass > "$WORK/pw.backup"
 
-    OB_PW=$(cat "$WORK/pw.app") "$KEYTOOL" -genkeypair -noprompt \
-        -keystore "$WORK/app-signing.p12" -storetype PKCS12 -storepass:env OB_PW \
+    KS_PW=$(cat "$WORK/pw.app") "$KEYTOOL" -genkeypair -noprompt \
+        -keystore "$WORK/app-signing.p12" -storetype PKCS12 -storepass:env KS_PW \
         -alias "$APP_ALIAS" -keyalg RSA -keysize 4096 -sigalg SHA256withRSA \
         -validity "$VALIDITY_DAYS" -dname "$APP_DNAME" 2>/dev/null
-    OB_PW=$(cat "$WORK/pw.upload") "$KEYTOOL" -genkeypair -noprompt \
-        -keystore "$WORK/upload.p12" -storetype PKCS12 -storepass:env OB_PW \
+    KS_PW=$(cat "$WORK/pw.upload") "$KEYTOOL" -genkeypair -noprompt \
+        -keystore "$WORK/upload.p12" -storetype PKCS12 -storepass:env KS_PW \
         -alias "$UPLOAD_ALIAS" -keyalg RSA -keysize 4096 -sigalg SHA256withRSA \
         -validity "$VALIDITY_DAYS" -dname "$UPLOAD_DNAME" 2>/dev/null
 
-    OB_PW=$(cat "$WORK/pw.app") "$KEYTOOL" -exportcert -rfc -keystore "$WORK/app-signing.p12" \
-        -storepass:env OB_PW -alias "$APP_ALIAS" > "$WORK/app-signing-certificate.pem" 2>/dev/null
-    OB_PW=$(cat "$WORK/pw.upload") "$KEYTOOL" -exportcert -rfc -keystore "$WORK/upload.p12" \
-        -storepass:env OB_PW -alias "$UPLOAD_ALIAS" > "$WORK/upload-certificate.pem" 2>/dev/null
+    KS_PW=$(cat "$WORK/pw.app") "$KEYTOOL" -exportcert -rfc -keystore "$WORK/app-signing.p12" \
+        -storepass:env KS_PW -alias "$APP_ALIAS" > "$WORK/app-signing-certificate.pem" 2>/dev/null
+    KS_PW=$(cat "$WORK/pw.upload") "$KEYTOOL" -exportcert -rfc -keystore "$WORK/upload.p12" \
+        -storepass:env KS_PW -alias "$UPLOAD_ALIAS" > "$WORK/upload-certificate.pem" 2>/dev/null
 
     app_fp=$(fingerprint "$WORK/app-signing-certificate.pem" sha256)
     up_fp=$(fingerprint "$WORK/upload-certificate.pem" sha256)
@@ -229,8 +258,8 @@ if ! stage_done generate; then
     [[ "$app_mod" != "$up_mod" ]] || die "app signing and upload keys are the same key"
 
     {
-        echo "OmniBridge Android signing — PUBLIC certificate fingerprints"
-        echo "package: io.github.yurisismotto.omnibridge"
+        echo "$PRODUCT Android signing — PUBLIC certificate fingerprints"
+        echo "package: $PACKAGE"
         echo "generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
         echo
         echo "app signing key  ($APP_ALIAS, RSA-4096, $APP_DNAME)"
@@ -255,9 +284,12 @@ if ! stage_done show; then
     They are shown this once. Nothing else will ever print them.
     Save each as its own entry, with the label exactly as written.
 
-      OmniBridge Android — app signing keystore      $(cat "$WORK/pw.app")
-      OmniBridge Android — upload keystore           $(cat "$WORK/pw.upload")
-      OmniBridge Android — signing backup (gpg)      $(cat "$WORK/pw.backup")
+      $PRODUCT Android — app signing keystore      $(cat "$WORK/pw.app")
+      $PRODUCT Android — upload keystore           $(cat "$WORK/pw.upload")
+      $PRODUCT Android — signing backup (gpg)      $(cat "$WORK/pw.backup")
+
+    These are new entries. Do not overwrite the retired OmniBridge entries:
+    ADR-0020 §D3 keeps them.
 
     The backup password must NOT be written on the backup media.
 
@@ -286,23 +318,24 @@ write_bundle() {   # $1 = media root, $2 = label
     ( cd "$dest" && sha256sum "$BUNDLE" > "$BUNDLE.sha256" )
     cp "$WORK/PUBLIC-FINGERPRINTS.txt" "$WORK/app-signing-certificate.pem" \
        "$WORK/upload-certificate.pem" "$dest/"
-    cat > "$dest/RESTORE.txt" <<'EOF'
-OmniBridge Android signing — offline backup
+    cat > "$dest/RESTORE.txt" <<EOF
+$PRODUCT Android signing — offline backup ($PACKAGE)
 
-omnibridge-android-signing-v1.tar.gpg holds BOTH keystores (app signing and
+$BUNDLE holds BOTH keystores (app signing and
 upload), encrypted with gpg AES-256. Neither password is on this media.
 
 Restore (into a tmpfs directory, never into a repository):
 
-  sha256sum -c omnibridge-android-signing-v1.tar.gpg.sha256
-  gpg --decrypt omnibridge-android-signing-v1.tar.gpg | tar -xf - -C "$DIR"
-  sha256sum -c "$DIR/keystores.sha256"
+  sha256sum -c $BUNDLE.sha256
+  gpg --decrypt $BUNDLE | tar -xf - -C "\$DIR"
+  sha256sum -c "\$DIR/keystores.sha256"
 
-  passphrase:          password manager, "OmniBridge Android — signing backup (gpg)"
-  app-signing.p12:     password manager, "OmniBridge Android — app signing keystore"
-  upload.p12:          password manager, "OmniBridge Android — upload keystore"
+  passphrase:          password manager, "$PRODUCT Android — signing backup (gpg)"
+  app-signing.p12:     password manager, "$PRODUCT Android — app signing keystore"
+  upload.p12:          password manager, "$PRODUCT Android — upload keystore"
 
-See docs/adr/ADR-0019-android-app-signing.md in the OmniBridge repository.
+See docs/adr/ADR-0019-android-app-signing.md and its ADR-0020 addendum in the
+$PRODUCT repository.
 EOF
     sync
     mount_id "$1" > "$WORK/written-mount.$2"
@@ -358,8 +391,8 @@ verify_media() {   # $1 = media root, $2 = label
         if [[ $ks == app-signing ]]; then alias=$APP_ALIAS pwfile=$WORK/typed.app
         else alias=$UPLOAD_ALIAS pwfile=$WORK/typed.upload; fi
         cert="$restore/$ks-certificate.pem"
-        OB_PW=$(cat "$pwfile") "$KEYTOOL" -certreq -keystore "$restore/$ks.p12" \
-            -storepass:env OB_PW -alias "$alias" -file "$restore/$ks.csr" 2>/dev/null \
+        KS_PW=$(cat "$pwfile") "$KEYTOOL" -certreq -keystore "$restore/$ks.p12" \
+            -storepass:env KS_PW -alias "$alias" -file "$restore/$ks.csr" 2>/dev/null \
             || die "media $2: $ks keystore did not open with the password you pasted"
         openssl req -in "$restore/$ks.csr" -noout -verify 2>/dev/null \
             || die "media $2: $ks CSR signature does not verify"
@@ -380,7 +413,7 @@ if ! stage_done verify; then
             app)    label="app signing keystore" ;;
             upload) label="upload keystore" ;;
         esac
-        read -r -s -p "    OmniBridge Android — $label: " typed; echo
+        read -r -s -p "    $PRODUCT Android — $label: " typed; echo
         printf '%s' "$typed" > "$WORK/typed.$which"
         unset typed
         cmp -s <(tr -d '\n' < "$WORK/pw.$which") "$WORK/typed.$which" \

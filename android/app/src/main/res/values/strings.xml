@@ -252,7 +252,7 @@
       is what this app has done since it started, and closing it is not losing
       a log, because there was never a log.
     -->
-    <string name="files_recent_scope">Transfers from this session. Pliwee keeps no history of what you send or receive — received files stay in Downloads/OmniBridge.</string>
+    <string name="files_recent_scope">Transfers from this session. Pliwee keeps no history of what you send or receive — received files stay in Downloads/Pliwee.</string>
     <string name="files_empty_title">No transfers yet</string>
     <string name="files_empty_subtitle">Files you send or receive appear here while they are moving, and stay listed until Pliwee closes.</string>
 

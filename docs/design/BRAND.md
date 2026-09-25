@@ -48,6 +48,13 @@ hand-built `Settings`. Neither renames a device that already exists.
 > platform waves re-point each derivative at the Pliwee masters: Android in
 > W6, the Linux desktop in W7, Play graphics in W10. This section describes
 > that artwork as it ships; its file names are identifiers those waves own.
+>
+> **2026-09-24 (Pliwee Wave 6).** Android is re-pointed. Its launcher
+> foreground, themed (monochrome) layer and in-app mark (`logo_pliwee_mark`)
+> are now derived mechanically from `pliwee-mark.svg` and `pliwee-mark-mono.svg`
+> by `docs/reports/branding/pliwee-wave-6/derive_android_icons.py`, and
+> `BrandingResourcesTest` asserts them against those masters. What follows
+> still describes the **Linux desktop** artwork, until W7.
 
 The official OmniBridge artwork was supplied and installed on 2026-09-21. The
 `BLOCKED_VISUAL_ASSET` notice that stood here is withdrawn: there is no
@@ -251,10 +258,10 @@ the cyan → blue → violet sweep.
 
 | Cut | File | Where it is used |
 |---|---|---|
-| Full colour | [`omnibridge-mark.svg`](assets/omnibridge-mark.svg) | **Canonical.** App bar, empty states, GTK `brand_mark`, Android `logo_omnibridge_mark` |
+| Full colour | [`omnibridge-mark.svg`](assets/omnibridge-mark.svg) | **Canonical** (desktop, until W7). App bar, empty states, GTK `brand_mark`. Android `logo_omnibridge_mark` until Pliwee W6, now `logo_pliwee_mark` from `pliwee-mark.svg` |
 | Single colour | [`omnibridge-mark-mono.svg`](assets/omnibridge-mark-mono.svg) | Anywhere the mark must inherit the text colour |
-| Application icon | [`omnibridge-app-icon.svg`](assets/omnibridge-app-icon.svg) | Linux hicolor icon, Android adaptive foreground |
-| Themed icon | [`omnibridge-android-monochrome.svg`](assets/omnibridge-android-monochrome.svg) | Android 13+ themed launcher layer |
+| Application icon | [`omnibridge-app-icon.svg`](assets/omnibridge-app-icon.svg) | Linux hicolor icon (Android adaptive foreground until Pliwee W6) |
+| Themed icon | [`omnibridge-android-monochrome.svg`](assets/omnibridge-android-monochrome.svg) | Android 13+ themed launcher layer until Pliwee W6; no build uses it now |
 | Wordmark | [`omnibridge-wordmark.svg`](assets/omnibridge-wordmark.svg) | Wordmark alone |
 | Lockup | [`omnibridge-logo-lockup.svg`](assets/omnibridge-logo-lockup.svg) | Mark + wordmark + tagline |
 
@@ -508,12 +515,13 @@ No screen contains a literal hex value.
 | [`omnibridge-wordmark.svg`](assets/omnibridge-wordmark.svg) | Wordmark |
 | [`omnibridge-logo-lockup.svg`](assets/omnibridge-logo-lockup.svg) | Mark + wordmark + tagline |
 | [`assets/icons/`](assets/icons/) | The 28-glyph Pliwee icon family — brand-neutral UI glyphs, carried over unchanged from the OmniBridge era |
-| `assets/pliwee-*.svg` | The five Pliwee masters — **BRAND APPROVED, canonical and frozen** (2026-09-24, `1ea65e6`); not yet used by any build (W6/W7 derive from them); see [Pliwee vector masters](#pliwee-vector-masters) |
+| `assets/pliwee-*.svg` | The five Pliwee masters — **BRAND APPROVED, canonical and frozen** (2026-09-24, `1ea65e6`); the Android drawables derive from them since W6, the desktop from W7; see [Pliwee vector masters](#pliwee-vector-masters) |
 
 Android adaptive icon: `res/mipmap-anydpi-v26/ic_launcher.xml` with a Dark
 (`#0B1020`) background, the mark as the adaptive foreground inside the 72 dp
-safe zone, and a monochrome layer for Android 13+ themed icons. All three are
-generated from `omnibridge-mark.svg` and asserted against it.
+safe zone (and the 66 dp round zone), and a monochrome layer for Android 13+
+themed icons. Since Pliwee W6 they are generated from `pliwee-mark.svg` and
+`pliwee-mark-mono.svg` and asserted against them by geometry and paint.
 
 The wordmark and the lockup ship as **outlines**, not live text. That is a
 property of the supplied artwork and it is the reason the typeface is recorded

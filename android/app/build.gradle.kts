@@ -15,38 +15,38 @@ plugins {
 // password. Both arrive from the environment, set for one Gradle run by
 // `android/signing/build-release-bundle.sh` after a hidden prompt:
 //
-//   OMNIBRIDGE_UPLOAD_KEYSTORE           path to the upload PKCS#12 keystore,
-//                                        which must live outside this repository
-//   OMNIBRIDGE_UPLOAD_KEYSTORE_PASSWORD  its password
+//   PLIWEE_UPLOAD_KEYSTORE           path to the upload PKCS#12 keystore,
+//                                    which must live outside this repository
+//   PLIWEE_UPLOAD_KEYSTORE_PASSWORD  its password
 //
 // A release packaging task with either missing FAILS. There is no fallback to
 // the debug key and no silent unsigned artifact. The one escape hatch is
-// explicit — `-Pomnibridge.release.unsigned=true` — for checking R8 output
+// explicit — `-Ppliwee.release.unsigned=true` — for checking R8 output
 // where no key exists (CI); what it produces is labelled as not a production
 // artifact, and Play refuses an unsigned bundle anyway.
 // ---------------------------------------------------------------------------
 val uploadKeystorePath: String? =
-    providers.environmentVariable("OMNIBRIDGE_UPLOAD_KEYSTORE").orNull?.takeIf { it.isNotBlank() }
+    providers.environmentVariable("PLIWEE_UPLOAD_KEYSTORE").orNull?.takeIf { it.isNotBlank() }
 val uploadKeystorePassword: String? =
-    providers.environmentVariable("OMNIBRIDGE_UPLOAD_KEYSTORE_PASSWORD").orNull?.takeIf { it.isNotEmpty() }
+    providers.environmentVariable("PLIWEE_UPLOAD_KEYSTORE_PASSWORD").orNull?.takeIf { it.isNotEmpty() }
 val allowUnsignedRelease: Boolean =
-    providers.gradleProperty("omnibridge.release.unsigned").orNull == "true"
+    providers.gradleProperty("pliwee.release.unsigned").orNull == "true"
 val repositoryRoot: File = rootDir.parentFile.canonicalFile
 val releaseSigningProblem: String? = when {
-    uploadKeystorePath == null -> "OMNIBRIDGE_UPLOAD_KEYSTORE is not set"
-    uploadKeystorePassword == null -> "OMNIBRIDGE_UPLOAD_KEYSTORE_PASSWORD is not set"
-    !File(uploadKeystorePath).isFile -> "OMNIBRIDGE_UPLOAD_KEYSTORE does not name a file: $uploadKeystorePath"
+    uploadKeystorePath == null -> "PLIWEE_UPLOAD_KEYSTORE is not set"
+    uploadKeystorePassword == null -> "PLIWEE_UPLOAD_KEYSTORE_PASSWORD is not set"
+    !File(uploadKeystorePath).isFile -> "PLIWEE_UPLOAD_KEYSTORE does not name a file: $uploadKeystorePath"
     File(uploadKeystorePath).canonicalFile.startsWith(repositoryRoot) ->
         "the upload keystore is inside the repository ($uploadKeystorePath); it must live outside it"
     else -> null
 }
 
 android {
-    namespace = "io.github.yurisismotto.omnibridge"
+    namespace = "io.github.yurisismotto.pliwee"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "io.github.yurisismotto.omnibridge"
+        applicationId = "io.github.yurisismotto.pliwee"
         // API 29 (Android 10) is the floor: it is where TLS 1.3 is enabled by
         // default and where SSLParameters.setApplicationProtocols (ALPN)
         // became available. Below that we could not speak the protocol at all.
@@ -67,7 +67,7 @@ android {
                 storeFile = file(uploadKeystorePath!!)
                 storeType = "pkcs12"
                 storePassword = uploadKeystorePassword
-                keyAlias = "omnibridge-upload"
+                keyAlias = "pliwee-upload"
                 // PKCS#12 has one password for the store and its keys.
                 keyPassword = uploadKeystorePassword
             }
@@ -186,13 +186,13 @@ gradle.taskGraph.whenReady {
     if (requested.isEmpty() || releaseSigningProblem == null) return@whenReady
     if (allowUnsignedRelease) {
         logger.warn(
-            "OMNIBRIDGE: building an UNSIGNED release (-Pomnibridge.release.unsigned=true). " +
+            "PLIWEE: building an UNSIGNED release (-Ppliwee.release.unsigned=true). " +
                 "This is NOT a production artifact and must never be uploaded.",
         )
         return@whenReady
     }
     throw GradleException(
-        "OmniBridge release signing is not configured: $releaseSigningProblem.\n" +
+        "Pliwee release signing is not configured: $releaseSigningProblem.\n" +
             "Requested: ${requested.joinToString { it.path }}.\n" +
             "Build a production release with android/signing/build-release-bundle.sh " +
             "(ADR-0019). There is no fallback to debug signing.",

@@ -27,7 +27,7 @@ HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 DOMAIN=""; DISTRO=""; EVIDENCE=""; PHONE_IP=""; ADB_SERIAL=""; PAIR_TTL=240
 GUEST_USER="${GUEST_USER:-anyflow}"; GUEST_UID="${GUEST_UID:-1000}"
-APP_PKG="io.github.yurisismotto.omnibridge"
+APP_PKG="io.github.yurisismotto.pliwee"
 # The notification fixture, and NOT `com.android.shell`. OmniBridge's app
 # picker offers apps a person can open from their home screen, plus apps that
 # happen to be notifying right now -- and com.android.shell has no launcher
@@ -35,9 +35,9 @@ APP_PKG="io.github.yurisismotto.omnibridge"
 # which is the ordering problem android/fixture/README.md exists to solve.
 # Choosing it therefore silently never happened, and L16 measured a peer that
 # announced no source role.
-FIXTURE_PKG="io.github.yurisismotto.omnibridge.fixture"
+FIXTURE_PKG="io.github.yurisismotto.pliwee.fixture"
 FIXTURE_ACT="$FIXTURE_PKG/.FixtureActivity"
-LISTENER="$APP_PKG/$APP_PKG.notifications.OmniBridgeNotificationListener"
+LISTENER="$APP_PKG/$APP_PKG.notifications.PliweeNotificationListener"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -506,7 +506,7 @@ rebind_listener() {
     after="$("${ADB[@]}" shell settings get secure enabled_notification_listeners 2>/dev/null | tr -d '\r')"
     [ "$after" = "$before" ] \
         || abort "the phone's approved-listener list changed across the rebind; it must be restored exactly (before: $before / after: $after)"
-    grep -q "ComponentInfo{$APP_PKG/$APP_PKG.notifications.OmniBridgeNotificationListener}" \
+    grep -q "ComponentInfo{$APP_PKG/$APP_PKG.notifications.PliweeNotificationListener}" \
         <<<"$("${ADB[@]}" shell dumpsys notification 2>/dev/null)" \
         || abort "OmniBridge's notification listener is not among the live listeners after the rebind"
     ok "the notification listener is bound again, and the approval list is byte-identical"

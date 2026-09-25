@@ -214,6 +214,8 @@ to take on. 13+ is defensible but adds nothing. Do not include children.
 
 ## PLAY14 — developer verification and package registration
 
+> **Superseding note — 2026-09-24, Pliwee rebrand Wave 6 (branch `feature/pliwee-rebrand-wave6`), [ADR-0020](../../adr/ADR-0020-rename-to-pliwee.md) §D1.** The package to register is now **`io.github.yurisismotto.pliwee`**, and the bundle is verified to carry exactly that package (`android/signing/verify-release-bundle.sh`). The `io.github.yurisismotto.omnibridge` requirement below was never registered on Play and is retired. ADR-0020 sets the order — identity decided, implemented and certified, then the Play app created — and the creation belongs to the Play release wave (W10). The text below is left as it was written.
+
 From 2026-09-30 every package on Play must be registered. For a Play developer:
 
 * **Identity:** existing Play Console identity verification counts. Check under

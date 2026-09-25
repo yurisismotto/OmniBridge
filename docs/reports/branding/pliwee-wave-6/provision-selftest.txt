@@ -1,0 +1,47 @@
+provision-signing-keys.sh self-test (throwaway keys, root /run/user/1000/pliwee-signing-selftest.2txVND)
+  PASS  the retired OmniBridge identity is planted (4 dirs, 6 files)
+  PASS  refuses without media
+  PASS  refuses the same medium twice
+  PASS  refuses media inside the repository
+  PASS  an unconfirmed show stage stops
+  PASS  stages 1-3 ran, with an OmniBridge record present
+  PASS  an encrypted bundle is on each medium
+  PASS  it stops and asks for a re-mount
+  PASS  passwords were shown in stage 2
+  PASS  password-manager labels name Pliwee, not the retired entries
+  PASS  no password appears anywhere on either medium
+  PASS  no plaintext private key on the media
+  PASS  bundle is not a plain tar
+  PASS  app signing subject is CN=Pliwee, OU=Android App Signing
+  PASS  upload subject is CN=Pliwee, OU=Android Upload
+  PASS  aliases are pliwee-upload and pliwee-app-signing
+  PASS  refuses to verify without a re-mount
+  PASS  refuses a mistyped password
+  PASS  refuses a corrupted bundle
+  PASS  stages 4-6 ran
+  PASS  both media restore-verified
+  PASS  tmpfs working directory destroyed
+  PASS  upload keystore installed
+  PASS  app signing keystore NOT installed
+  PASS  public record written
+  PASS  record carries fingerprints
+  PASS  record names package io.github.yurisismotto.pliwee
+  PASS  the Pliwee record names nothing of the retired identity
+  PASS  app signing and upload keys are distinct
+  PASS  record fingerprint matches the generated certificate
+  PASS  no password in the record
+  PASS  no private key in the record
+  PASS  RESTORE.txt names the Pliwee bundle
+  PASS  RESTORE.txt procedure recovers both keystores
+  PASS  restored upload keystore opens with its password
+  PASS  refuses to provision a second time (a Pliwee record exists)
+  PASS  the refusal leaves the Pliwee record byte-identical
+  PASS  the OmniBridge record, upload keystore and both media backups are byte-identical (names, modes, sizes, SHA-256)
+  PASS  no signing material in the repository working tree
+
+  39 passed, 0 failed
+exit=0
+# guard proof: provision-signing-keys.sh with SLUG edited to omnibridge, --status, selftest root
+rc=1
+
+[1;31mSTOP:[0m the product identity is the retired omnibridge identity

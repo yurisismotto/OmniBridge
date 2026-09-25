@@ -1,0 +1,108 @@
+## before-debug: /tmp/w6-before-debug.apk
+package: io.github.yurisismotto.omnibridge
+permissions (9):
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.CAMERA
+  android.permission.CHANGE_NETWORK_STATE
+  android.permission.CHANGE_WIFI_MULTICAST_STATE
+  android.permission.FOREGROUND_SERVICE
+  android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE
+  android.permission.INTERNET
+  android.permission.POST_NOTIFICATIONS
+  io.github.yurisismotto.omnibridge.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+components (11):
+  application io.github.yurisismotto.omnibridge.PliweeApp
+  activity io.github.yurisismotto.omnibridge.ui.MainActivity
+  activity com.journeyapps.barcodescanner.CaptureActivity
+  activity io.github.yurisismotto.omnibridge.ui.PairingCaptureActivity
+  activity io.github.yurisismotto.omnibridge.ui.SendActivity
+  service io.github.yurisismotto.omnibridge.service.ConnectionService
+  service io.github.yurisismotto.omnibridge.notifications.OmniBridgeNotificationListener
+  service io.github.yurisismotto.omnibridge.ui.ClipboardTileService
+  activity androidx.activity.ComponentActivity
+  provider androidx.startup.InitializationProvider
+  receiver androidx.profileinstaller.ProfileInstallReceiver
+
+## before-release: /tmp/w6-before-release.apk
+package: io.github.yurisismotto.omnibridge
+permissions (9):
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.CAMERA
+  android.permission.CHANGE_NETWORK_STATE
+  android.permission.CHANGE_WIFI_MULTICAST_STATE
+  android.permission.FOREGROUND_SERVICE
+  android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE
+  android.permission.INTERNET
+  android.permission.POST_NOTIFICATIONS
+  io.github.yurisismotto.omnibridge.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+components (10):
+  application io.github.yurisismotto.omnibridge.PliweeApp
+  activity io.github.yurisismotto.omnibridge.ui.MainActivity
+  activity com.journeyapps.barcodescanner.CaptureActivity
+  activity io.github.yurisismotto.omnibridge.ui.PairingCaptureActivity
+  activity io.github.yurisismotto.omnibridge.ui.SendActivity
+  service io.github.yurisismotto.omnibridge.service.ConnectionService
+  service io.github.yurisismotto.omnibridge.notifications.OmniBridgeNotificationListener
+  service io.github.yurisismotto.omnibridge.ui.ClipboardTileService
+  provider androidx.startup.InitializationProvider
+  receiver androidx.profileinstaller.ProfileInstallReceiver
+
+## after-debug: app/build/outputs/apk/debug/app-debug.apk
+package: io.github.yurisismotto.pliwee
+permissions (9):
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.CAMERA
+  android.permission.CHANGE_NETWORK_STATE
+  android.permission.CHANGE_WIFI_MULTICAST_STATE
+  android.permission.FOREGROUND_SERVICE
+  android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE
+  android.permission.INTERNET
+  android.permission.POST_NOTIFICATIONS
+  io.github.yurisismotto.pliwee.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+components (11):
+  application io.github.yurisismotto.pliwee.PliweeApp
+  activity io.github.yurisismotto.pliwee.ui.MainActivity
+  activity com.journeyapps.barcodescanner.CaptureActivity
+  activity io.github.yurisismotto.pliwee.ui.PairingCaptureActivity
+  activity io.github.yurisismotto.pliwee.ui.SendActivity
+  service io.github.yurisismotto.pliwee.service.ConnectionService
+  service io.github.yurisismotto.pliwee.notifications.PliweeNotificationListener
+  service io.github.yurisismotto.pliwee.ui.ClipboardTileService
+  activity androidx.activity.ComponentActivity
+  provider androidx.startup.InitializationProvider
+  receiver androidx.profileinstaller.ProfileInstallReceiver
+
+## after-release: app/build/outputs/apk/release/app-release-unsigned.apk
+package: io.github.yurisismotto.pliwee
+permissions (9):
+  android.permission.ACCESS_NETWORK_STATE
+  android.permission.CAMERA
+  android.permission.CHANGE_NETWORK_STATE
+  android.permission.CHANGE_WIFI_MULTICAST_STATE
+  android.permission.FOREGROUND_SERVICE
+  android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE
+  android.permission.INTERNET
+  android.permission.POST_NOTIFICATIONS
+  io.github.yurisismotto.pliwee.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+components (10):
+  application io.github.yurisismotto.pliwee.PliweeApp
+  activity io.github.yurisismotto.pliwee.ui.MainActivity
+  activity com.journeyapps.barcodescanner.CaptureActivity
+  activity io.github.yurisismotto.pliwee.ui.PairingCaptureActivity
+  activity io.github.yurisismotto.pliwee.ui.SendActivity
+  service io.github.yurisismotto.pliwee.service.ConnectionService
+  service io.github.yurisismotto.pliwee.notifications.PliweeNotificationListener
+  service io.github.yurisismotto.pliwee.ui.ClipboardTileService
+  provider androidx.startup.InitializationProvider
+  receiver androidx.profileinstaller.ProfileInstallReceiver
+
+CHECK debug: package io.github.yurisismotto.omnibridge -> io.github.yurisismotto.pliwee: PASS
+CHECK debug: permissions identical modulo the app's own package root (9): PASS
+CHECK debug: own components exactly the frozen 6 + application: PASS
+CHECK debug: same component roster as before except the names (7 vs 7): PASS
+  library components (unchanged set: yes): ['activity com.journeyapps.barcodescanner.CaptureActivity', 'activity androidx.activity.ComponentActivity', 'provider androidx.startup.InitializationProvider', 'receiver androidx.profileinstaller.ProfileInstallReceiver']
+CHECK release: package io.github.yurisismotto.omnibridge -> io.github.yurisismotto.pliwee: PASS
+CHECK release: permissions identical modulo the app's own package root (9): PASS
+CHECK release: own components exactly the frozen 6 + application: PASS
+CHECK release: same component roster as before except the names (7 vs 7): PASS
+  library components (unchanged set: yes): ['activity com.journeyapps.barcodescanner.CaptureActivity', 'provider androidx.startup.InitializationProvider', 'receiver androidx.profileinstaller.ProfileInstallReceiver']

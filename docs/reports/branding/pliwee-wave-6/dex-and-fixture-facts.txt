@@ -1,0 +1,26 @@
+## app/build/outputs/apk/debug/app-debug.apk
+classes10.dex:      55 Lio/github/yurisismotto/pliwee/ 
+classes11.dex:      56 Lio/github/yurisismotto/pliwee/ 
+classes12.dex:      22 Lio/github/yurisismotto/pliwee/ 
+classes13.dex:  
+classes2.dex:      16 Lio/github/yurisismotto/pliwee/ 
+classes3.dex:     361 Lio/github/yurisismotto/pliwee/ 
+classes4.dex:    1181 Lio/github/yurisismotto/pliwee/ 
+classes5.dex:     286 Lio/github/yurisismotto/pliwee/ 
+classes6.dex:     181 Lio/github/yurisismotto/pliwee/ 
+classes7.dex:     421 Lio/github/yurisismotto/pliwee/ 
+classes8.dex:     138 Lio/github/yurisismotto/pliwee/ 
+classes9.dex:     138 Lio/github/yurisismotto/pliwee/ 
+classes.dex:  
+grep -c line matches for Lio/github/yurisismotto/omnibridge/: 0 (expected 0)
+grep -c line matches for Lio/github/yurisismotto/pliwee/proto/Envelope;: 4 (expected >= 1)
+## app/build/outputs/apk/release/app-release-unsigned.apk
+classes.dex:     215 Lio/github/yurisismotto/pliwee/ 
+grep -c line matches for Lio/github/yurisismotto/omnibridge/: 0 (expected 0)
+grep -c line matches for Lio/github/yurisismotto/pliwee/proto/Envelope;: 1 (expected >= 1)
+## fixture
+package: name='io.github.yurisismotto.pliwee.fixture' versionCode='1' versionName='0.1.0' platformBuildVersionName='15' platformBuildVersionCode='35' compileSdkVersion='35' compileSdkVersionCodename='15'
+uses-permission: name='android.permission.POST_NOTIFICATIONS'
+uses-permission: name='io.github.yurisismotto.pliwee.fixture.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
+launchable-activity: name='io.github.yurisismotto.pliwee.fixture.FixtureActivity'  label='OmniBridge Fixture' icon=''
+-rw-r--r--. 1 yuri yuri 6321868 2026-09-24 23:57:52.428119969 -0300 fixture/build/outputs/apk/debug/fixture-debug.apk

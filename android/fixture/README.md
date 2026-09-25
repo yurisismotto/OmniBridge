@@ -50,16 +50,16 @@ JAVA_HOME=$HOME/.local/jdk/jdk-21.0.12.1+1 ANDROID_HOME=$HOME/Android/Sdk \
   ./gradlew :fixture:assembleDebug
 
 adb install -r fixture/build/outputs/apk/debug/fixture-debug.apk
-adb shell pm grant io.github.yurisismotto.omnibridge.fixture \
+adb shell pm grant io.github.yurisismotto.pliwee.fixture \
   android.permission.POST_NOTIFICATIONS
 ```
 
-Uninstall with `adb uninstall io.github.yurisismotto.omnibridge.fixture`.
+Uninstall with `adb uninstall io.github.yurisismotto.pliwee.fixture`.
 
 ## Invoke
 
 ```console
-FX=io.github.yurisismotto.omnibridge.fixture/.FixtureActivity
+FX=io.github.yurisismotto.pliwee.fixture/.FixtureActivity
 
 # a plain, clearable notification
 adb shell "am start -n $FX --es op post \

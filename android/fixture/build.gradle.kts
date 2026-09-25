@@ -38,14 +38,14 @@ plugins {
 }
 
 android {
-    namespace = "io.github.yurisismotto.omnibridge.fixture"
+    namespace = "io.github.yurisismotto.pliwee.fixture"
     compileSdk = 35
 
     defaultConfig {
         // Deterministic, and deliberately not a sub-package of the app's own
         // `applicationId`: two apps, two rows in the picker, no ambiguity
         // about which one a mirrored notification came from.
-        applicationId = "io.github.yurisismotto.omnibridge.fixture"
+        applicationId = "io.github.yurisismotto.pliwee.fixture"
         minSdk = 29
         targetSdk = 35
         versionCode = 1

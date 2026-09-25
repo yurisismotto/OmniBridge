@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Verifies an OmniBridge release bundle before it goes anywhere near Play
-# (ADR-0019, PLAY16). Every check is exact, and every check fails loudly —
+# Verifies a Pliwee release bundle before it goes anywhere near Play
+# (ADR-0019, PLAY16; ADR-0020 §D3). Every check is exact, and every check fails loudly —
 # including when the tool that would perform it is missing.
 #
 #   android/signing/verify-release-bundle.sh [--expect-cert PEM] APP.aab
@@ -8,9 +8,13 @@
 # Requires: JAVA_HOME (keytool), BUNDLETOOL (path to bundletool-all-*.jar),
 # python3, unzip, openssl.
 #
-# --expect-cert defaults to the committed PUBLIC upload certificate,
+# --expect-cert defaults to the committed PUBLIC Pliwee upload certificate,
 # android/signing/certs/upload-certificate.pem. It exists so the verifier can
 # be tested against a throwaway key; a production run never passes it.
+#
+# The retired OmniBridge certificates (ADR-0019) are kept, byte-identical, in
+# certs/legacy-omnibridge/. They never sign a Pliwee artifact: a bundle signed
+# by either is refused, and so is an --expect-cert that names either.
 
 set -euo pipefail
 
@@ -21,7 +25,8 @@ aab=${1:?usage: verify-release-bundle.sh [--expect-cert PEM] APP.aab}
 
 # The release contract. Changing any of these is a release decision, made
 # here on purpose, not discovered afterwards.
-readonly PACKAGE=io.github.yurisismotto.omnibridge
+readonly PACKAGE=io.github.yurisismotto.pliwee
+readonly EXPECT_SUBJECT="CN=Pliwee, OU=Android Upload"
 readonly MIN_SDK=29
 readonly MIN_TARGET_SDK=36
 readonly PERMISSIONS="android.permission.ACCESS_NETWORK_STATE
@@ -32,7 +37,7 @@ android.permission.FOREGROUND_SERVICE
 android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE
 android.permission.INTERNET
 android.permission.POST_NOTIFICATIONS
-io.github.yurisismotto.omnibridge.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+io.github.yurisismotto.pliwee.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
 
 fails=0
 pass() { printf '  PASS  %s\n' "$*"; }
@@ -45,7 +50,23 @@ KEYTOOL="${JAVA_HOME:?JAVA_HOME must name a JDK}/bin/keytool"
 [[ -f "${BUNDLETOOL:-}" ]] || die "BUNDLETOOL must name bundletool-all-*.jar (got '${BUNDLETOOL:-}')"
 for t in python3 unzip openssl; do command -v "$t" >/dev/null || die "$t is required"; done
 [[ -s "$aab" ]] || die "$aab is missing or empty"
-[[ -s "$expect_cert" ]] || die "expected certificate $expect_cert is missing"
+[[ -s "$expect_cert" ]] || die "expected certificate $expect_cert is missing (the Pliwee upload
+      certificate is committed there after provisioning — ADR-0019 addendum)"
+
+# The expected certificate is Pliwee's, not a retired one. Checked before any
+# verdict, so a verifier pointed at the wrong certificate cannot pass.
+want=$(openssl x509 -in "$expect_cert" -noout -fingerprint -sha256 | sed 's/^.*=//')
+[[ -n "$want" ]] || die "cannot read a SHA-256 fingerprint from $expect_cert"
+for retired in "$here"/certs/legacy-omnibridge/*.pem; do
+    [[ -s "$retired" ]] || die "the retired certificates are missing from certs/legacy-omnibridge/"
+    [[ "$want" != "$(openssl x509 -in "$retired" -noout -fingerprint -sha256 | sed 's/^.*=//')" ]] \
+        || die "$expect_cert is the retired OmniBridge certificate $(basename "$retired"); a Pliwee bundle is never verified against it"
+done
+subject=$(openssl x509 -in "$expect_cert" -noout -subject -nameopt RFC2253 | sed 's/^subject=//')
+case "$subject" in
+    "CN=Pliwee,OU=Android Upload"|"OU=Android Upload,CN=Pliwee") ;;
+    *) die "$expect_cert has subject '$subject', not $EXPECT_SUBJECT" ;;
+esac
 
 scratch=$(mktemp -d); trap 'rm -rf "$scratch"' EXIT
 echo "verifying $aab"
@@ -57,7 +78,6 @@ echo "verifying $aab"
 signers=$(grep -c '^Signer #' "$scratch/printcert" || true)
 [[ "$signers" == 1 ]] && pass "exactly one signer" || fail "signers: expected 1, found ${signers:-0}"
 got=$(sed -n 's/^[[:space:]]*SHA256: //p' "$scratch/printcert" | head -1)
-want=$(openssl x509 -in "$expect_cert" -noout -fingerprint -sha256 | sed 's/^.*=//')
 [[ -n "$got" && "$got" == "$want" ]] && pass "signed by the expected certificate ($want)" \
     || fail "signing certificate: expected $want, found ${got:-none}"
 grep -q 'CN=Android Debug' "$scratch/printcert" && fail "signed with an Android DEBUG certificate" \

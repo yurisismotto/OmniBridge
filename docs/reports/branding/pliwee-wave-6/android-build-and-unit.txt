@@ -1,0 +1,5 @@
+# command: ./gradlew --offline --no-daemon --max-workers=2 :app:assembleDebug :app:testDebugUnitTest :app:assembleDebugAndroidTest :fixture:assembleDebug (JDK 21 temurin)
+# started 2026-09-24T23:57:30-03:00
+BUILD SUCCESSFUL in 43s
+111 actionable tasks: 56 executed, 6 from cache, 49 up-to-date
+exit=0

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Builds the production OmniBridge release bundle, signed with the UPLOAD key,
-# and verifies it (ADR-0019). Run it in your own terminal: it asks for the
+# Builds the production Pliwee release bundle, signed with the UPLOAD key,
+# and verifies it (ADR-0019, ADR-0020 §D3). Run it in your own terminal: it asks for the
 # upload keystore password with hidden input and hands it to exactly one
 # Gradle run through the environment. Nothing is written to disk but the
 # bundle.
@@ -9,15 +9,16 @@
 #   BUNDLETOOL=/path/to/bundletool-all-1.18.3.jar \
 #       android/signing/build-release-bundle.sh
 #
-# OMNIBRIDGE_UPLOAD_KEYSTORE overrides the keystore path (default: where
-# provision-signing-keys.sh installed it).
+# PLIWEE_UPLOAD_KEYSTORE overrides the keystore path (default: where
+# provision-signing-keys.sh installed it). The retired OmniBridge upload
+# keystore is never a default and never used.
 #
 #   --install             also install the release build on the one attached
 #                         device (adb), for the physical release smoke. The APK
 #                         is derived from this bundle by bundletool and signed
 #                         with the upload key — the same code Play will serve,
 #                         under the upload certificate instead of Play's.
-#   --uninstall-existing  with --install: if an OmniBridge signed with a
+#   --uninstall-existing  with --install: if a Pliwee signed with a
 #                         different key (a debug build) is installed, remove it
 #                         first. That deletes its pairings and settings, so it
 #                         is never done without this flag.
@@ -27,7 +28,7 @@ umask 077
 
 here=$(cd "$(dirname "$0")" && pwd)
 android=$(cd "$here/.." && pwd)
-keystore="${OMNIBRIDGE_UPLOAD_KEYSTORE:-${XDG_DATA_HOME:-$HOME/.local/share}/omnibridge-android-signing/upload.p12}"
+keystore="${PLIWEE_UPLOAD_KEYSTORE:-${XDG_DATA_HOME:-$HOME/.local/share}/pliwee-android-signing/upload.p12}"
 aab="$android/app/build/outputs/bundle/release/app-release.aab"
 
 die() { printf '\nSTOP: %s\n' "$*" >&2; exit 1; }
@@ -40,12 +41,14 @@ for arg in "$@"; do
         *) die "unknown argument: $arg" ;;
     esac
 done
-readonly PACKAGE=io.github.yurisismotto.omnibridge
+readonly PACKAGE=io.github.yurisismotto.pliwee
 
 : "${JAVA_HOME:?set JAVA_HOME to a JDK 17+ (JDK 21 is the verified one)}"
 : "${ANDROID_HOME:?set ANDROID_HOME to the Android SDK}"
 [[ -f "${BUNDLETOOL:-}" ]] || die "set BUNDLETOOL to bundletool-all-*.jar — the bundle is not accepted unverified"
 [[ -f "$keystore" ]] || die "upload keystore not found at $keystore"
+[[ "$keystore" != *omnibridge-android-signing* ]] \
+    || die "$keystore is the retired OmniBridge upload keystore; it never signs a Pliwee artifact"
 [[ "$(stat -c %a "$keystore")" == 600 ]] || die "$keystore must be mode 600 (is $(stat -c %a "$keystore"))"
 if ((install)); then
     command -v adb >/dev/null || die "--install needs adb"
@@ -57,14 +60,14 @@ fi
     || die "the working tree has uncommitted changes; a release is built from a commit"
 commit=$(git -C "$android" rev-parse HEAD)
 
-read -r -s -p "Upload keystore password (OmniBridge Android — upload keystore): " pw; echo
+read -r -s -p "Upload keystore password (Pliwee Android — upload keystore): " pw; echo
 [[ -n "$pw" ]] || die "empty password"
 
 # --no-daemon: no Gradle process outlives this run holding the password in its
 # environment. `clean` so nothing from an earlier unsigned or debug run is
 # mistaken for this bundle.
 ( cd "$android" && \
-  OMNIBRIDGE_UPLOAD_KEYSTORE="$keystore" OMNIBRIDGE_UPLOAD_KEYSTORE_PASSWORD="$pw" \
+  PLIWEE_UPLOAD_KEYSTORE="$keystore" PLIWEE_UPLOAD_KEYSTORE_PASSWORD="$pw" \
   ./gradlew --no-daemon --max-workers=2 clean :app:bundleRelease )
 
 # The password must not have found its way into the bundle, in any entry.
@@ -81,12 +84,12 @@ echo "  commit   $commit"
 if ((install)); then
     echo
     echo "installing a release build derived from this bundle on $devices"
-    work=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/omnibridge-install.XXXXXX")
+    work=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/pliwee-install.XXXXXX")
     trap 'rm -rf "$work"; rm -f "$tmp"' EXIT
     # The password reaches bundletool through a file descriptor, never argv.
     "$JAVA_HOME/bin/java" -jar "$BUNDLETOOL" build-apks --mode=universal \
         --bundle="$aab" --output="$work/release.apks" \
-        --ks="$keystore" --ks-key-alias=omnibridge-upload \
+        --ks="$keystore" --ks-key-alias=pliwee-upload \
         --ks-pass=file:<(printf '%s' "$pw") --key-pass=file:<(printf '%s' "$pw")
     unset pw
 
@@ -99,15 +102,15 @@ if ((install)); then
         adb pull "$(sed -n 's/^package://p' "$work/pm-path" | tr -d '\r' | head -1)" "$work/installed.apk" >/dev/null
         "$apksigner" verify --print-certs "$work/installed.apk" > "$work/installed.cert" 2>/dev/null || true
         installed_cert=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$work/installed.cert" | head -1)
-        [[ -n "$installed_cert" ]] || die "could not read the installed OmniBridge's signing certificate"
+        [[ -n "$installed_cert" ]] || die "could not read the installed Pliwee's signing certificate"
         want=$(openssl x509 -in "$here/certs/upload-certificate.pem" -noout -fingerprint -sha256 \
             | sed 's/^.*=//; s/://g' | tr 'A-F' 'a-f')
         if [[ "$installed_cert" != "$want" ]]; then
             if ((uninstall_existing)); then
-                echo "removing the installed OmniBridge (signed by $installed_cert); its pairings go with it"
+                echo "removing the installed Pliwee (signed by $installed_cert); its pairings go with it"
                 adb uninstall "$PACKAGE"
             else
-                die "the installed OmniBridge is signed by another key ($installed_cert),
+                die "the installed Pliwee is signed by another key ($installed_cert),
       most likely a debug build. Replacing it deletes its pairings and settings.
       Re-run with --install --uninstall-existing to do that."
             fi

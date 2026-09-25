@@ -57,8 +57,8 @@ HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 DOMAIN=""; DISTRO=""; EVIDENCE=""; PHONE_IP=""; ADB_SERIAL=""
 GUEST_USER="${GUEST_USER:-anyflow}"; GUEST_UID="${GUEST_UID:-1000}"
-APP_PKG="io.github.yurisismotto.omnibridge"
-FIXTURE_PKG="io.github.yurisismotto.omnibridge.fixture"
+APP_PKG="io.github.yurisismotto.pliwee"
+FIXTURE_PKG="io.github.yurisismotto.pliwee.fixture"
 FIXTURE_ACT="$FIXTURE_PKG/.FixtureActivity"
 DROPIN="/etc/systemd/user/omnibridged.service.d/99-omnibridge-trace.conf"
 
