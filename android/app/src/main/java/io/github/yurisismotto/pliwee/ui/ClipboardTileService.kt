@@ -21,7 +21,7 @@ import java.security.SecureRandom
  * accessibility service, becoming the default IME, an invisible activity that
  * grabs focus for a frame) is either forbidden or user-hostile.
  *
- * So the tile does the one supported thing: it brings OmniBridge to the
+ * So the tile does the one supported thing: it brings Pliwee to the
  * foreground with an explicit "send the clipboard" request. The Activity then
  * has focus, reads the clipboard, and shows the peer — including the
  * sensitive-clip confirmation if the platform marked it. The person still

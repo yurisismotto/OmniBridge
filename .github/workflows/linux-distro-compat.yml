@@ -34,14 +34,14 @@
 # its **own** archive: no PPA, no third-party repository, no backport, no
 # Flatpak SDK, no bundled newer copy. That is the whole point of the row.
 #
-# The **Rust toolchain** is installed separately, pinned to OmniBridge's declared
+# The **Rust toolchain** is installed separately, pinned to Pliwee's declared
 # MSRV. That is deliberate and is not a contradiction: whether a given
 # distribution's default `rustc` package is new enough is a *packaging and
 # documentation* question, already answered per distribution in README.md, and
 # it is not what this workflow measures. Ubuntu 24.04's stock rustc is 1.75
 # and cannot build the lockfile; the distribution nevertheless carries
 # `rustc-1.91` in its own archive. Conflating the two would make this job go
-# red for a reason that has nothing to do with OmniBridge's source.
+# red for a reason that has nothing to do with Pliwee's source.
 
 name: Linux distro compatibility · build only
 
@@ -203,7 +203,7 @@ jobs:
           #
           # `git` is here for actions/checkout, which runs next and would
           # otherwise fall back to a tarball download. It is a CI tool, not a
-          # build dependency of OmniBridge, and the distinction matters: nothing
+          # build dependency of Pliwee, and the distinction matters: nothing
           # in this list may be read as a package the product needs.
           apt-get install -y --no-install-recommends \
             gcc libc6-dev pkg-config libgtk-4-dev libadwaita-1-dev \
@@ -251,7 +251,7 @@ jobs:
       # The Rust toolchain, separately and deliberately — see the header. It
       # is pinned to the declared MSRV, so these rows prove the stronger
       # statement: this distribution's native GTK stack *and* the lowest
-      # toolchain OmniBridge claims to support, together.
+      # toolchain Pliwee claims to support, together.
       - name: Rust toolchain · pinned to the declared MSRV
         run: |
           set -eux

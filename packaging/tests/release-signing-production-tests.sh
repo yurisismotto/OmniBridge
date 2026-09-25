@@ -9,7 +9,7 @@
 # needs no production key and no artifact download, so it runs on every PR.
 #
 # It cannot answer the question this file answers. "Does verification reject a
-# tampered OmniBridge release, signed by the production identity, over the
+# tampered Pliwee release, signed by the production identity, over the
 # artifacts GitHub Actions actually built?" is a different claim, and a fixture
 # cannot make it. The four conditions on the production-signing gate --
 # RELEASE-SIGNING-FOUNDATION-V1.md §8.9 -- name the real set explicitly:
@@ -121,7 +121,7 @@ printf 'work: %s\n' "$WORK"
 realsum() { find "$DIR" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1; }
 REAL_BEFORE="$(realsum)"
 
-# A throwaway identity that has nothing to do with OmniBridge, for NEG-03.
+# A throwaway identity that has nothing to do with Pliwee, for NEG-03.
 STRANGER="$WORK/stranger-home"; mkdir -p "$STRANGER"; chmod 700 "$STRANGER"
 gpg --homedir "$STRANGER" --batch --quiet --pinentry-mode loopback --passphrase '' \
     --quick-generate-key "Unrelated Key — not OmniBridge" ed25519 sign never >/dev/null 2>&1 \

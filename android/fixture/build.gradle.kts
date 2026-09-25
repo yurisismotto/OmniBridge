@@ -7,7 +7,7 @@
 // posts as `com.android.shell`. That works for a clearable notification and
 // fails at everything else:
 //
-//  * `com.android.shell` has no launcher entry, so OmniBridge's app picker can
+//  * `com.android.shell` has no launcher entry, so Pliwee's app picker can
 //    only see it *while it is already notifying* — which needs the listener
 //    bound, which needs a granted peer connected. N3 debt 3.
 //  * `cmd notification` has no `cancel`, no `setOngoing`, no group, no
@@ -16,10 +16,10 @@
 //
 // # Why a separate module rather than a debug source set
 //
-// A `debug`-only source set inside `:app` would share OmniBridge's package, its
+// A `debug`-only source set inside `:app` would share Pliwee's package, its
 // manifest, its permissions and its signing identity — and one day somebody
 // would build a release with it. A separate module with a separate
-// `applicationId` cannot end up in the OmniBridge APK, because nothing depends
+// `applicationId` cannot end up in the Pliwee APK, because nothing depends
 // on it: `:app` does not, and `settings.gradle.kts` includes it beside `:app`
 // rather than underneath it. That is a structural guarantee rather than a
 // convention.

@@ -135,7 +135,7 @@ class NotificationSource(
         /**
          * Ask the system to unbind it.
          *
-         * Called when the last eligible peer goes away, so that "OmniBridge reads
+         * Called when the last eligible peer goes away, so that "Pliwee reads
          * your notifications only while a granted computer is connected" is
          * structurally true rather than a promise.
          */
@@ -170,7 +170,7 @@ class NotificationSource(
         /**
          * Cancel one notification this device sourced.
          *
-         * **The only method on this seam with an effect outside OmniBridge**, and
+         * **The only method on this seam with an effect outside Pliwee**, and
          * the only place a remote message can reach the platform at all. It
          * takes a raw platform key that the caller looked up in the
          * [SourceIdMap]; no remote field is ever passed to it, because no
@@ -1152,7 +1152,7 @@ class NotificationSource(
      * ADR-0015 §3. The system does not bind us merely because the app is
      * installed and access is granted — `META_DATA_DEFAULT_AUTOBIND` is
      * `false` — so the binding is a function of whether a granted, mirroring
-     * peer is actually connected. That is what makes "OmniBridge reads your
+     * peer is actually connected. That is what makes "Pliwee reads your
      * notifications only while a granted computer is connected" structurally
      * true rather than a promise.
      */

@@ -61,7 +61,7 @@ class NotificationFilterTest {
     // -- the hard rules ------------------------------------------------------
 
     /**
-     * **OmniBridge's own package is never mirrored.** A hard loop-prevention rule
+     * **Pliwee's own package is never mirrored.** A hard loop-prevention rule
      * and not a preference: it is what stops the ongoing-connection
      * foreground-service notification — which exists on every running install
      * — from being mirrored back to the computer displaying it.
@@ -223,7 +223,7 @@ class NotificationFilterTest {
 
     /**
      * An app installed after the grant is not shared, and it needs no rule of
-     * its own: it is simply not in the set. OmniBridge does not retroactively
+     * its own: it is simply not in the set. Pliwee does not retroactively
      * widen a decision the user made about a different set of apps.
      */
     @Test

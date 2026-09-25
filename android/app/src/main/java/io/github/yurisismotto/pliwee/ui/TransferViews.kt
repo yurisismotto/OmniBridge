@@ -21,7 +21,7 @@ import io.github.yurisismotto.pliwee.ui.theme.PliweeTheme
 import io.github.yurisismotto.pliwee.ui.theme.PliweeType
 
 /**
- * File transfer, in the OmniBridge visual language.
+ * File transfer, in the Pliwee visual language.
  *
  * The behaviour is unchanged from the previous release — accept or reject,
  * watch progress, see the outcome. What changed is only how it looks.

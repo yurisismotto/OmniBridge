@@ -31,7 +31,7 @@ interface ClipboardTarget {
          *
          * The disambiguation is only reliable **with window focus**, because
          * `hasPrimaryClip()` is subject to the same restriction. That is
-         * enough: OmniBridge only ever reads from a focused Activity. Without
+         * enough: Pliwee only ever reads from a focused Activity. Without
          * focus the two are indistinguishable from inside the app, and the
          * outcome is the same either way — nothing is read and nothing is
          * sent.

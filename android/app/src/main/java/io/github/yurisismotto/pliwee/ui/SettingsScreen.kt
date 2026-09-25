@@ -27,7 +27,7 @@ import io.github.yurisismotto.pliwee.ui.theme.PliweeTheme
 import io.github.yurisismotto.pliwee.ui.theme.PliweeType
 
 /**
- * This device's own identity, and what OmniBridge is.
+ * This device's own identity, and what Pliwee is.
  *
  * The identity block is not decoration: the fingerprint here is what the
  * person reads aloud, or compares on screen, while pairing from the other

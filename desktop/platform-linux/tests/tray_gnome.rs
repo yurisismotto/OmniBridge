@@ -67,7 +67,7 @@ const MENU_INTERFACE: &str = "com.canonical.dbusmenu";
 ///
 /// The `$` binds to the second alternative only, so the first is an
 /// unanchored search for "something, a dot, something". That is the branch
-/// OmniBridge's `org.kde.StatusNotifierItem-<pid>-<n>` takes, and it is written
+/// Pliwee's `org.kde.StatusNotifierItem-<pid>-<n>` takes, and it is written
 /// out here rather than pulled in as a regex crate because the point is to
 /// reproduce the extension's decision, not to acquire a dependency.
 fn bus_address_regex_matches(name: &str) -> bool {
@@ -632,7 +632,7 @@ async fn n6_the_item_is_ready_and_visible_by_the_extensions_own_rules() {
     assert_eq!(facts.title, "Pliwee");
 
     // `Passive` is the one status that makes the extension hide the icon.
-    // OmniBridge's `Active` is not a decoration: it is the reason the icon is on
+    // Pliwee's `Active` is not a decoration: it is the reason the icon is on
     // the panel at all.
     assert_eq!(facts.status, "Active");
     assert!(facts.is_visible());
@@ -662,7 +662,7 @@ async fn n7_feature_detection_finds_activate_and_no_ayatana_secondary() {
     );
     assert!(
         !facts.has_ayatana_secondary,
-        "OmniBridge does not implement the Ayatana variant, and must not appear to"
+        "Pliwee does not implement the Ayatana variant, and must not appear to"
     );
 }
 
@@ -692,7 +692,7 @@ async fn n8_the_icon_is_a_theme_name_with_no_path_and_no_pixels() {
 /// `tools/busAnalyzer.js` walks every name on the bus and introspects it from
 /// `/` downwards looking for `org.kde.StatusNotifierItem`
 /// (`dbusUtils.js:introspectBusObject`). It exists because some applications
-/// never re-register when the extension is toggled. OmniBridge does re-register
+/// never re-register when the extension is toggled. Pliwee does re-register
 /// — but if the object tree were not walkable from `/`, this fallback would
 /// silently not cover it, so the walk is asserted rather than assumed.
 ///
@@ -866,7 +866,7 @@ async fn n11_every_menu_property_has_the_type_the_extension_mandates() {
         .await
         .expect("GetGroupProperties");
 
-    // The subset of `MandatedTypes` OmniBridge sends anything for.
+    // The subset of `MandatedTypes` Pliwee sends anything for.
     let mandated: HashMap<&str, &str> = [
         ("visible", "b"),
         ("enabled", "b"),
@@ -976,7 +976,7 @@ async fn n13_looking_at_the_menu_and_closing_it_opens_no_window() {
 }
 
 // ===========================================================================
-// N14–N16 — the interactions GNOME sends that OmniBridge deliberately ignores
+// N14–N16 — the interactions GNOME sends that Pliwee deliberately ignores
 // ===========================================================================
 
 /// N14 — a middle click, and the deliberate no-op behind it.
@@ -984,7 +984,7 @@ async fn n13_looking_at_the_menu_and_closing_it_opens_no_window() {
 /// `indicatorStatusIcon.js:423` turns `BUTTON_MIDDLE` into
 /// `AppIndicator.secondaryActivate`, which offers an activation token
 /// (`appIndicator.js:820`) and then — the Ayatana variant being absent —
-/// calls plain `SecondaryActivate`. OmniBridge does nothing with it, and this
+/// calls plain `SecondaryActivate`. Pliwee does nothing with it, and this
 /// test is what makes that a decision rather than an omission: the KDE sprint
 /// left it a no-op for want of a real host, and a real host's source now says
 /// the event arrives. It stays a no-op because on GNOME every surface is
@@ -1070,7 +1070,7 @@ async fn n15_the_menu_is_reachable_without_contextmenu_ever_being_called() {
 ///
 /// Scoped deliberately to *what GNOME reads*: every property in its own
 /// `StatusNotifierItem.xml`, plus the menu. `ToolTip` is not in that list —
-/// the extension comments it out — but OmniBridge publishes one anyway, on a
+/// the extension comments it out — but Pliwee publishes one anyway, on a
 /// public object, so it is included here rather than excused.
 #[tokio::test(flavor = "multi_thread")]
 async fn n16_nothing_the_extension_reads_is_private() {

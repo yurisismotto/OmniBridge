@@ -528,7 +528,7 @@ fn every_fault_leaves_the_identity_intact_and_only_absence_creates() {
             "{name}: this state must never be allowed to create an identity"
         );
 
-        // Whatever the fault did, OmniBridge did not add to it.
+        // Whatever the fault did, Pliwee did not add to it.
         std::fs::write(f.state_path(), &state_before).expect("restore state");
         std::fs::write(f.key_path(), &key_before).expect("restore key");
         std::fs::set_permissions(f.key_path(), std::fs::Permissions::from_mode(0o600))

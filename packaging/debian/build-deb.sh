@@ -72,7 +72,7 @@ VENDOR_TARBALL="$(find "$BUNDLE" -maxdepth 1 -name 'pliwee-*-vendor.tar.xz' | he
 
 VERSION="$(basename "$SRC_TARBALL" | sed 's/^pliwee-//; s/\.tar\.gz$//')"
 
-printf '\n==> %s, OmniBridge %s\n' "$IMAGE" "$VERSION"
+printf '\n==> %s, Pliwee %s\n' "$IMAGE" "$VERSION"
 printf '    source %s\n    vendor %s\n' "$(basename "$SRC_TARBALL")" "$(basename "$VENDOR_TARBALL")"
 
 STAGE="$(mktemp -d "${TMPDIR:-/tmp}/pliwee-deb.XXXXXXXX")"

@@ -268,7 +268,7 @@ class NotificationDismissRulesTest {
      * Both flags are consulted, and not one standing in for the other.
      *
      * `isClearable()` is already false for an ongoing notification on every
-     * Android OmniBridge supports, but they are separate platform concepts and a
+     * Android Pliwee supports, but they are separate platform concepts and a
      * rule that relies on one implying the other is a rule that breaks on the
      * release where it stops.
      */

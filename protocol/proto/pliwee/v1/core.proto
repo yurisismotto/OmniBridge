@@ -85,10 +85,16 @@ message HelloAck {
 //
 // `proof` = HMAC-SHA256(
 //     key = pairing_token,
-//     msg = "omnibridge/pairing-proof/v1"
+//     msg = "pliwee/pairing-proof/v1"
 //           || len_prefixed(responder_identity_fingerprint)
 //           || len_prefixed(initiator_identity_fingerprint)
 //           || len_prefixed(pairing_nonce))
+//
+// That is the canonical (Pliwee) profile. On a connection that negotiated the
+// legacy OmniBridge 1.0.0 profile (ALPN "omnibridge/1", QR scheme
+// "omnibridge1:") the domain is the legacy "omnibridge/pairing-proof/v1";
+// nothing else in the construction differs. The domain follows the profile
+// the connection negotiated and is never tried "under both" (ADR-0020 D4).
 //
 // The proof binds the short-lived pairing token to BOTH TLS identities and to
 // a server-chosen nonce. Consequences:
@@ -117,7 +123,8 @@ enum PairStatus {
 message PairResponse {
   PairStatus status = 1;
   // Present only on ACCEPTED. Same construction as PairRequest.proof but with
-  // the domain separator "omnibridge/pairing-confirm/v1". Lets the
+  // the domain separator "pliwee/pairing-confirm/v1" (legacy OmniBridge
+  // profile: "omnibridge/pairing-confirm/v1", by the same rule). Lets the
   // initiator confirm the responder also knew the token.
   bytes confirmation = 2;
 }

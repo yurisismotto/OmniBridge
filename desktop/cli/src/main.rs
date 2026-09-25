@@ -16,7 +16,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::UnixStream;
 
 #[derive(Parser, Debug)]
-#[command(name = "omnibridge", about = "Pliwee control", version)]
+#[command(name = "pliwee", about = "Pliwee control", version)]
 struct Args {
     #[command(subcommand)]
     command: Command,
@@ -1038,6 +1038,34 @@ fn print_notifications_status(report: &NotificationsStatusReport) {
             }
         } else {
             println!("      not connected");
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Args;
+    use clap::CommandFactory;
+
+    /// `pliwee --version` and the usage line name the installed binary.
+    /// The packages ship `/usr/bin/pliwee` and nothing else, so any other
+    /// name here sends the reader looking for a command that does not exist.
+    #[test]
+    fn the_command_identifies_itself_as_pliwee() {
+        let mut cmd = Args::command();
+        assert_eq!(cmd.get_name(), "pliwee");
+        let version = cmd.render_version();
+        assert_eq!(
+            version.trim_end(),
+            format!("pliwee {}", env!("CARGO_PKG_VERSION"))
+        );
+        let usage = cmd.render_usage().to_string();
+        assert!(usage.contains("pliwee"), "usage: {usage}");
+        for text in [version, usage, cmd.render_long_help().to_string()] {
+            assert!(
+                !text.to_ascii_lowercase().contains("omnibridge"),
+                "the CLI still names the retired binary: {text}"
+            );
         }
     }
 }

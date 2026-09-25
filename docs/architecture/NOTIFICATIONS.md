@@ -94,7 +94,7 @@ NotificationControl {
 }
 ```
 
-**Posted and Updated are one message.** No platform OmniBridge targets has a
+**Posted and Updated are one message.** No platform Pliwee targets has a
 separate update operation — `onNotificationPosted` fires for both with the same
 key; freedesktop `Notify` with `replaces_id` is the same method; re-adding a
 macOS request with the same identifier replaces it. A protocol that invented the
@@ -234,7 +234,7 @@ is not delivered later.
 
 Three rules that are not negotiable:
 
-1. **OmniBridge does not detect sensitive content itself.** No OTP regex, no
+1. **Pliwee does not detect sensitive content itself.** No OTP regex, no
    keyword list, no "looks like a bank" heuristic. A guess dressed as a security
    control is worse than an honest boundary — the reasoning
    [THREAT_MODEL.md](../security/THREAT_MODEL.md) T10 already applies to

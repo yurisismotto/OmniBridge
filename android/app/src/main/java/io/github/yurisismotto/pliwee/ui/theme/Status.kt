@@ -11,7 +11,7 @@ import io.github.yurisismotto.pliwee.R
  *
  * ## The rule this type exists to enforce
  *
- * **Nothing in OmniBridge says something with colour alone.** Roughly one man in
+ * **Nothing in Pliwee says something with colour alone.** Roughly one man in
  * twelve cannot separate the cyan of "connected" from the amber of "stale",
  * and both of those are claims about whether the thing on screen is true
  * right now. So a status is never a coloured dot: it is a dot, an icon and a
@@ -61,7 +61,7 @@ enum class PliweeStatus(
     @Composable
     @ReadOnlyComposable
     fun color(): Color {
-        val c = LocalOmniBridgeColors.current
+        val c = LocalPliweeColors.current
         return when (this) {
             Connected, Success -> c.accentCyan
             Available, Connecting, Transferring -> c.accentBlue

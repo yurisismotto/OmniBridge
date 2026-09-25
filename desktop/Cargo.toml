@@ -28,7 +28,7 @@ edition = "2021"
 #   zbus 5.19.0 / zvariant / zcheapstr      1.87
 #
 # So a toolchain below 1.88 fails in Cargo's resolver, before compiling one
-# line of OmniBridge. That is not academic: Debian 13 trixie's stock `rustc` is
+# line of Pliwee. That is not academic: Debian 13 trixie's stock `rustc` is
 # 1.85.1 and Ubuntu 24.04's `rustc-1.82` package is exactly 1.82, and both
 # were measured failing here (LINUX-UBUNTU-DEBIAN-COMPAT-U0.md §20.3).
 #

@@ -196,7 +196,7 @@ object NotificationDismissRules {
     fun decideClearable(current: PlatformNotification?): NotificationOutcome = when {
         current == null -> NotificationOutcome.NOTIFICATION_OUTCOME_UNKNOWN_NOTIFICATION
         // Both, and not just `clearable`. `isClearable()` is already false for
-        // an ongoing notification on every Android OmniBridge supports, but the
+        // an ongoing notification on every Android Pliwee supports, but the
         // two are separate platform concepts and a rule that relies on one
         // implying the other is a rule that breaks on the release where it
         // stops.

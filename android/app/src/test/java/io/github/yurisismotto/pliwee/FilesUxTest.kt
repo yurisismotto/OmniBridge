@@ -462,7 +462,7 @@ class FilesUxTest {
     @Test
     fun `T18 a sent file whose grant has lapsed reports the source, not the file`() {
         // The distinction matters to whoever reads it. The file is almost
-        // certainly still on the device and OmniBridge simply may not look at it
+        // certainly still on the device and Pliwee simply may not look at it
         // any more; saying it is missing would send someone hunting for
         // something that is not lost.
         val lapsed = only(

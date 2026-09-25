@@ -31,7 +31,7 @@
     <!--
       Deliberately absent, and the rule that keeps them so:
 
-        OmniBridge acquires a privileged Android capability only when a named,
+        Pliwee acquires a privileged Android capability only when a named,
         user-visible feature requires it; only through the platform-sanctioned
         API for that feature; only with the user's explicit, separately
         revocable consent; and never as a means of defeating a platform
@@ -39,7 +39,7 @@
 
       By that rule these stay out, and no feature is a reason to revisit them,
       because each is either a workaround for a protection or a grant far wider
-      than any OmniBridge feature needs:
+      than any Pliwee feature needs:
 
         * no BIND_ACCESSIBILITY_SERVICE
         * no QUERY_ALL_PACKAGES
@@ -169,7 +169,7 @@
             tools:replace="android:screenOrientation" />
 
         <!--
-          The scanner OmniBridge actually launches (ANDROID-UX-SCANNER-INSETS-01).
+          The scanner Pliwee actually launches (ANDROID-UX-SCANNER-INSETS-01).
 
           `PairingCaptureActivity` is the library's `CaptureActivity` with one
           thing added: an inset handler that keeps the prompt out from under
@@ -207,7 +207,7 @@
 
         <!--
           The Sharesheet entry point: Gallery / Files / Browser -> Share ->
-          OmniBridge. Exported because that is what makes it appear in the
+          Pliwee. Exported because that is what makes it appear in the
           chooser; it accepts only a shared stream and does nothing with an
           empty or unrecognised intent.
 
@@ -281,15 +281,15 @@
 
           `default_autobind=false` is the load-bearing one. Without it the
           system binds this listener whenever the app is installed and access
-          is granted, and OmniBridge would be reading notifications with nobody
+          is granted, and Pliwee would be reading notifications with nobody
           listening. With it, the binding is requested only while a paired
           computer that holds the notifications.v1 grant is connected, and
-          released when the last one goes away — which is what makes "OmniBridge
+          released when the last one goes away — which is what makes "Pliwee
           reads your notifications only while a granted computer is connected"
           structurally true rather than a promise. See ADR-0015 §3.
 
           `default_filter_types` is a real, free, OS-enforced narrowing that
-          sits underneath OmniBridge's own per-app filter: the system delivers
+          sits underneath Pliwee's own per-app filter: the system delivers
           only conversations and alerting notifications unless the user says
           otherwise. `disabled_filter_types` is deliberately NOT declared —
           it would grey those types out permanently in the system UI, and a

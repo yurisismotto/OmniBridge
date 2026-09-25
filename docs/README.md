@@ -1,4 +1,4 @@
-# OmniBridge documentation
+# Pliwee documentation
 
 Everything that is not a project entry point or a governance file lives here.
 The repository root carries [`README.md`](../README.md) and

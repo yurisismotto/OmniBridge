@@ -575,3 +575,91 @@ Only these block part of the implementation; everything else above is decided.
 * **Downgrade asymmetry** after state migration (D9).
 * **Version bounds.** Package `Obsoletes`/`Breaks` bounds are written against
   the first Pliwee version number, chosen at release time.
+
+---
+
+## Implementation amendments
+
+Added after acceptance and appended here, never edited into the text above
+(D7, AGENTS.md § "Historical documents are evidence"). Each one names its date,
+its branch and the measurement behind it. The text it amends stays standing
+where it is.
+
+### A1 (2026-09-25) — The first Pliwee version is **1.1.0**
+
+*Owner decision, approved 2026-09-25 for the pre-Wave-8 remediation
+(`feature/pliwee-rebrand-w8-remediation`).* This resolves plan decision **B4**
+and the risk "Version bounds" under *Unresolved risks* above.
+
+* The first Pliwee version is **1.1.0**. It satisfies §"Legacy systemd,
+  firewalld and desktop integration" ("a 1.x version above 1.0.0").
+* Rebrand Wave 7 had already written 1.1.0 into the tree **provisionally**
+  (`desktop/Cargo.toml` `[workspace.package]`, the RPM spec, `debian/changelog`,
+  the metainfo `<release>`, and `FIRST_PLIWEE_VERSION` in
+  `packaging/tests/packaging-checks.sh`). Every transition bound is written
+  against that literal, and `packaging-checks.sh` asserts that it is above
+  1.0.0 and not above the workspace version. The approval changes no value.
+  It turns "provisional" into "decided".
+* Nothing is published by this amendment. The metainfo `<release>` stays
+  `type="development"` until Wave 10 publishes it.
+
+### A2 (2026-09-25) — RPM transition: a transitional `omnibridge` package, **not** `Obsoletes:` on the core package
+
+*Owner decision, approved 2026-09-25 for the pre-Wave-8 remediation, on
+Wave 7's measurement.* This amends the **Packages** bullet of §"Legacy systemd,
+firewalld and desktop integration", which reads *"RPM `Obsoletes:` +
+`Provides:`"*, for the **core** package only.
+
+**What is decided.**
+
+| Package | Mechanism | Unchanged from the text above? |
+| --- | --- | --- |
+| `omnibridge` (RPM) → `pliwee` | a **transitional `omnibridge` 1.1.0** that `Requires: pliwee`, carries no files, and is an ordinary *upgrade* of `omnibridge` 1.0.0. `pliwee` carries **no** `Obsoletes: omnibridge` | **amended** |
+| `omnibridge-gui` (RPM) → `pliwee-gui` | `Obsoletes: omnibridge-gui < 1.1.0` + `Provides: omnibridge-gui = %{version}-%{release}` | as written |
+| `omnibridge`, `omnibridge-gui` (Debian) | `Replaces:` + `Breaks: … (<< 1.1.0~)`, plus transitional 1.1.0 packages, which the text above already allowed ("a transitional package if needed") | as written |
+
+**Why: measured, not preferred.** The published OmniBridge 1.0.0 RPM's `%preun`
+is `%systemd_user_preun omnibridged.service`. When the package is **erased**
+(`$1 = 0`), that runs `systemd-update-helper remove-user-units`, which runs
+`systemctl --user disable --now` for every logged-in user. `Obsoletes:` makes
+dnf *erase* the obsoleted package. Wave 7 measured this with dnf5 on Fedora 44
+and confirmed it on the real downloaded `omnibridge-1.0.0-1.fc44.x86_64.rpm`
+(`rpm -qp --scripts`):
+
+* `Obsoletes:` + `Provides:` (the text above): `%preun` ran with **`$1 = 0`**.
+  The person running `dnf upgrade` would lose their enablement and their
+  running daemon. That breaks this ADR's own first systemd invariant ("must,
+  after upgrading, have the Pliwee daemon running at the next login").
+* A transitional package with no `Obsoletes:`: `omnibridge` is **upgraded**,
+  `%preun` runs with **`$1 = 1`**, nothing is disabled, and `pliwee` arrives as
+  a dependency.
+* Both together: dnf takes the `Obsoletes:` path again (`$1 = 0`). So the core
+  package carries none.
+* `omnibridge-gui` 1.0.0 has no scriptlets at all, so the text above is kept
+  for it.
+
+The evidence is recorded in
+[`PLIWEE-WAVE-7-LINUX-INTEGRATION-PACKAGING.md`](../reports/branding/PLIWEE-WAVE-7-LINUX-INTEGRATION-PACKAGING.md)
+§1.3, with `pliwee-wave-7/package-transition-probe.{sh,txt}` and
+`pliwee-wave-7/v1.0.0-rpm-scriptlets.txt`.
+
+**Compatibility that stays.**
+
+* **Upgrade.** `dnf upgrade` (or `dnf install`) with the Pliwee set moves an
+  OmniBridge 1.0.0 install in place. State migration (D9, D12) and the
+  `omnibridged.service` alias are unchanged.
+* **Downgrade.** Removing `omnibridge pliwee pliwee-gui` and reinstalling the
+  1.0.0 packages restores the 1.0.0 package set and its unit file (Wave 7
+  measured this, RF). The D9 migration copies and never moves, so OmniBridge
+  1.0.0 then starts on its untouched `~/.local/share/omnibridge`. G7-UP U10
+  measures that on hardware. It is **not yet executed**.
+* **Window.** The transitional package ships through the Pliwee v1.x line,
+  under the *System integration* row of D11. Removing it needs a release note
+  and a further amendment here.
+
+**Enforced by** `packaging/tests/packaging-checks.sh`: no `Obsoletes:` of the
+core name, exact bounds against `FIRST_PLIWEE_VERSION`, and the transitional
+package's shape. The install/upgrade harnesses now **fail** when the expected
+OmniBridge 1.0.0 packages are missing, instead of skipping the transition
+assertions (`install-smoke.sh` L17, `upgrade-gates.sh` O1/U10). Report:
+[`PLIWEE-PRE-W8-REMEDIATION.md`](../reports/branding/PLIWEE-PRE-W8-REMEDIATION.md).

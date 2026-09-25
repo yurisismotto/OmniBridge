@@ -8,7 +8,7 @@ import java.io.IOException
 import java.io.InputStream
 
 /**
- * A file the user shared into OmniBridge, read through the `ContentResolver`.
+ * A file the user shared into Pliwee, read through the `ContentResolver`.
  *
  * ## Why never a real path
  *

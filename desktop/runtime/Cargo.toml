@@ -6,7 +6,7 @@ rust-version.workspace = true
 license.workspace = true
 
 [lints.rust]
-# The portable half of the OmniBridge Agent: `unsafe` is forbidden outright.
+# The portable half of the Pliwee Agent: `unsafe` is forbidden outright.
 unsafe_code = "forbid"
 
 [lints.clippy]

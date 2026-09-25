@@ -45,7 +45,7 @@ import org.junit.runner.RunWith
  * What is *not* exercised is the last few millimetres of input:
  *
  *  * **pairing** skips the ZXing decode. [QrPayload.parse] is given the very
- *    string the desktop encoded into the QR — `omnibridge pair` prints it under
+ *    string the desktop encoded into the QR — `pliwee pair` prints it under
  *    *"If your phone cannot scan, the payload is:"* — so the only step missed
  *    is turning pixels into that string;
  *  * **the grant and the policy** call the same two-line lambdas
@@ -70,7 +70,7 @@ import org.junit.runner.RunWith
  *
  * adb shell am instrument -w \
  *   -e class io.github.yurisismotto.pliwee.HostDrivenCertificationHarness#pair_with_the_payload_the_desktop_printed \
- *   -e omnibridge.pairing.payload 'omnibridge:v1:…' \
+ *   -e pliwee.pairing.payload 'pliwee1:…' \
  *   io.github.yurisismotto.pliwee.test/androidx.test.runner.AndroidJUnitRunner
  * ```
  *
@@ -327,14 +327,14 @@ class HostDrivenCertificationHarness {
     private companion object {
         /** Distinctive, so a host script can filter logcat down to this class. */
         const val TAG = "PliweeHarness"
-        const val ARG_PAYLOAD = "omnibridge.pairing.payload"
-        const val ARG_PEER = "omnibridge.peer"
-        const val ARG_GRANTED = "omnibridge.granted"
-        const val ARG_MIRROR = "omnibridge.mirror"
-        const val ARG_APPS = "omnibridge.apps"
-        const val ARG_ONGOING = "omnibridge.ongoing"
-        const val ARG_DISMISS = "omnibridge.dismiss"
-        const val ARG_LOCKED = "omnibridge.locked"
-        const val ARG_CONNECT = "omnibridge.connect"
+        const val ARG_PAYLOAD = "pliwee.pairing.payload"
+        const val ARG_PEER = "pliwee.peer"
+        const val ARG_GRANTED = "pliwee.granted"
+        const val ARG_MIRROR = "pliwee.mirror"
+        const val ARG_APPS = "pliwee.apps"
+        const val ARG_ONGOING = "pliwee.ongoing"
+        const val ARG_DISMISS = "pliwee.dismiss"
+        const val ARG_LOCKED = "pliwee.locked"
+        const val ARG_CONNECT = "pliwee.connect"
     }
 }

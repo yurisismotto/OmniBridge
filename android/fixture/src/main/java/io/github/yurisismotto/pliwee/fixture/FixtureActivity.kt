@@ -68,7 +68,7 @@ import android.widget.TextView
  *
  * `setOngoing(true)` sets `FLAG_ONGOING_EVENT`, and
  * `StatusBarNotification.isClearable()` is false whenever that flag or
- * `FLAG_NO_CLEAR` is set. `isClearable()` is exactly what OmniBridge's source
+ * `FLAG_NO_CLEAR` is set. `isClearable()` is exactly what Pliwee's source
  * consults before honouring a `DismissRequest`, so this is the real gate and
  * not an approximation of it.
  *

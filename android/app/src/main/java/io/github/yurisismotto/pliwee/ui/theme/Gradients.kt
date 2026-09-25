@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Brush
  *    5.48:1 at the worst point — which the token test asserts by sampling the
  *    interpolation rather than just the stops.
  *
- * Both keep all three brand hues, so the deepened one still reads as OmniBridge.
+ * Both keep all three brand hues, so the deepened one still reads as Pliwee.
  */
 object PliweeGradient {
     val decorativeStops = listOf(Brand.Cyan, Brand.Blue, Brand.Violet)

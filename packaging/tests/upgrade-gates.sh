@@ -227,7 +227,28 @@ digests() { gx "sha256sum $LEGACY/identity.key $LEGACY/state.json $LEGACY_CFG 2>
 if [ "$STAGE" = upgrade ]; then
 # ===========================================================================
 [ -n "$NEW_PKGDIR" ] || usage
+# The downgrade (U10) is part of this stage and needs the published 1.0.0 set.
+# Without it U10 used to be recorded n/a and the stage could still finish
+# green having measured no way back (pre-W8 remediation, owner decision 7).
+[ -n "$OLD_PKGDIR" ] \
+    || abort "--old-pkgdir (the published OmniBridge 1.0.0 set) is required by the upgrade stage: U10 cannot be measured without it"
 section "O1 — before"
+# The transition is only measured FROM OmniBridge 1.0.0. A guest where that
+# is not what is installed would run every U3 assertion against something
+# else, so the expected old packages and version are a precondition, checked
+# before anything is changed.
+if [ "$PKGEXT" = rpm ]; then
+    vers0="$(gx "rpm -q --qf '%{NAME} %{VERSION}-%{RELEASE}\n' omnibridge omnibridge-gui 2>&1")"
+else
+    vers0="$(gx "dpkg-query -W -f '\${Package} \${Version}\n' omnibridge omnibridge-gui 2>&1")"
+fi
+printf '%s\n' "$vers0" | save O1-versions.txt
+need_nonempty "O1: installed OmniBridge packages" "$vers0" 1 \
+    || abort "O1: the package query returned nothing; the old version cannot be established"
+n0="$(grep -cE '^omnibridge(-gui)? 1\.0\.0-1(\.fc44)?$' <<<"$vers0" || true)"
+need_exact_count "O1: OmniBridge packages at exactly 1.0.0-1" "$n0" 2 \
+    || abort "O1: the expected OmniBridge 1.0.0 packages are not installed ($(tr '\n' ' ' <<<"$vers0")); the transition cannot be measured"
+ok "O1: omnibridge and omnibridge-gui are exactly 1.0.0-1 before the upgrade"
 o1="$(facts omnibridge)"; printf '%s\n' "$o1" | save O1-facts.txt
 need_nonempty "O1 facts" "$o1" 3 || abort "could not read O1 from 'omnibridge status'"
 peers="$(sed -n 's/^paired-count //p' <<<"$o1")"
@@ -330,7 +351,6 @@ en9="$(gx "test -e /home/$IDLE_USER/.config/systemd/user/default.target.wants/pl
 [ "$en9" = 1 ] && ok "U9: '$IDLE_USER' has no enablement link for either name" || notok "U9: '$IDLE_USER' is enabled"
 
 section "U10 — downgrade to OmniBridge 1.0.0"
-[ -n "$OLD_PKGDIR" ] || { na "U10: --old-pkgdir not given"; finish; }
 deliver "$OLD_PKGDIR" /root/g7-old >/dev/null
 if [ "$PKGEXT" = rpm ]; then
     out="$(gx 'dnf remove -y omnibridge pliwee-gui pliwee 2>&1 && cd /root/g7-old && dnf install -y --disablerepo="*" ./omnibridge-1.0.0-*.x86_64.rpm ./omnibridge-gui-1.0.0-*.x86_64.rpm 2>&1')"; rc=$?

@@ -53,7 +53,7 @@ trap cleanup EXIT
 # never has to nest one heredoc inside another.
 PLIWEE_SCANNER_PY='import os, re, sys
 root = sys.argv[1]
-hdr = re.compile(r'\''-----BEGIN (?:PGP |OPENSSH |ENCRYPTED |RSA |EC |DSA )?PRIVATE KEY(?: BLOCK)?-----'\'')
+hdr = re.compile(r'\''-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----'\'')
 b64 = re.compile(r'\''^[A-Za-z0-9+/=]{40,}$'\'')
 for raw in sys.stdin.buffer.read().split(b'\''\0'\''):
     if not raw:
@@ -70,6 +70,58 @@ for raw in sys.stdin.buffer.read().split(b'\''\0'\''):
         if hdr.search(line) and any(b64.match(x.strip()) for x in lines[i + 1:i + 7]):
             print(rel)
             break
+'
+
+# The tracked-.pem classifier (owner decision, pre-W8 remediation, 2026-09-25).
+# A tracked `.pem` is accepted only when its CONTENT proves it is public: every
+# armour block is `CERTIFICATE`, every block parses with `openssl x509`, and
+# there is nothing else in the file -- no other label, no text between or
+# around the blocks, and no `PRIVATE`/`SECRET` anywhere. Anything else is
+# REJECTed with the reason. Prints one line per file: `CERT <path>` or
+# `REJECT <path>: <reason>`.
+PLIWEE_PEM_CLASSIFIER_PY='import base64, os, re, subprocess, sys, tempfile
+root = sys.argv[1]
+block = re.compile(r'\''-----BEGIN ([A-Z0-9 ]+)-----\n([A-Za-z0-9+/=\n]+?)\n-----END \1-----'\'')
+b64line = re.compile(r'\''^[A-Za-z0-9+/]{1,76}={0,2}$'\'')
+def classify(fp):
+    try:
+        raw = open(fp, "rb").read()
+    except OSError as e:
+        return "unreadable: %s" % e
+    try:
+        text = raw.decode("ascii").replace("\r\n", "\n")
+    except UnicodeDecodeError:
+        return "not ASCII armour"
+    if re.search(r'\''PRIVATE|SECRET'\'', text, re.I):
+        return "private/secret key-shaped content"
+    blocks = list(block.finditer(text))
+    if not blocks:
+        return "no PEM block"
+    rest = block.sub("", text)
+    if rest.strip():
+        return "content outside the certificate blocks"
+    for m in blocks:
+        if m.group(1) != "CERTIFICATE":
+            return "PEM label %r is not CERTIFICATE" % m.group(1)
+        body = m.group(2).split("\n")
+        if not all(b64line.match(x) for x in body):
+            return "malformed base64 in a CERTIFICATE block"
+        der = base64.b64decode("".join(body), validate=True)
+        if len(der) < 64 or der[0] != 0x30:
+            return "CERTIFICATE block is not a DER SEQUENCE"
+        with tempfile.NamedTemporaryFile(suffix=".der") as t:
+            t.write(der); t.flush()
+            r = subprocess.run(["openssl", "x509", "-inform", "DER", "-in", t.name, "-noout"],
+                               capture_output=True)
+        if r.returncode != 0:
+            return "a CERTIFICATE block does not parse as X.509"
+    return None
+for raw in sys.stdin.buffer.read().split(b'\''\0'\''):
+    if not raw:
+        continue
+    rel = raw.decode("utf-8", "replace")
+    why = classify(os.path.join(root, rel))
+    print("CERT %s" % rel if why is None else "REJECT %s: %s" % (rel, why))
 '
 
 TEST_UID="OmniBridge TEST KEY -- DO NOT TRUST <test-key@invalid.example>"
@@ -294,6 +346,18 @@ fi
 # and the exemption went with it: any tracked `.gpg`/`.asc`/`.key`/`.pem` is a
 # failure again, with nothing carved out.
 #
+# PUBLIC X.509 CERTIFICATES, PROVEN BY CONTENT (2026-09-25, pre-W8 remediation)
+# ---------------------------------------------------------------------------
+# The owner decided that public X.509 certificates in PEM form may be tracked
+# (ADR-0019's two public certificates, android/signing/certs/). That is NOT a
+# name exemption: a `.pem` passes only when the classifier above proves every
+# block in it is a CERTIFICATE that `openssl x509` parses and that nothing
+# else is in the file. A private key saved as `.pem`, a certificate bundled
+# with its key, and a key relabelled `CERTIFICATE` are all rejected, and the
+# controls below prove each of those rejections on real, ephemeral keys
+# before the tree's result is believed. `.gpg`, `.asc` and `.key` are still a
+# failure by name, with nothing carved out.
+#
 # A NAME IS NOT A WARRANT, and that half is kept
 # ----------------------------------------------
 # The exemption is gone; the lesson that produced it is not. A name rule on its
@@ -308,11 +372,93 @@ fi
 # defect packaging-checks.sh H1 exists to catch, which caught this line.
 tracked="$(git -C "$ROOT" ls-files)"
 [ -n "${tracked//[[:space:]]/}" ] || die "git ls-files returned nothing; this scan would be vacuous"
-key_shaped="$(grep -E '\.(gpg|asc|key|pem)$' <<<"$tracked" || true)"
+key_shaped="$(grep -E '\.(gpg|asc|key)$' <<<"$tracked" || true)"
 if [ -n "${key_shaped//[[:space:]]/}" ]; then
     notok "a key-shaped file is committed to the repository: $(head -3 <<<"$key_shaped" | tr '\n' ' ')"
 else
-    ok "no key-shaped file is committed to the repository"
+    ok "no .gpg/.asc/.key file is committed to the repository"
+fi
+
+# --- a tracked .pem must PROVE it is a public certificate --------------------
+#
+# The classifier is only believed after it has been shown, on this run, to
+# accept a real certificate and to reject each private-key shape. The controls
+# are generated here, ephemeral, in $WORK; nothing about them is committed.
+pem_tracked="$(grep -E '\.pem$' <<<"$tracked" || true)"
+n_pem="$(grep -c . <<<"$pem_tracked" || true)"
+if ! command -v python3 >/dev/null 2>&1 || ! command -v openssl >/dev/null 2>&1; then
+    # Not a skip: without the tools a tracked .pem cannot be proven public,
+    # and an unproven .pem is exactly what this check exists to refuse.
+    if [ "${n_pem:-0}" -gt 0 ]; then
+        notok "python3/openssl absent: $n_pem tracked .pem file(s) could NOT be proven to be public certificates"
+    else
+        skip "python3/openssl absent: the .pem classifier controls did not run (no .pem is tracked)"
+    fi
+else
+    PEMPY="$WORK/classify-pem.py"
+    printf '%s' "$PLIWEE_PEM_CLASSIFIER_PY" > "$PEMPY"
+    PC="$WORK/pem-control"; rm -rf "$PC"; mkdir -p "$PC"
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -days 1 \
+        -subj "/CN=pliwee-test-only.invalid" \
+        -keyout "$PC/private-pkcs8.pem" -out "$PC/public-cert.pem" >/dev/null 2>&1 \
+        || die "openssl could not make the ephemeral control certificate and key"
+    grep -q -- '-----BEGIN PRIVATE KEY-----' "$PC/private-pkcs8.pem" \
+        || die "the ephemeral control key is not a PKCS#8 PRIVATE KEY; the controls would test nothing"
+    openssl ec -in "$PC/private-pkcs8.pem" -out "$PC/private-ec.pem" >/dev/null 2>&1 \
+        || openssl pkey -in "$PC/private-pkcs8.pem" -traditional -out "$PC/private-ec.pem" >/dev/null 2>&1 \
+        || die "openssl could not write the traditional EC form of the control key"
+    openssl pkcs8 -topk8 -in "$PC/private-pkcs8.pem" -passout pass:control-only \
+        -out "$PC/private-encrypted.pem" >/dev/null 2>&1 \
+        || die "openssl could not write the encrypted form of the control key"
+    cat "$PC/public-cert.pem" "$PC/private-pkcs8.pem" > "$PC/cert-plus-key.pem"
+    # A private key's body under a CERTIFICATE label: only the X.509 parse
+    # can see through it, so the word PRIVATE is removed from this one.
+    { echo '-----BEGIN CERTIFICATE-----'
+      sed -e '/-----/d' "$PC/private-pkcs8.pem"
+      echo '-----END CERTIFICATE-----'; } > "$PC/key-relabelled.pem"
+    { cat "$PC/public-cert.pem"; echo 'trailing note'; } > "$PC/cert-plus-text.pem"
+    ctl="$(printf '%s\0' public-cert.pem private-pkcs8.pem private-ec.pem private-encrypted.pem \
+                         cert-plus-key.pem key-relabelled.pem cert-plus-text.pem \
+           | python3 "$PEMPY" "$PC")"
+    [ "$(grep -c . <<<"$ctl")" -eq 7 ] \
+        || die "the .pem classifier answered for $(grep -c . <<<"$ctl") of 7 control files; its verdicts mean nothing"
+    if grep -qxF 'CERT public-cert.pem' <<<"$ctl"; then
+        ok "pem control: a real public X.509 certificate is accepted"
+    else
+        die "the .pem classifier rejects a real certificate ($(grep public-cert <<<"$ctl")); a FAIL below would be about the classifier"
+    fi
+    for c in private-pkcs8.pem private-ec.pem private-encrypted.pem cert-plus-key.pem \
+             key-relabelled.pem cert-plus-text.pem; do
+        if grep -q "^REJECT $c: " <<<"$ctl"; then
+            ok "pem control: $c is rejected ($(sed -n "s/^REJECT $c: //p" <<<"$ctl"))"
+        else
+            notok "pem control: the classifier ACCEPTS $c -- private key material could be committed as .pem"
+        fi
+    done
+    # The armour scanner, too, must see a PEM private key, not only a PGP one.
+    ARMOURPY="$WORK/scan-armour.py"
+    printf '%s' "$PLIWEE_SCANNER_PY" > "$ARMOURPY"
+    pem_armour="$(printf 'private-pkcs8.pem\0private-ec.pem\0private-encrypted.pem\0public-cert.pem\0' \
+                  | python3 "$ARMOURPY" "$PC")"
+    if [ "$(grep -c . <<<"$pem_armour")" -eq 3 ] && ! grep -qxF 'public-cert.pem' <<<"$pem_armour"; then
+        ok "pem control: the tracked-tree armour scanner finds all three PEM private-key forms and not the certificate"
+    else
+        notok "pem control: the armour scanner found [$(paste -sd' ' <<<"$pem_armour")] of the three PEM private keys"
+    fi
+
+    if [ "${n_pem:-0}" -eq 0 ]; then
+        ok "no .pem file is committed to the repository"
+    else
+        verdicts="$(tr '\n' '\0' <<<"$pem_tracked" | python3 "$PEMPY" "$ROOT")"
+        [ "$(grep -c . <<<"$verdicts")" -eq "$n_pem" ] \
+            || die "the classifier answered for $(grep -c . <<<"$verdicts") of $n_pem tracked .pem file(s)"
+        rejected="$(grep '^REJECT ' <<<"$verdicts" || true)"
+        if [ -n "${rejected//[[:space:]]/}" ]; then
+            notok "a tracked .pem is not a public certificate: $(head -3 <<<"$rejected" | paste -sd' ')"
+        else
+            ok "every tracked .pem ($n_pem) is a public X.509 certificate and nothing else: $(sed 's/^CERT //' <<<"$verdicts" | paste -sd' ')"
+        fi
+    fi
 fi
 
 # --- and no tracked file carries private key armour, whatever it is called ---

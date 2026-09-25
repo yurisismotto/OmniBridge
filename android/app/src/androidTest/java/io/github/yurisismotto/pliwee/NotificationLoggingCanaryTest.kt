@@ -37,7 +37,7 @@ import org.junit.runner.RunWith
  * N1 left this to N3 and N2 built the desktop twin (`tests/logging.rs`). This
  * is the same idea against the real platform logger: drive real flows —
  * including the ones that fail — with values no notification would ever
- * contain, capture **everything OmniBridge wrote to logcat**, and assert none of
+ * contain, capture **everything Pliwee wrote to logcat**, and assert none of
  * it came out.
  *
  * ## Why it is an instrumented test
@@ -76,7 +76,7 @@ class NotificationLoggingCanaryTest {
         const val KEY = "0|example.canary.q7x.app|4711|omnibridge-n3-canary-tag-q7x|10123"
         const val LABEL = "Canary Q7X Label"
 
-        /** Every OmniBridge tag that can write a line during these flows. */
+        /** Every Pliwee tag that can write a line during these flows. */
         val TAGS = listOf(
             "NotificationSource",
             "PliweeListener",
@@ -451,7 +451,7 @@ class NotificationLoggingCanaryTest {
      */
     private fun assertClean(captured: String) {
         assertTrue(
-            "OmniBridge wrote nothing at all, so this test proves nothing",
+            "Pliwee wrote nothing at all, so this test proves nothing",
             captured.isNotBlank(),
         )
         // `logcat -d` prints a "--------- beginning of main" banner even when
@@ -468,7 +468,7 @@ class NotificationLoggingCanaryTest {
         )
         for (canary in listOf(TITLE, BODY, TAG, KEY, LABEL, PACKAGE)) {
             assertFalse(
-                "OmniBridge's log contained $canary:\n$captured",
+                "Pliwee's log contained $canary:\n$captured",
                 captured.contains(canary),
             )
         }
@@ -605,7 +605,7 @@ class NotificationLoggingCanaryTest {
      * Runs a shell command through the instrumentation.
      *
      * `logcat` needs `READ_LOGS`, which the *shell* holds and the application
-     * does not — and must not: OmniBridge declares no `READ_LOGS`, and reading its
+     * does not — and must not: Pliwee declares no `READ_LOGS`, and reading its
      * own log at runtime is not something it should be able to do. The test
      * harness borrowing the shell's permission is exactly the supported way to
      * audit what an app wrote.

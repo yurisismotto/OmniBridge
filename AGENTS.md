@@ -18,7 +18,7 @@ means exactly two files:
 
 | File | Why it is at root |
 | --- | --- |
-| `README.md` | the project's entry point — what OmniBridge is, how to build and run it |
+| `README.md` | the project's entry point — what Pliwee is, how to build and run it |
 | `AGENTS.md` | this file — the conventions an agent needs before it writes anything |
 
 `CONTRIBUTING.md`, `SECURITY.md` and `CODE_OF_CONDUCT.md` would also belong at

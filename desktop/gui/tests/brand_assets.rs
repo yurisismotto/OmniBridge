@@ -1,4 +1,4 @@
-//! Structural validation of the OmniBridge brand artwork.
+//! Structural validation of the Pliwee brand artwork.
 //!
 //! The marks are source-controlled vectors that get compiled into the binary
 //! and shipped as the application icon, so what can go wrong with them is not
@@ -860,7 +860,7 @@ fn the_desktop_entry_launches_this_binary() {
     );
 
     // D-Bus activation is the seam a shell uses to raise an already-running
-    // OmniBridge rather than starting a second process, and it only works
+    // Pliwee rather than starting a second process, and it only works
     // because the bus name is the desktop file id.
     assert_eq!(
         desktop_entry_key("DBusActivatable").as_deref(),
@@ -1106,7 +1106,7 @@ fn the_dbus_activation_entry_claims_the_application_id() {
     assert!(
         template.is_file(),
         "no D-Bus activation template at {} — without one the bus cannot start \
-         OmniBridge, and the tray's cold-start path does not exist",
+         Pliwee, and the tray's cold-start path does not exist",
         template.display()
     );
     assert_eq!(
@@ -1216,7 +1216,7 @@ fn the_installer_handles_the_activation_entry_like_the_other_two() {
         "the installer does not tell the session bus to reread its services"
     );
 
-    // And uninstall removes it, or an uninstalled OmniBridge leaves the bus able
+    // And uninstall removes it, or an uninstalled Pliwee leaves the bus able
     // to start a binary that is no longer there.
     let uninstall_block = installer
         .split("if [ \"$uninstall\" -eq 1 ]")
@@ -1335,5 +1335,124 @@ fn the_desktop_compiles_in_the_pliwee_masters() {
     assert!(
         !widgets.contains("omnibridge-mark"),
         "the GUI still draws the OmniBridge mark"
+    );
+}
+
+// ===========================================================================
+// G8 D8 — the pairing QR's centre mark is the Pliwee master, not a drawing
+// ===========================================================================
+//
+// Until the pre-W8 remediation the centre of the pairing QR was a Cairo
+// re-drawing of the pre-Pliwee "Flowing Ribbon" (`draw_ribbon`). ADR-0020 D8
+// forbids re-creating the mark's geometry anywhere, so the centre is now the
+// compiled-in `pliwee-mark.svg` laid over the code by GTK. These tests fail if
+// the centre goes back to being drawn, or if the resource it loads stops being
+// the frozen master.
+
+/// Normalises what `xml-stripblanks` changes and nothing else: the XML
+/// declaration it adds and the whitespace-only text between tags it removes.
+fn stripblanks_normal_form(svg: &str) -> String {
+    let body = svg.trim();
+    let body = match body.strip_prefix("<?xml") {
+        Some(rest) => rest.split_once("?>").map_or(rest, |(_, after)| after),
+        None => body,
+    };
+    let mut out = String::with_capacity(body.len());
+    let mut pending = String::new();
+    let mut after_tag = false;
+    for c in body.trim().chars() {
+        if after_tag && c.is_whitespace() {
+            pending.push(c);
+            continue;
+        }
+        if c != '<' {
+            out.push_str(&pending);
+        }
+        pending.clear();
+        after_tag = c == '>';
+        out.push(c);
+    }
+    out
+}
+
+#[test]
+fn the_pairing_qr_centre_is_the_compiled_in_master_not_a_drawing() {
+    let source =
+        std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/views/pairing.rs"))
+            .expect("src/views/pairing.rs is readable");
+    let code = strip_comments(&source);
+
+    assert!(
+        code.contains("widgets::brand_mark("),
+        "the pairing dialog no longer shows the compiled-in mark"
+    );
+    assert!(
+        code.contains("add_overlay(&centre_mark)"),
+        "the centre mark is not laid over the code"
+    );
+    // The QR is modules and a keep-out square: rectangles and nothing else.
+    // Any path, arc or gradient in this file is a mark being re-drawn.
+    for primitive in [
+        "move_to",
+        "line_to",
+        "curve_to",
+        "arc(",
+        "arc_negative",
+        "LinearGradient",
+        "RadialGradient",
+        "set_line_width",
+        "draw_ribbon",
+        "BRAND_GRADIENT",
+        "Pixbuf",
+        "omnibridge",
+    ] {
+        assert!(
+            !code.contains(primitive),
+            "pairing.rs uses {primitive:?}: the centre mark must be the \
+             master, not a drawing of it"
+        );
+    }
+
+    // `compile_resources` searches `data/` before the asset directory, so a
+    // file of the same name there would shadow the master unnoticed.
+    assert!(
+        !data().join("pliwee-mark.svg").exists(),
+        "data/pliwee-mark.svg would shadow the frozen master in the gresource"
+    );
+}
+
+#[test]
+fn the_compiled_in_centre_mark_is_the_frozen_master() {
+    use gtk::gio;
+    gio::resources_register_include!("pliwee.gresource").expect("the compiled-in resources load");
+    let compiled = gio::resources_lookup_data(
+        "/io/github/yurisismotto/pliwee/pliwee-mark.svg",
+        gio::ResourceLookupFlags::NONE,
+    )
+    .expect("the mark is compiled in under the application path");
+    let compiled = std::str::from_utf8(&compiled).expect("the compiled mark is UTF-8");
+    let master = read("pliwee-mark.svg");
+    assert!(
+        compiled.len() > 1000,
+        "the compiled mark is {} bytes: a comparison against it would be vacuous",
+        compiled.len()
+    );
+    assert_eq!(
+        stripblanks_normal_form(compiled),
+        stripblanks_normal_form(&master),
+        "the compiled-in pliwee-mark.svg is not the frozen master"
+    );
+}
+
+#[test]
+fn stripblanks_normal_form_changes_only_blanks_between_tags() {
+    assert_eq!(
+        stripblanks_normal_form("<?xml version=\"1.0\"?>\n<a>\n  <b x=\"1 2\">t u</b>\n</a>\n"),
+        "<a><b x=\"1 2\">t u</b></a>"
+    );
+    // A changed coordinate is still a difference.
+    assert_ne!(
+        stripblanks_normal_form("<p d=\"M1,2\"/>"),
+        stripblanks_normal_form("<p d=\"M1,3\"/>")
     );
 }

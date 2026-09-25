@@ -7,7 +7,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 /**
- * The OmniBridge type system.
+ * The Pliwee type system.
  *
  * ## Which face this actually renders in
  *
@@ -68,7 +68,7 @@ object PliweeType {
 }
 
 /**
- * The OmniBridge scale expressed as a Material 3 [Typography].
+ * The Pliwee scale expressed as a Material 3 [Typography].
  *
  * Material components are kept, not replaced, so anything drawn by Material3
  * inherits the brand scale without every call site having to pass a style.

@@ -58,7 +58,7 @@ data class NotificationApp(
  *
  * ## The one package that is never in the list
  *
- * OmniBridge's own. Not as a default and not as a filter the user can undo:
+ * Pliwee's own. Not as a default and not as a filter the user can undo:
  * [build] removes it, and the source drops its own package before any filter
  * runs anyway ([NotificationFilter.screen]), so selecting it would be inert
  * even if it could be selected. Two independent mechanisms, because this one

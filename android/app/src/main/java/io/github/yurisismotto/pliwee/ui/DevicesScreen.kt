@@ -45,6 +45,14 @@ import io.github.yurisismotto.pliwee.ui.theme.PliweeTheme
 import io.github.yurisismotto.pliwee.ui.theme.PliweeType
 
 /**
+ * The empty-state hint on Home. It names the command the Linux packages
+ * actually install ([PairingScanner.HOST_PAIR_COMMAND]).
+ */
+internal const val FIRST_DEVICE_HINT =
+    "Run `${PairingScanner.HOST_PAIR_COMMAND}` on your computer, then scan the code " +
+        "it shows. Nothing leaves your network."
+
+/**
  * Home: the computers this phone knows, and what can be done with them now.
  *
  * Anything waiting on a decision — an incoming file, a held clip — is placed
@@ -105,8 +113,7 @@ fun DevicesScreen(
             item {
                 PliweeEmptyState(
                     title = "Connect your first device",
-                    subtitle = "Run `omnibridge pair` on your computer, then scan the code " +
-                        "it shows. Nothing leaves your network.",
+                    subtitle = FIRST_DEVICE_HINT,
                     actionLabel = "Pair device",
                     onAction = actions.onPair,
                 )

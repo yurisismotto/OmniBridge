@@ -6,7 +6,7 @@ import androidx.compose.animation.core.Easing
 /**
  * Motion tokens.
  *
- * Movement in OmniBridge means flow: something travelling from one device to
+ * Movement in Pliwee means flow: something travelling from one device to
  * another. It is short, it eases, and it never loops for decoration alone.
  *
  * Every duration here is read through

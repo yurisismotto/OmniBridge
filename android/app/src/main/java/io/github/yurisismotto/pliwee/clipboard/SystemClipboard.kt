@@ -20,7 +20,7 @@ import android.util.Log
  * Since Android 10 (API 29), `getPrimaryClip` returns null unless the calling
  * app has input focus or is the default IME. That is a deliberate platform
  * decision — the clipboard routinely holds passwords and one-time codes — and
- * OmniBridge respects it. Specifically, this app does **not**:
+ * Pliwee respects it. Specifically, this app does **not**:
  *
  *  * declare an `AccessibilityService`;
  *  * ask to become the default IME;
@@ -30,13 +30,13 @@ import android.util.Log
  *  * poll in the background hoping to catch a moment of focus.
  *
  * The consequence is stated rather than hidden: reads happen only when the
- * person has OmniBridge in the foreground and asks for one. See
+ * person has Pliwee in the foreground and asks for one. See
  * [ClipboardCapabilities.AUTO_SEND_SUPPORTED].
  *
  * ## Writing is not restricted the same way
  *
  * `setPrimaryClip` has no focus requirement, so a clip received from a
- * computer can be applied while OmniBridge is in the background. That asymmetry
+ * computer can be applied while Pliwee is in the background. That asymmetry
  * is what makes automatic Fedora → Android sync possible while automatic
  * Android → Fedora sync is not. It is nonetheless verified on hardware rather
  * than assumed, and [ClipboardTarget.WriteResult] carries what actually happened so
@@ -62,7 +62,7 @@ class SystemClipboard(context: Context) : ClipboardTarget {
 
         // `getPrimaryClip` returns null for *two* different situations — the
         // clipboard is empty, and the read was refused — and telling a person
-        // "open OmniBridge and try again" when their clipboard is simply empty
+        // "open Pliwee and try again" when their clipboard is simply empty
         // sends them round a loop that cannot end. Observed on an SM-X620
         // running Android 16, which is why this asks twice.
         //
@@ -128,7 +128,7 @@ class SystemClipboard(context: Context) : ClipboardTarget {
      * Replaces the clipboard with text that came from another device.
      *
      * Two platform hints are set, and both are *presentation* hints — neither
-     * is enforcement and nothing in OmniBridge depends on either:
+     * is enforcement and nothing in Pliwee depends on either:
      *
      *  * `EXTRA_IS_REMOTE_DEVICE` (API 34+) tells the system this clip came
      *    from another device, which is what suppresses the "copied" toast

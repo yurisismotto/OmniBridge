@@ -15,6 +15,12 @@
 
 ### 1.1 B4 — the first Pliwee version: **1.1.0, provisional**
 
+> **Superseded 2026-09-25 (pre-Wave-8 remediation,
+> `feature/pliwee-rebrand-w8-remediation`).** The owner approved **1.1.0**
+> ([ADR-0020](../../adr/ADR-0020-rename-to-pliwee.md) amendment A1). The value
+> is no longer provisional. Nothing in the tree changed, because 1.1.0 is what
+> this wave wrote. The text below is the record as written.
+
 The plan makes B4 an owner decision "chosen at release time", and says it
 blocks the Wave 7 package bounds. The bounds cannot be written, and the upgrade
 cannot be measured at all, without a version above 1.0.0: with both at 1.0.0-1,
@@ -62,6 +68,11 @@ that need the alias enabled the old name before it existed. `packaging-checks.sh
 asserts that no `Alias=` line comes back.
 
 ### 1.3 The package transition: a **transitional `omnibridge` package**, not `Obsoletes:` on the core — a measured deviation from the plan's RPM line
+
+> **2026-09-25 (pre-Wave-8 remediation).** The owner approved this deviation.
+> It is recorded as [ADR-0020](../../adr/ADR-0020-rename-to-pliwee.md)
+> amendment A2, with the measurement below as its rationale. The text below is
+> unchanged.
 
 The plan writes the RPM transition as `Obsoletes: omnibridge < V` + `Provides:`.
 Measured with the real package managers on dummy packages carrying the same

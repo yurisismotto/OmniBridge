@@ -8,7 +8,7 @@
 # network stacks, which is why the guest is on macvtap over the wired NIC and
 # not on libvirt NAT.
 #
-# The one step that cannot be automated is pairing: OmniBridge pairs by
+# The one step that cannot be automated is pairing: Pliwee pairs by
 # scanning a QR code with the phone's camera, and the Android app has no
 # manual-entry path (checked: there is no text field and no deep link). This
 # script therefore renders the guest's pairing payload as a QR on the HOST's
@@ -28,7 +28,7 @@ HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DOMAIN=""; DISTRO=""; EVIDENCE=""; PHONE_IP=""; ADB_SERIAL=""; PAIR_TTL=240
 GUEST_USER="${GUEST_USER:-anyflow}"; GUEST_UID="${GUEST_UID:-1000}"
 APP_PKG="io.github.yurisismotto.pliwee"
-# The notification fixture, and NOT `com.android.shell`. OmniBridge's app
+# The notification fixture, and NOT `com.android.shell`. Pliwee's app
 # picker offers apps a person can open from their home screen, plus apps that
 # happen to be notifying right now -- and com.android.shell has no launcher
 # entry, so it is invisible in the picker until it is already notifying,
@@ -313,7 +313,7 @@ else
 OPERATOR ACTION REQUIRED — scan the pairing QR
 =========================================================
   Target machine   the HOST screen (Fedora 44) and the $phone_model tablet
-  What to do       the tablet's OmniBridge pairing scanner is ALREADY OPEN
+  What to do       the tablet's Pliwee pairing scanner is ALREADY OPEN
                    (verified: topResumedActivity is PairingCaptureActivity).
                    A QR has been opened on this screen in the image viewer.
                    Point the tablet's camera at it. If no window appeared,
@@ -421,7 +421,7 @@ fi
 # ---------------------------------------------------------------------------
 section "Configuring the phone for this guest"
 # ---------------------------------------------------------------------------
-# Pairing establishes trust; it grants nothing. OmniBridge negotiates the
+# Pairing establishes trust; it grants nothing. Pliwee negotiates the
 # INTERSECTION of both sides' per-capability grants, so a freshly paired peer
 # starts at whatever each end already allows -- measured on the first guest,
 # that was `capabilities=["battery.v1"]` and every capability gate below would
@@ -489,14 +489,14 @@ ensure_connected() {
 #
 # The approval string is read first and asserted to come back BYTE-IDENTICAL:
 # this setting is the operator's, it lists two other listeners that have
-# nothing to do with OmniBridge, and a run that widened or narrowed it would be
+# nothing to do with Pliwee, and a run that widened or narrowed it would be
 # changing the device it is certifying.
 rebind_listener() {
     local before after
     before="$("${ADB[@]}" shell settings get secure enabled_notification_listeners 2>/dev/null | tr -d '\r')"
     case "$before" in
         *"$APP_PKG"*) : ;;
-        *) abort "OmniBridge's notification listener is not approved on the phone; L16 cannot be measured" ;;
+        *) abort "Pliwee's notification listener is not approved on the phone; L16 cannot be measured" ;;
     esac
     printf '%s\n' "$before" | save "39-listener-approval-before.txt"
     "${ADB[@]}" shell cmd notification disallow_listener "$LISTENER" >/dev/null 2>&1
@@ -508,7 +508,7 @@ rebind_listener() {
         || abort "the phone's approved-listener list changed across the rebind; it must be restored exactly (before: $before / after: $after)"
     grep -q "ComponentInfo{$APP_PKG/$APP_PKG.notifications.PliweeNotificationListener}" \
         <<<"$("${ADB[@]}" shell dumpsys notification 2>/dev/null)" \
-        || abort "OmniBridge's notification listener is not among the live listeners after the rebind"
+        || abort "Pliwee's notification listener is not among the live listeners after the rebind"
     ok "the notification listener is bound again, and the approval list is byte-identical"
 }
 
@@ -744,7 +744,7 @@ else
 fi
 
 # Can this session read its own selection at all? That is a property of the
-# compositor, not of OmniBridge: GNOME implements neither wlr-data-control nor
+# compositor, not of Pliwee: GNOME implements neither wlr-data-control nor
 # ext-data-control, so no client can read a selection it does not own. The
 # daemon reports this itself, and the gate is classified from the product's own
 # contract rather than forced either way.

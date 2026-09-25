@@ -609,6 +609,17 @@ B5–B7 are execution choices inside their wave, not blockers of the plan.
 > **2026-09-24:** B1 and B2 are **resolved**. Wave 0 closed BRAND APPROVED at
 > `1ea65e6`, and the approved masters are in `docs/design/assets/`.
 
+> **2026-09-25 (pre-Wave-8 remediation, `feature/pliwee-rebrand-w8-remediation`):**
+> **B4 is resolved.** The owner approved **1.1.0** as the first Pliwee version.
+> That is the value Wave 7 had written into the tree provisionally
+> ([ADR-0020](../../adr/ADR-0020-rename-to-pliwee.md) amendment A1). The same
+> approval **supersedes the RPM half of Wave 7's "Package transition" row**
+> above: the core package moves through a transitional `omnibridge` 1.1.0, not
+> `Obsoletes: omnibridge < V` + `Provides:`, because the published 1.0.0
+> `%preun` disables and stops the daemon when the package is erased (ADR-0020
+> amendment A2; Wave 7 report §1.3). `omnibridge-gui` keeps the planned
+> `Obsoletes:` + `Provides:`. The row itself is left as written.
+
 ---
 
 ## 7. Recommended start

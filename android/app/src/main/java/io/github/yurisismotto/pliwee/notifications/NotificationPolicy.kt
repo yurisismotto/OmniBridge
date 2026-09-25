@@ -94,7 +94,7 @@ data class NotificationPolicy(
     /**
      * The packages this computer may receive. **Empty by default.**
      *
-     * OmniBridge's own package is not in this set and could not help if it were:
+     * Pliwee's own package is not in this set and could not help if it were:
      * the own-package rule is applied before the filter is consulted and there
      * is no setting that turns it off.
      */
@@ -120,7 +120,7 @@ data class NotificationPolicy(
      *
      * A listener in the personal profile receives work-profile notifications
      * unless the administrator blocks it. Mirroring an employer's data onto a
-     * personal machine is not a decision OmniBridge makes on someone's behalf,
+     * personal machine is not a decision Pliwee makes on someone's behalf,
      * and a user who shares "Slack" from their personal profile has not
      * thereby asked to share work Slack.
      */

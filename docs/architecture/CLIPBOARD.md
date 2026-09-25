@@ -15,7 +15,7 @@ wrong rather than merely optimistic. Android 10 and later refuse
 Android app cannot watch its own clipboard. Every technique that defeats that
 restriction — an `AccessibilityService`, becoming the default IME, an
 invisible focus-stealing activity, `READ_LOGS`, root — is either forbidden by
-Play policy, hostile to the user, or both. OmniBridge uses none of them and
+Play policy, hostile to the user, or both. Pliwee uses none of them and
 therefore does not have background clipboard reading on Android. See
 [Android's limitation](#the-android-limitation) below.
 
@@ -408,7 +408,7 @@ never appears in an `argv`, so there is no quoting to get wrong, nothing for a
 Fedora, Ubuntu and Debian alike. Its absence is detected once at startup and
 reported by `pliwee clipboard status`, rather than failing at the first use.
 The runtime message names the missing binaries and the package and stops
-there: OmniBridge does not know which package manager the machine has, and a
+there: Pliwee does not know which package manager the machine has, and a
 wrong guess is worse than none. Per-distribution install commands live in
 [the README](../../README.md#running-on-linux), where they can be correct.
 
@@ -426,7 +426,7 @@ the difference is not hypothetical:
 | Debian 13 trixie | `2.2.1-2` | yes | **no** |
 
 Note the second column: all four print the identical string `wl-clipboard
-2.2.1`, and they do not behave identically. **That is why OmniBridge probes
+2.2.1`, and they do not behave identically. **That is why Pliwee probes
 `wl-copy --help` for the option rather than parsing `--version`** — a `>= 2.3`
 version test would reject Fedora's working build and accept the three that
 cannot do it. The version number is offered to users as guidance for choosing
@@ -504,7 +504,7 @@ exactly that, rather than failing at the first call with a worse message.
 tests and this document all read.
 
 Since Android 10 (API 29), `getPrimaryClip` returns null unless the calling app
-has input focus or is the default IME. OmniBridge is a normal app. It does **not**:
+has input focus or is the default IME. Pliwee is a normal app. It does **not**:
 
 * declare an `AccessibilityService`;
 * ask to become the default IME;
@@ -566,7 +566,7 @@ it lands on their clipboard.
 ## Sensitive clipboards
 
 Android → desktop already requires a deliberate tap. When the platform marks a
-clip `EXTRA_IS_SENSITIVE`, OmniBridge asks **again**, naming the destination:
+clip `EXTRA_IS_SENSITIVE`, Pliwee asks **again**, naming the destination:
 
 ```text
 This clipboard is marked sensitive
@@ -649,7 +649,7 @@ every mutator now republishes.
 
 A `TileService` has no input focus — the panel belongs to System UI — so
 `getPrimaryClip` returns null inside `onClick`. The tile therefore does the one
-supported thing: it brings OmniBridge to the foreground with an explicit
+supported thing: it brings Pliwee to the foreground with an explicit
 `ACTION_SEND_CLIPBOARD`, and the Activity, which does have focus, reads the
 clipboard and shows the destination.
 

@@ -3,7 +3,7 @@ package io.github.yurisismotto.pliwee.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * OmniBridge colour tokens.
+ * Pliwee colour tokens.
  *
  * The canonical values live in `docs/design/tokens.json` and
  * [io.github.yurisismotto.pliwee.DesignTokensTest] reads that file and fails
@@ -90,7 +90,7 @@ object AccentOnDark {
  * The surface, text and accent tokens for one theme.
  *
  * Material's own [androidx.compose.material3.ColorScheme] carries what
- * Material components need. This carries what OmniBridge needs on top of it:
+ * Material components need. This carries what Pliwee needs on top of it:
  * a muted text tier, an explicit hairline border colour, and the accents
  * already corrected for the current theme so a call site never has to ask
  * which one it is in.

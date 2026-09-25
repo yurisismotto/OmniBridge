@@ -27,6 +27,16 @@
   <a href="#documentation">Documentation</a>
 </p>
 
+> **OmniBridge is being renamed Pliwee** ([ADR-0020](docs/adr/ADR-0020-rename-to-pliwee.md)).
+> *Note added 2026-09-25.* The **published** release is still OmniBridge
+> v1.0.0, and the install, verify and command-line sections below describe
+> that release as it was published. The **source tree** on this branch
+> already builds Pliwee 1.1.0 (not yet released): the binaries are `pliwee`,
+> `pliweed` and `pliwee-gui`, the user unit is `pliweed.service`, and received
+> files go to `<XDG downloads>/Pliwee`. *Build from source* and *Repository
+> layout* describe the tree. Release URLs and the verification key move when
+> Pliwee is published.
+
 ## Install OmniBridge
 
 OmniBridge for Linux is distributed as packages attached to its
@@ -389,16 +399,16 @@ sudo apt install wl-clipboard                    # clipboard, at runtime
 sudo apt install upower                          # battery.v1, optional
 ```
 
-The package names differ; the runtime binary OmniBridge actually looks for is
+The package names differ; the runtime binary Pliwee actually looks for is
 called `wl-copy` on all of them, and the package carrying it is called
 `wl-clipboard` on all of them.
 
 ### The Rust toolchain, per distribution
 
-**OmniBridge requires Rust ≥ 1.88.** That number is not a preference: the
+**Pliwee requires Rust ≥ 1.88.** That number is not a preference: the
 committed `Cargo.lock` contains crates (`time`, `rcgen`, `zbus`) that declare
 it, so an older toolchain fails in Cargo's resolver before compiling a line of
-OmniBridge. The distribution's own `rustc` package is **not** required — it is
+Pliwee. The distribution's own `rustc` package is **not** required — it is
 simply the most convenient source when it is new enough.
 
 | Distribution | Its default `rustc` | Enough? | What to use |
@@ -415,7 +425,7 @@ cd desktop
 cargo build --release
 cargo test --workspace          # 981 tests
 
-./target/release/omnibridged   # foreground, or install the user unit
+./target/release/pliweed       # foreground, or install the user unit
 ```
 
 As a service. The unit is a **user** unit — the identity key lives 0600 in
@@ -424,9 +434,9 @@ nothing here wants root. It is distribution-neutral and lives in
 `packaging/common/`, which is the one copy every package format installs:
 
 ```bash
-install -Dm0644 packaging/common/omnibridged.service \
-    ~/.config/systemd/user/omnibridged.service
-systemctl --user enable --now omnibridged.service
+install -Dm0644 packaging/common/pliweed.service \
+    ~/.config/systemd/user/pliweed.service
+systemctl --user enable --now pliweed.service
 ```
 
 Building the packages themselves is described in
@@ -440,6 +450,10 @@ Needs JDK 21 and Android SDK platform 35. See
 `cd android && ./gradlew :app:assembleDebug`.
 
 ## Command-line reference
+
+These are the commands of the published OmniBridge v1.0.0. In a build of this
+source tree the command is `pliwee` (for example `pliwee pair`), the daemon is
+`pliweed`, and received files land in `<XDG downloads>/Pliwee`.
 
 ```bash
 omnibridge status              # identity, port, capabilities, live connections
@@ -640,16 +654,16 @@ omnibridge/
 │   ├── capabilities/files/    files.v1 — transfers, filename safety, stream auth
 │   ├── capabilities/clipboard/ clipboard.v1 — text rules, policy, loop suppression
 │   ├── capabilities/notifications/ notifications.v1 — mirror, roles, redaction
-│   ├── daemon/                omnibridged
-│   ├── cli/                   omnibridge
-│   └── gui/                   omnibridge-gui — GTK4 / libadwaita
+│   ├── daemon/                pliweed
+│   ├── cli/                   pliwee
+│   └── gui/                   pliwee-gui — GTK4 / libadwaita
 ├── android/                   Kotlin + Compose app
 ├── browser-extension/         (placeholder)
 ├── packaging/common/          the systemd user unit and the cargo vendor config
 ├── packaging/fedora/          RPM spec, firewalld service
 ├── packaging/debian/          debhelper packaging for Debian and Ubuntu
 └── docs/                      see docs/README.md for the full taxonomy
-    ├── adr/                   ADR-0001 … ADR-0018
+    ├── adr/                   ADR-0001 … ADR-0020
     ├── architecture/          OVERVIEW.md, PROTOCOL.md, FILES.md, CLIPBOARD.md, NOTIFICATIONS.md
     ├── design/                BRAND.md, UI-GUIDELINES.md, tokens.json, assets/
     ├── security/              THREAT_MODEL.md
@@ -657,7 +671,7 @@ omnibridge/
     ├── audits/                readiness and gap analyses, by area
     ├── certification/         PASS/FAIL gates and their evidence, by area
     ├── reports/               sprint and hardening reports, by area
-    └── migrations/            AnyFlow → OmniBridge
+    └── migrations/            AnyFlow → OmniBridge (and, when published, OmniBridge → Pliwee)
 ```
 
 Root Markdown is limited to this file and

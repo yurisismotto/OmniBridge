@@ -224,7 +224,7 @@ async fn closing_an_unknown_id_is_a_success() {
     // GNOME answers nothing at all; a spec-literal server answers an error.
     // Both mean "the notification is gone", which is what was asked for, so
     // the sink reports success either way. This is the assertion that keeps
-    // OmniBridge from logging a failure on every dismissal against dunst or mako.
+    // Pliwee from logging a failure on every dismissal against dunst or mako.
     sink.close(4_294_967_000)
         .await
         .expect("closing an id that never existed is a success");
@@ -315,7 +315,7 @@ async fn the_real_session_can_report_human_dismissals() {
     eprintln!("capabilities: {:?}", sink.capabilities());
     assert!(
         sink.capabilities().dismiss_reporting,
-        "this session cannot observe NotificationClosed, so OmniBridge will \
+        "this session cannot observe NotificationClosed, so Pliwee will \
          announce no DISMISS_REPORTER role and dismissal sync will correctly \
          report itself unavailable"
     );

@@ -105,8 +105,9 @@
   </recommends>
 
   <releases>
-    <!-- The first Pliwee version (rebrand plan, decision B4). Marked
-         "development" until it is published in Wave 10. -->
+    <!-- The first Pliwee version (rebrand plan, decision B4; approved by the
+         owner on 2026-09-25, ADR-0020 amendment A1). Marked "development"
+         until it is published in Wave 10. -->
     <release version="1.1.0" date="2026-09-25" type="development">
       <description>
         <p>OmniBridge is now Pliwee. Pairings, grants and the device identity carry over from OmniBridge 1.0.0.</p>

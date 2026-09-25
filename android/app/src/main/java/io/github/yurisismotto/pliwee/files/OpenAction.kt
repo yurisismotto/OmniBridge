@@ -34,13 +34,13 @@ package io.github.yurisismotto.pliwee.files
  *    true.
  *
  * [Available] means "structurally openable" — the transfer really succeeded
- * and OmniBridge really retained something to open. That is exactly the
+ * and Pliwee really retained something to open. That is exactly the
  * condition the brief asks the button to be drawn on.
  */
 sealed interface OpenAction {
 
     /**
-     * There is a file, and OmniBridge still holds a way to reach it.
+     * There is a file, and Pliwee still holds a way to reach it.
      *
      * Not a promise that the tap will succeed: nothing can promise that
      * across the gap between drawing a button and someone pressing it. It is
@@ -49,7 +49,7 @@ sealed interface OpenAction {
     data object Available : OpenAction
 
     /**
-     * Outgoing only. OmniBridge no longer holds a read grant for the file it
+     * Outgoing only. Pliwee no longer holds a read grant for the file it
      * sent, so it cannot open it and must not pretend otherwise.
      *
      * This is the *normal* end state for a share-sheet send, not an error:
@@ -93,7 +93,7 @@ object FilesOpen {
      * @param sending which direction this transfer ran in.
      * @param state where the state machine left it. Only [TransferState.COMPLETED]
      *   is a success; nothing infers one from bytes moved or a file existing.
-     * @param hasTarget whether OmniBridge retained anything to open at all — the
+     * @param hasTarget whether Pliwee retained anything to open at all — the
      *   published MediaStore item for a received file, the shared source URI
      *   for a sent one.
      * @param accessLost whether a check has since *proved* the target

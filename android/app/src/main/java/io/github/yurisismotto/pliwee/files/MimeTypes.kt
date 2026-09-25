@@ -27,7 +27,7 @@ package io.github.yurisismotto.pliwee.files
  * It does not sniff content, and it does not decide whether a file is safe.
  * "It ends in .apk" is not a security control and neither is "it ends in
  * .txt": Android's own installer consent is what guards an install, and
- * duplicating that judgement here would only make OmniBridge's version of it the
+ * duplicating that judgement here would only make Pliwee's version of it the
  * one that is wrong. Opening means handing the URI to the platform's ordinary
  * app resolution and letting the platform ask.
  */

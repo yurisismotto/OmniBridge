@@ -79,7 +79,7 @@ import io.github.yurisismotto.pliwee.ui.theme.MinTouchTarget
  *
  * [NotificationApps.build] merges three sources — applications with a launcher
  * entry, applications currently in the notification shade, and applications
- * already chosen — and drops OmniBridge's own package. See
+ * already chosen — and drops Pliwee's own package. See
  * [io.github.yurisismotto.pliwee.notifications.InstalledApps] for why none of
  * that needs `QUERY_ALL_PACKAGES`.
  *

@@ -157,8 +157,8 @@ else
     pre="$(gx 'rpm -q --qf "%{NAME}\n" pliwee pliwee-gui 2>/dev/null | grep -c "^pliwee" || true')"
 fi
 [ "${pre//[[:space:]]/}" = "0" ] \
-    || abort "OmniBridge is already installed in the guest ($pre package(s)) — L1 cannot measure a clean install"
-ok "no OmniBridge package is installed in the guest (clean-install precondition)"
+    || abort "Pliwee is already installed in the guest ($pre package(s)) — L1 cannot measure a clean install"
+ok "no Pliwee package is installed in the guest (clean-install precondition)"
 
 # A graphical session must exist, or L3/L6/L9/L19 measure nothing.
 sessions="$(gx "loginctl list-sessions --no-legend 2>/dev/null | grep -c ' $GUEST_USER ' || true")"
@@ -534,7 +534,7 @@ if [ "${watcher:-0}" -ge 1 ] 2>/dev/null; then
     ok "L9: a StatusNotifierWatcher is present on the session bus (a tray host exists)"
     [ "${sni:-0}" -ge 1 ] 2>/dev/null \
         && ok "L9: ${sni} StatusNotifierItem registered" \
-        || notok "L9: a tray host is present but OmniBridge registered no StatusNotifierItem"
+        || notok "L9: a tray host is present but Pliwee registered no StatusNotifierItem"
 else
     ok "L9: no StatusNotifierWatcher — this desktop has no tray host, which is the documented GNOME case"
     daemon_ok="$(gx 'pgrep -c -x pliweed || true' | tr -d '[:space:]')"
@@ -551,8 +551,8 @@ else
     owns_ext="$(gx 'rpm -qf /usr/share/gnome-shell/extensions 2>/dev/null | grep -c pliwee || true' | tr -d '[:space:]')"
 fi
 [ "${owns_ext:-0}" = "0" ] \
-    && ok "L9: no OmniBridge package owns a GNOME Shell extension (appindicator present on system: ${ext:-0})" \
-    || notok "L9: an OmniBridge package owns a GNOME Shell extension path"
+    && ok "L9: no Pliwee package owns a GNOME Shell extension (appindicator present on system: ${ext:-0})" \
+    || notok "L9: a Pliwee package owns a GNOME Shell extension path"
 
 # ---------------------------------------------------------------------------
 section "L10 — mDNS advertisement"
@@ -830,7 +830,7 @@ fi
 # L26 — nothing in the user's state may be root-owned, on any path taken above.
 foreign="$(gx "find $STATE_DIR /home/$GUEST_USER/Downloads/Pliwee /run/user/$GUEST_UID/pliwee ! -user $GUEST_USER 2>/dev/null | head -20" || true)"
 [ -z "${foreign//[[:space:]]/}" ] \
-    && ok "L26: no file in the user's OmniBridge state is owned by anyone but $GUEST_USER" \
+    && ok "L26: no file in the user's Pliwee state is owned by anyone but $GUEST_USER" \
     || notok "L26: $(printf '%s\n' "$foreign" | grep -c .) path(s) in the user's state are not owned by $GUEST_USER"
 printf '%s\n' "${foreign:-<none>}" | save "25-L26-foreign-owned.txt"
 

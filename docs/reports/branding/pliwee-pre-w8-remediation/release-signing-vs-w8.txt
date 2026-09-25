@@ -1,0 +1,34 @@
+# release-signing-tests.sh: the failed-G8 run (W8 E7, recovered from its evidence) vs this remediation, check by check (first 90 chars; ephemeral key ids and temp-dir names differ per run)
+$ diff <(W8 E7 ok/not-ok lines) <(this run ok/not-ok lines)
+1c1
+< ok    two ephemeral test keys exist, 28773A9DFE7578DAB3A9B1C6D970D17517C78C7E and 78D3FDF3
+---
+> ok    two ephemeral test keys exist, DF772E6C14E992D59385B9366A9FD3813FCEC64E and 2AF004AC
+21c21
+< ok    a good signature by an unexpected fingerprint: rejected — the signature is by 28773A
+---
+> ok    a good signature by an unexpected fingerprint: rejected — the signature is by DF772E
+28c28,37
+< not ok  a key-shaped file is committed to the repository: android/signing/certs/legacy-omn
+---
+> ok    no .gpg/.asc/.key file is committed to the repository
+> ok    pem control: a real public X.509 certificate is accepted
+> ok    pem control: private-pkcs8.pem is rejected (private/secret key-shaped content)
+> ok    pem control: private-ec.pem is rejected (private/secret key-shaped content)
+> ok    pem control: private-encrypted.pem is rejected (private/secret key-shaped content)
+> ok    pem control: cert-plus-key.pem is rejected (private/secret key-shaped content)
+> ok    pem control: key-relabelled.pem is rejected (a CERTIFICATE block does not parse as X
+> ok    pem control: cert-plus-text.pem is rejected (content outside the certificate blocks)
+> ok    pem control: the tracked-tree armour scanner finds all three PEM private-key forms a
+> ok    every tracked .pem (2) is a public X.509 certificate and nothing else: android/signi
+37c46
+< ok    certify-only master CA5EE126FD4234DDA44B183547412B3FFA3D481F with signing subkey DFD
+---
+> ok    certify-only master C6315A198CFF7B6412BF28D058531F1C2D83F83E with signing subkey 058
+40c49
+< ok    gpg pre-generated a revocation certificate at openpgp-revocs.d/CA5EE126FD4234DDA44B1
+---
+> ok    gpg pre-generated a revocation certificate at openpgp-revocs.d/C6315A198CFF7B6412BF2
+
+W8 E7 summary: 61 passed, 1 failed
+this run:      71 passed, 0 failed

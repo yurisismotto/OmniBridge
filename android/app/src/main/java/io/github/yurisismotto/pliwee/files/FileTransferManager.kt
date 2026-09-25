@@ -158,7 +158,7 @@ class FileTransferManager(
         /** Peer-supplied for an incoming file; the provider's for an outgoing one. */
         val mimeType: String = "",
         /**
-         * Whether OmniBridge still holds something it could open.
+         * Whether Pliwee still holds something it could open.
          *
          * Structural only — that a target was retained, not that it still
          * resolves. [resolveOpen] is what asks the platform.
@@ -759,7 +759,7 @@ class FileTransferManager(
         // app could see and that `finish` would have deleted, and offering to
         // open unverified bytes is the thing IS_PENDING exists to prevent.
         //
-        // Keeping it is not a new permission. OmniBridge inserted this row, so
+        // Keeping it is not a new permission. Pliwee inserted this row, so
         // MediaStore already lets it read the item back; nothing is granted
         // here that was not true while the bytes were being written.
         transfer.openUri = pending.uri
@@ -826,14 +826,14 @@ class FileTransferManager(
      * ## The two checks are deliberately different
      *
      * *Sending* asks `checkUriPermission`, because the question is about a
-     * **grant**: the file belongs to another app and OmniBridge's access to it
+     * **grant**: the file belongs to another app and Pliwee's access to it
      * has a lifetime it does not control. This is the check that must never
      * be skipped, and the failure it reports is
      * [OpenAction.SourceUnavailable] — not "file missing", because the file
-     * is almost certainly still there and OmniBridge simply may not look at it.
+     * is almost certainly still there and Pliwee simply may not look at it.
      *
      * *Receiving* asks MediaStore whether the item still exists, because
-     * OmniBridge inserted that row and needs no grant to read it. The only way
+     * Pliwee inserted that row and needs no grant to read it. The only way
      * it goes away is that somebody deleted the file, which is
      * [OpenAction.FileMissing].
      *

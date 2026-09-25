@@ -34,7 +34,7 @@ enum class NotificationReadiness {
     SHARING_OFF,
 
     /**
-     * Sharing is on, but Android has not given OmniBridge notification access.
+     * Sharing is on, but Android has not given Pliwee notification access.
      *
      * The fix is in Settings, not here, and the screen offers the way there.
      */
@@ -120,7 +120,7 @@ enum class NotificationReadiness {
  */
 enum class NotificationDismissReadiness {
     /**
-     * Android has not given OmniBridge notification access, so this phone could
+     * Android has not given Pliwee notification access, so this phone could
      * not act on a dismissal even if it were switched on.
      *
      * First, because it is the gate that makes every other one moot, and

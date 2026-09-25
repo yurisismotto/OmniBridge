@@ -75,7 +75,7 @@ impl FakeWatcher {
     /// The real implementation reads a leading `/` as an object path and takes
     /// the service from the sender; anything else is a bus name and the path
     /// is `/StatusNotifierItem`. Both branches are here so that a change in
-    /// what OmniBridge sends is visible.
+    /// what Pliwee sends is visible.
     async fn register_status_notifier_item(
         &self,
         service: String,
@@ -345,7 +345,7 @@ async fn d5_a_shell_that_comes_back_gets_exactly_one_new_registration() {
     let (_watcher2, second) = start_watcher(&bus).await;
     until("the second registration", || second.count() == 1).await;
 
-    // One, and it stays one: a shell restart must not leave two OmniBridge icons
+    // One, and it stays one: a shell restart must not leave two Pliwee icons
     // behind.
     stays(
         "exactly one registration",
@@ -410,7 +410,7 @@ async fn d6_the_watcher_sees_exactly_one_pliwee_item() {
         .get_property("RegisteredStatusNotifierItems")
         .await
         .expect("RegisteredStatusNotifierItems");
-    assert_eq!(items.len(), 1, "more than one OmniBridge item: {items:?}");
+    assert_eq!(items.len(), 1, "more than one Pliwee item: {items:?}");
 
     // And the item's name says which process it belongs to, exactly as KDE's
     // own client names its items.

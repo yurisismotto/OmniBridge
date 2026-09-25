@@ -546,7 +546,7 @@ object UiMapping {
     /**
      * Said when the clipboard is empty.
      *
-     * Deliberately not "OmniBridge could not read your clipboard": Android
+     * Deliberately not "Pliwee could not read your clipboard": Android
      * only permits a clipboard read while the app has focus, this screen has
      * already taken its one chance, and implying that a retry might work
      * would be inviting the person to do something that cannot help.

@@ -110,7 +110,7 @@ enum NotificationImportance {
 // notification from an ungranted peer is still refused; a SECRET one from a
 // granted peer is still governed by local policy.
 //
-// OmniBridge never tries to detect sensitive content itself: no OTP regex, no
+// Pliwee never tries to detect sensitive content itself: no OTP regex, no
 // keyword list, no "looks like a bank" heuristic. On the certification
 // hardware the platform's own OTP redaction did not fire at all
 // (POC-NOTIF-01), so no rule here may assume the platform protects us.
@@ -156,7 +156,7 @@ message Progress {
 
 // The current state of one notification identity.
 //
-// POSTED AND UPDATED ARE THE SAME MESSAGE. No platform OmniBridge targets has a
+// POSTED AND UPDATED ARE THE SAME MESSAGE. No platform Pliwee targets has a
 // separate "update" operation: `onNotificationPosted` fires for both and the
 // key is identical; freedesktop `Notify` with `replaces_id` is the same
 // method; re-adding a macOS request with the same identifier replaces it.
@@ -172,11 +172,17 @@ message NotificationUpsert {
   //
   // Derived at the source as
   //   HMAC-SHA256(device_notification_secret,
-  //               "omnibridge/notifications.v1/id/v1" || len32(key) || key)[0..16]
+  //               "pliwee/notifications.v1/id/v1" || len32(key) || key)[0..16]
   // where `key` is the platform's own notification key. The RAW ANDROID KEY
   // IS NEVER TRANSMITTED: it is `userId|pkg|id|tag|uid` and would ship a
   // profile id and an install-specific uid to a desktop that never needed
   // either. See ADR-0016.
+  //
+  // The domain is canonical on every wire profile: the value is computed on
+  // the source device alone and is opaque to the sink, so there is no legacy
+  // OmniBridge form (`omnibridge/notifications.v1/id/v1` was the OmniBridge
+  // 1.0.0 build's domain and is not computed or accepted by Pliwee; ADR-0020
+  // D4). The same holds for the group and content digests below.
   //
   // The derivation belongs to the source platform adapter, because it needs
   // that device's secret. This schema defines only the type, the width and
@@ -227,7 +233,7 @@ message NotificationUpsert {
   bool dismissible = 13;
 
   // Opaque 8-byte digest of the source's group key:
-  //   SHA-256("omnibridge/notifications.v1/group/v1" || len32(gk) || gk)[0..8]
+  //   SHA-256("pliwee/notifications.v1/group/v1" || len32(gk) || gk)[0..8]
   // Groups mirrored notifications without revealing the platform group
   // string, which embeds the package and app-internal identifiers.
   // Absent = ungrouped. Exactly 8 bytes when present.

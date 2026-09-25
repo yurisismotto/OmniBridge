@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Locate controls in an Android view hierarchy dumped by `uiautomator dump`.
 
-The peer gates drive the OmniBridge app over adb. Fixed tap coordinates do not
+The peer gates drive the Pliwee app over adb. Fixed tap coordinates do not
 survive a screen that scrolls, a peer list that grows, or a device with a
 different resolution -- and a tap that lands on nothing looks exactly like a
 tap that worked. Every control is therefore located by its label in the live

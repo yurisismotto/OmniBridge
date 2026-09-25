@@ -28,7 +28,7 @@ import io.github.yurisismotto.pliwee.ui.theme.PliweeType
  *
  * Android's `EXTRA_IS_SENSITIVE` is a hint from whichever app produced the
  * clip — a password manager sets it. It is not an access control and nothing
- * in OmniBridge depends on it. What it earns is this: one more deliberate act
+ * in Pliwee depends on it. What it earns is this: one more deliberate act
  * before a password leaves the device, with the destination named, so
  * "Send clipboard" cannot become a one-tap exfiltration of a credential the
  * person forgot was there.

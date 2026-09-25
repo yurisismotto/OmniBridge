@@ -1,0 +1,184 @@
+# 2026-09-25T10:34:21-03:00 HEAD=6723e760ef0c87816a43f302062675d20061d205 (working tree: the pre-W8 remediation, uncommitted)
+$ python3 docs/reports/branding/pliwee-pre-w8-remediation/remainder_census.py --list N
+category                                                                   files  lines    occ
+H  historical / rebrand record (ADR-0020 D7)                                 170   3808   4836
+W10 pre-migration public value (P1; owned by W9/W10)                          14    158    182
+L1 legacy wire profile (D4, W5)                                               50    177    212
+L2 legacy state paths and their migration (D9, W4)                            23     71     78
+L3 legacy systemd unit name, alias (W7)                                       12     58     64
+L4 legacy firewalld service, kept (W7)                                         8     23     27
+L5 legacy package names, transition and bounds (W7)                           20    131    149
+L6 retired app ids, removed or refused by name (W6/W7)                        11     15     17
+L7 retired Android signing identity (D3, W6)                                   7     29     35
+L8 retired OmniBridge artwork, unused (W7)                                     3     52     69
+L9 G7-UP / transition harness driving the real OmniBridge 1.0.0 (W7)           1     73     94
+T1 negative / dead-list / near-miss test value                                21     35     37
+T2 test fixture, sentinel or certification-guest name                         20    103    108
+Q  measured transcript or historical fact quoted in a comment                  2      2      2
+N  transition notice or rename documentation (intentional)                    51    147    158
+P  product noun in developer-only prose (comment / living tech doc)            0      0      0
+O  open cleanup: developer-only name a wave deferred to W8 (non-blocking)      0      0      0
+D  DEFECT: stale user-visible or normative text (blocking)                     0      0      0
+?  UNEXPLAINED                                                                 0      0      0
+TOTAL (unique files)                                                         303   4882   6068
+independent count (LC_ALL=C grep -aoi): 6068 occurrences
+
+file names containing omnibridge: 18
+  H  historical / rebrand record (ADR-0020 D7)                                 9
+  L4 legacy firewalld service, kept (W7)                                       1
+  L7 retired Android signing identity (D3, W6)                                 2
+  L8 retired OmniBridge artwork, unused (W7)                                   6
+  ?  UNEXPLAINED                                                               0
+independent name count (git ls-files | grep -ci): 18
+
+== listing N  transition notice or rename documentation (intentional)
+   .github/workflows/release-artifacts.yml:22: # are in packaging/common/README.md, "Upgrading from OmniBridge".   [Upgrading from OmniBridge|upgrading-from]
+   android/README.md:16: This is a new app, not an update of the never-distributed OmniBridge build   [Upgrading from OmniBridge|upgrading-from]
+   android/README.md:19: the desktop meets the phone as a new device. An OmniBridge app left on a test   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/AndroidManifest.xml:143: and the manifest merger imported that verbatim, because OmniBridge had   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/java/io/github/yurisismotto/pliwee/identity/DeviceIdentity.kt:64: * (ADR-0020 §D1), as it did for OmniBridge (ADR-0018). It is not a   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/java/io/github/yurisismotto/pliwee/net/Discovery.kt:219: * legacy type alone is an OmniBridge 1.0.0 daemon.   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/java/io/github/yurisismotto/pliwee/net/PeerProfiles.kt:11: * an OmniBridge 1.0.0 desktop that is later upgraded to Pliwee is dialled   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/java/io/github/yurisismotto/pliwee/net/PinnedTrustManager.kt:126: /** Control ALPN of the legacy OmniBridge profile (ADR-0020 §D4). */   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/java/io/github/yurisismotto/pliwee/net/PinnedTrustManager.kt:140: /** Data ALPN of the legacy OmniBridge profile. */   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/java/io/github/yurisismotto/pliwee/net/WireProfile.kt:7: * identifiers; through the v1.x line it also speaks the OmniBridge ones, so   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/java/io/github/yurisismotto/pliwee/net/WireProfile.kt:8: * this app can still discover, pair with and use an un-upgraded OmniBridge   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/java/io/github/yurisismotto/pliwee/net/WireProfile.kt:51: * Legacy acceptance path for OmniBridge 1.0.0 desktops. Removing it is a   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/java/io/github/yurisismotto/pliwee/pairing/PairingProof.kt:27: * `pliwee/pairing-proof/v1`, or on a connection to an OmniBridge 1.0.0   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/main/java/io/github/yurisismotto/pliwee/pairing/QrPayload.kt:58: /** The scheme an OmniBridge 1.0.0 desktop shows. Accepted, never emitted. */   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/test/java/io/github/yurisismotto/pliwee/BatteryGrantTest.kt:18: * had *negotiated* `battery.v1` — which is every OmniBridge desktop — and the   [account of a defect fixed in the OmniBridge era]
+   android/app/src/test/java/io/github/yurisismotto/pliwee/WireIdentityTest.kt:41: * OmniBridge values are both pinned, side by side, so neither can drift.   [Upgrading from OmniBridge|upgrading-from]
+   android/app/src/test/java/io/github/yurisismotto/pliwee/WireIdentityTest.kt:43: * OmniBridge values were recorded in ADR-0018, the Pliwee values in ADR-0020.   [Upgrading from OmniBridge|upgrading-from]
+   desktop/capabilities/files/src/destination.rs:21: //! …then [`DOWNLOAD_SUBDIR`] (`Pliwee/`) underneath. The `OmniBridge/`   [the legacy download folder (D9)]
+   desktop/capabilities/files/src/destination.rs:51: /// Where OmniBridge put received files. Never written, moved or deleted: only   [the legacy download folder (D9)]
+   desktop/core/src/identity.rs:47: /// OmniBridge has always shipped, and the only one Wave 0 ships. It holds the   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/identity.rs:264: /// A PKCS#8 key in a file this process can read. Everything OmniBridge has   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/identity.rs:653: /// Wave 0's only implementation, and the one every OmniBridge install in the   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/lib.rs:50: /// Control-session ALPN of the legacy OmniBridge profile. Accepted through   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/lib.rs:67: /// Data-stream ALPN of the legacy OmniBridge profile.   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/lib.rs:73: /// DNS-SD service type of the legacy OmniBridge profile. The daemon   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/lib.rs:74: /// advertises one instance under both types, so an un-upgraded OmniBridge   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/platform/unix_fs.rs:3: //! Everything OmniBridge has always done, moved behind the trait and with the   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/platform/unix_fs.rs:219: /// requires. The Linux adapter resolves the Pliwee and the legacy OmniBridge   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/platform/unix_fs.rs:239: /// here, the Linux adapter's `legacy_migration` decides whether an OmniBridge   [legacy state migration (D9)]
+   desktop/core/src/profile.rs:4: //! Pliwee v1.x line it also accepts the OmniBridge identifiers, so that an   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/profile.rs:5: //! un-upgraded OmniBridge 1.0.0 peer keeps working. Which set a connection   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/profile.rs:25: /// Legacy acceptance path for OmniBridge 1.0.0 peers. Removing it is a   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/qr.rs:12: //! OmniBridge build cannot scan a `pliwee1:` code; that is unsupported by   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/src/qr.rs:42: /// The legacy OmniBridge scheme. Parsed, never emitted.   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/tests/wire_identity.rs:17: //! the same commit — which is exactly the reviewable event the OmniBridge   [history of the OmniBridge rename]
+   desktop/core/tests/wire_identity.rs:24: //! the OmniBridge ones as a legacy profile. **Both** sets are pinned here, side   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/tests/wire_identity.rs:28: //! The OmniBridge values were recorded in ADR-0018; the Pliwee values in   [Upgrading from OmniBridge|upgrading-from]
+   desktop/core/tests/wire_identity.rs:288: /// A server that speaks only the legacy profile — the shape of an OmniBridge   [legacy profile server (D4)]
+   desktop/daemon/tests/legacy_state_migration.rs:2: //! OmniBridge state exists (ADR-0020 D9/D12; implementation plan, Wave 4).   [legacy state migration test (D9/D12)]
+   desktop/daemon/tests/legacy_state_migration.rs:10: //! The legacy state here is written by `Store::open`, the code path OmniBridge   [legacy state migration test]
+   desktop/daemon/tests/legacy_state_migration.rs:167: /// What OmniBridge 1.0.0 would have left behind: an identity, a granted peer   [Upgrading from OmniBridge|upgrading-from]
+   desktop/daemon/tests/legacy_state_migration.rs:258: /// The Wave 4 integration gate on state captured from a **real** OmniBridge   [legacy state migration test]
+   desktop/daemon/tests/legacy_state_migration.rs:271: #[ignore = "needs state captured from a real OmniBridge 1.0.0 install"]   [Upgrading from OmniBridge|upgrading-from]
+   desktop/gui/data/io.github.yurisismotto.pliwee.desktop:20: # name — measured under Xwayland (on the OmniBridge build; GTK derives it from   [Upgrading from OmniBridge|upgrading-from]
+   desktop/gui/data/io.github.yurisismotto.pliwee.metainfo.xml:26: <replaces> names the OmniBridge 1.0.0 component id. The product was renamed   [Upgrading from OmniBridge|upgrading-from]
+   desktop/gui/data/io.github.yurisismotto.pliwee.metainfo.xml:27: (ADR-0020), so a software centre that listed OmniBridge should treat this   [AppStream transition comment]
+   desktop/gui/data/io.github.yurisismotto.pliwee.metainfo.xml:29: URLs still point at the OmniBridge repository: they move with the   [W10-owned URLs, explained]
+   desktop/gui/data/io.github.yurisismotto.pliwee.metainfo.xml:113: <p>OmniBridge is now Pliwee. Pairings, grants and the device identity carry over from OmniBridge 1.0.0.</p>   [AppStream release note]
+   desktop/gui/data/io.github.yurisismotto.pliwee.service.in:12: # rather than assumed (on the OmniBridge build, under its names at the time):   [Upgrading from OmniBridge|upgrading-from]
+   desktop/gui/data/io.github.yurisismotto.pliwee.service.in:14: #     $ pkill -x omnibridge-gui   [measured transcript on the OmniBridge build]
+   desktop/gui/data/io.github.yurisismotto.pliwee.service.in:16: #           --object-path /io/github/yurisismotto/omnibridge \   [measured transcript on the OmniBridge build]
+   desktop/gui/data/io.github.yurisismotto.pliwee.service.in:39: # the activation message that is already on its way. Measured on the OmniBridge   [measured transcript on the OmniBridge build]
+   desktop/gui/data/io.github.yurisismotto.pliwee.service.in:40: # build (then named omnibridge-gui): the process owns its application id,   [measured transcript on the OmniBridge build]
+   desktop/gui/src/selection.rs:85: /// Loads the choice from the default location, carrying an OmniBridge   [legacy gui.json migration (D9)]
+   desktop/gui/tools/install-desktop-metadata.sh:43: #   ./install-desktop-metadata.sh --uninstall         # ...and the OmniBridge files   [Upgrading from OmniBridge|upgrading-from]
+   desktop/gui/tools/install-desktop-metadata.sh:52: # Upgrading a development install from OmniBridge   [legacy dev-install removal]
+   desktop/gui/tools/install-desktop-metadata.sh:55: # The application id changed with the rename (ADR-0020): an OmniBridge   [legacy dev-install removal]
+   desktop/gui/tools/install-desktop-metadata.sh:70: # The OmniBridge 1.0.0 id. Only ever used to remove a development install   [Upgrading from OmniBridge|upgrading-from]
+   desktop/gui/tools/install-desktop-metadata.sh:71: # made from an OmniBridge checkout; nothing is installed under it.   [Upgrading from OmniBridge|upgrading-from]
+   desktop/gui/tools/install-desktop-metadata.sh:126: # Every file an OmniBridge checkout's copy of this script could have   [Upgrading from OmniBridge|upgrading-from]
+   desktop/platform-linux/src/activation.rs:469: // OmniBridge 1.0.0 id: a stale service file an upgrade left behind must   [Upgrading from OmniBridge|upgrading-from]
+   desktop/platform-linux/src/legacy_migration.rs:1: //! Carrying an OmniBridge v1.0.0 identity into Pliwee's directories.   [Upgrading from OmniBridge|upgrading-from]
+   desktop/platform-linux/src/legacy_migration.rs:5: //! In the Linux adapter rather than in `pliwee-core`, because OmniBridge   [legacy state migration (D9)]
+   desktop/platform-linux/src/legacy_migration.rs:12: //! a new identity.* An install that ran OmniBridge has its identity key and   [legacy state migration (D9)]
+   desktop/platform-linux/src/legacy_migration.rs:35: //! deleted, so OmniBridge 1.0.0 can still start on it after a downgrade. A   [Upgrading from OmniBridge|upgrading-from]
+   desktop/platform-linux/src/legacy_migration.rs:515: /// holds one public fingerprint, and OmniBridge wrote it with the default   [legacy state migration (D9)]
+   desktop/platform-linux/src/legacy_migration.rs:516: /// umask. Requiring more than OmniBridge did would turn a working install   [legacy state migration (D9)]
+   desktop/platform-linux/src/legacy_migration.rs:570: //! Each legacy directory here is made by *OmniBridge's own code path*:   [legacy state migration (D9)]
+   desktop/platform-linux/src/legacy_migration.rs:594: /// Creates an identity in `dir` the way OmniBridge did, and returns its   [legacy state migration (D9)]
+   desktop/platform-linux/src/systemd_transition.rs:1: //! The OmniBridge → Pliwee `systemd --user` transition, as the daemon sees it.   [Upgrading from OmniBridge|upgrading-from]
+   desktop/platform-linux/src/systemd_transition.rs:29: /// The unit name OmniBridge 1.0.0 shipped. An alias of [`UNIT`] since Wave 7.   [Upgrading from OmniBridge|upgrading-from]
+   desktop/platform-linux/src/systemd_transition.rs:43: /// Only the OmniBridge-era link. Starts at login through the alias, but   [Upgrading from OmniBridge|upgrading-from]
+   desktop/platform-linux/src/systemd_transition.rs:130: /// The OmniBridge 1.0.0 upgrade case: `systemctl --user enable   [Upgrading from OmniBridge|upgrading-from]
+   desktop/platform-linux/src/tray/model.rs:57: /// (ADR-0020): a pin or hide the user set on the OmniBridge item is keyed by   [Upgrading from OmniBridge|upgrading-from]
+   desktop/proto/tests/schema_comments.rs:5: //! the code to the `pliwee/…` domains and left the comments on `omnibridge/…`,   [D4 guard: module doc on the defect]
+   desktop/runtime/src/mdns.rs:12: //! OmniBridge 1.0.0 app still find this daemon; the Pliwee app browses both   [Upgrading from OmniBridge|upgrading-from]
+   docs/README.md:24: | a record of a rename, port or data migration | [`migrations/`](migrations/) | `migrations/MIGRATION-ANYFLOW-TO-OMNIBRIDGE.md` |   [Upgrading from OmniBridge|upgrading-from]
+   docs/README.md:75: ├── migrations/                 AnyFlow → OmniBridge   [Upgrading from OmniBridge|upgrading-from]
+   docs/README.md:107: still say `yurisismotto/omnibridge` or `yurisismotto/anyflow`. They are left   [history repository note]
+   docs/adr/README.md:25: | [0018](ADR-0018-rename-to-omnibridge.md) | Rename to OmniBridge | Accepted · supersedes 0011's identifier tables · identifier tables and no-dual-stack rule su   [Upgrading from OmniBridge|upgrading-from]
+   docs/architecture/CLIPBOARD.md:35: OmniBridge 1.0.0 peer). No second socket, no second   [Upgrading from OmniBridge|upgrading-from]
+   docs/architecture/FILES.md:159: §D4). With an OmniBridge 1.0.0 peer the control session negotiates the legacy   [Upgrading from OmniBridge|upgrading-from]
+   docs/architecture/NOTIFICATIONS.md:382: one, on the grounds that OmniBridge implemented no notifications anywhere and there   [historical account of a past decision]
+   docs/architecture/PROTOCOL.md:68: accepts the OmniBridge ones as a **legacy profile**, so an OmniBridge 1.0.0   [Upgrading from OmniBridge|upgrading-from]
+   docs/architecture/PROTOCOL.md:213: code of an OmniBridge 1.0.0 desktop, and the scheme fixes the profile of the   [Upgrading from OmniBridge|upgrading-from]
+   docs/architecture/PROTOCOL.md:215: format and refused as such. An OmniBridge app cannot scan a `pliwee1:` code;   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:16: | **Previous names** | **OmniBridge** (*One bridge. Any device.*), the name of the public Linux v1.0.0 release — see [ADR-0020](../adr/ADR-0020-rename-to-pliwee   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:29: The OmniBridge era reserved a naming family that was **never implemented**:   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:30: *OmniBridge Desktop* (the desktop application, when it needs naming apart   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:31: from the product), *OmniBridge for Android*, *OmniBridge Connect*,   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:32: *OmniBridge Mirror* and *OmniBridge Find*. ADR-0020 does not carry it over, so   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:47: > *artwork* the builds draw is still the OmniBridge set below, until the   [dated W1 note]
+   docs/design/BRAND.md:68: > OmniBridge files below stay in the tree, unused, and are described as   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:73: > desktop pairing QR's centre still hand-drawn in Cairo from the OmniBridge   [dated pre-W8 note on D8]
+   docs/design/BRAND.md:79: > still render from the OmniBridge files until Wave 10.)   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:96: (see *Pliwee vector masters*). What follows records the OmniBridge rule. Every other   [retired-artwork history]
+   docs/design/BRAND.md:330: Flow Cyan was called *Bridge Cyan* under OmniBridge. ADR-0020 §D8 renamed it;   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:543: | [`assets/icons/`](assets/icons/) | The 28-glyph Pliwee icon family — brand-neutral UI glyphs, carried over unchanged from the OmniBridge era |   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:550: **Retired — OmniBridge v1.0.0 artwork, not canonical.** Kept in the tree as   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/BRAND.md:579: graphics that still render from the OmniBridge files move in Wave 10.   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/UI-GUIDELINES.md:62: OmniBridge 1.0.0 device), mutually   [Upgrading from OmniBridge|upgrading-from]
+   docs/design/UI-GUIDELINES.md:105: renamed them from their earlier `OmniBridge` prefix. They are identifiers, not   [rename note]
+   docs/security/THREAT_MODEL.md:3: > Pliwee was called OmniBridge until its v1.0.0 Linux release   [former-name note (ADR-0020 D7)]
+   packaging/common/README.md:5: not a second unit, see [Upgrading from OmniBridge](#upgrading-from-omnibridge).   [Upgrading from OmniBridge|upgrading-from]
+   packaging/common/README.md:114: ## Upgrading from OmniBridge   [Upgrading from OmniBridge|upgrading-from]
+   packaging/common/README.md:117: OmniBridge 1.0.0 install upgrades with the distribution's normal command, and   [Upgrading from OmniBridge|upgrading-from]
+   packaging/common/README.md:130: a running OmniBridge daemon is merged into `pliweed.service` on the next   [Upgrading from OmniBridge]
+   packaging/common/README.md:148: **3. The old package's scriptlets must not undo it.** The OmniBridge 1.0.0   [Upgrading from OmniBridge|upgrading-from]
+   packaging/common/README.md:180: **Development installs.** Files installed by an OmniBridge checkout's   [Upgrading from OmniBridge|upgrading-from]
+   packaging/common/README.md:183: checkout: it removes the Pliwee files and, by exact name, the OmniBridge ones   [Upgrading from OmniBridge|upgrading-from]
+   packaging/common/pliweed.service:131: # re-enabled: see packaging/common/README.md, "Upgrading from OmniBridge".   [Upgrading from OmniBridge|upgrading-from]
+   packaging/debian/changelog:3: * OmniBridge is now Pliwee (ADR-0020). Source and binary packages pliwee and   [Upgrading from OmniBridge|upgrading-from]
+   packaging/debian/control:60: # The OmniBridge -> Pliwee transition (ADR-0020). 1.1.0 is the first Pliwee   [Upgrading from OmniBridge|upgrading-from]
+   packaging/debian/control:63: # describes the one upgrade path from OmniBridge and must not move with later   [transitional package comment]
+   packaging/debian/control:67: # makes apt remove or upgrade that omnibridge rather than leave it half there.   [transitional package comment]
+   packaging/debian/control:70: # would give apt two answers to "install omnibridge".   [transitional package comment]
+   packaging/debian/control:83: Pliwee was called OmniBridge until 1.0.0. An OmniBridge install upgrades to   [package description]
+   packaging/debian/rules:75: # OmniBridge"). No maintainer script writes into a home directory.   [section title "Upgrading from OmniBridge"]
+   packaging/fedora/README.md:25: [Upgrading from OmniBridge](#upgrading-from-omnibridge)). `%check` runs the   [Upgrading from OmniBridge|upgrading-from]
+   packaging/fedora/README.md:134: ## Upgrading from OmniBridge   [Upgrading from OmniBridge|upgrading-from]
+   packaging/fedora/README.md:141: package is not simply obsoleted — the OmniBridge 1.0.0 `%preun` would disable   [Upgrading from OmniBridge|upgrading-from]
+   packaging/fedora/README.md:144: [`../common/README.md`](../common/README.md#upgrading-from-omnibridge).   [Upgrading from OmniBridge|upgrading-from]
+   packaging/fedora/pliwee.spec:136: # --- the OmniBridge -> Pliwee package transition (ADR-0020) -----------------   [Upgrading from OmniBridge|upgrading-from]
+   packaging/fedora/pliwee.spec:141: # from OmniBridge and must not move with later versions.   [transitional bound comment]
+   packaging/fedora/pliwee.spec:167: Pliwee was called OmniBridge until 1.0.0. An OmniBridge install upgrades to   [package description]
+   packaging/fedora/pliwee.spec:234: # The OmniBridge 1.0.0 unit name, as a symlink in the same directory: systemd   [Upgrading from OmniBridge|upgrading-from]
+   packaging/fedora/pliwee.spec:239: # packaging/common/README.md, "Upgrading from OmniBridge").   [Upgrading from OmniBridge|upgrading-from]
+   packaging/fedora/pliwee.spec:248: # OmniBridge 1.0.0 file, unchanged, and it stays through Pliwee v1.x so that a   [Upgrading from OmniBridge|upgrading-from]
+   packaging/fedora/pliwee.spec:299: # Transitional: no files. Its whole job is to be the upgrade of omnibridge.   [transitional package comment]
+   packaging/fedora/pliwee.spec:360: Upgrading from OmniBridge 1.0.0: your device identity and pairings carry over,   [%post notice]
+   packaging/fedora/pliwee.spec:394: - OmniBridge is now Pliwee (ADR-0020). Binaries pliwee, pliweed and   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/install-smoke.sh:10: #   # the rename (ADR-0020) the older build is OmniBridge 1.0.0, and the new   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/install-smoke.sh:196: # The OmniBridge unit name is an alias: a symlink to pliweed.service in the   [legacy unit alias]
+   packaging/tests/install-smoke.sh:238: # Both service definitions on Fedora: `pliwee`, and the OmniBridge 1.0.0   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/install-smoke.sh:276: # Both directories: the OmniBridge 1.0.0 one, which is what an upgraded   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/install-smoke.sh:308: # The older build is OmniBridge: its package is still called that.   [the upgrade starts from OmniBridge 1.0.0]
+   packaging/tests/install-smoke.sh:318: # The rename's upgrade is measured FROM the published OmniBridge 1.0.0, and   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/install-smoke.sh:324: pass "L17: the older build is OmniBridge 1.0.0 (the transition's expected starting point)"   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/install-smoke.sh:365: # The OmniBridge -> Pliwee package transition: the core name is UPGRADED   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/install-smoke.sh:368: # OmniBridge 1.0.0 above, so these assertions always have something to   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/packaging-checks.sh:27: # The OmniBridge 1.0.0 firewalld file. Kept, byte for byte, through Pliwee   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/packaging-checks.sh:33: # against this literal; see the "OmniBridge -> Pliwee" group below.   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/packaging-checks.sh:433: # legacy file is the one OmniBridge 1.0.0 shipped, not a re-authored copy.   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/packaging-checks.sh:849: group "OmniBridge -> Pliwee transition (ADR-0020; rebrand Wave 7)"   [Upgrading from OmniBridge|upgrading-from]
+   packaging/tests/packaging-checks.sh:864: pass "the first Pliwee version $FIRST_PLIWEE_VERSION is above OmniBridge 1.0.0"   [Upgrading from OmniBridge|upgrading-from]
+   protocol/proto/pliwee/v1/capabilities/files_v1.proto:220: // On a stream of the legacy OmniBridge 1.0.0 profile the domain is the   [Upgrading from OmniBridge|upgrading-from]
+   protocol/proto/pliwee/v1/core.proto:126: // the domain separator "pliwee/pairing-confirm/v1" (legacy OmniBridge   [Upgrading from OmniBridge|upgrading-from]
+
+G8 remainder census: PASS (zero unexplained, zero defects)
+exit=0

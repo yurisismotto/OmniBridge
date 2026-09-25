@@ -169,7 +169,7 @@ fun SendClipboardScreen(
  * Nothing on the clipboard.
  *
  * Says what is true and what to do about it, and nothing else. In
- * particular it does not suggest that OmniBridge could fetch the clipboard
+ * particular it does not suggest that Pliwee could fetch the clipboard
  * if it tried harder: Android only lets an app read the clipboard while it
  * has focus, and this screen has already had its one chance.
  *

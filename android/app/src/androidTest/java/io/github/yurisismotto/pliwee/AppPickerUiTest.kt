@@ -345,14 +345,14 @@ class AppPickerUiTest {
     // --- what cannot be in the list ----------------------------------------
 
     @Test
-    fun omnibridges_own_package_is_not_offered() {
+    fun pliwees_own_package_is_not_offered() {
         // The rule lives in `NotificationApps.build`, which is what produces
         // the list the picker is handed on a real device, so the list here is
         // built the same way rather than written by hand. A hand-written row
         // would only have proved that the screen renders what it is given,
         // which is not the invariant and is not where the rule is.
         //
-        // The inputs are deliberately hostile: OmniBridge's own package arrives
+        // The inputs are deliberately hostile: Pliwee's own package arrives
         // from all three sources at once — a launcher entry, the notification
         // shade, and a stored policy that already names it.
         val recorder = Fx.Recorder()

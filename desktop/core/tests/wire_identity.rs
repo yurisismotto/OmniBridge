@@ -314,3 +314,72 @@ async fn a_legacy_only_server_refuses_a_canonical_client() {
     });
     assert_eq!(negotiate(legacy, legacy_only).await, (expected, expected));
 }
+
+/// A server that selects **no** ALPN completes the handshake in rustls: the
+/// client is left with no negotiated profile. `require_negotiated` is the
+/// client's check after the handshake (the mirror of Android's
+/// `TlsFactory.requireNegotiated`), and it must refuse that connection rather
+/// than assume a profile. Against the real listener the same check passes.
+#[tokio::test]
+async fn a_client_refuses_a_server_that_negotiated_no_alpn() {
+    let server = LocalIdentity::generate("srv", pliwee_proto::v1::Platform::Linux).expect("srv");
+    let client = LocalIdentity::generate("cli", pliwee_proto::v1::Platform::Android).expect("cli");
+    let no_alpn = {
+        let mut config = (*tls::server_config(&server).expect("server config")).clone();
+        config.alpn_protocols.clear();
+        std::sync::Arc::new(config)
+    };
+
+    for profile in Profile::ALL {
+        for kind in [ConnectionKind::Control, ConnectionKind::Data] {
+            let config = match kind {
+                ConnectionKind::Control => {
+                    tls::client_config(&client, server.fingerprint(), profile)
+                }
+                ConnectionKind::Data => {
+                    tls::data_stream_client_config(&client, server.fingerprint(), profile)
+                }
+            }
+            .expect("client config");
+
+            for (server_config, should_pass) in [
+                (no_alpn.clone(), false),
+                (tls::server_config(&server).expect("server config"), true),
+            ] {
+                let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+                    .await
+                    .expect("bind");
+                let addr = listener.local_addr().expect("addr");
+                let accept = tokio::spawn(async move {
+                    let (stream, _) = listener.accept().await.expect("accept");
+                    tokio_rustls::TlsAcceptor::from(server_config)
+                        .accept(stream)
+                        .await
+                        .map(|_| ())
+                });
+                let stream = tokio::net::TcpStream::connect(addr).await.expect("connect");
+                let name = rustls_pki_types::ServerName::try_from("pliwee.invalid").expect("name");
+                // The handshake itself succeeds in both cases: that is the
+                // gap this check closes.
+                let tls = tokio_rustls::TlsConnector::from(config.clone())
+                    .connect(name, stream)
+                    .await
+                    .expect("rustls completes the handshake");
+                accept.await.expect("join").expect("server handshake");
+                let verdict = tls::require_negotiated(tls.get_ref().1, profile, kind);
+                assert_eq!(
+                    verdict.is_ok(),
+                    should_pass,
+                    "{profile} {kind:?}, server ALPN {}: {verdict:?}",
+                    if should_pass { "offered" } else { "none" }
+                );
+                // Right profile, wrong kind: refused as well.
+                let other = match kind {
+                    ConnectionKind::Control => ConnectionKind::Data,
+                    ConnectionKind::Data => ConnectionKind::Control,
+                };
+                assert!(tls::require_negotiated(tls.get_ref().1, profile, other).is_err());
+            }
+        }
+    }
+}

@@ -100,9 +100,10 @@ Two distinctions worth keeping:
 ## Components
 
 Both platforms carry the same vocabulary under the same names. The Kotlin
-names below keep their `OmniBridge` prefix until the code-naming wave (W3 of
-the [rebrand plan](../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md))
-renames them; they are identifiers, not copy.
+names below carry the `Pliwee` prefix; the code-naming wave (W3 of the
+[rebrand plan](../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md))
+renamed them from their earlier `OmniBridge` prefix. They are identifiers, not
+copy.
 
 | Concept | Android (`ui/components`) | Desktop (`gui/src/widgets.rs`) |
 |---|---|---|
@@ -318,7 +319,7 @@ together.
 
 | | Rule |
 |---|---|
-| **Android** | `Modifier.omniBridgeContentColumn()` — fills below 640 dp, caps and centres above it. A modifier rather than a wrapper, so it applies to a `LazyColumn` without making it eager. |
+| **Android** | `Modifier.pliweeContentColumn()` — fills below 640 dp, caps and centres above it. A modifier rather than a wrapper, so it applies to a `LazyColumn` without making it eager. |
 | **Desktop** | `AdwBreakpoint` at 700 sp collapses the split view rather than squeezing the content. Minimum window 360 × 420. |
 
 The cap is a layout constraint and nothing else. Neither platform branches on

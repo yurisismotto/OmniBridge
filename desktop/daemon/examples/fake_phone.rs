@@ -46,6 +46,7 @@ use pliwee_core::error::{PairingError, Result};
 use pliwee_core::qr::QrPayload;
 use pliwee_core::session::{self, ClientHandshake, PeerStatus, SessionHandle, SessionHost};
 use pliwee_core::store::Store;
+use pliwee_core::tls::ConnectionKind;
 use pliwee_core::{Fingerprint, Profile};
 use pliwee_proto::v1;
 use pliwee_proto::v1::capabilities::ChargingState;
@@ -97,6 +98,8 @@ impl DataStreamDialer for PhoneDialer {
             .connect(name, tcp)
             .await
             .map_err(pliwee_core::Error::Io)?;
+        // The desktop must have selected exactly the data ALPN offered.
+        pliwee_core::tls::require_negotiated(tls.get_ref().1, profile, ConnectionKind::Data)?;
         Ok(Box::new(tls))
     }
 }
@@ -147,6 +150,7 @@ async fn run_files(
     tcp.set_nodelay(true)?;
     let name = rustls_pki_types::ServerName::try_from("pliwee.invalid")?;
     let mut tls = connector.connect(name, tcp).await?;
+    pliwee_core::tls::require_negotiated(tls.get_ref().1, profile, ConnectionKind::Control)?;
     println!("TLS established under profile {profile}");
 
     let session_host: Arc<dyn SessionHost> = host.clone();
@@ -503,6 +507,7 @@ async fn run(
     tcp.set_nodelay(true)?;
     let name = rustls_pki_types::ServerName::try_from("pliwee.invalid")?;
     let mut tls = connector.connect(name, tcp).await?;
+    pliwee_core::tls::require_negotiated(tls.get_ref().1, profile, ConnectionKind::Control)?;
     println!("TLS established under profile {profile} and server identity pinned");
 
     let session_host: Arc<dyn SessionHost> = host.clone();

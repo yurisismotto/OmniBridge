@@ -323,7 +323,7 @@ assumed.
 
 ## Android send: the Sharesheet
 
-`Gallery / Files / Browser → Share → OmniBridge → Send`.
+`Gallery / Files / Browser → Share → Pliwee → Send`.
 
 `SendActivity` handles `ACTION_SEND`. The `content://` URI is read through the
 `ContentResolver` and **never resolved to a filesystem path** — turning a
@@ -341,7 +341,7 @@ costs one extra read and keeps memory flat. A provider whose content changes
 between the passes produces a hash mismatch on the receiver, which fails the
 transfer rather than delivering something that does not match its own digest.
 
-`ACTION_SEND_MULTIPLE` is registered so OmniBridge appears for multi-select, and
+`ACTION_SEND_MULTIPLE` is registered so Pliwee appears for multi-select, and
 sends the first item, saying so. Full batching is the documented next
 increment (see *Not in this version*).
 

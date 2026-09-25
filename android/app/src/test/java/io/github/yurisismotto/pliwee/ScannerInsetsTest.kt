@@ -256,7 +256,7 @@ class ScannerInsetsTest {
 
     /** Nor may a theme do it on their behalf. */
     @Test
-    fun `no OmniBridge theme turns on a fullscreen or translucent bar flag`() {
+    fun `no Pliwee theme turns on a fullscreen or translucent bar flag`() {
         val themes = File("src/main/res").walkTopDown()
             .filter { it.isFile && it.extension == "xml" }
             .toList()
@@ -301,7 +301,7 @@ class ScannerInsetsTest {
 
     /** And the capture screen delegates every barcode to ZXing, as before. */
     @Test
-    fun `OmniBridge's capture activity adds inset handling and nothing else`() {
+    fun `Pliwee's capture activity adds inset handling and nothing else`() {
         val code = File(
             "src/main/java/io/github/yurisismotto/pliwee/ui/PairingCaptureActivity.kt",
         ).readText()

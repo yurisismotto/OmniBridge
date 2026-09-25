@@ -40,7 +40,7 @@ import io.github.yurisismotto.pliwee.ui.theme.PliweeType
 /**
  * The base card.
  *
- * One surface, one hairline border, one small radius — every card in OmniBridge
+ * One surface, one hairline border, one small radius — every card in Pliwee
  * is this, so they cannot drift apart. Depth comes from the border rather
  * than a shadow: the reference is flat and calm, and a 6dp Material lift on
  * every card would make the whole screen hover.

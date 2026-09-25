@@ -12,7 +12,7 @@
 # It is deliberately NOT a package-native signature. `rpmsign` and `debsigs`
 # sign a package so that `rpm`/`dpkg` can check it at install time, which
 # matters when packages are served from a repository the user has configured.
-# OmniBridge has no repository yet; its artifacts are downloaded from a GitHub
+# Pliwee has no repository yet; its artifacts are downloaded from a GitHub
 # release page. The detached signature over the manifest is the path that
 # actually protects that download. Package-native signing is inventoried in
 # docs/audits/release/RELEASE-SIGNING-FOUNDATION-V1.md §2 and is not done here.
@@ -20,9 +20,9 @@
 # WHAT A SIGNATURE IS NOT
 # -----------------------
 # The release already carries SLSA v1 build provenance, Sigstore-backed, bound
-# to the workflow and the commit. That answers "was this built by OmniBridge's
+# to the workflow and the commit. That answers "was this built by Pliwee's
 # CI from commit X?". This signature answers a different question — "does the
-# OmniBridge maintainer stand behind this release?" — and neither substitutes
+# Pliwee maintainer stand behind this release?" — and neither substitutes
 # for the other. Do not let a green `gh attestation verify` be read as a
 # maintainer signature.
 #

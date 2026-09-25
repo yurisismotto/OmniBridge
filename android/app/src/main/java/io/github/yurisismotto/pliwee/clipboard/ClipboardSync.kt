@@ -515,7 +515,7 @@ class ClipboardSync(
     /**
      * Reads the clipboard and sends it to one computer.
      *
-     * **Must be called while OmniBridge is in the foreground.** That is not a
+     * **Must be called while Pliwee is in the foreground.** That is not a
      * style preference: Android returns null from `getPrimaryClip` otherwise,
      * and the failure is reported as [SystemClipboard.ReadFailure.NotAllowed]
      * so the person is told why rather than shown an empty result.

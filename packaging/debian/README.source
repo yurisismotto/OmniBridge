@@ -7,7 +7,7 @@ Two things about this source package are unusual, and both are deliberate.
 1. The Rust floor is not satisfiable on stock Debian 13
 -------------------------------------------------------
 
-OmniBridge's MSRV is **1.88**. It is measured from the committed lockfile
+Pliwee's MSRV is **1.88**. It is measured from the committed lockfile
 rather than chosen: `time` 0.3.55 demands it and cargo's resolver refuses
 before compiling a line. `desktop/Cargo.toml` carries the derivation.
 
@@ -112,7 +112,7 @@ maintainer script for `$HOME` and `.local/share`, and
 `packaging/tests/install-smoke.sh` plants a fake trust store and compares its
 digest and mode across remove, reinstall and purge.
 
-**No GNOME Shell extension dependency.** OmniBridge publishes a
+**No GNOME Shell extension dependency.** Pliwee publishes a
 StatusNotifierItem, which is the tray protocol KDE implements natively. A
 GNOME session needs an AppIndicator host extension to display one, and that is
 the user's choice to install: a package that pulled in a shell extension would

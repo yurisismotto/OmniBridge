@@ -1,7 +1,7 @@
 //! Proof that the TLS stack never needs the private key as bytes.
 //!
 //! This is the architectural claim Wave 0 rests on, and the one that decides
-//! whether OmniBridge can ever run on a device whose key lives in a TPM, a
+//! whether Pliwee can ever run on a device whose key lives in a TPM, a
 //! Secure Enclave or an Android Keystore. Apple state it plainly:
 //!
 //! > *Not having a mechanism to transfer plain-text key data into or out of

@@ -10,7 +10,7 @@ package io.github.yurisismotto.pliwee.notifications
  */
 enum class DropReason {
     /**
-     * OmniBridge's own package. A hard rule, checked first, with no setting that
+     * Pliwee's own package. A hard rule, checked first, with no setting that
      * turns it off. See [NotificationFilter].
      */
     OWN_PACKAGE,
@@ -105,7 +105,7 @@ sealed interface FilterVerdict {
  *
  * System applications are denied by default for exactly the same reason every
  * other application is: the allow-list starts empty and a system package is
- * not in it. OmniBridge does not classify packages as "system" and then trust the
+ * not in it. Pliwee does not classify packages as "system" and then trust the
  * classification — a check that could be wrong in either direction is worse
  * than the deny-by-default that needs no check at all.
  */

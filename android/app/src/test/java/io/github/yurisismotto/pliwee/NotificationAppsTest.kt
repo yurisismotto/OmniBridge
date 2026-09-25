@@ -12,7 +12,7 @@ import org.junit.Test
  *
  * The picker is the largest usability gap N2 left and the largest new attack
  * surface N3 adds, so the rules that bound it are pinned here rather than
- * inspected in a screenshot: OmniBridge's own package can never appear, nothing
+ * inspected in a screenshot: Pliwee's own package can never appear, nothing
  * is selected without being named, and an application that was chosen and
  * then disappeared from the launcher is still visible so it can be switched
  * off.

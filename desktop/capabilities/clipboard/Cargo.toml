@@ -48,7 +48,7 @@ tracing = "0.1"
 # The clipboard *watch* path only. Pure Rust (x11rb's own connection backend),
 # so it adds no C toolchain requirement to a build that had none.
 #
-# It is not here to make OmniBridge an X11 application. On a GNOME Wayland
+# It is not here to make Pliwee an X11 application. On a GNOME Wayland
 # session, Mutter mirrors the Wayland clipboard onto the Xwayland `CLIPBOARD`
 # selection, and XFIXES is the only *event-driven* view of clipboard change
 # that GNOME exposes to an ordinary client — Mutter implements neither

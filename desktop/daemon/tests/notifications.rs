@@ -5,7 +5,7 @@
 //! store. Where the capability's own suite proves the rules in isolation, this
 //! one proves they survive the transport, the negotiation and the grant
 //! plumbing — including the parts that only exist out here: that pairing alone
-//! grants nothing, that a peer OmniBridge has never granted cannot reach the
+//! grants nothing, that a peer Pliwee has never granted cannot reach the
 //! capability at all, and that a broken sink does not take the other three
 //! capabilities down with it.
 //!

@@ -32,7 +32,7 @@ The phone always initiates. The desktop always listens. See ADR-0005.
 | `pliwee-capability-files` | core, proto | `files.v1`: transfer state machine, filename safety, data-stream auth |
 | `pliwee-capability-clipboard` | core, proto | `clipboard.v1`: text rules, policy, loop suppression, Wayland/X11 backend |
 | `pliwee-control` | — | The CLI/GUI ↔ agent contract: request/response types and the `ControlTransport` seam. No I/O |
-| `pliwee-runtime` | core, control, battery, files, clipboard | The OmniBridge Agent, minus the platform: mDNS, listener, state, control server, `SessionHost` |
+| `pliwee-runtime` | core, control, battery, files, clipboard | The Pliwee Agent, minus the platform: mDNS, listener, state, control server, `SessionHost` |
 | `pliwee-linux` | core, control | The Linux adapter: Unix-socket control endpoint, XDG paths, 0600/0700 modes, store composition |
 | `pliwee-daemon` | runtime, linux | `pliweed` — composes the two and adds a `main` |
 | `pliwee-cli` | control, linux | `pliwee` |

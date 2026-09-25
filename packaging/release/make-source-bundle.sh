@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Produces the source bundle an official OmniBridge package is built from.
+# Produces the source bundle an official Pliwee package is built from.
 #
 # ---------------------------------------------------------------------------
 # Why this exists

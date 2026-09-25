@@ -53,7 +53,7 @@ android {
         minSdk = 29
         targetSdk = 36
         // versionName is the public semantic release version and follows
-        // OmniBridge's. versionCode is Play's ordering key: it must rise for
+        // Pliwee's. versionCode is Play's ordering key: it must rise for
         // every upload to any Play track, and a code Play has seen once can
         // never be reused — not even for a bundle that was rejected.
         versionCode = 1

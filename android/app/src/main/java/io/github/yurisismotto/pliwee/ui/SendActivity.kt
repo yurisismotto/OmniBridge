@@ -66,7 +66,7 @@ import io.github.yurisismotto.pliwee.ui.theme.PliweeType
 import kotlinx.coroutines.launch
 
 /**
- * The Sharesheet entry point: Gallery/Files/Browser → Share → OmniBridge.
+ * The Sharesheet entry point: Gallery/Files/Browser → Share → Pliwee.
  *
  * ## What this activity is careful about
  *
@@ -130,7 +130,7 @@ class SendActivity : ComponentActivity() {
             // The app's own theme, not a bare MaterialTheme. This screen is a
             // modal over somebody else's app and it used to look like one:
             // default Material colours, default Material cards, none of the
-            // tokens the rest of OmniBridge is built from. It is an exchange
+            // tokens the rest of Pliwee is built from. It is an exchange
             // flow — the same act as Send clipboard with a different payload —
             // so it wears the same visual language and the same dark theme.
             PliweeTheme {
@@ -713,7 +713,7 @@ private fun DestinationPicker(
 }
 
 /**
- * The text half of the Sharesheet: "Share → OmniBridge" from a browser or a
+ * The text half of the Sharesheet: "Share → Pliwee" from a browser or a
  * notes app.
  *
  * The text is *not* rendered. Showing a preview would put whatever was shared

@@ -84,7 +84,7 @@ impl TestBus {
     ///
     /// It is also a real case and not a contrivance: `/usr/share/dbus-1/services`
     /// does not exist on a machine where nothing has ever shipped a D-Bus
-    /// service, and the OmniBridge package is then the thing that creates it.
+    /// service, and the Pliwee package is then the thing that creates it.
     ///
     /// [`TestBus::start_with_watched_service_dir`] is the other half, for the
     /// one test that pins the difference down.

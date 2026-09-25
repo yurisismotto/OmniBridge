@@ -191,7 +191,10 @@ message FileControl {
 // ---------------------------------------------------------------------------
 //
 // These two messages are exchanged over a dedicated TLS 1.3 connection that
-// negotiated ALPN "omnibridge-data/1". They are length-prefixed exactly like an
+// negotiated ALPN "pliwee-data/1" (or, when the control session negotiated the
+// legacy OmniBridge 1.0.0 profile, the legacy "omnibridge-data/1"; a data
+// stream always uses the same profile as its control session). They are
+// length-prefixed exactly like an
 // Envelope but are NOT Envelopes: no sequence number, no replay window, no
 // capability dispatch. After DataStreamReady the connection carries raw file
 // bytes and nothing else.
@@ -209,10 +212,14 @@ message DataStreamAuth {
   //
   //   mac = HMAC-SHA256(
   //       key = stream_challenge,
-  //       msg = "omnibridge/files.v1/data-stream/v1"
+  //       msg = "pliwee/files.v1/data-stream/v1"
   //             || len_prefixed(acceptor_identity_fingerprint)
   //             || len_prefixed(dialer_identity_fingerprint)
   //             || len_prefixed(transfer_id))
+  //
+  // On a stream of the legacy OmniBridge 1.0.0 profile the domain is the
+  // legacy "omnibridge/files.v1/data-stream/v1"; the construction is
+  // otherwise identical (ADR-0020 D4).
   //
   // The construction mirrors the pairing proof. What each binding buys:
   //

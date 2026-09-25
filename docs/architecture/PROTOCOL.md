@@ -1,4 +1,4 @@
-# OmniBridge protocol — v1
+# Pliwee protocol — v1
 
 ## Invariants
 
@@ -85,6 +85,11 @@ The rules:
 * A client offers the canonical ALPN, unless it knows the peer only as legacy:
   paired from an `omnibridge1:` code, or found on `_omnibridge._tcp` and not
   on `_pliwee._tcp`.
+* A client offers exactly **one** ALPN and, after the handshake, requires the
+  server to have selected exactly that one; anything else (including no ALPN
+  at all, which TLS permits) closes the connection. Android:
+  `TlsFactory.requireNegotiated`; desktop: `tls::require_negotiated`. Neither
+  retries under the other profile.
 * A proof, confirmation or data-stream MAC is verified under the negotiated
   profile's domain **only**. There is no fallback to the other domain.
 * A data stream must negotiate the same profile as the control session that

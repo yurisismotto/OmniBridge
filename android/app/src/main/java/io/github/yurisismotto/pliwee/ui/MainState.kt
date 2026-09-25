@@ -237,7 +237,7 @@ data class MainActions(
     /** Replaces one computer's notification policy. Never widens another's. */
     val onSetNotificationPolicy: (TrustStore.TrustedPeer, NotificationPolicy) -> Unit,
     /**
-     * Opens Android's own notification-access screen, on OmniBridge's own switch.
+     * Opens Android's own notification-access screen, on Pliwee's own switch.
      *
      * The permission is granted there and nowhere else — there is no dialog
      * here that could grant it, and the real state is re-read when the person

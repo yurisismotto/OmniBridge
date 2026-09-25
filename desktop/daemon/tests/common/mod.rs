@@ -715,7 +715,14 @@ impl TestClient {
         let tcp = TcpStream::connect(addr).await?;
         // The name is irrelevant: our verifier pins the key and ignores it.
         let name = rustls_pki_types::ServerName::try_from("pliwee.invalid").expect("static name");
-        Ok(connector.connect(name, tcp).await?)
+        let tls = connector.connect(name, tcp).await?;
+        // As every client does: the server selected exactly the ALPN offered.
+        pliwee_core::tls::require_negotiated(
+            tls.get_ref().1,
+            profile,
+            pliwee_core::tls::ConnectionKind::Control,
+        )?;
+        Ok(tls)
     }
 
     /// Full connect + handshake, under this run's [`test_profile`]. `token`
@@ -1023,7 +1030,13 @@ pub async fn open_data_stream_with_profile(
     let connector = TlsConnector::from(config);
     let tcp = TcpStream::connect(addr).await?;
     let name = rustls_pki_types::ServerName::try_from("pliwee.invalid").expect("static name");
-    Ok(connector.connect(name, tcp).await?)
+    let tls = connector.connect(name, tcp).await?;
+    pliwee_core::tls::require_negotiated(
+        tls.get_ref().1,
+        profile,
+        pliwee_core::tls::ConnectionKind::Data,
+    )?;
+    Ok(tls)
 }
 
 /// Waits for a transfer to reach a terminal state and returns its snapshot.

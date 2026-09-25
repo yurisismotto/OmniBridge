@@ -16,7 +16,9 @@ use std::path::Path;
 const APP_ID: &str = "io.github.yurisismotto.pliwee";
 
 fn main() {
-    println!("cargo:rerun-if-changed=data/pliwee.gresource.xml");
+    // The whole directory, not only the list: `compile_resources` searches
+    // `data/` first, so a file added there can change what is compiled in.
+    println!("cargo:rerun-if-changed=data");
     println!("cargo:rerun-if-changed=../../docs/design/assets");
 
     let out = std::env::var("OUT_DIR").expect("cargo sets OUT_DIR");

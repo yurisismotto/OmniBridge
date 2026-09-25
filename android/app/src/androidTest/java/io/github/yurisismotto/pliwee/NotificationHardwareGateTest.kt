@@ -42,7 +42,7 @@ import org.junit.runner.RunWith
  *
  * Two `adb` commands, run before this suite, are what make the interesting
  * gates executable. They post a notification from `com.android.shell` — a
- * different package from OmniBridge, which is what the own-package rule needs to
+ * different package from Pliwee, which is what the own-package rule needs to
  * be distinguishable from an allow-list decision:
  *
  * ```console
@@ -70,12 +70,12 @@ class NotificationHardwareGateTest {
      * and what N3 debt 3 and N4 debt 2 are both about. `cmd notification post`
      * can create a clearable notification and nothing else: no cancel, no
      * ongoing, no group, no tag control — and `com.android.shell` has no
-     * launcher entry, so OmniBridge's own app picker cannot offer it until it is
+     * launcher entry, so Pliwee's own app picker cannot offer it until it is
      * *already* notifying, which needs the listener bound, which needs a
      * granted peer connected.
      *
      * `android/fixture/` is a test-only module that fixes all of that. It is
-     * never part of the OmniBridge APK — nothing depends on it — and it is
+     * never part of the Pliwee APK — nothing depends on it — and it is
      * installed by hand for a certification run:
      *
      * ```console
@@ -259,7 +259,7 @@ class NotificationHardwareGateTest {
     }
 
     /**
-     * **OmniBridge's own notification is never mirrored**, on hardware.
+     * **Pliwee's own notification is never mirrored**, on hardware.
      *
      * The ongoing-connection foreground-service notification exists on every
      * running install and is the loop this rule exists to prevent. Allowing
@@ -279,7 +279,7 @@ class NotificationHardwareGateTest {
         attachAndDrain()
 
         assertTrue(
-            "OmniBridge's own package must never be mirrored, under any policy",
+            "Pliwee's own package must never be mirrored, under any policy",
             upserts().none { it.upsert.appId == app.packageName },
         )
     }
@@ -432,7 +432,7 @@ class NotificationHardwareGateTest {
      * the session that is already up.**
      *
      * The revocation story has to be structurally true rather than a promise:
-     * the user turns OmniBridge off in Settings, the platform fires
+     * the user turns Pliwee off in Settings, the platform fires
      * `onListenerDisconnected()` on a healthy session, and the phone says "I am
      * no longer a source" **before** it stops being connected — with a higher
      * epoch, and without a reconnect.

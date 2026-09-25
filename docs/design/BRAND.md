@@ -67,6 +67,16 @@ hand-built `Settings`. Neither renames a device that already exists.
 > `desktop/gui/tests/brand_assets.rs` re-proves both from the files. The
 > OmniBridge files below stay in the tree, unused, and are described as
 > history.
+>
+> **2026-09-25 (Pliwee pre-W8 remediation).** The Wave 7 note above was not yet
+> true of one surface: the first Wave 8 certification (defect D8) found the
+> desktop pairing QR's centre still hand-drawn in Cairo from the OmniBridge
+> ribbon geometry. That drawing is deleted. The centre is now the compiled-in
+> `pliwee-mark.svg` itself, laid over the code's keep-out square by GTK, and
+> `brand_assets.rs` fails if the centre is drawn again or if the compiled-in
+> resource stops being the frozen master. With that, no application build
+> draws OmniBridge artwork. (The Play graphics sources, `assets/play/render.sh`,
+> still render from the OmniBridge files until Wave 10.)
 
 The official OmniBridge artwork was supplied and installed on 2026-09-21. The
 `BLOCKED_VISUAL_ASSET` notice that stood here is withdrawn: there is no
@@ -75,13 +85,15 @@ any active surface.
 
 | | |
 |---|---|
-| **Canonical mark (shipped)** | [`assets/omnibridge-mark.svg`](assets/omnibridge-mark.svg) |
+| **Canonical mark of the OmniBridge era (retired; not the current mark)** | [`assets/omnibridge-mark.svg`](assets/omnibridge-mark.svg) |
 | **Name drawn by the wordmark and lockup** | OmniBridge |
 | **Tagline drawn by the lockup** | One bridge. Any device. |
 | **Typeface** | Inter |
 | **Palette** | `#4F6BFF` Primary Blue · `#18B8C9` Flow Cyan · `#7C5CFC` Accent Violet · `#0B1020` Dark · `#F7F9FC` Surface |
 
-`omnibridge-mark.svg` is the single source of truth for geometry. Every other
+Until Pliwee W7, `omnibridge-mark.svg` was the single source of truth for
+geometry. The current source is [`pliwee-mark.svg`](assets/pliwee-mark.svg)
+(see *Pliwee vector masters*). What follows records the OmniBridge rule. Every other
 asset and every platform derivative is built from *its* outline, and that is
 asserted rather than asked for: `desktop/gui/tests/brand_assets.rs` and
 Android's `BrandingResourcesTest` both re-read this file and compare the
@@ -255,9 +267,11 @@ already saturated has nothing left to say those things with.
 
 ## Logo
 
-> This section describes the **OmniBridge** mark the builds still draw. The
-> Pliwee mark is the Flow Monogram in [Pliwee vector masters](#pliwee-vector-masters);
-> the rules below (one mark, no redraw, misuse) carry over to it unchanged.
+> This section describes the **retired OmniBridge** mark, which no
+> application build draws any more (since Pliwee W6/W7 and the pre-W8
+> remediation). The current mark is the Flow Monogram in
+> [Pliwee vector masters](#pliwee-vector-masters); the rules below (one mark,
+> no redraw, misuse) carry over to it unchanged.
 
 There is **one** mark. Not a pair with different jobs, not an institutional cut
 and a product cut — one piece of artwork, used everywhere, at every size.
@@ -520,15 +534,32 @@ No screen contains a literal hex value.
 
 | File | Role |
 |---|---|
-| [`omnibridge-mark.svg`](assets/omnibridge-mark.svg) | **Canonical mark.** Every other asset derives from this outline |
+| [`pliwee-mark.svg`](assets/pliwee-mark.svg) | **Canonical mark.** Wave 0 master — BRAND APPROVED, frozen (2026-09-24, `1ea65e6`). Every current derivative is taken from it |
+| [`pliwee-mark-mono.svg`](assets/pliwee-mark-mono.svg) | Wave 0 master — single-ink cut of the mark |
+| [`pliwee-mark-tonal.svg`](assets/pliwee-mark-tonal.svg) | Wave 0 master — tonal cut of the mark |
+| [`pliwee-wordmark.svg`](assets/pliwee-wordmark.svg) | Wave 0 master — the outlined Pliwee lettering |
+| [`pliwee-lockup.svg`](assets/pliwee-lockup.svg) | Wave 0 master — mark + wordmark + tagline |
+| [`pliwee-app-icon.svg`](assets/pliwee-app-icon.svg) | 512 px desktop application icon (hicolor, window, tray) — a placement of `pliwee-mark.svg`, not a master (Pliwee W7) |
+| [`assets/icons/`](assets/icons/) | The 28-glyph Pliwee icon family — brand-neutral UI glyphs, carried over unchanged from the OmniBridge era |
+
+The five `pliwee-*` masters are the authoritative artwork; see
+[Pliwee vector masters](#pliwee-vector-masters). The Android drawables derive
+from them since W6, the desktop (including the pairing QR's centre mark) since
+W7 and the pre-W8 remediation.
+
+**Retired — OmniBridge v1.0.0 artwork, not canonical.** Kept in the tree as
+history and structurally checked by `brand_assets.rs`; no application build
+draws them. The Play graphics sources still render from two of them until
+Wave 10.
+
+| File | Role until it was retired |
+|---|---|
+| [`omnibridge-mark.svg`](assets/omnibridge-mark.svg) | The OmniBridge mark (canonical until Pliwee W7; retired) |
 | [`omnibridge-mark-mono.svg`](assets/omnibridge-mark-mono.svg) | Mark, single colour, inherits `currentColor` |
 | [`omnibridge-app-icon.svg`](assets/omnibridge-app-icon.svg) | 512 px application icon |
 | [`omnibridge-android-monochrome.svg`](assets/omnibridge-android-monochrome.svg) | Android themed-icon cut |
 | [`omnibridge-wordmark.svg`](assets/omnibridge-wordmark.svg) | Wordmark |
 | [`omnibridge-logo-lockup.svg`](assets/omnibridge-logo-lockup.svg) | Mark + wordmark + tagline |
-| [`assets/icons/`](assets/icons/) | The 28-glyph Pliwee icon family — brand-neutral UI glyphs, carried over unchanged from the OmniBridge era |
-| `assets/pliwee-*.svg` | The five Pliwee masters — **BRAND APPROVED, canonical and frozen** (2026-09-24, `1ea65e6`); the Android drawables derive from them since W6, the desktop from W7; see [Pliwee vector masters](#pliwee-vector-masters) |
-| [`pliwee-app-icon.svg`](assets/pliwee-app-icon.svg) | 512 px desktop application icon (hicolor, window, tray) — a placement of `pliwee-mark.svg`, not a master (Pliwee W7) |
 
 Android adaptive icon: `res/mipmap-anydpi-v26/ic_launcher.xml` with a Dark
 (`#0B1020`) background, the mark as the adaptive foreground inside the 72 dp
@@ -543,6 +574,6 @@ match the wordmark it sits beside. It also means the letterforms cannot be
 checked by reading the file — what the tests assert instead is that no active
 asset carries the pre-rename identity, and that every product surface which
 *speaks* the name says Pliwee (`BrandingResourcesTest` for the Android label,
-the tray and panel tests for the desktop). The OmniBridge wordmark and lockup
-above still *draw* "OmniBridge" until they are retired with the other
-OmniBridge artwork (W6, W7).
+the tray and panel tests for the desktop). The retired OmniBridge wordmark and
+lockup still *draw* "OmniBridge"; no application build uses them, and the Play
+graphics that still render from the OmniBridge files move in Wave 10.

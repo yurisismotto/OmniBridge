@@ -1603,7 +1603,7 @@ class NotificationSourceTest {
     // -- binding lifecycle ---------------------------------------------------
 
     /**
-     * The claim "OmniBridge reads your notifications only while a granted
+     * The claim "Pliwee reads your notifications only while a granted
      * computer is connected", made structural: the binding follows live peer
      * state in both directions.
      */

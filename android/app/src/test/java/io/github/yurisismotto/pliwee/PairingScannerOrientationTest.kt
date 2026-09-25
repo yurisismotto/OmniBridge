@@ -13,7 +13,7 @@ import java.io.File
  * ANDROID-UX-ORIENTATION-01: the pairing scanner must not own the user's
  * orientation.
  *
- * The defect had two causes and neither was in OmniBridge's own Kotlin, which is
+ * The defect had two causes and neither was in Pliwee's own Kotlin, which is
  * why the coverage here is split between a static check on the manifest and a
  * behavioural one on the scan request:
  *
@@ -158,17 +158,17 @@ class PairingScannerOrientationTest {
     }
 
     /**
-     * ANDROID-UX-SCANNER-INSETS-01 introduced OmniBridge's own capture activity,
+     * ANDROID-UX-SCANNER-INSETS-01 introduced Pliwee's own capture activity,
      * and a subclass gets a *separate* manifest entry: nothing is inherited
      * from the library's declaration. So the orientation guarantee has to be
      * restated on it, or a custom activity becomes how `sensorLandscape`
      * creeps back in.
      */
     @Test
-    fun `OmniBridge's own scanner activity is declared unspecified too`() {
+    fun `Pliwee's own scanner activity is declared unspecified too`() {
         val declaration = declarationFor(".ui.PairingCaptureActivity")
         assertTrue(
-            "OmniBridge's capture activity must declare screenOrientation=" +
+            "Pliwee's capture activity must declare screenOrientation=" +
                 "\"unspecified\": $declaration",
             declaration.contains("android:screenOrientation=\"unspecified\""),
         )
@@ -185,7 +185,7 @@ class PairingScannerOrientationTest {
 
     /** And it is the one the scan request actually launches. */
     @Test
-    fun `the scan request launches OmniBridge's capture activity`() {
+    fun `the scan request launches Pliwee's capture activity`() {
         assertEquals(
             "without this the contract launches the library's own screen, " +
                 "whose prompt lays out behind the navigation bar",
@@ -219,7 +219,7 @@ class PairingScannerOrientationTest {
             val code = withoutKotlinComments(file.readText())
             forbidden.filter { code.contains(it) }.map { "${file.name}: $it" }
         }
-        assertTrue("OmniBridge must not own the user's orientation: $offenders", offenders.isEmpty())
+        assertTrue("Pliwee must not own the user's orientation: $offenders", offenders.isEmpty())
     }
 
     /** And nothing re-locks the scanner through the library's own switch. */
@@ -273,7 +273,7 @@ class PairingScannerOrientationTest {
         for (code in rejected) {
             assertEquals(
                 "'$code' must not pair",
-                PairingScanner.Outcome.NotOmniBridgeCode,
+                PairingScanner.Outcome.NotPliweeCode,
                 PairingScanner.outcomeOf(code),
             )
         }

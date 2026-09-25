@@ -20,7 +20,7 @@ import io.github.yurisismotto.pliwee.PliweeApp
  *
  * Almost nothing. Its callbacks arrive on the phone's **main thread** — the
  * `NotificationListenerService` javadoc says so from API 24 onward, AOSP
- * VERIFIED — so each one drops OmniBridge's own package, copies a handful of
+ * VERIFIED — so each one drops Pliwee's own package, copies a handful of
  * fields into a plain [PlatformNotification], hands it to
  * [NotificationSource] and returns.
  *
@@ -49,7 +49,7 @@ import io.github.yurisismotto.pliwee.PliweeApp
  * not bind this service merely because the app is installed. [NotificationSource]
  * asks for a bind through [NotificationAccess.requestRebind] and releases it
  * through this service's own `requestUnbind`, as granted, mirroring peers come
- * and go — which is what makes "OmniBridge reads your notifications only while a
+ * and go — which is what makes "Pliwee reads your notifications only while a
  * granted computer is connected" structurally true.
  *
  * The two halves are deliberately not the same seam. `requestRebind` is a
@@ -85,7 +85,7 @@ class PliweeNotificationListener : NotificationListenerService() {
             }.getOrNull()
 
         override fun cancel(platformKey: String): Boolean = runCatching {
-            // The one call in OmniBridge that a remote message can reach. It
+            // The one call in Pliwee that a remote message can reach. It
             // takes a key the source looked up in its own in-memory map; no
             // field from any peer is passed here, and there is no overload of
             // this seam that takes a package, an id or a tag.
@@ -296,7 +296,7 @@ object NotificationAccess {
      * Where to send someone who wants to grant or revoke notification access.
      *
      * `ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS` plus the component extra
-     * lands on **OmniBridge's own switch**, with its own explanation, rather than
+     * lands on **Pliwee's own switch**, with its own explanation, rather than
      * on a list of every application on the device that a person then has to
      * search. It is API 30; the floor here is 29, so the whole-list action is
      * the documented fallback for that one release.
@@ -305,7 +305,7 @@ object NotificationAccess {
      * the person is looking at, and it must come back to that Activity so the
      * real permission state can be re-read on resume.
      *
-     * **OmniBridge never asks for this permission any other way.** There is no
+     * **Pliwee never asks for this permission any other way.** There is no
      * dialog that grants it, no accessibility-service workaround, and no
      * `CompanionDeviceManager` association — ADR-0015 §10 records why the last
      * of those is a notification-privacy decision and not a convenience.

@@ -9,7 +9,7 @@
 //!
 //! It proves that no portable crate reaches for a platform API outside the
 //! one feature-gated module that is allowed to. It says **nothing** about
-//! whether OmniBridge works on Windows or macOS — that needs a real machine and
+//! whether Pliwee works on Windows or macOS — that needs a real machine and
 //! belongs to Wave 5 and later. Conflating the two is how a project talks
 //! itself into believing it supports a platform it has never run on.
 //!

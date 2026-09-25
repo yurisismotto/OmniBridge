@@ -17,7 +17,6 @@ use std::rc::Rc;
 
 use super::Pages;
 use crate::client;
-use crate::theme;
 use crate::widgets::{self, SPACING_MD, SPACING_SM, SPACING_XS};
 
 pub fn present_pairing_dialog(parent: Option<&gtk::Window>, pages: &Pages) {
@@ -53,7 +52,24 @@ pub fn present_pairing_dialog(parent: Option<&gtk::Window>, pages: &Pages) {
     qr_area.update_property(&[gtk::accessible::Property::Label(
         "Pairing QR code. Scan it with Pliwee on the other device.",
     )]);
-    qr_card.append(&qr_area);
+    // The centre mark is the Wave 0 master itself, compiled into the binary
+    // and rendered by GTK's SVG loader: the same resource `brand_mark` shows
+    // everywhere else. It is laid over the code, not drawn into it, so no
+    // geometry is re-created here (ADR-0020 D8). It stays hidden until there
+    // is a code to sit in.
+    let centre_mark = widgets::brand_mark(centre_mark_px(300, 300));
+    centre_mark.set_can_target(false);
+    centre_mark.set_visible(false);
+    {
+        let centre_mark = centre_mark.clone();
+        qr_area.connect_resize(move |_, width, height| {
+            centre_mark.set_pixel_size(centre_mark_px(width, height));
+        });
+    }
+    let qr_overlay = gtk::Overlay::new();
+    qr_overlay.set_child(Some(&qr_area));
+    qr_overlay.add_overlay(&centre_mark);
+    qr_card.append(&qr_overlay);
     let expiry = widgets::caption("Opening a pairing window…");
     qr_card.append(&expiry);
     columns.append(&qr_card);
@@ -133,6 +149,7 @@ pub fn present_pairing_dialog(parent: Option<&gtk::Window>, pages: &Pages) {
         let identity_body = identity_body.clone();
         let confirm = confirm.clone();
         let payload = payload.clone();
+        let centre_mark = centre_mark.clone();
         let dialog = dialog.clone();
         let pages = pages.clone();
         client::pair(None, move |event| match event {
@@ -143,6 +160,7 @@ pub fn present_pairing_dialog(parent: Option<&gtk::Window>, pages: &Pages) {
             }) => {
                 *payload.borrow_mut() = Some(text);
                 qr_area.queue_draw();
+                centre_mark.set_visible(true);
                 expiry.set_label(&format!("This code expires in {expires_in_secs} seconds."));
                 true
             }
@@ -218,10 +236,28 @@ pub fn present_pairing_dialog(parent: Option<&gtk::Window>, pages: &Pages) {
     dialog.present(parent);
 }
 
-/// Draws the pairing payload as a QR code, with the mark in the middle.
+/// The share of the code's side the centre mark may cover.
+///
+/// Error correction is level H, which recovers up to 30% of the codewords; a
+/// square of a fifth of the side, plus a one-module margin, stays well inside
+/// that.
+const CENTRE_MARK_FRACTION: f64 = 0.20;
+
+/// The side, in logical pixels, of the square the centre mark is fitted into
+/// for a drawing area of `width` x `height`. The keep-out square in
+/// [`draw_qr`] and the mark's pixel size both come from here, so the two
+/// cannot disagree about where the mark is.
+fn centre_mark_px(width: i32, height: i32) -> i32 {
+    (f64::from(width.min(height).max(0)) * CENTRE_MARK_FRACTION).floor() as i32
+}
+
+/// Draws the pairing payload as a QR code, with a white keep-out square in the
+/// middle for the centre mark.
 ///
 /// Error correction is set to the highest level precisely so the centre can
-/// carry the mark without making the code harder to read.
+/// carry the mark without making the code harder to read. The mark itself is
+/// not drawn here: it is the compiled-in `pliwee-mark.svg`, laid over this
+/// area by [`present_pairing_dialog`].
 fn draw_qr(cr: &gtk::cairo::Context, width: i32, height: i32, payload: &str) {
     use qrcode::{EcLevel, QrCode};
 
@@ -253,10 +289,11 @@ fn draw_qr(cr: &gtk::cairo::Context, width: i32, height: i32, payload: &str) {
     }
     let _ = cr.fill();
 
-    // The mark, on a white keep-out square the code can spare at level H.
-    let logo = size * 0.20;
-    let lx = ox + (size - logo) / 2.0;
-    let ly = oy + (size - logo) / 2.0;
+    // The keep-out square the code can spare at level H, one module wider
+    // than the mark on every side. Centred, as the overlaid mark is.
+    let logo = f64::from(centre_mark_px(width, height));
+    let lx = (width as f64 - logo) / 2.0;
+    let ly = (height as f64 - logo) / 2.0;
     cr.set_source_rgb(1.0, 1.0, 1.0);
     cr.rectangle(
         lx - scale,
@@ -265,41 +302,18 @@ fn draw_qr(cr: &gtk::cairo::Context, width: i32, height: i32, payload: &str) {
         logo + scale * 2.0,
     );
     let _ = cr.fill();
-    // The mark, drawn with the same geometry as the SVG rather than blitted
-    // from one: a path scales crisply at any QR size and needs no decode
-    // inside a draw callback.
-    draw_ribbon(cr, lx, ly, logo);
 }
 
-/// The Flowing Ribbon, in Cairo. Geometry mirrors
-/// `docs/design/assets/omnibridge-mark.svg` in its 188x146 box.
-fn draw_ribbon(cr: &gtk::cairo::Context, x: f64, y: f64, size: f64) {
-    let s = size / 64.0;
-    cr.save().ok();
-    cr.translate(x, y);
-    cr.scale(s, s);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    // Straight off the brand gradient token, so the drawn mark cannot drift
-    // from the stylesheet or from the SVG the rest of the product ships.
-    let [start, middle, end] = theme::BRAND_GRADIENT.map(theme::rgb);
-    let gradient = gtk::cairo::LinearGradient::new(12.0, 46.0, 52.0, 20.0);
-    gradient.add_color_stop_rgb(0.0, start.0, start.1, start.2);
-    gradient.add_color_stop_rgb(0.5, middle.0, middle.1, middle.2);
-    gradient.add_color_stop_rgb(1.0, end.0, end.1, end.2);
-    let _ = cr.set_source(&gradient);
-
-    cr.set_line_width(6.5);
-    cr.set_line_cap(gtk::cairo::LineCap::Round);
-    cr.move_to(14.0, 44.0);
-    cr.curve_to(30.0, 44.0, 24.0, 21.0, 50.0, 22.0);
-    let _ = cr.stroke();
-
-    cr.set_source_rgb(start.0, start.1, start.2);
-    cr.arc(14.0, 44.0, 7.0, 0.0, std::f64::consts::TAU);
-    let _ = cr.fill();
-    cr.set_source_rgb(end.0, end.1, end.2);
-    cr.arc(50.0, 22.0, 7.0, 0.0, std::f64::consts::TAU);
-    let _ = cr.fill();
-
-    cr.restore().ok();
+    #[test]
+    fn the_centre_mark_is_a_fifth_of_the_code() {
+        assert_eq!(centre_mark_px(300, 300), 60);
+        assert_eq!(centre_mark_px(500, 300), 60);
+        assert_eq!(centre_mark_px(299, 400), 59);
+        assert_eq!(centre_mark_px(0, 0), 0);
+        assert_eq!(centre_mark_px(-5, 10), 0);
+    }
 }

@@ -454,7 +454,7 @@ foreign="$(printf '%s\n' "$hits" | grep -v ' adbd *:' || true)"
 n_foreign="$(printf '%s\n' "$foreign" | grep -c . || true)"
 printf '%s\n' "$hits" | save "24-logcat-sentinel-hits.txt"
 if [ "${n_foreign:-0}" -eq 0 ] 2>/dev/null; then
-    ok "L16: the $n_hits logcat line(s) carrying a sentinel are all adbd echoing this harness's own 'am start'; no OmniBridge process logged either"
+    ok "L16: the $n_hits logcat line(s) carrying a sentinel are all adbd echoing this harness's own 'am start'; no Pliwee process logged either"
 else
     notok "L16: ${n_foreign} logcat line(s) outside adbd carry a notification sentinel: $(printf '%s' "$foreign" | head -1 | head -c 160)"
 fi

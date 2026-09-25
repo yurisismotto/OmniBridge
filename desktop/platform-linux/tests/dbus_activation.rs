@@ -9,7 +9,7 @@
 //! > a running `dbus-daemon` does not notice a service file written after it
 //! > started, and does notice it after `ReloadConfig`.
 //!
-//! That is a property of D-Bus, not of OmniBridge, and the whole feature is
+//! That is a property of D-Bus, not of Pliwee, and the whole feature is
 //! built on it. It was measured once by hand in
 //! `KDE-PLASMA-REAL-CERTIFICATION-V1.md` §40. Here it is measured by the suite,
 //! on every run, on whatever distribution the suite runs on — which matters,
@@ -34,7 +34,7 @@ use pliwee_linux::tray::model::DESKTOP_APP_ID;
 /// The premise the self-heal rests on, measured rather than assumed.
 ///
 /// One `ReloadConfig` makes a service file that is on disk activatable. That
-/// is the only bus behaviour OmniBridge depends on, and it is what this
+/// is the only bus behaviour Pliwee depends on, and it is what this
 /// asserts. If a bus ever stopped honouring it, the self-heal would be solving
 /// a problem it can no longer solve, and this is where that shows up.
 ///
@@ -89,7 +89,7 @@ async fn one_reload_makes_an_installed_service_file_activatable() {
 /// The test asserts the thing that is true of **both**: after the self-heal,
 /// the name is activatable, and the outcome is never a false claim to have
 /// repaired something. Which of the two paths got there is printed, not
-/// asserted, because it is a property of the bus and not of OmniBridge.
+/// asserted, because it is a property of the bus and not of Pliwee.
 #[tokio::test]
 async fn either_bus_implementation_ends_up_activatable_and_neither_is_misreported() {
     let bus = TestBus::start_with_watched_service_dir();
@@ -132,7 +132,7 @@ async fn activatable(proxy: &zbus::fdo::DBusProxy<'_>) -> Vec<String> {
 ///
 /// **Do not assert `HealedByReload` against a real bus.** Which path is taken
 /// depends on whether that implementation's own directory watching notices the
-/// file before OmniBridge asks — `dbus-daemon` watches with inotify,
+/// file before Pliwee asks — `dbus-daemon` watches with inotify,
 /// `dbus-broker` does not, and even on one implementation it is a race between
 /// the bus's rescan and this call. The *policy* — reload exactly once, and only
 /// when the name is missing — is asserted exhaustively and deterministically by
@@ -379,7 +379,7 @@ fn this_crate_never_opens_the_system_bus() {
 /// user's own `~/.local/share/dbus-1/services`. A name nothing else uses, with
 /// `Exec=/bin/true`. It is removed and the bus reloaded before the test
 /// returns, on the success path and on the failure path. It never touches
-/// OmniBridge's own service file, the trust store, or anything else.
+/// Pliwee's own service file, the trust store, or anything else.
 #[tokio::test]
 #[ignore = "needs a real desktop session bus"]
 async fn the_real_session_bus_heals_a_freshly_installed_name() {

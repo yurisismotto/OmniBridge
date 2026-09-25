@@ -174,7 +174,7 @@ class NotificationsProtocolTest {
 
     /**
      * Posted and Updated are one message: the same identity carrying different
-     * content is the whole update mechanism, on every platform OmniBridge targets.
+     * content is the whole update mechanism, on every platform Pliwee targets.
      */
     @Test
     fun `an update keeps the identity and changes the content`() {

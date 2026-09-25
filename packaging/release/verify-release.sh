@@ -3,7 +3,7 @@
 #
 # It answers two questions in the only order that is useful:
 #
-#   1. did the OmniBridge maintainer sign this release's manifest?
+#   1. did the Pliwee maintainer sign this release's manifest?
 #   2. are the files beside it the files that manifest describes?
 #
 # Checking the digests first and the signature afterwards would be checking a

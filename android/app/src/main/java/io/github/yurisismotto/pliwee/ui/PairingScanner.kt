@@ -4,7 +4,7 @@ import com.journeyapps.barcodescanner.ScanOptions
 import io.github.yurisismotto.pliwee.pairing.QrPayload
 
 /**
- * How OmniBridge asks for a pairing QR code, and what it does with the answer.
+ * How Pliwee asks for a pairing QR code, and what it does with the answer.
  *
  * Both halves live here rather than inline in [MainActivity] so that they can
  * be tested on the JVM: neither the options nor the outcome touches an Android
@@ -13,7 +13,7 @@ import io.github.yurisismotto.pliwee.pairing.QrPayload
  * ## ANDROID-UX-ORIENTATION-01
  *
  * The scanner used to force landscape whatever the device was doing, and
- * there were **two** causes, neither of them visible in OmniBridge's own code:
+ * there were **two** causes, neither of them visible in Pliwee's own code:
  *
  *  1. `zxing-android-embedded` declares `CaptureActivity` with
  *     `android:screenOrientation="sensorLandscape"` in its own manifest, and
@@ -29,7 +29,7 @@ import io.github.yurisismotto.pliwee.pairing.QrPayload
  * Fixing either alone leaves the scanner locked, which is why both are named
  * in one place.
  *
- * OmniBridge does not own the user's orientation during a scan. With both causes
+ * Pliwee does not own the user's orientation during a scan. With both causes
  * removed the activity is `unspecified`, which is Android applying the user's
  * own policy: rotation locked to portrait stays portrait, auto-rotate on
  * follows the device.
@@ -45,8 +45,16 @@ import io.github.yurisismotto.pliwee.pairing.QrPayload
  */
 object PairingScanner {
 
+    /**
+     * The desktop command that opens a pairing window and shows the QR code.
+     *
+     * The Linux packages install `/usr/bin/pliwee` and no other command
+     * name, so every screen that tells the user what to type says this.
+     */
+    const val HOST_PAIR_COMMAND = "pliwee pair"
+
     /** What the scanner screen tells the user to point the camera at. */
-    const val PROMPT = "Point at the QR code shown by `omnibridge pair`"
+    const val PROMPT = "Point at the QR code shown by `$HOST_PAIR_COMMAND`"
 
     /**
      * The scan request.
@@ -82,15 +90,16 @@ object PairingScanner {
         data object Cancelled : Outcome
 
         /**
-         * Something was scanned and it is not an OmniBridge pairing code.
+         * Something was scanned and it is not a pairing code this app accepts
+         * (a Pliwee `pliwee1:` code, or a legacy `omnibridge1:` one).
          *
          * Carries nothing. The scanned text is attacker-supplied and may hold
          * a pairing token, so it is never echoed to a screen, a log or a
          * crash report.
          */
-        data object NotOmniBridgeCode : Outcome
+        data object NotPliweeCode : Outcome
 
-        /** A well-formed OmniBridge pairing code. */
+        /** A well-formed pairing code. */
         data class Pair(val payload: QrPayload) : Outcome
     }
 
@@ -109,6 +118,6 @@ object PairingScanner {
         contents == null -> Outcome.Cancelled
         else -> QrPayload.parse(contents)
             ?.let { Outcome.Pair(it) }
-            ?: Outcome.NotOmniBridgeCode
+            ?: Outcome.NotPliweeCode
     }
 }

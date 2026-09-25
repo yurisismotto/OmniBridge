@@ -53,7 +53,7 @@
 //! No `image-data`, no `image-path`, no `sound-file`, no hyperlink. `urgency`
 //! is 0 or 1 and never 2.
 //!
-//! One hint is sent, `desktop-entry`, naming OmniBridge's own application id. It
+//! One hint is sent, `desktop-entry`, naming Pliwee's own application id. It
 //! is how a future Linux *source* would recognise its own output and refuse to
 //! mirror it back — the "recognise your own output" discipline applied on the
 //! platform where it will be needed next.
@@ -67,7 +67,7 @@ const DEST: &str = "org.freedesktop.Notifications";
 const PATH: &str = "/org/freedesktop/Notifications";
 const IFACE: &str = "org.freedesktop.Notifications";
 
-/// The application id OmniBridge posts under.
+/// The application id Pliwee posts under.
 ///
 /// Matches the desktop file the packaging installs, so the shell shows the
 /// right name and icon for a mirrored notification, and so a future Linux

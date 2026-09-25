@@ -28,8 +28,9 @@ FIREWALLD="$ROOT/packaging/fedora/pliwee-firewalld.xml"
 # v1.x (ADR-0020): a zone that names the `omnibridge` service must still load.
 LEGACY_FIREWALLD="$ROOT/packaging/fedora/omnibridge-firewalld.xml"
 LEGACY_FIREWALLD_SHA256="af8fa0c6865e35fad996cd7540a7e7c30cb93b90403839a7333ede01b449ab2d"
-# The first Pliwee version (rebrand plan B4). Every transition bound is
-# written against this literal; see the "OmniBridge -> Pliwee" group below.
+# The first Pliwee version (rebrand plan B4; approved by the owner on
+# 2026-09-25, ADR-0020 amendment A1). Every transition bound is written
+# against this literal; see the "OmniBridge -> Pliwee" group below.
 FIRST_PLIWEE_VERSION="1.1.0"
 DEBIAN="$ROOT/packaging/debian"
 GUI_DATA="$ROOT/desktop/gui/data"
@@ -345,7 +346,7 @@ else
 fi
 
 # Q3. AppStream metadata exists and agrees with the workspace version. Without
-# it OmniBridge is invisible in GNOME Software and KDE Discover.
+# it Pliwee is invisible in GNOME Software and KDE Discover.
 metainfo="$GUI_DATA/$APP_ID.metainfo.xml"
 if [ -f "$metainfo" ]; then
     pass "Q3: AppStream metadata is present"

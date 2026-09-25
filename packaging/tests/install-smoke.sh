@@ -23,7 +23,7 @@
 # It is a **package-lifecycle** test: the file manifest, the scriptlets, and
 # above all the promise that no transaction touches the user's trust store. It
 # runs the real package manager against the real artifacts, as root, in a
-# container that has never seen OmniBridge.
+# container that has never seen Pliwee.
 #
 # It is **NOT** desktop certification, and it must never be quoted as any. A
 # container has no `systemd --user` manager, no session bus, no compositor and
@@ -35,7 +35,7 @@
 # Why a container and not a VM
 # ----------------------------
 # For the gates it *does* cover, a container is the stronger instrument: it is
-# a machine that has never had OmniBridge on it, it is destroyed afterwards,
+# a machine that has never had Pliwee on it, it is destroyed afterwards,
 # and it can be re-run in ninety seconds. The gates it cannot cover are not
 # gates a VM would cover better — they need a graphical login, which is a
 # different measurement entirely.
@@ -306,13 +306,32 @@ if [ "$old_count" -gt 0 ]; then
     rc=$?
     if [ "$rc" -eq 0 ]; then
         # The older build is OmniBridge: its package is still called that.
-        old_ver="$(rpm -q --qf '%{NAME} %{VERSION}-%{RELEASE}\n' omnibridge pliwee 2>/dev/null | grep -v 'not installed' \
-                   || dpkg-query -W -f '${Package} ${Version}\n' omnibridge pliwee 2>/dev/null \
+        old_ver="$(rpm -q --qf '%{NAME} %{VERSION}-%{RELEASE}\n' omnibridge omnibridge-gui pliwee 2>/dev/null | grep -v 'not installed' \
+                   || dpkg-query -W -f '${Package} ${Version}\n' omnibridge omnibridge-gui pliwee 2>/dev/null \
                    || true)"
         pass "L17: the older build installed ($(printf '%s' "$old_ver" | tr '\n' ' '))"
     else
+        old_ver=""
         fail "L17: could not install the older build"
         tail -15 /tmp/old.log | sed 's/^/        /'
+    fi
+    # The rename's upgrade is measured FROM the published OmniBridge 1.0.0, and
+    # nothing else. Anything else installed as "the older build" -- another
+    # version, a Pliwee build, nothing at all -- used to make the transition
+    # assertions below skip in silence while the group still passed. It is a
+    # failure now (pre-W8 remediation, owner decision 7).
+    if [ "$(grep -cE '^omnibridge 1\.0\.0-' <<<"$old_ver" || true)" = 1 ]; then
+        pass "L17: the older build is OmniBridge 1.0.0 (the transition's expected starting point)"
+    else
+        fail "L17: the older build is not OmniBridge 1.0.0 (installed: '$(printf '%s' "${old_ver:-<nothing>}" | tr '\n' ' ')'); the transition cannot be measured"
+    fi
+    old_gui_files="$(find /old -maxdepth 1 -name '*omnibridge-gui*' | wc -l)"
+    if [ "$old_gui_files" -gt 0 ]; then
+        if [ "$(grep -cE '^omnibridge-gui 1\.0\.0-' <<<"$old_ver" || true)" = 1 ]; then
+            pass "L17: the older build includes omnibridge-gui 1.0.0"
+        else
+            fail "L17: an omnibridge-gui package was given but omnibridge-gui 1.0.0 is not installed ('$(printf '%s' "${old_ver:-<nothing>}" | tr '\n' ' ')')"
+        fi
     fi
 
     if [ "$FORMAT" = rpm ]; then
@@ -343,26 +362,26 @@ if [ "$old_count" -gt 0 ]; then
         diff <(printf '%s\n' "$before_up") <(printf '%s\n' "$after_up") | sed 's/^/        /'
     fi
 
-    # The OmniBridge -> Pliwee package transition, when the older build was
-    # OmniBridge: the core name is UPGRADED to the transitional package (so
-    # its %preun saw $1 = 1 and disabled nobody), not erased.
-    if grep -q '^omnibridge ' <<<"$old_ver"; then
-        if [ "$FORMAT" = rpm ]; then
-            trans="$(rpm -q --qf '%{VERSION}' omnibridge 2>/dev/null || true)"
-        else
-            trans="$(dpkg-query -W -f '${Version}' omnibridge 2>/dev/null || true)"
-        fi
-        case "$trans" in
-            1.0.0*|""|*"not installed"*)
-                fail "L17: omnibridge was not upgraded to the transitional package (now: '${trans:-<absent>}')" ;;
-            *)  pass "L17: omnibridge was upgraded in place to the transitional $trans" ;;
-        esac
-        if [ -L /usr/lib/systemd/user/omnibridged.service ] \
-           && [ "$(readlink /usr/lib/systemd/user/omnibridged.service)" = pliweed.service ]; then
-            pass "L17: after the upgrade omnibridged.service is the alias of pliweed.service"
-        else
-            fail "L17: after the upgrade omnibridged.service is not the alias of pliweed.service"
-        fi
+    # The OmniBridge -> Pliwee package transition: the core name is UPGRADED
+    # to the transitional package (so its %preun saw $1 = 1 and disabled
+    # nobody), not erased. Unconditional: the older build was required to be
+    # OmniBridge 1.0.0 above, so these assertions always have something to
+    # measure, and a wrong starting point has already failed.
+    if [ "$FORMAT" = rpm ]; then
+        trans="$(rpm -q --qf '%{VERSION}' omnibridge 2>/dev/null || true)"
+    else
+        trans="$(dpkg-query -W -f '${Version}' omnibridge 2>/dev/null || true)"
+    fi
+    case "$trans" in
+        1.0.0*|""|*"not installed"*)
+            fail "L17: omnibridge was not upgraded to the transitional package (now: '${trans:-<absent>}')" ;;
+        *)  pass "L17: omnibridge was upgraded in place to the transitional $trans" ;;
+    esac
+    if [ -L /usr/lib/systemd/user/omnibridged.service ] \
+       && [ "$(readlink /usr/lib/systemd/user/omnibridged.service)" = pliweed.service ]; then
+        pass "L17: after the upgrade omnibridged.service is the alias of pliweed.service"
+    else
+        fail "L17: after the upgrade omnibridged.service is not the alias of pliweed.service"
     fi
 
     # §4.9: an upgrade cannot restart a running user daemon, and must not try.
@@ -476,7 +495,7 @@ if [ "$FORMAT" = deb ]; then
     fi
 fi
 
-# L26: no root-owned file anywhere in the user's OmniBridge state.
+# L26: no root-owned file anywhere in the user's Pliwee state.
 rooted="$(find /home/tester/.local/share/pliwee ! -user tester 2>/dev/null)"
 if [ -n "$rooted" ]; then
     fail "L26: root-owned files in the user's state:"

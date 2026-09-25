@@ -420,6 +420,31 @@ pub fn negotiated_protocol(conn: &rustls::CommonState) -> Option<NegotiatedProto
     NegotiatedProtocol::from_alpn(conn.alpn_protocol()?)
 }
 
+/// Client side: requires that the server selected **exactly** the one ALPN
+/// this client offered, for `profile` and `kind`.
+///
+/// rustls refuses a server that selects a protocol the client did not offer,
+/// but it lets a server that selects *none* complete the handshake, leaving
+/// the connection with no negotiated profile. That profile must never be
+/// assumed: it decides which domain a proof is computed under. So every
+/// client checks after the handshake and closes on anything else, exactly as
+/// Android's `TlsFactory.requireNegotiated` does. There is no fallback to
+/// another profile and no retry under one.
+pub fn require_negotiated(
+    conn: &rustls::CommonState,
+    profile: Profile,
+    kind: ConnectionKind,
+) -> Result<()> {
+    let expected = NegotiatedProtocol { profile, kind };
+    if negotiated_protocol(conn) == Some(expected) {
+        Ok(())
+    } else {
+        Err(Error::Protocol(
+            "the server did not negotiate the one ALPN this client offered",
+        ))
+    }
+}
+
 /// Extracts the peer's pinned-identity fingerprint from a completed handshake.
 ///
 /// Returns an error if the peer sent no certificate. That should be

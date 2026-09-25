@@ -60,7 +60,7 @@ class ClipboardInstrumentedTest {
     private fun text(value: String) = ClipboardText.validate(value).getOrThrow()
 
     /**
-     * Runs [body] with OmniBridge on screen **and holding window focus**.
+     * Runs [body] with Pliwee on screen **and holding window focus**.
      *
      * The distinction is the whole subject of this file. `ActivityScenario`
      * reports `RESUMED` as soon as `onResume` has run, but window focus is a
@@ -100,7 +100,7 @@ class ClipboardInstrumentedTest {
         }
 
         assertTrue(
-            "OmniBridge never took window focus in $FOCUS_ATTEMPTS attempts of " +
+            "Pliwee never took window focus in $FOCUS_ATTEMPTS attempts of " +
                 "${FOCUS_TIMEOUT_MS}ms, so this test cannot say anything about " +
                 "clipboard access. Is another app holding focus, or the screen locked?",
             false,
@@ -124,7 +124,7 @@ class ClipboardInstrumentedTest {
 
         // The write itself, with nothing on screen. This is the asymmetry the
         // whole capability rests on, so it is asserted *without* focus: a
-        // clip from a computer must land while OmniBridge is in the background.
+        // clip from a computer must land while Pliwee is in the background.
         val result = clipboard.write(text(value), sensitive = false)
         assertEquals(ClipboardTarget.WriteResult.Applied, result)
         Log.i(TAG, "setPrimaryClip from the background: APPLIED")
@@ -181,7 +181,7 @@ class ClipboardInstrumentedTest {
      *
      * A presentation hint: it tells the system this clip came from another
      * device, which is what stops Android showing a "copied" toast for
-     * something the person did not copy. Nothing in OmniBridge depends on it.
+     * something the person did not copy. Nothing in Pliwee depends on it.
      */
     @Test
     fun extra_is_remote_device_is_set_on_api_34_and_above() {
@@ -383,7 +383,7 @@ class ClipboardInstrumentedTest {
         private const val TAG = "PliweeClipTest"
 
         /**
-         * How long to wait for OmniBridge to take window focus.
+         * How long to wait for Pliwee to take window focus.
          *
          * Generous: on a device where another app is in the foreground, the
          * launch, the transition animation and the focus grant are all real

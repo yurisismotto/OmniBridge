@@ -4,7 +4,7 @@ import com.journeyapps.barcodescanner.CaptureActivity
 import com.journeyapps.barcodescanner.DecoratedBarcodeView
 
 /**
- * OmniBridge's pairing scanner screen.
+ * Pliwee's pairing scanner screen.
  *
  * It is `CaptureActivity` from `zxing-android-embedded` with exactly one
  * thing added: the prompt is kept out from under the system bars. See

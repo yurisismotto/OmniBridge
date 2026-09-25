@@ -1,0 +1,16 @@
+$ cargo clippy --locked --offline -j 2 --workspace --all-targets --all-features -- -D warnings
+   Compiling pliwee-proto v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/proto)
+    Checking pliwee-control v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/control)
+   Compiling pliwee-gui v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/gui)
+    Checking pliwee-core v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/core)
+    Checking pliwee-linux v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/platform-linux)
+    Checking pliwee-capability-notifications v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/notifications)
+    Checking pliwee-capability-clipboard v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/clipboard)
+    Checking pliwee-capability-battery v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/battery)
+    Checking pliwee-capability-files v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/files)
+    Checking pliwee-runtime v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/runtime)
+    Checking pliwee-daemon v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/daemon)
+    Checking pliwee-cli v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.70s
+wall 9.81 s, max RSS 357688 KB
+exit=0

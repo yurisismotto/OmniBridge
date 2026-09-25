@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
             PairingScanner.Outcome.Cancelled -> return@registerForActivityResult
             // Never echo the scanned text back to the screen: it may contain
             // a pairing token, and it is attacker-supplied either way.
-            PairingScanner.Outcome.NotOmniBridgeCode -> {
+            PairingScanner.Outcome.NotPliweeCode -> {
                 showError("That QR code is not a Pliwee pairing code.")
                 return@registerForActivityResult
             }
@@ -411,7 +411,7 @@ class MainActivity : ComponentActivity() {
                 .onFailure { showError("Could not open Android's notification settings.") }
         },
         onOpenPrivacyPolicy = {
-            // The only web address OmniBridge ever opens, and it opens it in
+            // The only web address Pliwee ever opens, and it opens it in
             // the person's own browser: the app itself makes no HTTP request.
             runCatching {
                 startActivity(Intent(Intent.ACTION_VIEW, PrivacyPolicy.URL.toUri()))
@@ -452,7 +452,7 @@ class MainActivity : ComponentActivity() {
      * ## What "open" means here, and what it deliberately does not mean
      *
      * It means `ACTION_VIEW` with a `content://` URI and a read grant for
-     * that one item, resolved through a chooser. OmniBridge does not run
+     * that one item, resolved through a chooser. Pliwee does not run
      * anything, does not decide whether the file is safe, and does not treat
      * an extension as evidence about either. Whatever Android would do with
      * this file from the Files app is what happens, with the same consent
@@ -464,7 +464,7 @@ class MainActivity : ComponentActivity() {
      * `FileUriExposedException` on every API level this app supports, and the
      * reason it does is that a path is not a permission: the receiving app
      * would need its own access to the file, which on shared storage means a
-     * storage permission that OmniBridge deliberately does not hold. The
+     * storage permission that Pliwee deliberately does not hold. The
      * received-file URI is MediaStore's own; the sent-file URI is the one the
      * person shared in. Neither is ever converted to a path.
      *
@@ -474,7 +474,7 @@ class MainActivity : ComponentActivity() {
      * why the two directions are checked differently.
      *
      * *It is granted, not assumed.* `FLAG_GRANT_READ_URI_PERMISSION` passes
-     * OmniBridge's own read access to whichever app the person picks, for that
+     * Pliwee's own read access to whichever app the person picks, for that
      * URI alone and for the life of that activity. Read, not write: opening a
      * file is not permission to change it.
      *
@@ -497,7 +497,7 @@ class MainActivity : ComponentActivity() {
             setDataAndType(ready.uri, ready.mimeType)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             // The chooser is a separate task; without this it would be
-            // launched into OmniBridge's, and backing out of the viewer would
+            // launched into Pliwee's, and backing out of the viewer would
             // land somewhere in the middle of this app.
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
@@ -524,7 +524,7 @@ class MainActivity : ComponentActivity() {
         OpenAction.NoViewer -> getString(R.string.files_open_no_viewer)
         // Neither should reach a person: the button is not drawn for a
         // transfer that cannot be opened. If one does, saying the file is not
-        // there is the honest answer, because OmniBridge cannot reach it.
+        // there is the honest answer, because Pliwee cannot reach it.
         OpenAction.NotApplicable, OpenAction.Available ->
             getString(R.string.files_open_file_missing)
     }

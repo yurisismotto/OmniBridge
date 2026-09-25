@@ -71,7 +71,7 @@ import io.github.yurisismotto.pliwee.ui.theme.MinTouchTarget
  * The screen is laid out in the order the permissions actually apply, and it
  * never collapses them:
  *
- * 1. **Share notifications with this computer** — OmniBridge's own per-peer
+ * 1. **Share notifications with this computer** — Pliwee's own per-peer
  *    grant, written to the same trust store the clipboard and files switches
  *    write. Off until a person turns it on.
  * 2. **Notification access** — Android's, for the whole device, granted in

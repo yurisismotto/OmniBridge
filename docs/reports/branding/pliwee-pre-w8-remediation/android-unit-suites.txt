@@ -1,0 +1,64 @@
+$ ./gradlew --offline --no-build-cache --max-workers=2 -Dorg.gradle.parallel=false :app:cleanTestDebugUnitTest :app:testDebugUnitTest
+> Task :app:cleanTestDebugUnitTest
+> Task :app:testDebugUnitTest
+BUILD SUCCESSFUL in 3s
+exit=0
+io.github.yurisismotto.pliwee.BatteryGrantTest: 3 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:27
+io.github.yurisismotto.pliwee.BatteryReadingTest: 5 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:27
+io.github.yurisismotto.pliwee.BrandingResourcesTest: 13 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:27
+io.github.yurisismotto.pliwee.CapabilityRegistryTest: 7 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:27
+io.github.yurisismotto.pliwee.ClipboardCachesTest: 8 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:27
+io.github.yurisismotto.pliwee.ClipboardPolicyTest: 8 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:27
+io.github.yurisismotto.pliwee.ClipboardShortcutTest: 13 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:27
+io.github.yurisismotto.pliwee.ClipboardSyncTest: 30 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:27
+io.github.yurisismotto.pliwee.ClipboardTextTest: 11 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.ClipboardTruthfulnessTest: 20 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.DataStreamCopyTest: 8 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.DesignTokensTest: 16 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.DevicesPresentationTest: 8 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.EchoSuppressionTest: 10 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.EndpointsTest: 18 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.ExchangeFlowTest: 29 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.FailureKindTest: 7 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.FilenamesTest: 15 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.FilesUxTest: 31 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.FingerprintTest: 7 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.FramingTest: 9 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.HostCommandCopyTest: 3 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.KeyDigestsTest: 3 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.ManifestComponentsTest: 5 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.MultiPeerRoutingTest: 13 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationAppsTest: 13 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationConvergenceTest: 19 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationDismissRulesTest: 14 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationFilterTest: 21 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationHardeningTest: 13 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationIdentityTest: 19 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationNavigationTest: 7 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationPolicyStorageTest: 14 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationQueueTest: 14 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationReadinessTest: 21 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationRolesTest: 19 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationSecretTest: 14 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationSourceTest: 60 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationTextTest: 21 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.NotificationsProtocolTest: 20 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.PairingProofTest: 12 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:28
+io.github.yurisismotto.pliwee.PairingRecoveryTest: 30 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.PairingScannerOrientationTest: 13 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.PeerTargetTest: 18 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.PinnedTrustManagerTest: 7 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.PrivacyPolicyTest: 2 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.ProtocolTest: 10 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.QrPayloadTest: 13 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.ReconnectTest: 18 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.RevokedDeviceCleanupTest: 29 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.ScannerInsetsTest: 14 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.SendClipboardUiTest: 13 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.SendRetryTest: 21 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.StreamAuthTest: 12 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.TransferStateTest: 7 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.TrustStoreTest: 4 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.UiMappingTest: 31 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+io.github.yurisismotto.pliwee.WireIdentityTest: 24 tests, 0 failures, 0 errors, 0 skipped, at 2026-09-25T13:29:29
+TOTAL suites=58 tests=867 failures=0 errors=0 skipped=0

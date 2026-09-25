@@ -32,7 +32,7 @@ import io.github.yurisismotto.pliwee.ui.theme.PliweeType
  *
  * ## What this screen is, and what it is careful not to claim to be
  *
- * It is not a history. OmniBridge writes nothing about a transfer to disk —
+ * It is not a history. Pliwee writes nothing about a transfer to disk —
  * that is a product decision, not an omission — so the list is everything
  * this *process* has done, and it goes away when the process does. The screen
  * says so, in [R.string.files_recent_scope], rather than letting a person

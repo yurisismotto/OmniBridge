@@ -47,7 +47,7 @@ struct Args {
 
     /// Directory for received files.
     ///
-    /// Defaults to `<XDG downloads>/OmniBridge`. Peers can never influence this:
+    /// Defaults to `<XDG downloads>/Pliwee`. Peers can never influence this:
     /// an offer carries a filename and no path at all.
     #[arg(long)]
     download_dir: Option<std::path::PathBuf>,
@@ -512,4 +512,31 @@ fn find_legacy_partial_files(current: &std::path::Path) -> Vec<String> {
         );
     }
     found
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Args;
+    use clap::CommandFactory;
+    use pliwee_capability_files::destination::{DOWNLOAD_SUBDIR, LEGACY_DOWNLOAD_SUBDIR};
+
+    /// `pliweed --help` states the download default the daemon really uses.
+    /// The text is prose, so it is checked against the constant rather than
+    /// trusted to follow it: W4 moved the folder and the help did not move.
+    #[test]
+    fn help_states_the_real_download_folder() {
+        let mut cmd = Args::command();
+        assert_eq!(cmd.get_name(), "pliweed");
+        let help = cmd.render_long_help().to_string();
+        let want = format!("<XDG downloads>/{DOWNLOAD_SUBDIR}");
+        assert!(help.contains(&want), "missing {want:?} in:\n{help}");
+        assert!(
+            !help.contains(LEGACY_DOWNLOAD_SUBDIR),
+            "the help still names the legacy folder:\n{help}"
+        );
+        assert_eq!(
+            cmd.render_version().trim_end(),
+            format!("pliweed {}", env!("CARGO_PKG_VERSION"))
+        );
+    }
 }

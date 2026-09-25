@@ -15,12 +15,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * The OmniBridge tokens for the current theme.
+ * The Pliwee tokens for the current theme.
  *
  * Static rather than dynamic: the scheme changes only when the theme does,
  * and a static local avoids re-composing every reader on unrelated changes.
  */
-val LocalOmniBridgeColors: ProvidableCompositionLocal<PliweeColorScheme> =
+val LocalPliweeColors: ProvidableCompositionLocal<PliweeColorScheme> =
     staticCompositionLocalOf { LightColors }
 
 /** True when the person has asked the system to remove animation. */
@@ -50,14 +50,14 @@ fun rememberReducedMotion(): Boolean {
 fun motionDuration(millis: Int): Int = if (LocalReducedMotion.current) 0 else millis
 
 /**
- * Material 3 built from the OmniBridge tokens.
+ * Material 3 built from the Pliwee tokens.
  *
- * Material semantics are kept deliberately. OmniBridge should look like OmniBridge
+ * Material semantics are kept deliberately. Pliwee should look like Pliwee
  * *on Android* — a Switch still behaves and reads as an Android Switch, a
  * dialog still sits where Android puts one — rather than like a foreign
  * design language pasted onto the platform.
  *
- * Dynamic colour is not used. OmniBridge's palette carries meaning: teal is
+ * Dynamic colour is not used. Pliwee's palette carries meaning: teal is
  * "connected", amber is "stale", red is "revoked". Letting the wallpaper
  * recolour that would recolour the status language with it.
  */
@@ -122,7 +122,7 @@ fun PliweeTheme(
 ) {
     val tokens = if (darkTheme) DarkColors else LightColors
     CompositionLocalProvider(
-        LocalOmniBridgeColors provides tokens,
+        LocalPliweeColors provides tokens,
         LocalReducedMotion provides rememberReducedMotion(),
     ) {
         MaterialTheme(
@@ -133,8 +133,8 @@ fun PliweeTheme(
     }
 }
 
-/** Shorthand for the OmniBridge tokens at a call site: `PliweeTheme.colors`. */
+/** Shorthand for the Pliwee tokens at a call site: `PliweeTheme.colors`. */
 object PliweeTheme {
     val colors: PliweeColorScheme
-        @Composable @ReadOnlyComposable get() = LocalOmniBridgeColors.current
+        @Composable @ReadOnlyComposable get() = LocalPliweeColors.current
 }

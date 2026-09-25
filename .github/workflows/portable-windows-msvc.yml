@@ -6,7 +6,7 @@
 # accidentally unified Cargo feature has leaked into the six portable crates:
 # the boundary Wave 0 built still holds. It is a **boundary regression test**.
 #
-# It says nothing whatsoever about whether OmniBridge *runs* on Windows. That is
+# It says nothing whatsoever about whether Pliwee *runs* on Windows. That is
 # runtime certification, it needs a real machine, and it belongs to Wave 5+.
 # Conflating the two is how a project talks itself into believing it supports
 # a platform it has never run on.

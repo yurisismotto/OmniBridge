@@ -74,7 +74,7 @@ fn the_capability_id_is_the_canonical_one() {
 
 /// N0 defines the id and registers nothing. The Android source (N1) and the
 /// Linux sink (N2) add the two implementations; until then the id must never
-/// reach a `HELLO`, or a peer would be told OmniBridge can mirror notifications
+/// reach a `HELLO`, or a peer would be told Pliwee can mirror notifications
 /// when no code exists to do it.
 #[test]
 fn nothing_advertises_notifications_v1_after_n0() {
@@ -297,7 +297,7 @@ fn every_body_round_trips() {
     }
 }
 
-/// Posted and Updated are one message on purpose: no platform OmniBridge targets
+/// Posted and Updated are one message on purpose: no platform Pliwee targets
 /// has a separate update operation, so the same identity carrying different
 /// content is the whole update mechanism.
 #[test]

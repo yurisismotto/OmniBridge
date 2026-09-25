@@ -133,7 +133,7 @@ object ClipboardCapabilities {
      *
      * **False, and not a limitation of this implementation.** Since Android
      * 10 (API 29) `ClipboardManager.getPrimaryClip` returns null unless the
-     * calling app has input focus or is the default IME. OmniBridge is a normal
+     * calling app has input focus or is the default IME. Pliwee is a normal
      * app: it is not an IME, it holds no accessibility service, and it does
      * not steal focus. So there is no supported way to observe the clipboard
      * in the background, and this constant says so rather than the app

@@ -6,7 +6,7 @@
 # under clippy**, production and test code alike, on the toolchain this project
 # is developed against. It is a source-hygiene gate and nothing more: it runs
 # no test, binds no socket and touches no desktop session, so a green tick here
-# says nothing about whether OmniBridge works.
+# says nothing about whether Pliwee works.
 #
 # Why it exists
 # -------------
