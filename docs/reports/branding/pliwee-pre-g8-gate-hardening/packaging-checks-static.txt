@@ -1,0 +1,179 @@
+
+Version synchronisation (audit §13.1)
+  ok    spec Version: 1.1.0 matches the workspace version
+
+MSRV synchronisation (audit P1)
+  ok    spec BuildRequires: rust >= 1.88 matches rust-version = 1.88
+
+Build-fatal defects B1/B2/B3 stay fixed
+  ok    B1: BuildRequires pkgconf-pkg-config
+  ok    B1: BuildRequires gtk4-devel
+  ok    B1: BuildRequires libadwaita-devel
+  ok    B1: BuildRequires glib2-devel
+  ok    B1: BuildRequires dbus-daemon (the tray suites need a real bus)
+  ok    B2: BuildRequires systemd-rpm-macros
+  ok    B2: the user unit path stays a macro
+  ok    B3: cargo runs --offline
+  ok    B3: cargo runs --locked
+  ok    B3: a vendor tarball and its cargo config are wired into %prep
+
+Vendor config describes an offline-only source (audit B3)
+  ok    crates-io is replaced by vendored-sources
+  ok    the vendor directory is relative, so the config is location-independent
+  ok    no git or sparse registry source is configured
+
+The package installs everything it builds (audit P7)
+  ok    %files lists pliweed
+  ok    %files lists pliwee
+  ok    %files lists pliwee-gui
+  ok    %build names pliwee-daemon explicitly
+  ok    %build names pliwee-cli explicitly
+  ok    %build names pliwee-gui explicitly
+
+The canonical systemd user unit (audit §7.1; gates S1-S3)
+  ok    the unit is at packaging/common/pliweed.service
+  ok    no duplicate unit under packaging/fedora/
+  ok    the spec installs the common unit
+  ok    S2: RuntimeDirectory=pliwee
+  ok    S2: RuntimeDirectoryMode=0700
+  ok    S1: ReadWritePaths=%h/.local/share (the parent, so a fresh install can create its data directory)
+  ok    no StateDirectory= (it would point at ~/.local/state)
+  ok    hardening kept: NoNewPrivileges=true
+  ok    hardening kept: PrivateTmp=true
+  ok    hardening kept: ProtectSystem=strict
+  ok    hardening kept: ProtectHome=read-only
+  ok    hardening kept: ProtectKernelTunables=true
+  ok    hardening kept: ProtectControlGroups=true
+  ok    hardening kept: RestrictNamespaces=true
+  ok    hardening kept: RestrictRealtime=true
+  ok    hardening kept: RestrictSUIDSGID=true
+  ok    hardening kept: LockPersonality=true
+  ok    hardening kept: MemoryDenyWriteExecute=true
+  ok    hardening kept: SystemCallArchitectures=native
+  ok    hardening kept: SystemCallFilter=@system-service
+  ok    hardening kept: SystemCallFilter=~@privileged @resources @obsolete
+  ok    hardening kept: RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+  ok    no ProtectKernelModules= — a user manager cannot apply it, and it is redundant here
+  ok    no CapabilityBoundingSet= — a user manager cannot apply it, and it is redundant here
+  ok    no AmbientCapabilities= — a user manager cannot apply it, and it is redundant here
+  ok    no User=/Group= — it runs as whoever owns the session
+  ok    [Install] WantedBy=default.target (a user unit target)
+  ok    ExecStart is the absolute installed path
+  ok    no *Directory= directive creates or owns user state
+
+Desktop integration (audit §10; P4, P5, P7)
+  ok    the spec installs desktop metadata with the shared script
+  ok    the metadata installer is given a --destdir
+  ok    P5: the D-Bus template's Exec is built from @BINDIR@
+  ok    the D-Bus template declares the application id verbatim
+  ok    Q3: AppStream metadata is present
+  ok    the metainfo release 1.1.0 matches the workspace version
+  ok    no update-desktop-database scriptlet (the distro's file trigger owns it)
+  ok    no gtk-update-icon-cache scriptlet (the distro's file trigger owns it)
+
+Every shipped XML parses
+  ok    parses: packaging/fedora/pliwee-firewalld.xml
+  ok    parses: packaging/fedora/omnibridge-firewalld.xml
+  ok    parses: desktop/gui/data/io.github.yurisismotto.pliwee.metainfo.xml
+
+Firewall: shipped, never enabled (audit §9)
+  ok    the core package installs the firewalld service definition pliwee.xml
+  ok    the core package installs the firewalld service definition omnibridge.xml
+  ok    no scriptlet runs firewall-cmd, on any path
+  ok    pliwee-firewalld.xml declares exactly tcp/55432 and nothing else
+  ok    pliwee-firewalld.xml: mDNS is not redeclared (firewalld's own mdns service covers it)
+  ok    omnibridge-firewalld.xml declares exactly tcp/55432 and nothing else
+  ok    omnibridge-firewalld.xml: mDNS is not redeclared (firewalld's own mdns service covers it)
+  ok    omnibridge-firewalld.xml is byte-identical to the file OmniBridge 1.0.0 shipped
+
+systemd user lifecycle (audit §7.3, §4.3)
+  ok    %systemd_user_post is called
+  ok    %systemd_user_preun is called
+  ok    %systemd_user_postun is called
+  ok    the unit is not globally enabled
+
+%doc is documentation, not the evidence tree (audit R10)
+  ok    %doc is %doc README.md
+
+Subpackage split (audit §12)
+  ok    pliwee-gui is its own subpackage
+  ok    pliwee-gui requires the exact core build
+  ok    R5: Suggests wl-clipboard, with no version constraint
+
+Debian / Ubuntu packaging (audit §6)
+  ok    debian/control
+  ok    debian/rules
+  ok    debian/changelog
+  ok    debian/copyright
+  ok    debian/source/format
+  ok    debian/README.source
+  ok    debian/pliwee.install
+  ok    debian/pliwee-gui.install
+  ok    debian/rules is executable
+  ok    debian/rules installs the canonical unit from packaging/common/
+  ok    no duplicate unit under packaging/debian/
+  ok    debian/rules installs desktop metadata with the shared script
+  ok    debian/rules runs cargo --locked
+  ok    debian/rules runs cargo --offline
+  ok    debian/rules redirects CARGO_HOME into the build tree
+  ok    R7: dh_installsystemduser --no-enable
+  ok    no runtime relation names rustc or cargo
+  ok    Build-Depends states rustc (>= 1.88), matching the workspace MSRV
+  ok    no firewalld metadata in the Debian packaging (audit §9.3)
+  ok    no GNOME Shell extension dependency
+
+No maintainer script may touch the trust store, on any path (R6)
+  ok    no hand-written maintainer scripts at all — debhelper generates them
+  ok    debian/rules adds no purge behaviour
+
+No maintainer script touches user state (audit R6)
+  ok    no user-state path is referenced outside comments
+
+OmniBridge -> Pliwee transition (ADR-0020; rebrand Wave 7)
+  ok    the first Pliwee version 1.1.0 is above OmniBridge 1.0.0
+  ok    the workspace version 1.1.0 is at or above the first Pliwee version
+  ok    the spec builds exactly pliwee, pliwee-gui and the transitional omnibridge (rpmspec)
+  ok    the core package declares no Obsoletes: (the transitional package upgrades omnibridge instead)
+  ok    the core package does not Provide: omnibridge
+  ok    transitional %package -n omnibridge: noarch, Requires: pliwee = %{version}-%{release}
+  ok    the transitional omnibridge package has a %files section (and it is empty)
+  ok    pliwee-gui: Obsoletes: omnibridge-gui < 1.1.0 (exact bound)
+  ok    pliwee-gui: Provides: omnibridge-gui = %{version}-%{release}
+  ok    the spec ships omnibridged.service as a symlink to pliweed.service, and lists it
+  ok    debian/pliwee.links ships omnibridged.service as a symlink to pliweed.service
+  ok    no Alias= in the unit (the alias is the shipped symlink)
+  ok    debian pliwee: Replaces: omnibridge (<< 1.1.0~)
+  ok    debian pliwee: Breaks: omnibridge (<< 1.1.0~)
+  ok    debian pliwee does not Provide: omnibridge
+  ok    debian transitional omnibridge: Architecture: all, Depends: pliwee (>= ${binary:Version})
+  ok    debian pliwee-gui: Replaces: omnibridge-gui (<< 1.1.0~)
+  ok    debian pliwee-gui: Breaks: omnibridge-gui (<< 1.1.0~)
+  ok    debian pliwee-gui does not Provide: omnibridge-gui
+  ok    debian transitional omnibridge-gui: Architecture: all, Depends: pliwee-gui (>= ${binary:Version})
+  ok    debian/changelog's top entry is the pliwee source: pliwee (1.1.0-1) unstable; urgency=medium
+  ok    the metainfo <replaces> the OmniBridge component id
+
+== H1: no host-side `| grep -q` in the harnesses ==
+  ok    H1: no harness pipes into grep -q on the host side
+
+== H2: the guest harnesses load lib/assert.sh ==
+  ok    H2: lifecycle-gates.sh loads lib/assert.sh
+  ok    H2: lifecycle-peer-gates.sh loads lib/assert.sh
+  ok    H2: security-log-evidence.sh loads lib/assert.sh
+  ok    H2: upgrade-gates.sh loads lib/assert.sh
+  ok    H2: pre-g8-manual-gates.sh loads lib/assert.sh
+
+== H3: the harness self-tests assert in both directions ==
+  ok    H3: 45 cases require a primitive to REJECT its failure mode
+  ok    H3: 16 cases require a primitive to ACCEPT the good case, so one hard-coded to fail cannot pass
+
+== H4: G7-UP stage order and the pre-G8 coordinator ==
+  ok    H4: the upgrade stage (175 lines, through U9) stops on Pliwee with a checkpoint and contains no U10
+  ok    H4: the downgrade stage checks the U6 evidence (line 176) before U0 contacts the guest (line 187)
+  ok    H4: G7-UP keeps its exact-count, anchored-window and U10 identity assertions
+  ok    H4: the coordinator drives the repository's own gate scripts
+  ok    H4: the coordinator creates no repository or release, merges nothing, adds no UID and does not touch Play
+  ok    H4: signing provisioning runs with the terminal's own stdio (no pipe, tee or redirect)
+
+-----------------------------------------------
+136 passed, 0 failed

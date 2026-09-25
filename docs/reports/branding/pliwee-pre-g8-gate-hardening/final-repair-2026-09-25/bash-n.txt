@@ -1,0 +1,13 @@
+# 2026-09-25T17:16:03Z
+bash -n OK  packaging/tests/pre-g8-manual-gates.sh
+bash -n OK  packaging/tests/pre-g8-manual-gates-selftests.sh
+bash -n OK  packaging/tests/evidence-whitespace-check.sh
+bash -n OK  packaging/tests/upgrade-gates.sh
+bash -n OK  packaging/tests/harness-selftests.sh
+bash -n OK  packaging/tests/packaging-checks.sh
+bash -n OK  packaging/tests/lib/g7up-evidence.sh
+bash -n OK  packaging/tests/lib/g7up-fixture.sh
+bash -n OK  packaging/tests/lib/assert.sh
+bash -n OK  docs/reports/branding/pliwee-pre-g8-gate-hardening/final-repair-2026-09-25/mutations-final.sh
+bash -n OK  docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/mutations-repair.sh
+bash -n OK  docs/reports/branding/pliwee-pre-g8-gate-hardening/mutations.sh

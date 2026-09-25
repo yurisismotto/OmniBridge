@@ -1,0 +1,8 @@
+PASS  docs/design/assets/pliwee-mark.svg  b1d927564f25c8c59361eb3a7a5cad845ce18428421a053b25cbe1943440519c
+PASS  docs/design/assets/pliwee-mark-mono.svg  15120dd82ba288f51854baec6820f93f72d78bcc1d029451d3b88691cb510fdf
+PASS  docs/design/assets/pliwee-mark-tonal.svg  99201df067a31aed898f45d31b0d04a01e430a6d4f4e7c595357996428d7ee1b
+PASS  docs/design/assets/pliwee-wordmark.svg  6220f2e8d275357f010c9456ca75bddfccfe25ea587969fa61933d4aeeafaf13
+PASS  docs/design/assets/pliwee-lockup.svg  78792f3e978bdc97b7f16efbdcd92d08f9e1771f6ad5d674ff0c9ea0423245de
+PASS  protocol/testdata/identity-a.der  cdb976416b52d73b00faeadcb1890e35515061527559cd0643e451b7c46baa41
+PASS  protocol/testdata/identity-b.der  a3b55bf1b9db309585eec391efb5de42ca0cd3c4810ba03d4cc1986ce26561a8
+frozen digests: 7 passed, 0 failed (expected exactly 7 passed)

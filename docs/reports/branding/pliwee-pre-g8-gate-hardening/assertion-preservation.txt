@@ -1,0 +1,9 @@
+# upgrade-gates.sh assertion lines at HEAD (e68f332) vs the working tree
+# pattern: need_exact_count|need_nonempty|need_window_covers|contains|ok "|notok "|abort " (leading whitespace stripped)
+HEAD lines: 95
+present in the working tree: 95 of 95
+missing:
+(end of missing list)
+
+# the one line removed on purpose (not an assertion): the U6 n/a record
+339:na "U6: the peer reconnect, clipboard round-trip and file are lifecycle-peer-gates.sh, run now against this guest: $HERE/lifecycle-peer-gates.sh --domain $DOMAIN --distro $DISTRO ..."

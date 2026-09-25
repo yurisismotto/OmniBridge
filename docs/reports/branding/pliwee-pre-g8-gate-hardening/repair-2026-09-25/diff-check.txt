@@ -1,0 +1,16 @@
+# 2026-09-25T16:48:01Z
+$ git diff --check
+rc=0
+$ grep -nE "[[:space:]]+$" (untracked files of this branch)
+rc=1 (1 = no match)
+
+# Superseding note — 2026-09-25, final hardening repair
+# (report § 10, branch feature/pliwee-pre-g8-gate-hardening). The "no match"
+# above was not true of this evidence set. At the time, 12 lines in four
+# files under docs/reports/branding/pliwee-pre-g8-gate-hardening/ ended in
+# spaces: harness-selftests.txt (2), mutations.txt (4),
+# repair-2026-09-25/harness-selftests.txt (2) and
+# repair-2026-09-25/mutations-original-rerun.txt (4). `git diff --check` does
+# not look at untracked files. Those lines were stripped and a guard was added;
+# see ../final-repair-2026-09-25/whitespace-normalization.txt and diff-check.txt.
+# The lines above are left as they were written.

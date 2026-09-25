@@ -332,6 +332,17 @@ and the two public ADR-0019 certificates in
     `packaging-checks.sh`'s static lint of every harness (H1/H2, 129/0).
     Neither harness was run end to end. They need containers and guests
     (§ 8).
+
+    > **Superseding note — 2026-09-25, pre-G8 gate hardening
+    > (`feature/pliwee-pre-g8-gate-hardening`).** The bullet above hardened
+    > U10 inside the upgrade stage. That stage still recorded U6 as n/a and then
+    > ran U10, so U6 could not be measured against the upgraded guest before the
+    > downgrade. U10 is now its own `--stage downgrade`, and it refuses unless a
+    > verified U6 PASS from `--stage peer-u6` exists for the same distro,
+    > domain, run and guest. The upgrade stage still requires `--old-pkgdir` and
+    > now records the digest of its `SHA256SUMS`, and U10 refuses a different
+    > set. The O1 checks described above are unchanged. See
+    > [PLIWEE-PRE-G8-GATE-HARDENING.md](PLIWEE-PRE-G8-GATE-HARDENING.md).
 * **Certification and harness wording**: § 4, "Harness messages".
 * **Compatibility values preserved.** Every L1–L9 class of the W8 audit is
   still present and still asserted: the legacy wire profile
@@ -467,6 +478,46 @@ candidate frozen on `develop`.
 | Android instrumented suite (including `HostDrivenCertificationHarness` with the renamed `pliwee.*` keys), component-upgrade test, signed-bundle verification | the device may not be touched; no Pliwee upload key exists | W6 § 7 procedure |
 | `release-artifacts.yml` dry run | pushing or dispatching is the orchestrator's | the orchestrator |
 | Signing-key provisioning, Play, repository migration | out of scope (W9/W10, operator) | — |
+
+> **Superseding note — 2026-09-25, pre-G8 gate hardening
+> (`feature/pliwee-pre-g8-gate-hardening`).** Some of the gates in this
+> table are now driven by one resumable operator coordinator,
+> `packaging/tests/pre-g8-manual-gates.sh`. It runs one gate at a time,
+> confirms every VM, device or signing-media action at the terminal, and
+> records PASS / FAIL / PENDING / BLOCKED from the evidence the owning scripts
+> write. It drives **only** these:
+>
+> * G7-UP U0–U10 (with U8 on a fresh guest) on the four distributions, in §3
+>   order: U6 against the upgraded guest, then U10;
+> * `lifecycle-gates.sh`, on a fresh guest per distribution;
+> * `security-log-evidence.sh`, once per distribution, on the upgraded G7-UP
+>   guest before U10;
+> * `lifecycle-peer-gates.sh` **only as U6**, run by
+>   `upgrade-gates.sh --stage peer-u6` against the upgraded guest;
+> * from the GNOME and KDE row, **only** the Wave 2 Devices-page keyboard and
+>   screen-reader procedure;
+> * the Android instrumented suite as `:app:connectedDebugAndroidTest`, where
+>   `HostDrivenCertificationHarness` runs only in its no-argument mode, and
+>   the component-upgrade test;
+> * signing-key provisioning (`provision-signing-keys.sh`).
+>
+> These stay outside it, with their own procedures and owners:
+>
+> * the network matrix;
+> * the container builds, `install-smoke.sh` and the built-package validators;
+> * Security Certification v1 (SEC) and the clipboard.v1, files.v1 and
+>   notifications.v1 hardware certifications;
+> * `systemd-unit-gates.sh`;
+> * the QR centre mark and scan (D8), tray, D-Bus activation, and the reset of
+>   favourites and notification settings in real sessions;
+> * a full `lifecycle-peer-gates.sh` run outside U6, and the host-driven
+>   `HostDrivenCertificationHarness` runs;
+> * signed-bundle verification;
+> * the `release-artifacts.yml` dry run;
+> * Play and repository migration (W9/W10).
+>
+> The table is left as written. **None of these gates has been executed.** See
+> [PLIWEE-PRE-G8-GATE-HARDENING.md](PLIWEE-PRE-G8-GATE-HARDENING.md) §9.
 
 ## 9. Evidence files (`pliwee-pre-w8-remediation/`)
 

@@ -363,6 +363,20 @@ built binaries differ from the tree only in those comments.
 | `release-signing-production-tests.sh` | needs a real signed release set; the next one is the first Pliwee release | Wave 10 |
 | Debian 13 in the package-transition probe | no `debian:trixie` image was cached, and nothing was pulled | G7-UP on Debian 13 |
 
+> **Superseding note — 2026-09-25, pre-G8 gate hardening
+> (`feature/pliwee-pre-g8-gate-hardening`).** The G7-UP row above describes
+> `upgrade-gates.sh` as it was authored in this wave: `--stage upgrade` ran O1,
+> U3, U4, O2, U5, U7, U9 **and U10**, and recorded U6 as n/a. Run that way, the
+> guest was already back on OmniBridge 1.0.0 by the time `lifecycle-peer-gates.sh`
+> could run, so U6 could never be measured against the upgraded guest before U10,
+> which is the order the plan (§3) requires. The harness now has separate
+> stages: `upgrade` (O1–U9) stops on Pliwee and writes a checkpoint, `peer-u6`
+> runs U6 against that guest, and `downgrade` (U10) refuses unless it can
+> verify a U6 PASS for the same distro, domain, run and guest identity. The
+> operator drives the stages through `packaging/tests/pre-g8-manual-gates.sh`.
+> See [PLIWEE-PRE-G8-GATE-HARDENING.md](PLIWEE-PRE-G8-GATE-HARDENING.md). The
+> row is left as written: G7-UP is still **NOT EXECUTED**.
+
 ---
 
 ## 6. Remaining `omnibridge` in the Wave 7 areas — classified

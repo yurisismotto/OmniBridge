@@ -1,0 +1,109 @@
+
+== A missing executable  (Packaging v1: an absent runuser) ==
+ok    REJECTS a tool that is not installed — required tool(s) not installed: omnibridge-definitely-not-a-real-tool-4f9a
+ok    REJECTS one absent tool among several present ones — required tool(s) not installed: omnibridge-definitely-not-a-real-tool-4f9a
+ok    ACCEPTS tools that are installed
+
+== An empty capture  (Packaging v1: an empty tracing capture; L16: one line) ==
+ok    REJECTS an empty capture — the journal is empty; a search over it would prove nothing
+ok    REJECTS a whitespace-only capture — the journal is empty; a search over it would prove nothing
+ok    REJECTS a capture below the minimum — the journal holds 1 line(s), fewer than the 20 this gate needs to be non-vacuous
+ok    ACCEPTS a capture with real content
+ok    ACCEPTS a capture meeting an explicit minimum
+
+== A search that loses a match  (Evidence closure: 225 misses in 300 runs) ==
+ok    PREDICATE contains(), on a sentinel near the start of a 4000-line capture — answers true, as it must
+ok    PREDICATE contains(), on a string the capture does not hold — answers false, as it must
+ok    PREDICATE absent(), on a string that really is absent — answers true, as it must
+ok    PREDICATE absent(), on a string that is present — the privacy-gate direction — answers false, as it must
+ok    REGRESSION: 200/200 searches of a large capture found a present sentinel (the pipe form missed 75%)
+
+== A window that does not cover the operation  (defects 2, 9, 19) ==
+ok    REJECTS a window with no anchor for this operation — the journal does not contain 'transfer=abc12345', so the window does not cover the operation under test;
+ok    REJECTS an empty window, before any anchor is even looked for — the journal is empty; a search over it would prove nothing
+ok    ACCEPTS a window carrying this operation's own anchor
+
+== A wrong artifact count  (Packaging v1: six built, one shipped) ==
+ok    REJECTS a count that is wrong — installed packages is 1, expected exactly 2
+ok    REJECTS a count that is zero — installed packages is 0, expected exactly 2
+ok    REJECTS a count that could not be read — installed packages is <unreadable>, expected exactly 2
+ok    ACCEPTS a count that is exactly right
+ok    ACCEPTS a count with the whitespace guests add
+
+== A glob that matched nothing  (Packaging v1: L17 skipped its group) ==
+ok    REJECTS a glob that matches nothing — expected exactly 2 file(s) matching '*.rpm' in /tmp/pliwee-selftest.aeyp9Whd/pkgs, found 0
+ok    REJECTS a glob that matches the wrong number — expected exactly 3 file(s) matching '*.deb' in /tmp/pliwee-selftest.aeyp9Whd/pkgs, found 2
+ok    REJECTS a directory that does not exist — need_glob: '/tmp/pliwee-selftest.aeyp9Whd/nope' is not a directory
+ok    ACCEPTS a glob that matches exactly the expected count
+
+== A relative mount path  (Packaging v1: read as a named volume) ==
+ok    REJECTS a relative path used as a mount source — --pkgdir must be an absolute path, got 'artifacts/fedora44' -- a relative path is read as a named volume
+ok    REJECTS a bare name used as a mount source — --pkgdir must be an absolute path, got 'artifacts' -- a relative path is read as a named volume by podman
+ok    ACCEPTS an absolute mount source
+
+== A directory nothing can write to  (Packaging v1: the subuid case) ==
+ok    REJECTS a directory the harness cannot write to — cannot write to /tmp/pliwee-selftest.aeyp9Whd/ro; anything staged there would be silently absent
+ok    ACCEPTS a writable directory
+
+== An operation that never ran  (defects 10, 11: the session was torn down) ==
+ok    REJECTS a counter that did not move across the operation — mirrored did not change across the operation (3 -> 3); the operation under test did not run
+ok    REJECTS a before/after observation that is missing — mirrored: a before/after observation is missing, so nothing can be said about whether the operation ran
+ok    ACCEPTS a counter that moved
+
+== A delta that is not the one claimed  (defect 14: 'mirrored now' is not a total) ==
+ok    REJECTS no change where exactly one was expected — mirrored changed by 0, expected exactly 1 (3 -> 3)
+ok    REJECTS two arrivals counted as the one under test — mirrored changed by 2, expected exactly 1 (3 -> 5)
+ok    REJECTS a non-numeric observation — mirrored: before='three' after='4' are not both numbers
+ok    ACCEPTS exactly the expected delta
+ok    ACCEPTS a delta of one from a cleared baseline
+
+== A prompt with no stdin  (Packaging v1 bash -s; defect 4: silent decline) ==
+ok    ACCEPTS a command given a real answer on stdin
+ok    REJECTS a command whose stdin is closed — pliwee pair will read EOF from its prompt and take the default answer, which is usually 'no'
+
+== U10 before U6  (pre-G8 gate hardening: U6 recorded n/a, then U10 ran) ==
+ok    ACCEPTS a real U6 PASS on the same distro, domain, run and guest
+ok    REJECTS U10 with no U6 at all (the old order: upgrade, then straight to the downgrade) — no U6-RESULT in /tmp/pliwee-selftest.aeyp9Whd/g7/no-u6: U6 has not been run against the upgraded guest
+ok    REJECTS an empty U6-RESULT file — U6-RESULT is empty; a search over it would prove nothing
+ok    REJECTS a hand-written 'verdict=PASS' and nothing else — U6-RESULT holds 1 line(s), fewer than the 10 this gate needs to be non-vacuous
+ok    REJECTS a U6 record with no upgrade checkpoint behind it — no UPGRADE-CHECKPOINT in /tmp/pliwee-selftest.aeyp9Whd/g7/no-checkpoint: the upgrade stage has not comple
+ok    REJECTS a U6 log altered after it was recorded — the U6 log is missing or is not the one U6-RESULT recorded
+ok    REJECTS an empty U6 log, even with a matching digest — the U6 log is empty; a search over it would prove nothing
+ok    REJECTS a U6 run in which lifecycle-peer-gates.sh failed a check — failed checks in the U6 log is 1, expected exactly 0
+ok    REJECTS a U6 run that stopped on a precondition — the U6 log records a PRECONDITION FAILED: lifecycle-peer-gates.sh stopped before measuring
+ok    REJECTS a U6 that re-paired the phone (U6 is 'reconnects WITHOUT re-pairing') — the U6 log has no line matching /^ok    the phone is already paired with this guest; no operator action n
+ok    REJECTS a clipboard that went one way only (n/a is not a round-trip) — the U6 log has no line matching /^ok    L14: phone -> guest (arrived|recorded in the guest journal)/: tha
+ok    REJECTS a file transfer with no journal line naming its id — the U6 transfer journal is empty; a search over it would prove nothing
+ok    REJECTS a U6 recorded for another domain — U6-RESULT was recorded for domain 'g7-u2404', not 'g7-f44'
+ok    REJECTS a U6 whose peer gates measured another distribution — lifecycle-peer-gates.sh measured distro 'ubuntu2404', not 'fedora44'
+ok    REJECTS a U6 log whose tally names another guest — the U6 log has no 'fedora44 / g7-f44' tally: it was not measured on this guest
+ok    REJECTS the right U6 asked about as another distro — UPGRADE-CHECKPOINT is for distro 'fedora44', not 'ubuntu2404'
+ok    REJECTS the right U6 asked about as another domain — UPGRADE-CHECKPOINT is for domain 'g7-f44', not 'g7-u2404'
+ok    REJECTS a U6 from an earlier upgrade run — U6-RESULT run_id 'g7up-fedora44-20260101T000000Z-00000001' is not the upgrade checkpoint's 'g7up-fedora44
+ok    REJECTS a U6 measured on another machine — U6-RESULT guest_machine_id 'ffffffffffffffffffffffffffffffff' is not the upgrade checkpoint's '5f0c0ffee5
+ok    REJECTS a U6 whose peer saw a different local fingerprint than the upgraded guest's — the peer gates saw fingerprint '9999 9999 9999 9999', not the upgraded guest's 'AB12 CD34 EF56 7890'
+ok    REJECTS a U6 that started before the upgrade stage completed — U6 did not start after the upgrade stage completed (started 1)
+ok    REJECTS a U6 on a run whose upgrade stage failed checks — the upgrade stage recorded '2' failed check(s); no U6 on that run can be a PASS
+ok    REJECTS a U6 whose lifecycle-peer-gates.sh exited non-zero — lifecycle-peer-gates.sh exited 1 in U6
+ok    STAGE refuses --stage downgrade with no evidence at all — exit 3 before contacting the guest: PRECONDITION FAILED: U10 refused: there is no verified U6 PASS for fedora44 on g7-f44 in /
+ok    STAGE refuses --stage downgrade after the upgrade but before U6 — exit 3 before contacting the guest: PRECONDITION FAILED: U10 refused: there is no verified U6 PASS for fedora44 on g7-f44 in /
+ok    STAGE refuses --stage downgrade over an empty U6-RESULT — exit 3 before contacting the guest: PRECONDITION FAILED: U10 refused: there is no verified U6 PASS for fedora44 on g7-f44 in /
+ok    STAGE refuses --stage downgrade over a forged 'verdict=PASS' — exit 3 before contacting the guest: PRECONDITION FAILED: U10 refused: there is no verified U6 PASS for fedora44 on g7-f44 in /
+ok    STAGE refuses --stage downgrade over a U6 recorded for another domain — exit 3 before contacting the guest: PRECONDITION FAILED: U10 refused: there is no verified U6 PASS for fedora44 on g7-f44 in /
+ok    STAGE refuses --stage downgrade over a U6 that measured another distribution — exit 3 before contacting the guest: PRECONDITION FAILED: U10 refused: there is no verified U6 PASS for fedora44 on g7-f44 in /
+ok    STAGE refuses --stage downgrade on another domain than the one U6 measured — exit 3 before contacting the guest: PRECONDITION FAILED: U10 refused: there is no verified U6 PASS for fedora44 on g7-other in
+ok    STAGE refuses --stage downgrade with a different 1.0.0 set than the upgrade recorded — exit 3 before contacting the guest: PRECONDITION FAILED: U10 refused: /tmp/pliwee-selftest.aeyp9Whd/old2/SHA256SUMS is not the
+ok    STAGE accepts --stage downgrade over a real U6 PASS — it passed the evidence gate and went on to contact the guest
+ok    STAGE refuses a second --stage downgrade after one was interrupted — exit 3 before contacting the guest: PRECONDITION FAILED: U10 refused: it already started here (run_id=x). A second downgrade m
+ok    STAGE refuses --stage peer-u6 before the upgrade stage completed — exit 3 before contacting the guest: PRECONDITION FAILED: U6 refused: no completed upgrade stage for fedora44 on g7-f44 in /tmp
+ok    STAGE refuses --stage peer-u6 once U10 has started — exit 3 before contacting the guest: PRECONDITION FAILED: U6 refused: U10 has already started on this guest (/tmp/pliwee-selfte
+ok    STAGE refuses --stage peer-u6 after an upgrade stage that failed checks — exit 3 before contacting the guest: PRECONDITION FAILED: U6 refused: the upgrade stage recorded 2 failed check(s); G7-UP is al
+ok    STAGE accepts --stage peer-u6 after a completed upgrade stage — it passed the evidence gate and went on to contact the guest
+ok    STAGE refuses a second --stage upgrade into an evidence directory that already has one — exit 3 before contacting the guest: PRECONDITION FAILED: /tmp/pliwee-selftest.aeyp9Whd/g7/stage-ok already holds a completed u
+ok    STATIC the upgrade stage (175 lines, O1 through U9) contains no U10: it stops on Pliwee and writes the checkpoint
+
+== The pre-G8 coordinator  (pre-g8-manual-gates-selftests.sh) ==
+ok    the coordinator's self-tests pass (95 checks)
+
+-----------------------------------------------
+80 passed, 0 failed

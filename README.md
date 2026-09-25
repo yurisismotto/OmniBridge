@@ -423,7 +423,7 @@ simply the most convenient source when it is new enough.
 ```bash
 cd desktop
 cargo build --release
-cargo test --workspace          # 981 tests
+cargo test --workspace          # the full workspace test suite
 
 ./target/release/pliweed       # foreground, or install the user unit
 ```
@@ -614,7 +614,7 @@ Every certification, audit and report is indexed under
 ## Testing
 
 ```bash
-cd desktop && cargo test --workspace              # 981 tests
+cd desktop && cargo test --workspace              # the full workspace test suite
 cd android && ./gradlew :app:testDebugUnitTest    # 771 tests
 
 # Touches the real system clipboard, so it is opt-in:

@@ -1037,7 +1037,7 @@ done
 # to remember all of them in prose.
 printf '\n== H2: the guest harnesses load lib/assert.sh ==\n'
 h2_bad=0
-for h in lifecycle-gates.sh lifecycle-peer-gates.sh security-log-evidence.sh upgrade-gates.sh; do
+for h in lifecycle-gates.sh lifecycle-peer-gates.sh security-log-evidence.sh upgrade-gates.sh pre-g8-manual-gates.sh; do
     f="$ROOT/packaging/tests/$h"
     [ -f "$f" ] || { fail "H2: $h is missing"; h2_bad=$((h2_bad + 1)); continue; }
     if grep -q 'lib/assert.sh' "$f"; then
@@ -1067,6 +1067,64 @@ else
     [ "${n_acc:-0}" -ge 5 ] 2>/dev/null \
         && pass "H3: $n_acc cases require a primitive to ACCEPT the good case, so one hard-coded to fail cannot pass" \
         || fail "H3: only ${n_acc:-0} acceptance cases; a primitive that rejected everything would pass the suite"
+fi
+
+# ---------------------------------------------------------------------------
+# H4 — G7-UP runs in the order §3 defines, and the coordinator drives it
+# ---------------------------------------------------------------------------
+# Pre-G8 gate hardening: the upgrade stage recorded U6 n/a and downgraded
+# (U10) in the same run, so U6 could never be measured against the upgraded
+# guest. The self-tests prove the refusals at run time; this pins the shape,
+# and the exact assertions G7-UP had, so a later edit cannot quietly undo it.
+printf '\n== H4: G7-UP stage order and the pre-G8 coordinator ==\n'
+ug="$ROOT/packaging/tests/upgrade-gates.sh"
+# From the upgrade stage's opening line to the next stage's; a `^fi$` range
+# would stop at the first inner `fi` and read a dozen lines.
+up_block="$(awk '/^if \[ "\$STAGE" = upgrade \]; then/ {f=1; next} f && /^if \[ "\$STAGE" = / {exit} f' "$ug")"
+n_up="$(grep -c . <<<"$up_block" || true)"
+if [ "${n_up:-0}" -ge 100 ] && grep -qF 'section "U9' <<<"$up_block" && ! grep -qF 'section "U10' <<<"$up_block" \
+        && grep -qF 'G7UP_CHECKPOINT' <<<"$up_block"; then
+    pass "H4: the upgrade stage ($n_up lines, through U9) stops on Pliwee with a checkpoint and contains no U10"
+else
+    fail "H4: the upgrade stage still downgrades, or writes no checkpoint"
+fi
+l_ref="$(grep -n 'g7up_verify_u6 "\$EVIDENCE" "\$DISTRO" "\$DOMAIN"' "$ug" | head -1 | cut -d: -f1)"
+l_u0="$(grep -n '^section "U0' "$ug" | head -1 | cut -d: -f1)"
+if [ -n "$l_ref" ] && [ -n "$l_u0" ] && [ "$l_ref" -lt "$l_u0" ]; then
+    pass "H4: the downgrade stage checks the U6 evidence (line $l_ref) before U0 contacts the guest (line $l_u0)"
+else
+    fail "H4: the U6 evidence check is missing or comes after U0 (lines ${l_ref:-none} / ${l_u0:-none})"
+fi
+h4_bad=0
+for a in 'need_exact_count "U1: packages at exactly 1.0.0-1" "$n_ok" 2' \
+         'need_exact_count "O1: OmniBridge packages at exactly 1.0.0-1" "$n0" 2' \
+         'need_exact_count "O1: legacy files digested"' \
+         'need_exact_count "O1: daemon processes" "$pids1" 1' \
+         'need_exact_count "O2: pliweed processes" "$pids2" 1' \
+         'need_exact_count "O2: omnibridged processes" "$old2" 0' \
+         'need_window_covers "U4 journal after the upgrade" "$jnl" "migrated from $LEGACY"' \
+         'need_window_covers "U8 journal" "$jnl" "refusing to start: $LEGACY"' \
+         'ok "U10: OmniBridge 1.0.0 starts on its pre-migration identity"'; do
+    grep -qF -- "$a" "$ug" || { fail "H4: G7-UP lost the assertion: $a"; h4_bad=$((h4_bad + 1)); }
+done
+[ "$h4_bad" -eq 0 ] && pass "H4: G7-UP keeps its exact-count, anchored-window and U10 identity assertions"
+co="$ROOT/packaging/tests/pre-g8-manual-gates.sh"
+if [ -x "$co" ]; then
+    h4_bad=0
+    for s in upgrade-gates.sh security-log-evidence.sh lifecycle-gates.sh provision-signing-keys.sh connectedDebugAndroidTest; do
+        grep -qF "$s" "$co" || { fail "H4: the coordinator does not drive $s"; h4_bad=$((h4_bad + 1)); }
+    done
+    [ "$h4_bad" -eq 0 ] && pass "H4: the coordinator drives the repository's own gate scripts"
+    if grep -nE '^[^#]*(gh (repo|release|pr)|git (merge|push|commit)|--quick-add-uid|adduid|play(-| )console|androidpublisher)' "$co" >/dev/null; then
+        fail "H4: the coordinator contains a repository, release, merge, OpenPGP-UID or Play action"
+    else
+        pass "H4: the coordinator creates no repository or release, merges nothing, adds no UID and does not touch Play"
+    fi
+    grep -qxF '        "$prov" --media-a "$MEDIA_A" --media-b "$MEDIA_B"' "$co" \
+        && pass "H4: signing provisioning runs with the terminal's own stdio (no pipe, tee or redirect)" \
+        || fail "H4: the signing provisioning line is not the bare, uncaptured invocation"
+else
+    fail "H4: packaging/tests/pre-g8-manual-gates.sh is missing or not executable"
 fi
 
 printf '\n%s\n' "-----------------------------------------------"
