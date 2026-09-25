@@ -21,7 +21,7 @@ changed what the product *says*. It did not change what the product *is
 called by the system*: binaries, paths, package names, the Android
 `applicationId`, the desktop app id, protocol identifiers and URLs still carry
 `omnibridge`, and each moves in the wave that owns it (plan §2). Copy that
-quotes one of those — "Run `omnibridge pair`", `~/Downloads/OmniBridge` —
+quotes one of those — "Run `omnibridge pair`", Android's `Download/OmniBridge` —
 quotes it exactly until then.
 
 ### Reserved naming family

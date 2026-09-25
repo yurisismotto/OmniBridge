@@ -869,6 +869,8 @@ pub(crate) mod tests {
                     .collect(),
                 devices: devices.clone(),
                 pairing_active: false,
+                migrated_from: None,
+                legacy_partial_files: Vec::new(),
             }),
             devices: Some(devices),
             transfers: Some(Vec::new()),

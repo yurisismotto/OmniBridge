@@ -51,6 +51,9 @@ pliwee-core = { version = "1.0.0", path = "../core", features = ["unix-fs"] }
 pliwee-control = { version = "1.0.0", path = "../control" }
 pliwee-proto = { version = "1.0.0", path = "../proto" }
 async-trait = "0.1"
+# `MIGRATED_FROM` records the SHA-256 of each file carried over from an
+# OmniBridge data directory. Already in the workspace graph (`pliwee-core`).
+sha2 = "0.10.9"
 tokio = { version = "1", features = ["net", "io-util", "rt"] }
 tracing = "0.1"
 

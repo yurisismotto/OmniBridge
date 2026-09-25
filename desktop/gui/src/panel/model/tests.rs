@@ -101,6 +101,8 @@ fn status(devices: &[DeviceReport]) -> StatusReport {
             .collect(),
         devices: devices.to_vec(),
         pairing_active: false,
+        migrated_from: None,
+        legacy_partial_files: Vec::new(),
     }
 }
 

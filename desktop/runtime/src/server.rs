@@ -227,6 +227,7 @@ async fn build_status(state: &Arc<DaemonState>) -> StatusReport {
     let devices = build_devices(state).await;
     let listen_port = state.listen_port().await;
     let listen_families = state.listen_families();
+    let local_state = state.local_state();
     let store = state.store.lock().await;
     StatusReport {
         device_name: store.settings().device_name.clone(),
@@ -245,6 +246,8 @@ async fn build_status(state: &Arc<DaemonState>) -> StatusReport {
         connections,
         devices,
         pairing_active: state.pairing_remaining().await.is_some(),
+        migrated_from: local_state.migrated_from,
+        legacy_partial_files: local_state.legacy_partial_files,
     }
 }
 

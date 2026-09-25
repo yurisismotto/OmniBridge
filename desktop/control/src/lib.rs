@@ -695,6 +695,30 @@ pub struct StatusReport {
     /// paired-but-offline device instead of silently omitting it.
     pub devices: Vec<DeviceReport>,
     pub pairing_active: bool,
+    /// Where this device's identity came from, when it was carried over from
+    /// an OmniBridge install (ADR-0020 D9). `None` for an identity that was
+    /// created here.
+    ///
+    /// `#[serde(default)]` so a client and a daemon of different builds still
+    /// understand each other: an older daemon simply has nothing to report.
+    #[serde(default)]
+    pub migrated_from: Option<MigrationReport>,
+    /// Interrupted OmniBridge transfers (`.omnibridge-*.part`) still in a
+    /// download directory. Listed so a person can decide about them; the
+    /// daemon never removes them (ADR-0020 D9).
+    #[serde(default)]
+    pub legacy_partial_files: Vec<String>,
+}
+
+/// An identity copied from an OmniBridge data directory.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MigrationReport {
+    /// The legacy directory. It was not modified.
+    pub source: String,
+    pub migrated_at_unix: u64,
+    /// True when the copy happened during this daemon run, false when an
+    /// earlier run made it and this one only found the record.
+    pub this_run: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

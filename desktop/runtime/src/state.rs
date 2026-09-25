@@ -77,6 +77,19 @@ pub struct DaemonState {
 
     /// The address families the listener really accepts on, for reporting.
     listen_families: std::sync::OnceLock<String>,
+
+    /// What startup found about where the local state came from. Set once by
+    /// the agent before it serves anything; reported by `status`.
+    local_state: std::sync::OnceLock<LocalStateReport>,
+}
+
+/// Facts about this machine's local state that only startup can know.
+#[derive(Debug, Clone, Default)]
+pub struct LocalStateReport {
+    /// The identity was carried over from an OmniBridge data directory.
+    pub migrated_from: Option<crate::control::MigrationReport>,
+    /// Leftover `.omnibridge-*.part` files. Listed, never removed.
+    pub legacy_partial_files: Vec<String>,
 }
 
 impl DaemonState {
@@ -102,7 +115,18 @@ impl DaemonState {
             device_info,
             listen_port: std::sync::atomic::AtomicU16::new(0),
             listen_families: std::sync::OnceLock::new(),
+            local_state: std::sync::OnceLock::new(),
         }
+    }
+
+    /// Records what startup found about the local state. First call wins.
+    pub fn set_local_state(&self, report: LocalStateReport) {
+        let _ = self.local_state.set(report);
+    }
+
+    /// What startup found, or nothing to report.
+    pub fn local_state(&self) -> LocalStateReport {
+        self.local_state.get().cloned().unwrap_or_default()
     }
 
     /// Attaches the file-transfer manager.

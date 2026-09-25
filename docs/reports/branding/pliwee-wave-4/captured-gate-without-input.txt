@@ -1,0 +1,24 @@
+# the captured-state gate, run with W4_CAPTURED_STATE unset (final tree)
+   Compiling pliwee-daemon v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/daemon)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.65s
+     Running tests/legacy_state_migration.rs (target/debug/deps/legacy_state_migration-7ffb0b5e3f4bb2fa)
+
+running 1 test
+test captured_v1_0_0_state_is_carried_over ... FAILED
+
+failures:
+
+---- captured_v1_0_0_state_is_carried_over stdout ----
+
+thread 'captured_v1_0_0_state_is_carried_over' (143020) panicked at daemon/tests/legacy_state_migration.rs:275:10:
+NOT EXECUTED: W4_CAPTURED_STATE is not set
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    captured_v1_0_0_state_is_carried_over
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p pliwee-daemon --test legacy_state_migration`
+exit=101

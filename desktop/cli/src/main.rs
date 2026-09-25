@@ -395,6 +395,25 @@ async fn simple(stream: UnixStream, request: Request) -> anyhow::Result<()> {
             if s.pairing_active {
                 println!("  pairing     window OPEN");
             }
+            // ADR-0020 D9: where this identity came from, if it was carried
+            // over. The source directory is named because it still exists and
+            // is what an OmniBridge downgrade would start on.
+            if let Some(m) = &s.migrated_from {
+                println!(
+                    "  migrated    from {}{} (source left unchanged)",
+                    m.source,
+                    if m.this_run { ", on this start" } else { "" }
+                );
+            }
+            if !s.legacy_partial_files.is_empty() {
+                println!(
+                    "\n  {} interrupted OmniBridge transfer(s), left in place:",
+                    s.legacy_partial_files.len()
+                );
+                for f in &s.legacy_partial_files {
+                    println!("    {f}");
+                }
+            }
 
             if s.devices.is_empty() {
                 println!("\n  no paired devices. Run: omnibridge pair");

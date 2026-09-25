@@ -7,7 +7,7 @@ Electron app and not an embedded web view.
 
 A **client of the daemon**, and nothing more. It speaks the same
 newline-delimited JSON control protocol the `omnibridge` CLI speaks, over the
-same Unix socket in `$XDG_RUNTIME_DIR/omnibridge/control.sock`, using the very
+same Unix socket in `$XDG_RUNTIME_DIR/pliwee/control.sock`, using the very
 same `Request`/`Response` types from `pliwee-daemon`. Sharing those types is
 the point: if the socket contract changes, this crate stops compiling.
 

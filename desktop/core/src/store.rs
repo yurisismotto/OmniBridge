@@ -720,7 +720,7 @@ impl Store {
     }
 }
 
-/// Default location: `$XDG_DATA_HOME/omnibridge`, else `~/.local/share/…`.
+/// Default location: `$XDG_DATA_HOME/pliwee`, else `~/.local/share/…`.
 ///
 /// Re-exported from the Unix adapter so existing callers keep their import
 /// path. It is feature-gated for the same reason the adapter is.

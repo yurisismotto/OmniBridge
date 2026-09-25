@@ -3,7 +3,9 @@
 //! Everything OmniBridge has always done, moved behind the trait and with the
 //! absent/unreadable confusion removed:
 //!
-//! * `$XDG_DATA_HOME/omnibridge`, else `~/.local/share/omnibridge`;
+//! * `$XDG_DATA_HOME/pliwee`, else `~/.local/share/pliwee` — with an
+//!   existing `…/omnibridge` carried over first by the Linux adapter
+//!   (ADR-0020 D9);
 //! * `identity.key` at mode 0600 inside a directory at mode 0700;
 //! * write-then-rename, with the temp file created **already** at the final
 //!   mode so there is no window in which the key is world-readable;
@@ -210,16 +212,40 @@ impl SecretStore for FileSecretStore {
     }
 }
 
-/// Default location: `$XDG_DATA_HOME/omnibridge`, else `~/.local/share/…`.
+/// Resolves an XDG base directory: the variable if it is set to an absolute
+/// path, else `$HOME/<home_suffix>`, else `./<home_suffix>`.
+///
+/// A relative value is ignored, as the XDG Base Directory specification
+/// requires. The Linux adapter resolves the Pliwee and the legacy OmniBridge
+/// location with this same function, so the two can never disagree about
+/// which base they are under.
+pub fn xdg_base(
+    xdg: Option<std::ffi::OsString>,
+    home: Option<std::ffi::OsString>,
+    home_suffix: &str,
+) -> PathBuf {
+    xdg.map(PathBuf::from)
+        .filter(|p| p.is_absolute())
+        .unwrap_or_else(|| {
+            home.map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("."))
+                .join(home_suffix)
+        })
+}
+
+/// Default location: `$XDG_DATA_HOME/pliwee`, else `~/.local/share/pliwee`.
+///
+/// This is only where the identity *belongs*. Before the agent opens a store
+/// here, the Linux adapter's `legacy_migration` decides whether an OmniBridge
+/// identity has to be carried into it first; opening this path alone on an
+/// upgraded machine would be a first run over a live identity.
 pub fn default_data_dir() -> PathBuf {
-    if let Some(xdg) = std::env::var_os("XDG_DATA_HOME") {
-        PathBuf::from(xdg).join("omnibridge")
-    } else {
-        let home = std::env::var_os("HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from("."));
-        home.join(".local/share/omnibridge")
-    }
+    xdg_base(
+        std::env::var_os("XDG_DATA_HOME"),
+        std::env::var_os("HOME"),
+        ".local/share",
+    )
+    .join("pliwee")
 }
 
 /// This machine's name, for the `device_name` a peer sees.

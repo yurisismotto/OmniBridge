@@ -18,7 +18,11 @@ use pliwee_capability_notifications::backend::{
 use pliwee_capability_notifications::{NotificationManager, NotificationsCapability};
 use pliwee_control::transport::ControlTransport;
 use pliwee_core::capability::CapabilityRegistry;
-use pliwee_daemon::{approval::FileApproval, listener, mdns, server, state::DaemonState};
+use pliwee_daemon::{
+    approval::FileApproval,
+    listener, mdns, server,
+    state::{DaemonState, LocalStateReport},
+};
 use tokio_rustls::TlsAcceptor;
 
 #[derive(Parser, Debug)]
@@ -84,7 +88,55 @@ async fn main() -> anyhow::Result<()> {
         .install_default()
         .map_err(|_| anyhow::anyhow!("a rustls crypto provider was already installed"))?;
 
-    let data_dir = args.data_dir.unwrap_or_else(pliwee_linux::default_data_dir);
+    // ---- local state: carry an OmniBridge identity over first -------------
+    // ADR-0020 D9/D12. Before the store is opened on `~/.local/share/pliwee`,
+    // an identity still under `~/.local/share/omnibridge` is copied across —
+    // or, if it exists and cannot be read, startup stops here and names it.
+    // Opening the new directory without asking would be a "first run" over a
+    // live identity: a new key, and every pairing silently gone.
+    //
+    // An explicit `--data-dir` is the operator's own choice of directory and
+    // is used exactly as given.
+    let (data_dir, migrated_from) = match args.data_dir {
+        Some(dir) => (dir, None),
+        None => {
+            let dirs = pliwee_linux::DataDirs::from_env();
+            let origin = pliwee_linux::migrate_data_dir(&dirs).map_err(|e| {
+                tracing::error!(path = %e.path.display(), "refusing to start: {e}");
+                anyhow::anyhow!("{e}")
+            })?;
+            let report = match &origin {
+                pliwee_linux::DataDirOrigin::Migrated(r) => {
+                    tracing::info!(
+                        source = %r.source.display(),
+                        destination = %dirs.canonical.display(),
+                        "migrated from {}: identity and trust store copied into {}; \
+                         the source directory was not modified",
+                        r.source.display(),
+                        dirs.canonical.display()
+                    );
+                    Some(migration_report(r, true))
+                }
+                pliwee_linux::DataDirOrigin::Existing {
+                    migrated_from: Some(r),
+                } => {
+                    tracing::info!(
+                        source = %r.source.display(),
+                        migrated_at_unix = r.migrated_at_unix,
+                        "local state was migrated from {} by an earlier start; \
+                         nothing to migrate",
+                        r.source.display()
+                    );
+                    Some(migration_report(r, false))
+                }
+                pliwee_linux::DataDirOrigin::Existing {
+                    migrated_from: None,
+                }
+                | pliwee_linux::DataDirOrigin::NoLegacyState => None,
+            };
+            (dirs.canonical, report)
+        }
+    };
     // The Linux adapter composes the store: XDG paths, 0600/0700 modes,
     // `Platform::Linux`, `/etc/hostname`. `pliwee-core` decides the policy,
     // this decides where and how.
@@ -155,6 +207,7 @@ async fn main() -> anyhow::Result<()> {
         max_file_bytes = files_config.max_file_bytes,
         "files.v1 ready"
     );
+    let legacy_partial_files = find_legacy_partial_files(destination.dir());
 
     if args.accept_files_without_asking {
         tracing::warn!(
@@ -268,6 +321,10 @@ async fn main() -> anyhow::Result<()> {
             .with_notifications(Arc::clone(&notifications))
             .with_file_approval(Arc::clone(&approval)),
     );
+    state.set_local_state(LocalStateReport {
+        migrated_from,
+        legacy_partial_files,
+    });
 
     // The state is the authorizer: every grant question is answered from the
     // trust store, freshly, rather than from a set captured at handshake time.
@@ -403,4 +460,47 @@ async fn main() -> anyhow::Result<()> {
     // is, and a named pipe has no file to unlink.
     transport.release();
     Ok(())
+}
+
+fn migration_report(
+    record: &pliwee_linux::MigrationRecord,
+    this_run: bool,
+) -> pliwee_daemon::control::MigrationReport {
+    pliwee_daemon::control::MigrationReport {
+        source: record.source.display().to_string(),
+        migrated_at_unix: record.migrated_at_unix,
+        this_run,
+    }
+}
+
+/// Interrupted OmniBridge transfers left in the download directory in use and
+/// in the one OmniBridge used. Reported by `status`; never removed.
+fn find_legacy_partial_files(current: &std::path::Path) -> Vec<String> {
+    use pliwee_capability_files::destination::{
+        default_download_dir, legacy_partial_files, LEGACY_DOWNLOAD_SUBDIR,
+    };
+    let legacy = default_download_dir().join(LEGACY_DOWNLOAD_SUBDIR);
+    let mut dirs = vec![current.to_path_buf()];
+    if legacy != current {
+        dirs.push(legacy);
+    }
+    let mut found = Vec::new();
+    for dir in dirs {
+        match legacy_partial_files(&dir) {
+            Ok(files) => found.extend(files.into_iter().map(|p| p.display().to_string())),
+            Err(e) => tracing::warn!(
+                dir = %dir.display(),
+                error = %e,
+                "could not look for interrupted OmniBridge transfers"
+            ),
+        }
+    }
+    if !found.is_empty() {
+        tracing::info!(
+            count = found.len(),
+            "interrupted OmniBridge transfers (.omnibridge-*.part) found; they \
+             are left in place — see `status`"
+        );
+    }
+    found
 }

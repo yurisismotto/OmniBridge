@@ -130,6 +130,17 @@ impl Launch {
 
 /// Starts the application.
 pub fn run() -> glib::ExitCode {
+    // ADR-0020 D9: an OmniBridge `gui.json` that exists and cannot be carried
+    // over stops the GUI and names the file, before any window exists.
+    let selection = match Selection::load() {
+        Ok(selection) => selection,
+        Err(e) => {
+            eprintln!("pliwee: refusing to start: {e}");
+            return glib::ExitCode::FAILURE;
+        }
+    };
+    let selection = RefCell::new(Some(selection));
+
     gio::resources_register_include!("omnibridge.gresource")
         .expect("the compiled-in resources should load");
 
@@ -151,7 +162,9 @@ pub fn run() -> glib::ExitCode {
             adw::init().expect("libadwaita should initialise");
             install_styles();
             install_icons();
-            *handle.borrow_mut() = Some(App::start(app));
+            if let Some(selection) = selection.borrow_mut().take() {
+                *handle.borrow_mut() = Some(App::start(app, selection));
+            }
         });
     }
 
@@ -452,11 +465,11 @@ struct App {
 
 impl App {
     /// The struct, with nothing running yet.
-    fn bare(app: &adw::Application) -> Rc<App> {
+    fn bare(app: &adw::Application, selection: Selection) -> Rc<App> {
         Rc::new(App {
             app: app.clone(),
             state: Rc::new(RefCell::new(DaemonState::default())),
-            selection: Rc::new(Selection::load()),
+            selection: Rc::new(selection),
             refresh: RefCell::new(None),
             settings: RefCell::new(None),
             panel: RefCell::new(None),
@@ -464,8 +477,8 @@ impl App {
         })
     }
 
-    fn start(app: &adw::Application) -> Rc<App> {
-        let this = App::bare(app);
+    fn start(app: &adw::Application, selection: Selection) -> Rc<App> {
+        let this = App::bare(app, selection);
         this.install_actions();
         this.install_poll();
 
@@ -489,7 +502,7 @@ impl App {
     /// session for as long as the test process lived.
     #[cfg(test)]
     fn for_test(app: &adw::Application) -> Rc<App> {
-        let this = App::bare(app);
+        let this = App::bare(app, Selection::unmigrated());
         this.install_actions();
         this
     }

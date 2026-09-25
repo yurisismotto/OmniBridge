@@ -18,7 +18,9 @@
 //!    whichever it actually uses;
 //! 3. `$HOME/Downloads`.
 //!
-//! …then `OmniBridge/` underneath. `$HOME` is read from the environment and no
+//! …then [`DOWNLOAD_SUBDIR`] (`Pliwee/`) underneath. The `OmniBridge/`
+//! directory an earlier install used is user data: it is never moved, renamed
+//! or deleted (ADR-0020 D9), and new files simply go to the new one. `$HOME` is read from the environment and no
 //! path is hardcoded: there is no `/home/<user>` anywhere in this file.
 //!
 //! # Writing
@@ -42,6 +44,45 @@ use std::path::{Path, PathBuf};
 use crate::limits::MAX_DUPLICATE_SUFFIX;
 use crate::sink::FileSink;
 use crate::transfer::TransferId;
+
+/// The directory received files go into, under the user's Downloads.
+pub const DOWNLOAD_SUBDIR: &str = "Pliwee";
+
+/// Where OmniBridge put received files. Never written, moved or deleted: only
+/// looked in, for leftovers of interrupted transfers.
+pub const LEGACY_DOWNLOAD_SUBDIR: &str = "OmniBridge";
+
+/// The temp-file prefix OmniBridge used for a transfer in progress.
+const LEGACY_PARTIAL_PREFIX: &str = ".omnibridge-";
+
+/// Leftover OmniBridge temp files (`.omnibridge-<id>.part`) in `dir`.
+///
+/// A finished transfer never leaves one and an interrupted one cannot be
+/// resumed, so what is found here is dead weight — but it is also somebody's
+/// partial file in their Downloads folder, so it is *reported* and never
+/// removed (ADR-0020 D9). A directory that does not exist has none. Symlinks
+/// and directories are not files a transfer left, and are not listed.
+pub fn legacy_partial_files(dir: &Path) -> io::Result<Vec<PathBuf>> {
+    let entries = match std::fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(e) => return Err(e),
+    };
+    let mut found = Vec::new();
+    for entry in entries {
+        let entry = entry?;
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if !(name.starts_with(LEGACY_PARTIAL_PREFIX) && name.ends_with(".part")) {
+            continue;
+        }
+        if std::fs::symlink_metadata(entry.path())?.is_file() {
+            found.push(entry.path());
+        }
+    }
+    found.sort();
+    Ok(found)
+}
 
 /// The directory received files are stored in, on a Unix filesystem.
 #[derive(Debug, Clone)]
@@ -257,7 +298,7 @@ mod tests {
     fn temp_destination() -> (tempfile::TempDir, crate::sink::Destination) {
         use crate::sink::Destination;
         let dir = tempfile::tempdir().expect("tempdir");
-        let dest = Destination::new(dir.path().join("OmniBridge"));
+        let dest = Destination::new(dir.path().join(DOWNLOAD_SUBDIR));
         dest.prepare().expect("prepare");
         (dir, dest)
     }
@@ -434,11 +475,53 @@ mod tests {
     }
 
     #[test]
-    fn the_omnibridge_subdirectory_is_used() {
+    fn the_pliwee_subdirectory_is_used() {
         let dest = crate::sink::Destination::default_location();
         assert_eq!(
             dest.dir().file_name().and_then(|s| s.to_str()),
-            Some("OmniBridge")
+            Some("Pliwee")
+        );
+    }
+
+    #[test]
+    fn legacy_partial_files_are_listed_and_never_touched() {
+        use std::os::unix::fs::MetadataExt;
+        let dir = tempfile::tempdir().expect("tempdir");
+        let d = dir.path();
+        let leftover = d.join(".omnibridge-0a0b.part");
+        std::fs::write(&leftover, b"partial").expect("write");
+        std::fs::write(d.join(".omnibridge-0c0d.part"), b"partial").expect("write");
+        // Not leftovers: a finished file, a current temp, a symlink, a dir.
+        std::fs::write(d.join("photo.jpg"), b"done").expect("write");
+        std::fs::write(d.join(".pliwee-0e0f.part"), b"current").expect("write");
+        std::os::unix::fs::symlink(&leftover, d.join(".omnibridge-link.part")).expect("symlink");
+        std::fs::create_dir(d.join(".omnibridge-dir.part")).expect("mkdir");
+        let before = std::fs::metadata(&leftover).expect("stat");
+
+        let found = legacy_partial_files(d).expect("scan");
+
+        assert_eq!(
+            found,
+            vec![
+                d.join(".omnibridge-0a0b.part"),
+                d.join(".omnibridge-0c0d.part")
+            ]
+        );
+        let after = std::fs::metadata(&leftover).expect("stat");
+        assert_eq!(std::fs::read(&leftover).expect("read"), b"partial");
+        assert_eq!(
+            (before.mtime(), before.mtime_nsec()),
+            (after.mtime(), after.mtime_nsec())
+        );
+        assert_eq!(std::fs::read_dir(d).expect("list").count(), 6);
+    }
+
+    #[test]
+    fn a_missing_directory_has_no_legacy_partial_files() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        assert_eq!(
+            legacy_partial_files(&dir.path().join("absent")).expect("scan"),
+            Vec::<PathBuf>::new()
         );
     }
 }

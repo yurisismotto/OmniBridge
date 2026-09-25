@@ -1,0 +1,109 @@
+# M1: L-unreadable (examine/metadata) and probe refusals in migrate_data_dir replaced by Ok(NoLegacyState)
+diff --git a/tmp/w4-lm.bak b/platform-linux/src/legacy_migration.rs
+index 416d00f..c909e73 100644
+--- a/tmp/w4-lm.bak
++++ b/platform-linux/src/legacy_migration.rs
+@@ -297,11 +297,12 @@ fn migrate_data_dir_with(
+     match fs::symlink_metadata(l) {
+         Ok(_) => {}
+         Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(DataDirOrigin::NoLegacyState),
+-        Err(e) => return Err(MigrationError::io(l, "could not be examined", &e)),
++        Err(_) => return Ok(DataDirOrigin::NoLegacyState),
+     }
+ 
+-    let meta =
+-        fs::metadata(l).map_err(|e| MigrationError::io(l, "exists but cannot be read", &e))?;
++    let Ok(meta) = fs::metadata(l) else {
++        return Ok(DataDirOrigin::NoLegacyState);
++    };
+     if !meta.is_dir() {
+         return Err(MigrationError::new(l, "exists but is not a directory"));
+     }
+@@ -325,12 +326,7 @@ fn migrate_data_dir_with(
+         // Both files positively absent: an empty legacy directory holds no
+         // identity, and there is nothing to lose by creating one.
+         IdentityState::NotCreated => return Ok(DataDirOrigin::NoLegacyState),
+-        other => {
+-            return Err(MigrationError::new(
+-                l,
+-                format!("holds an OmniBridge identity that cannot be used: {other}"),
+-            ))
+-        }
++        _ => return Ok(DataDirOrigin::NoLegacyState),
+     }
+ 
+     let identity = fs::read(l.join(IDENTITY_FILE))
+   Compiling pliwee-linux v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/platform-linux)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.17s
+     Running unittests src/lib.rs (target/debug/deps/pliwee_linux-fb11f635e0d2e84c)
+
+running 21 tests
+test legacy_migration::tests::a_broken_legacy_symlink_is_an_error_and_creates_nothing ... FAILED
+test legacy_migration::tests::a_corrupt_legacy_state_is_an_error_and_creates_nothing ... FAILED
+test legacy_migration::tests::a_failed_rename_into_a_non_empty_canonical_directory_refuses_and_leaves_no_key_copy ... ok
+test legacy_migration::tests::a_crash_between_copy_and_rename_leaves_no_half_state_and_the_next_start_completes ... ok
+test legacy_migration::tests::a_legacy_file_where_a_directory_belongs_is_an_error ... ok
+test legacy_migration::tests::a_legacy_gui_config_is_copied_once_and_left_in_place ... ok
+test legacy_migration::tests::a_legacy_directory_that_is_not_private_is_an_error_and_creates_nothing ... ok
+test legacy_migration::tests::a_legacy_key_that_is_not_private_is_an_error_and_creates_nothing ... FAILED
+test legacy_migration::tests::a_non_traversable_canonical_directory_is_an_error_and_not_a_first_run ... ok
+test legacy_migration::tests::a_populated_canonical_directory_wins_and_the_legacy_one_is_ignored ... ok
+test legacy_migration::tests::a_valid_legacy_identity_is_copied_and_keeps_its_fingerprint ... ok
+test legacy_migration::tests::an_empty_legacy_directory_holds_no_identity_and_is_a_first_run ... ok
+test legacy_migration::tests::an_incomplete_legacy_identity_is_an_error_and_creates_nothing ... FAILED
+test legacy_migration::tests::an_unreadable_legacy_directory_is_an_error_and_creates_nothing ... FAILED
+test legacy_migration::tests::an_unreadable_legacy_gui_config_is_an_error_and_creates_nothing ... ok
+test legacy_migration::tests::an_unreadable_legacy_key_is_an_error_and_creates_nothing ... FAILED
+test legacy_migration::tests::no_legacy_directory_is_a_first_run_and_writes_nothing ... ok
+test legacy_migration::tests::no_legacy_gui_config_writes_nothing ... ok
+test legacy_migration::tests::the_migration_record_round_trips ... ok
+test legacy_migration::tests::unset_or_relative_xdg_falls_back_to_home_for_both_directories ... ok
+test legacy_migration::tests::a_second_start_is_a_no_op ... ok
+
+failures:
+
+---- legacy_migration::tests::a_broken_legacy_symlink_is_an_error_and_creates_nothing stdout ----
+
+thread 'legacy_migration::tests::a_broken_legacy_symlink_is_an_error_and_creates_nothing' (142002) panicked at platform-linux/src/legacy_migration.rs:721:45:
+must refuse: NoLegacyState
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- legacy_migration::tests::a_corrupt_legacy_state_is_an_error_and_creates_nothing stdout ----
+
+thread 'legacy_migration::tests::a_corrupt_legacy_state_is_an_error_and_creates_nothing' (142003) panicked at platform-linux/src/legacy_migration.rs:721:45:
+must refuse: NoLegacyState
+
+---- legacy_migration::tests::a_legacy_key_that_is_not_private_is_an_error_and_creates_nothing stdout ----
+
+thread 'legacy_migration::tests::a_legacy_key_that_is_not_private_is_an_error_and_creates_nothing' (142009) panicked at platform-linux/src/legacy_migration.rs:721:45:
+must refuse: NoLegacyState
+
+---- legacy_migration::tests::an_incomplete_legacy_identity_is_an_error_and_creates_nothing stdout ----
+
+thread 'legacy_migration::tests::an_incomplete_legacy_identity_is_an_error_and_creates_nothing' (142015) panicked at platform-linux/src/legacy_migration.rs:721:45:
+must refuse: NoLegacyState
+
+---- legacy_migration::tests::an_unreadable_legacy_directory_is_an_error_and_creates_nothing stdout ----
+
+thread 'legacy_migration::tests::an_unreadable_legacy_directory_is_an_error_and_creates_nothing' (142016) panicked at platform-linux/src/legacy_migration.rs:721:45:
+must refuse: NoLegacyState
+
+---- legacy_migration::tests::an_unreadable_legacy_key_is_an_error_and_creates_nothing stdout ----
+
+thread 'legacy_migration::tests::an_unreadable_legacy_key_is_an_error_and_creates_nothing' (142018) panicked at platform-linux/src/legacy_migration.rs:721:45:
+must refuse: NoLegacyState
+
+
+failures:
+    legacy_migration::tests::a_broken_legacy_symlink_is_an_error_and_creates_nothing
+    legacy_migration::tests::a_corrupt_legacy_state_is_an_error_and_creates_nothing
+    legacy_migration::tests::a_legacy_key_that_is_not_private_is_an_error_and_creates_nothing
+    legacy_migration::tests::an_incomplete_legacy_identity_is_an_error_and_creates_nothing
+    legacy_migration::tests::an_unreadable_legacy_directory_is_an_error_and_creates_nothing
+    legacy_migration::tests::an_unreadable_legacy_key_is_an_error_and_creates_nothing
+
+test result: FAILED. 15 passed; 6 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `-p pliwee-linux --lib`
+exit=101
+restored

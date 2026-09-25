@@ -7,8 +7,10 @@
 //!   implementing [`pliwee_control::transport::ControlTransport`];
 //! * the client half of that endpoint, so the CLI and the GUI can reach the
 //!   agent without depending on the agent;
-//! * the store adapter — `$XDG_DATA_HOME/omnibridge`, 0600 keys in a 0700
-//!   directory — assembled from the pieces in `pliwee-core`.
+//! * the store adapter — `$XDG_DATA_HOME/pliwee`, 0600 keys in a 0700
+//!   directory — assembled from the pieces in `pliwee-core`, together with
+//!   the carry-over of an OmniBridge identity from `$XDG_DATA_HOME/omnibridge`
+//!   (ADR-0020 D9).
 //!
 //! # What is *not* here
 //!
@@ -52,6 +54,11 @@ use std::path::{Path, PathBuf};
 use pliwee_control::transport::{BindError, ControlListener, ControlTransport};
 use tokio::net::{UnixListener, UnixStream};
 
+pub mod legacy_migration;
+pub use legacy_migration::{
+    migrate_config_file, migrate_data_dir, ConfigFiles, ConfigOrigin, DataDirOrigin, DataDirs,
+    MigrationError, MigrationRecord,
+};
 pub use pliwee_core::platform::unix_fs::{default_data_dir, default_device_name, FileSecretStore};
 
 #[cfg(feature = "tray")]
@@ -83,16 +90,23 @@ pub fn open_store(dir: impl AsRef<Path>) -> pliwee_core::Result<pliwee_core::sto
 // The control endpoint
 // ---------------------------------------------------------------------------
 
-/// Path of the control socket.
+/// Path of the control socket: `$XDG_RUNTIME_DIR/pliwee/control.sock`.
 ///
 /// `XDG_RUNTIME_DIR` is per-user and mode 0700, so the socket is not
 /// reachable by other local users. If it is unset (an unusual login), we fall
 /// back to a per-uid path under `/tmp` and create it 0700 ourselves.
+///
+/// Renamed from `omnibridge` without any migration (ADR-0020 D9): the socket
+/// is volatile, and the daemon and every client ship together.
 pub fn control_socket_path() -> PathBuf {
-    let base = std::env::var_os("XDG_RUNTIME_DIR")
+    control_socket_path_from(std::env::var_os("XDG_RUNTIME_DIR"), nix_uid())
+}
+
+fn control_socket_path_from(runtime_dir: Option<std::ffi::OsString>, uid: u32) -> PathBuf {
+    let base = runtime_dir
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(format!("/tmp/omnibridge-{}", nix_uid())));
-    base.join("omnibridge").join("control.sock")
+        .unwrap_or_else(|| PathBuf::from(format!("/tmp/pliwee-{uid}")));
+    base.join("pliwee").join("control.sock")
 }
 
 fn nix_uid() -> u32 {
@@ -312,10 +326,22 @@ mod tests {
         // `XDG_RUNTIME_DIR` is only read, never set: mutating the environment
         // would race every other test in this binary.
         let path = control_socket_path();
-        assert!(path.ends_with("omnibridge/control.sock"), "{path:?}");
+        assert!(path.ends_with("pliwee/control.sock"), "{path:?}");
         if let Some(runtime) = std::env::var_os("XDG_RUNTIME_DIR") {
             assert!(path.starts_with(PathBuf::from(runtime)), "{path:?}");
         }
+    }
+
+    #[test]
+    fn without_a_runtime_directory_the_socket_falls_back_to_a_per_uid_tmp_path() {
+        assert_eq!(
+            control_socket_path_from(None, 1000),
+            PathBuf::from("/tmp/pliwee-1000/pliwee/control.sock")
+        );
+        assert_eq!(
+            control_socket_path_from(Some("/run/user/1000".into()), 1000),
+            PathBuf::from("/run/user/1000/pliwee/control.sock")
+        );
     }
 
     #[test]

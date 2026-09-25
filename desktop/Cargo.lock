@@ -1524,6 +1524,7 @@ dependencies = [
  "pliwee-control",
  "pliwee-core",
  "pliwee-proto",
+ "sha2",
  "tempfile",
  "tokio",
  "tracing",

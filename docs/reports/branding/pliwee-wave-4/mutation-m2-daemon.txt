@@ -1,0 +1,145 @@
+# M2: the daemon's migrate_data_dir call replaced by Ok(DataDirOrigin::NoLegacyState)
++    approval::FileApproval,
++    listener, mdns, server,
++    state::{DaemonState, LocalStateReport},
+-    let data_dir = args.data_dir.unwrap_or_else(pliwee_linux::default_data_dir);
++    // ---- local state: carry an OmniBridge identity over first -------------
++    // ADR-0020 D9/D12. Before the store is opened on `~/.local/share/pliwee`,
++    // an identity still under `~/.local/share/omnibridge` is copied across —
++    // or, if it exists and cannot be read, startup stops here and names it.
++    // Opening the new directory without asking would be a "first run" over a
++    // live identity: a new key, and every pairing silently gone.
++    //
++    // An explicit `--data-dir` is the operator's own choice of directory and
++    // is used exactly as given.
++    let (data_dir, migrated_from) = match args.data_dir {
++        Some(dir) => (dir, None),
++        None => {
++            let dirs = pliwee_linux::DataDirs::from_env();
++            let origin = Ok::<_, pliwee_linux::MigrationError>(pliwee_linux::DataDirOrigin::NoLegacyState).map_err(|e| {
++                tracing::error!(path = %e.path.display(), "refusing to start: {e}");
++                anyhow::anyhow!("{e}")
++            })?;
++            let report = match &origin {
++                pliwee_linux::DataDirOrigin::Migrated(r) => {
++                    tracing::info!(
++                        source = %r.source.display(),
++                        destination = %dirs.canonical.display(),
++                        "migrated from {}: identity and trust store copied into {}; \
++                         the source directory was not modified",
++                        r.source.display(),
++                        dirs.canonical.display()
++                    );
++                    Some(migration_report(r, true))
++                }
++                pliwee_linux::DataDirOrigin::Existing {
++                    migrated_from: Some(r),
++                } => {
++                    tracing::info!(
++                        source = %r.source.display(),
++                        migrated_at_unix = r.migrated_at_unix,
++                        "local state was migrated from {} by an earlier start; \
++                         nothing to migrate",
++                        r.source.display()
++                    );
++                    Some(migration_report(r, false))
++                }
++                pliwee_linux::DataDirOrigin::Existing {
++                    migrated_from: None,
++                }
++                | pliwee_linux::DataDirOrigin::NoLegacyState => None,
++            };
++            (dirs.canonical, report)
++        }
++    };
++    let legacy_partial_files = find_legacy_partial_files(destination.dir());
++    state.set_local_state(LocalStateReport {
++        migrated_from,
++        legacy_partial_files,
++    });
++    record: &pliwee_linux::MigrationRecord,
++    this_run: bool,
++    pliwee_daemon::control::MigrationReport {
++        source: record.source.display().to_string(),
++        migrated_at_unix: record.migrated_at_unix,
++        this_run,
++    }
++    use pliwee_capability_files::destination::{
++        default_download_dir, legacy_partial_files, LEGACY_DOWNLOAD_SUBDIR,
++    };
++    let legacy = default_download_dir().join(LEGACY_DOWNLOAD_SUBDIR);
++    let mut dirs = vec![current.to_path_buf()];
++    if legacy != current {
++        dirs.push(legacy);
++    }
++    let mut found = Vec::new();
++    for dir in dirs {
++        match legacy_partial_files(&dir) {
++            Ok(files) => found.extend(files.into_iter().map(|p| p.display().to_string())),
++            Err(e) => tracing::warn!(
++                dir = %dir.display(),
++                error = %e,
++                "could not look for interrupted OmniBridge transfers"
++            ),
++        }
++    }
++    if !found.is_empty() {
++        tracing::info!(
++            count = found.len(),
++            "interrupted OmniBridge transfers (.omnibridge-*.part) found; they \
++             are left in place — see `status`"
++        );
++    }
++    found
+   Compiling pliwee-linux v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/platform-linux)
+   Compiling pliwee-daemon v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/daemon)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.61s
+     Running tests/legacy_state_migration.rs (target/debug/deps/legacy_state_migration-7ffb0b5e3f4bb2fa)
+
+running 5 tests
+test a_fresh_home_is_a_first_run_under_the_pliwee_directory_only ... ok
+test captured_v1_0_0_state_is_carried_over ... ignored, needs state captured from a real OmniBridge 1.0.0 install
+test an_omnibridge_identity_is_carried_over_and_never_regenerated ... FAILED
+test interrupted_omnibridge_transfers_are_reported_and_left_in_place ... ok
+test unreadable_legacy_state_refuses_to_start_and_creates_no_identity has been running for over 60 seconds
+test unreadable_legacy_state_refuses_to_start_and_creates_no_identity ... FAILED
+
+failures:
+
+---- an_omnibridge_identity_is_carried_over_and_never_regenerated stdout ----
+
+thread 'an_omnibridge_identity_is_carried_over_and_never_regenerated' (142694) panicked at daemon/tests/legacy_state_migration.rs:329:5:
+no 'migrated from /tmp/.tmpI9jXD9/home/.local/share/omnibridge: identity and trust store copied' in:
+[32m INFO[0m [2momnibridged[0m[2m:[0m using command-line port override [3mport[0m[2m=[0m0
+[32m INFO[0m [2momnibridged[0m[2m:[0m local identity [3mdevice[0m[2m=[0m6452ef433f3a30f3ed6f458a86f95aa8 [3mname[0m[2m=[0mfedora [3mfingerprint[0m[2m=[0mDA83 7B64 364A 08A6 [3mkey_backing[0m[2m=[0msoftware
+[32m INFO[0m [2momnibridged[0m[2m:[0m UPower available; this machine will report its own battery
+[32m INFO[0m [2momnibridged[0m[2m:[0m files.v1 ready [3mdownload_dir[0m[2m=[0m/tmp/.tmpI9jXD9/home/Downloads/Pliwee [3mmax_file_bytes[0m[2m=[0m17179869184
+[32m INFO[0m [2momnibridged[0m[2m:[0m clipboard auto-send is unavailable on this session; sending by hand reads the selection the same way and is usually unavailable too. Receiving is unaffected — `omnibridge clipboard status` has the detail [3mreason[0m[2m=[0mno graphical session found (neither WAYLAND_DISPLAY nor DISPLAY is set), so there is no clipboard to share
+[32m INFO[0m [2momnibridged[0m[2m:[0m clipboard.v1 ready [3mbackend[0m[2m=[0munsupported (no graphical session found (neither WAYLAND_DISPLAY nor DISPLAY is set), so there is no clipboard to share)
+[32m INFO[0m [2mpliwee_capability_notifications::backend::dbus[0m[2m:[0m no session bus; notifications.v1 has no sink on this session [3merror[0m[2m=[0mother
+[32m INFO[0m [2mpliwee_capability_notifications::backend::logind[0m[2m:[0m lock state from logind LockedHint [3msession[0m[2m=[0m/org/freedesktop/login1/session/_32 [3mlocked[0m[2m=[0mtrue
+[32m INFO[0m [2mpliwee_capability_notifications[0m[2m:[0m no notification server on this session; notifications.v1 is supported but will announce no SINK role [3mbackend[0m[2m=[0mnone
+[32m INFO[0m [2momnibridged[0m[2m:[0m notifications.v1 ready [3msink[0m[2m=[0mno notification server on this session [3mlock[0m[2m=[0morg.freedesktop.login1.Session.LockedHint on /org/freedesktop/login1/session/_32 [3mavailable[0m[2m=[0mfalse
+[32m INFO[0m [2momnibridged[0m[2m:[0m capabilities registered [3mcapabilities[0m[2m=[0m["battery.v1", "clipboard.v1", "files.v1", "notifications.v1"]
+[32m INFO[0m [2momnibridged[0m[2m:[0m listening [3mport[0m[2m=[0m33573 [3mfamilies[0m[2m=[0mIPv4+IPv6 [3msockets[0m[2m=[0m1
+[32m INFO[0m [2momnibridged[0m[2m:[0m control endpoint ready [3mendpoint[0m[2m=[0m/tmp/.tmpI9jXD9/run/pliwee/control.sock
+[32m INFO[0m [2momnibridged[0m[2m:[0m mDNS advertisement disabled
+[32m INFO[0m [2mpliwee_linux::tray[0m[2m:[0m no tray integration on this session [3mreason[0m[2m=[0mno session bus (bus error)
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- unreadable_legacy_state_refuses_to_start_and_creates_no_identity stdout ----
+
+thread 'unreadable_legacy_state_refuses_to_start_and_creates_no_identity' (142715) panicked at daemon/tests/legacy_state_migration.rs:391:13:
+the daemon kept running on unreadable legacy state
+
+
+failures:
+    an_omnibridge_identity_is_carried_over_and_never_regenerated
+    unreadable_legacy_state_refuses_to_start_and_creates_no_identity
+
+test result: FAILED. 2 passed; 2 failed; 1 ignored; 0 measured; 0 filtered out; finished in 60.16s
+
+error: test failed, to rerun pass `-p pliwee-daemon --test legacy_state_migration`
+exit=101
+restored

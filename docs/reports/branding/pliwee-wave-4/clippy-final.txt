@@ -1,0 +1,3 @@
+   Compiling pliwee-gui v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/gui)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.76s
+exit=0
