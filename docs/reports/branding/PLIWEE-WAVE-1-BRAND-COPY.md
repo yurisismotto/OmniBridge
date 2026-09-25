@@ -2,7 +2,8 @@
 
 | | |
 | --- | --- |
-| **Status** | **WAVE 1 NOT COMPLETE** — every exit criterion is met except one: the Android unit suite was **NOT EXECUTED** (§8.2). G1: **PASS, zero unexplained occurrences**. |
+| **Status** | **WAVE 1 COMPLETE** (2026-09-24, §15): the Android unit suite ran on JDK 21, **833 passed, 0 failed**; `strings.xml` lint has **0** format-argument issues. G1: **PASS, zero unexplained occurrences**. |
+| **Status at commit `86504f0`** (superseded by §15) | **WAVE 1 NOT COMPLETE** — every exit criterion is met except one: the Android unit suite was **NOT EXECUTED** (§8.2). G1: **PASS, zero unexplained occurrences**. |
 | **Date** | 2026-09-24 |
 | **Branch** | `worktree-pliwee-wave1-brand-copy`, based on `473b200` (`feature/pliwee-rebrand-wave1` = `develop` after PR #5); fast-forwardable onto `feature/pliwee-rebrand-wave1` |
 | **Plan** | [PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md § Wave 1](../../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md#wave-1--brand-copy--living-design-docs) (normative) |
@@ -233,6 +234,11 @@ below was then run in the foreground, one crate group at a time, with
 
 ### 8.2 NOT EXECUTED
 
+> **Superseded 2026-09-24, on `feature/pliwee-rebrand-wave1` at `86504f0`:**
+> JDK 21 (Temurin 21.0.12.1) is now installed. The Android unit suite and
+> lint have run, and the instrumented sources compile; see §15. The table
+> below is what was true at commit time.
+
 | Suite | Reason |
 | --- | --- |
 | **Android unit suite** (`./gradlew :app:testDebugUnitTest`, incl. `BrandingResourcesTest`, `DesignTokensTest`, `UiMappingTest`, `SendRetryTest`, `ClipboardSyncTest`) | **NOT EXECUTED.** The Gradle wrapper is 8.11.1, which cannot run on the only JDK on this machine (OpenJDK 25.0.4.1). Wave 0 ran this suite on JDK 21, which is not installed here (no `/usr/lib/jvm/java-21*`, no Android Studio JBR, no toolchain under `~/.gradle/jdks`). No result is inferred. |
@@ -391,6 +397,10 @@ is empty. The Wave 1 edit script also refused any path in the frozen set.
 
 ## 13. Exit criteria
 
+> **Superseded 2026-09-24 (§15):** "relevant tests green" is now **met**:
+> desktop 1 044/1 044 and Android unit 833/833. The table below is the
+> commit-time record.
+
 | Criterion | Result |
 | --- | --- |
 | every applicable user-visible product noun says Pliwee | **met** in the Wave 1 areas; out-of-area surfaces listed in §12.2 |
@@ -404,6 +414,48 @@ is empty. The Wave 1 edit script also refused any path in the frozen set.
 
 ## 14. Status
 
+> **Superseded 2026-09-24 by §15: WAVE 1 COMPLETE.** The status below is the
+> commit-time record.
+
 **WAVE 1 NOT COMPLETE.** The copy, living docs and G1 gate are done and
 verified. One gate is open: the Android unit suite, which could not run on
 this machine (§8.2). No PASS is claimed for it. Wave 2 has not started.
+
+## 15. Closure: Android checks (2026-09-24)
+
+Run on `feature/pliwee-rebrand-wave1` at `86504f0` (the Wave 1 commit), with a
+clean tree. **No source, test or design file changed.** Only this report was
+edited. The desktop suites and the G1 implementation are unchanged since
+§8.1, so they were not rerun, except the cheap G1 census and the
+master-hash check below.
+
+**Toolchain.** `JAVA_HOME=/usr/lib/jvm/java-21-temurin-jdk` (OpenJDK
+Temurin 21.0.12.1+1 LTS), Gradle wrapper 8.11.1, `--no-daemon
+--max-workers=2 -Dorg.gradle.parallel=false`. Commands ran one at a time.
+
+### 15.1 Executed
+
+| Command (in `android/`) | Result |
+| --- | --- |
+| `./gradlew :app:testDebugUnitTest` | **BUILD SUCCESSFUL**, exit 0. `testDebugUnitTest` *executed* (not `FROM-CACHE`); 56 result files, all time-stamped by this run. **833 tests, 0 failures, 0 errors, 0 skipped.** The suites Wave 1 edited: `BrandingResourcesTest` 12/12, `ClipboardSyncTest` 30/30, `DesignTokensTest` 16/16, `SendRetryTest` 21/21, `UiMappingTest` 31/31. |
+| `./gradlew :app:compileDebugAndroidTestKotlin` | **BUILD SUCCESSFUL**. The two edited instrumented files (`AppPickerUiTest`, `NotificationConsentUiTest`) compile. |
+| `./gradlew :app:lintDebug` | exit 1: **1 error, 36 warnings**. **0** `StringFormat*` issues, so no format arguments are missing (the plan's regression check). The 10 issues on `strings.xml` are `PluralsCandidate` ×4 and `UnusedResources` ×6. The one error is `StartActivityAndCollapseDeprecated` at `ClipboardTileService.kt:100`. That file is untouched since `745541c`, and `android-ci.yml` audits the error as a false positive of a version-gated call and not a gate. |
+| same `lintDebug` on the pre-Wave-1 base `473b200`, in a temporary detached worktree (removed afterwards) | exit 1: **1 error, 36 warnings**. Compared by (id, file, line) after normalising the worktree prefix, **the two issue sets are identical**. Wave 1 introduced no lint issue and removed none. |
+| `python3 docs/reports/branding/pliwee-wave-1/g1_copy_census.py` | **G1 PASS**, exit 0: 612 occurrences = 612 independent, 8/8 anchors, 0 unexplained. |
+| `sha256sum` of the five Wave 0 masters | **5/5** equal the digests in §11. |
+| `git diff --check HEAD~1 HEAD` and on the working tree | clean |
+
+### 15.2 Still NOT EXECUTED
+
+| Suite | Reason |
+| --- | --- |
+| Android instrumented tests (`:app:connectedDebugAndroidTest`) | **NOT EXECUTED.** No emulator is installed. The only device attached is the owner's physical phone (`RX2Y500C7SY`). `connectedAndroidTest` installs and then uninstalls the app under test, which would destroy the installed app's pairing identity and data. Wave 1 lists no hardware gate ("Upgrade / hardware: none"), and Android CI's gate is compile plus unit tests. The two edited files change expected text only and compile (§15.1). |
+| Compose previews / Robolectric | **n/a.** The app has no `@Preview` and no Robolectric dependency. `ClipboardShortcutTest` says so explicitly. The desktop widget-tree integration test ran (§8.1). |
+
+### 15.3 Exit criteria, closed
+
+Every row of §13 is **met**. "Relevant tests green" is now desktop
+1 044/1 044 (§8.1) plus Android unit 833/833 (§15.1). G1 has zero
+unexplained occurrences.
+
+**WAVE 1 COMPLETE.** Wave 2 has not started.
