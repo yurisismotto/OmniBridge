@@ -112,7 +112,7 @@ nsec="$(find "$SCAN/private-keys-v1.d" -type f -name '*.key' 2>/dev/null | wc -l
 gpgconf --homedir "$SCAN" --kill gpg-agent >/dev/null 2>&1 || true
 rm -rf "$SCAN"
 
-WORK="$(mktemp -d -t omnibridge-prod-signing.XXXXXXXX)" || die "no temp dir"
+WORK="$(mktemp -d -t pliwee-prod-signing.XXXXXXXX)" || die "no temp dir"
 trap 'rm -rf "$WORK"' EXIT INT TERM
 printf 'work: %s\n' "$WORK"
 
@@ -281,13 +281,13 @@ fi
 section "SIGN-NEG-05 — an artifact is replaced, same filename, different bytes"
 # ---------------------------------------------------------------------------
 # The realistic substitution: another distribution's package of the SAME name.
-# All three DEB targets build 'omnibridge_<V>-1_amd64.deb', and the workflow
+# All three DEB targets build 'pliwee_<V>-1_amd64.deb', and the workflow
 # asserts the three differ -- so this swap is a genuinely different binary
 # under a filename SHA256SUMS already covers.
 T5="$WORK/neg05"; fresh_copy "$T5"
 ok "NEG-05 control: the untouched copy verifies"
-VICTIM="$(find "$T5/ubuntu2404" -name 'omnibridge_*_amd64.deb' -type f ! -name '*gui*' | sort | head -1)"
-DONOR="$(find "$T5/debian13"   -name 'omnibridge_*_amd64.deb' -type f ! -name '*gui*' | sort | head -1)"
+VICTIM="$(find "$T5/ubuntu2404" -name 'pliwee_*_amd64.deb' -type f ! -name '*gui*' | sort | head -1)"
+DONOR="$(find "$T5/debian13"   -name 'pliwee_*_amd64.deb' -type f ! -name '*gui*' | sort | head -1)"
 [ -n "$VICTIM" ] && [ -n "$DONOR" ] || die "NEG-05 needs a same-named .deb in ubuntu2404 and debian13"
 [ "$(basename "$VICTIM")" = "$(basename "$DONOR")" ] \
     || die "NEG-05's two packages are not same-named: $(basename "$VICTIM") vs $(basename "$DONOR")"

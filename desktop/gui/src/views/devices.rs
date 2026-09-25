@@ -457,7 +457,7 @@ fn grant_row(control: Control, device_name: &str, pages: &Pages) -> gtk::Box {
         let pages = pages.clone();
         client::send(control.request(wanted), move |reply| {
             if let Ok(Response::Error { message }) = reply {
-                eprintln!("omnibridge-gui: the daemon refused the grant change: {message}");
+                eprintln!("pliwee-gui: the daemon refused the grant change: {message}");
             }
             pages.refresh_now();
         });
@@ -516,7 +516,7 @@ fn revoke_dialog(control: Control, pages: Pages) -> adw::AlertDialog {
         let pages = pages.clone();
         client::send(control.request(false), move |reply| {
             if let Ok(Response::Error { message }) = reply {
-                eprintln!("omnibridge-gui: could not revoke: {message}");
+                eprintln!("pliwee-gui: could not revoke: {message}");
             }
             pages.refresh_now();
         });
@@ -548,7 +548,7 @@ fn remove_dialog(control: Control, pages: Pages) -> adw::AlertDialog {
         let fingerprint = fingerprint.clone();
         client::send(control.request(false), move |reply| {
             if let Ok(Response::Error { message }) = reply {
-                eprintln!("omnibridge-gui: could not remove the device from the list: {message}");
+                eprintln!("pliwee-gui: could not remove the device from the list: {message}");
                 pages.refresh_now();
                 return;
             }
@@ -586,7 +586,7 @@ fn remove_all_dialog(control: Control, pages: Pages) -> adw::AlertDialog {
         let fingerprints = fingerprints.clone();
         client::send(control.request(false), move |reply| {
             if let Ok(Response::Error { message }) = reply {
-                eprintln!("omnibridge-gui: could not remove the revoked devices: {message}");
+                eprintln!("pliwee-gui: could not remove the revoked devices: {message}");
                 pages.refresh_now();
                 return;
             }

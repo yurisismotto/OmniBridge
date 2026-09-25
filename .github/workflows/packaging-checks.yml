@@ -114,12 +114,12 @@ jobs:
       #
       # The stub is there because `verify` also checks that ExecStart= points
       # at something executable, and it is the *directives* this job is asking
-      # about. That the real binary lands at /usr/bin/omnibridged is asserted
+      # about. That the real binary lands at /usr/bin/pliweed is asserted
       # separately, by packaging-checks.sh against a built RPM.
       - name: systemd-analyze verify the canonical unit
         run: |
           systemd-analyze --version | head -1
-          sudo install -Dm0755 /bin/true /usr/bin/omnibridged
-          systemd-analyze verify packaging/common/omnibridged.service
+          sudo install -Dm0755 /bin/true /usr/bin/pliweed
+          systemd-analyze verify packaging/common/pliweed.service
           echo "  ok    the unit verifies clean"
-          sudo rm -f /usr/bin/omnibridged
+          sudo rm -f /usr/bin/pliweed

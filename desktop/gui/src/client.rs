@@ -1,7 +1,7 @@
 //! Talking to the daemon.
 //!
 //! The GUI speaks the *same* newline-delimited JSON control protocol the CLI
-//! does, over the same Unix socket in `$XDG_RUNTIME_DIR/omnibridge/`, using the
+//! does, over the same Unix socket in `$XDG_RUNTIME_DIR/pliwee/`, using the
 //! very same [`Request`]/[`Response`] types from `pliwee-daemon`. Nothing
 //! here is a second, parallel interface: if the socket contract changes, this
 //! file stops compiling, which is the point.

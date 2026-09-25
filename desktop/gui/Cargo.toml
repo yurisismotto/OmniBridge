@@ -26,7 +26,7 @@ name = "pliwee_gui"
 path = "src/lib.rs"
 
 [[bin]]
-name = "omnibridge-gui"
+name = "pliwee-gui"
 path = "src/main.rs"
 
 [dependencies]
@@ -39,7 +39,7 @@ pliwee-control = { version = "1.0.0", path = "../control" }
 # The Linux control endpoint. A desktop UI is a platform application; it is
 # the *portable* crates that must not name a platform.
 # `default-features = false` turns off the crate's `tray` feature. The tray is
-# the agent's, not the GUI's: `omnibridged` owns the StatusNotifierItem and this
+# the agent's, not the GUI's: `pliweed` owns the StatusNotifierItem and this
 # process is what it activates. A GUI that could publish a tray item is one
 # refactor away from being kept resident to hold one.
 pliwee-linux = { version = "1.0.0", path = "../platform-linux", default-features = false }

@@ -1,4 +1,4 @@
-//! `omnibridged` — the user-session daemon.
+//! `pliweed` — the user-session daemon.
 //!
 //! Runs unprivileged under `systemd --user`. It binds a high TCP port, a Unix
 //! socket in `XDG_RUNTIME_DIR`, and an mDNS responder. It needs no root, no
@@ -26,7 +26,7 @@ use pliwee_daemon::{
 use tokio_rustls::TlsAcceptor;
 
 #[derive(Parser, Debug)]
-#[command(name = "omnibridged", about = "Pliwee daemon", version)]
+#[command(name = "pliweed", about = "Pliwee daemon", version)]
 struct Args {
     /// Data directory (identity and trust store).
     #[arg(long)]
@@ -137,6 +137,15 @@ async fn main() -> anyhow::Result<()> {
             (dirs.canonical, report)
         }
     };
+    // ---- systemd: an account still enabled under the OmniBridge name ------
+    // Read-only. The package ships omnibridged.service as an alias of
+    // pliweed.service, so such an account starts this daemon at login; what it
+    // cannot do is report itself enabled under the new name. Say so, once,
+    // with the one command that fixes it (ADR-0020; rebrand Wave 7, B5).
+    pliwee_linux::systemd_transition::log(&pliwee_linux::systemd_transition::classify(
+        &pliwee_linux::systemd_transition::wants_dir_from_env(),
+    ));
+
     // The Linux adapter composes the store: XDG paths, 0600/0700 modes,
     // `Platform::Linux`, `/etc/hostname`. `pliwee-core` decides the policy,
     // this decides where and how.
@@ -186,7 +195,7 @@ async fn main() -> anyhow::Result<()> {
 
     // files.v1. Note what is NOT here: an entry in `auto_grant`. Writing a
     // file to someone's disk is a side effect, so the grant is explicit
-    // (`omnibridge grant <device> files.v1`) per ADR-0008.
+    // (`pliwee grant <device> files.v1`) per ADR-0008.
     let destination = match args.download_dir {
         Some(dir) => Destination::new(dir),
         None => Destination::default_location(),
@@ -235,7 +244,7 @@ async fn main() -> anyhow::Result<()> {
     // that can write your clipboard can also read what you paste next, and
     // ADR-0008 requires a side effect that large to be granted by hand.
     //
-    // The backend is probed once here so that `omnibridge clipboard status` can
+    // The backend is probed once here so that `pliwee clipboard status` can
     // report what this session can actually do — including, on GNOME, that it
     // cannot report clipboard changes at all — instead of each command
     // discovering it separately.
@@ -245,7 +254,7 @@ async fn main() -> anyhow::Result<()> {
             reason = %why,
             "clipboard auto-send is unavailable on this session; sending by \
              hand reads the selection the same way and is usually unavailable \
-             too. Receiving is unaffected — `omnibridge clipboard status` has \
+             too. Receiving is unaffected — `pliwee clipboard status` has \
              the detail"
         );
     }
@@ -258,7 +267,7 @@ async fn main() -> anyhow::Result<()> {
     // ADR-0015 §4 requires that to be granted by hand.
     //
     // The two platform seams are probed once, here, so that
-    // `omnibridge notifications status` reports what this session can actually do
+    // `pliwee notifications status` reports what this session can actually do
     // instead of each command discovering it separately — and so that the
     // first role announcement is a fact rather than a hope.
     //

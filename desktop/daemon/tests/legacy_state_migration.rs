@@ -67,7 +67,7 @@ impl Home {
     /// desktop session running these tests.
     fn spawn(&self) -> Child {
         let log = std::fs::File::create(&self.log).expect("log");
-        Command::new(env!("CARGO_BIN_EXE_omnibridged"))
+        Command::new(env!("CARGO_BIN_EXE_pliweed"))
             .args(["--port", "0", "--no-mdns"])
             .env_clear()
             .env("HOME", &self.home)

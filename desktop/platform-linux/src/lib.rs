@@ -61,6 +61,10 @@ pub use legacy_migration::{
 };
 pub use pliwee_core::platform::unix_fs::{default_data_dir, default_device_name, FileSecretStore};
 
+/// Reading, never writing, how the account enables the daemon: the
+/// OmniBridge-era `omnibridged.service` link (ADR-0020, rebrand Wave 7).
+pub mod systemd_transition;
+
 #[cfg(feature = "tray")]
 pub mod tray;
 

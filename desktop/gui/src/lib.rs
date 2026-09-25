@@ -1,7 +1,7 @@
 //! Pliwee for the desktop.
 //!
 //! A GTK4 / libadwaita front end for the daemon. It is a *client* of the same
-//! local control socket the `omnibridge` CLI uses and adds no protocol, no
+//! local control socket the `pliwee` CLI uses and adds no protocol, no
 //! capability and no privilege of its own: everything on screen is something
 //! the daemon already reports, and every action is a request the CLI can make
 //! too. See `desktop/runtime/src/server.rs`.
@@ -14,7 +14,7 @@
 //! # Two surfaces, one application
 //!
 //! ```text
-//! omnibridge-gui                     the GtkApplication
+//! pliwee-gui                      the GtkApplication
 //! ├── Quick Panel                 everyday glance and actions   (panel/)
 //! └── Settings                    devices, policies, diagnostics (views/)
 //! ```
@@ -22,7 +22,7 @@
 //! One process, one application id, one poll of the daemon, one stored choice
 //! of device. The two windows are two views of that; neither owns it, and
 //! closing either leaves the other — and the daemon — entirely alone. There is
-//! no `omnibridge-quickpanel` anything: the agent is `omnibridged` and stays the
+//! no `pliwee-quickpanel` anything: the agent is `pliweed` and stays the
 //! only long-lived process Pliwee runs.
 //!
 //! # Activation
@@ -38,9 +38,9 @@
 //! and from a command line, which is forwarded to the running instance:
 //!
 //! ```console
-//! $ omnibridge-gui                  # Settings — the existing behaviour
-//! $ omnibridge-gui --quick-panel    # the Quick Panel
-//! $ omnibridge-gui --page files     # Settings, on one page
+//! $ pliwee-gui                      # Settings — the existing behaviour
+//! $ pliwee-gui --quick-panel        # the Quick Panel
+//! $ pliwee-gui --page files         # Settings, on one page
 //! ```
 //!
 //! That pair is the seam a later desktop-shell integration — a KDE
@@ -68,7 +68,7 @@ use panel::QuickPanel;
 use pliwee_control::{Request, Response};
 use selection::Selection;
 
-const APP_ID: &str = "io.github.yurisismotto.omnibridge";
+const APP_ID: &str = "io.github.yurisismotto.pliwee";
 
 /// The application action that raises the Quick Panel.
 pub const ACTION_QUICK_PANEL: &str = "quick-panel";
@@ -98,7 +98,7 @@ pub enum Launch {
     /// Anything else, including no arguments at all.
     ///
     /// Opening Settings on a bare launch is the behaviour this application
-    /// has always had, and it stays: a person who runs `omnibridge-gui` today
+    /// has always had, and it stays: a person who runs `pliwee-gui` today
     /// gets the window they got yesterday. The Quick Panel is additive and
     /// asks for itself by name.
     Settings(Option<Page>),
@@ -141,12 +141,12 @@ pub fn run() -> glib::ExitCode {
     };
     let selection = RefCell::new(Some(selection));
 
-    gio::resources_register_include!("omnibridge.gresource")
+    gio::resources_register_include!("pliwee.gresource")
         .expect("the compiled-in resources should load");
 
     let app = adw::Application::builder()
         .application_id(APP_ID)
-        // Without this, a second `omnibridge-gui --quick-panel` would activate
+        // Without this, a second `pliwee-gui --quick-panel` would activate
         // the running instance and the running instance would never see the
         // flag — it would re-present whatever window it opened with. The
         // remote argv has to reach the primary instance for the activation
@@ -238,7 +238,7 @@ fn install_styles() {
 /// an icon from the application at all. It derives one:
 ///
 /// ```text
-/// xdg_toplevel.set_app_id("io.github.yurisismotto.omnibridge")   <- this process
+/// xdg_toplevel.set_app_id("io.github.yurisismotto.pliwee")   <- this process
 ///     -> the .desktop file with that id, from XDG_DATA_DIRS    <- the session
 ///         -> its Icon= name
 ///             -> that name in the *shell's* icon theme
@@ -259,7 +259,7 @@ fn install_styles() {
 fn install_icons() {
     if let Some(display) = gtk::gdk::Display::default() {
         gtk::IconTheme::for_display(&display)
-            .add_resource_path("/io/github/yurisismotto/omnibridge/icons");
+            .add_resource_path("/io/github/yurisismotto/pliwee/icons");
     }
     gtk::Window::set_default_icon_name(APP_ID);
 }
@@ -904,11 +904,11 @@ mod tests {
     #[test]
     fn the_quick_panel_is_reachable_from_the_command_line() {
         assert_eq!(
-            Launch::parse(&["omnibridge-gui", "--quick-panel"]),
+            Launch::parse(&["pliwee-gui", "--quick-panel"]),
             Launch::QuickPanel
         );
         assert_eq!(
-            Launch::parse(&["omnibridge-gui", "--panel"]),
+            Launch::parse(&["pliwee-gui", "--panel"]),
             Launch::QuickPanel
         );
     }
@@ -917,9 +917,9 @@ mod tests {
     /// existing users would be a surprise with nothing to gain by it.
     #[test]
     fn a_bare_launch_still_opens_settings() {
-        assert_eq!(Launch::parse(&["omnibridge-gui"]), Launch::Settings(None));
+        assert_eq!(Launch::parse(&["pliwee-gui"]), Launch::Settings(None));
         assert_eq!(
-            Launch::parse(&["omnibridge-gui", "--unknown-to-this-build"]),
+            Launch::parse(&["pliwee-gui", "--unknown-to-this-build"]),
             Launch::Settings(None)
         );
     }
@@ -927,16 +927,16 @@ mod tests {
     #[test]
     fn a_page_can_still_be_named() {
         assert_eq!(
-            Launch::parse(&["omnibridge-gui", "--page", "clipboard"]),
+            Launch::parse(&["pliwee-gui", "--page", "clipboard"]),
             Launch::Settings(Some(Page::Clipboard))
         );
         assert_eq!(
-            Launch::parse(&["omnibridge-gui", "--page=peers"]),
+            Launch::parse(&["pliwee-gui", "--page=peers"]),
             Launch::Settings(Some(Page::Devices))
         );
         // An unknown page is not worth refusing to open a window over.
         assert_eq!(
-            Launch::parse(&["omnibridge-gui", "--page", "nonsense"]),
+            Launch::parse(&["pliwee-gui", "--page", "nonsense"]),
             Launch::Settings(None)
         );
     }
@@ -947,11 +947,11 @@ mod tests {
     fn the_old_trusted_peers_route_opens_devices() {
         assert_eq!(Page::from_name("peers"), Some(Page::Devices));
         assert_eq!(
-            Launch::parse(&["omnibridge-gui", "--page", "peers"]),
+            Launch::parse(&["pliwee-gui", "--page", "peers"]),
             Launch::Settings(Some(Page::Devices))
         );
         assert_eq!(
-            Launch::parse(&["omnibridge-gui", "--page=peers"]),
+            Launch::parse(&["pliwee-gui", "--page=peers"]),
             Launch::Settings(Some(Page::Devices))
         );
         assert_eq!(Page::from_name("devices"), Some(Page::Devices));
@@ -975,7 +975,7 @@ mod tests {
     #[test]
     fn the_panel_flag_is_not_order_dependent() {
         assert_eq!(
-            Launch::parse(&["omnibridge-gui", "--page", "files", "--quick-panel"]),
+            Launch::parse(&["pliwee-gui", "--page", "files", "--quick-panel"]),
             Launch::QuickPanel
         );
     }
@@ -987,7 +987,7 @@ mod tests {
     fn the_activation_seam_has_stable_names() {
         assert_eq!(ACTION_QUICK_PANEL, "quick-panel");
         assert_eq!(ACTION_SETTINGS, "settings");
-        assert_eq!(APP_ID, "io.github.yurisismotto.omnibridge");
+        assert_eq!(APP_ID, "io.github.yurisismotto.pliwee");
     }
 }
 
@@ -1251,7 +1251,7 @@ pub(crate) mod application_gate {
 
     /// Opening a surface starts nothing in the background.
     ///
-    /// The Quick Panel is a view over `omnibridged`; it is not a daemon, it does
+    /// The Quick Panel is a view over `pliweed`; it is not a daemon, it does
     /// not launch one, and there is no second long-lived process anywhere in
     /// this application. Asserted structurally — nothing here spawns, and the
     /// approval attachment is the application's and predates any window.

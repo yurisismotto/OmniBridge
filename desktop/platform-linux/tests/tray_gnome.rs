@@ -627,7 +627,7 @@ async fn n6_the_item_is_ready_and_visible_by_the_extensions_own_rules() {
 
     let facts = log.facts_for(&item.bus_name);
     assert!(facts.is_ready(), "the extension would never draw this item");
-    assert_eq!(facts.id, "io.github.yurisismotto.omnibridge");
+    assert_eq!(facts.id, "io.github.yurisismotto.pliwee");
     assert_eq!(facts.menu_path, MENU_OBJECT_PATH);
     assert_eq!(facts.title, "Pliwee");
 
@@ -682,7 +682,7 @@ async fn n8_the_icon_is_a_theme_name_with_no_path_and_no_pixels() {
     until("registration", || log.count() == 1).await;
 
     let facts = log.facts_for(&item.bus_name);
-    assert_eq!(facts.icon_name, "io.github.yurisismotto.omnibridge");
+    assert_eq!(facts.icon_name, "io.github.yurisismotto.pliwee");
     assert_eq!(facts.icon_theme_path, "");
     assert_eq!(facts.icon_pixmaps, 0);
 }
@@ -1114,7 +1114,7 @@ async fn n16_nothing_the_extension_reads_is_private() {
     // a compile-time constant in `model.rs` or a word from the protocol.
     let allowed = [
         "",
-        "io.github.yurisismotto.omnibridge",
+        "io.github.yurisismotto.pliwee",
         "Pliwee",
         "One flow. Any device.",
         "ApplicationStatus",

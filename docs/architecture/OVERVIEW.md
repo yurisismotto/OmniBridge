@@ -5,11 +5,11 @@
 ```
      Linux desktop                                Android
 ┌───────────────────────┐                 ┌───────────────────────┐
-│  omnibridge (CLI)        │                 │  Compose UI           │
+│  pliwee (CLI)         │                 │  Compose UI           │
 │        │              │                 │        │              │
 │  unix socket, JSON    │                 │  ConnectionService    │
 │        │              │                 │  (connectedDevice FGS)│
-│  omnibridged             │                 │        │              │
+│  pliweed              │                 │        │              │
 │  ┌─────────────────┐  │   TLS 1.3       │  ┌──────────────────┐ │
 │  │ session         │◀─┼─────────────────┼─▶│ PeerConnection   │ │
 │  │ capabilities    │  │   mutual auth   │  │ capabilities     │ │
@@ -34,9 +34,9 @@ The phone always initiates. The desktop always listens. See ADR-0005.
 | `pliwee-control` | — | The CLI/GUI ↔ agent contract: request/response types and the `ControlTransport` seam. No I/O |
 | `pliwee-runtime` | core, control, battery, files, clipboard | The OmniBridge Agent, minus the platform: mDNS, listener, state, control server, `SessionHost` |
 | `pliwee-linux` | core, control | The Linux adapter: Unix-socket control endpoint, XDG paths, 0600/0700 modes, store composition |
-| `pliwee-daemon` | runtime, linux | `omnibridged` — composes the two and adds a `main` |
-| `pliwee-cli` | control, linux | `omnibridge` |
-| `pliwee-gui` | control, linux | `omnibridge-gui` |
+| `pliwee-daemon` | runtime, linux | `pliweed` — composes the two and adds a `main` |
+| `pliwee-cli` | control, linux | `pliwee` |
+| `pliwee-gui` | control, linux | `pliwee-gui` |
 
 `pliwee-core` has no global state and no I/O policy. Everything it needs from
 the host arrives through the `SessionHost` trait, which is why the whole

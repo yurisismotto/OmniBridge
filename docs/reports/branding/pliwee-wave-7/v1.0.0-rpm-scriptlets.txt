@@ -1,0 +1,54 @@
+$ rpm -qp --scripts omnibridge-1.0.0-1.fc44.x86_64.rpm   (the published v1.0.0 core package)
+postinstall scriptlet (using /bin/sh):
+
+ 
+if [ $1 -eq 1 ] && [ -x "/usr/lib/systemd/systemd-update-helper" ]; then 
+    # Initial installation 
+    /usr/lib/systemd/systemd-update-helper install-user-units omnibridged.service || : 
+fi 
+
+cat <<'EOF'
+
+OmniBridge installed. To start it for your user:
+
+    systemctl --user enable --now omnibridged.service
+    omnibridge status
+
+Then pair your phone:
+
+    omnibridge pair
+
+The daemon runs as your user and never needs root. If your firewall zone is not
+the Fedora Workstation default, see the Firewall section of
+/usr/share/doc/omnibridge/README.md.
+EOF
+preuninstall scriptlet (using /bin/sh):
+
+ 
+if [ $1 -eq 0 ] && [ -x "/usr/lib/systemd/systemd-update-helper" ]; then 
+    # Package removal, not upgrade 
+    /usr/lib/systemd/systemd-update-helper remove-user-units omnibridged.service || : 
+fi 
+
+
+# On %postun, and why rpmlint's `empty-%postun` is correct and ignored:
+#
+# MEASURED on Fedora 44 by evaluating the macro — %systemd_user_postun expands
+# to nothing at all, so the scriptlet below really is empty.
+#
+# The alternative is %systemd_user_postun_with_restart, which is NOT empty: it
+# marks user units for restart, and that would restart a user's running daemon
+# on every upgrade. Audit §4.9 settles the opposite as deliberate behaviour and
+# gate L17 asserts it — "record that the running daemon was NOT restarted".
+# Taking the non-empty macro to quiet a linter would reverse a documented
+# decision and break a gate.
+#
+# Calling the documented triple also keeps this correct if a future
+# systemd-rpm-macros gives the macro a body. The explanation lives out here
+# rather than inside the scriptlet because text inside it is scanned by
+# rpmlint, and naming the package manager in a comment is reported as a
+# dangerous command.
+postuninstall program: /bin/sh
+
+$ rpm -qp --scripts omnibridge-gui-1.0.0-1.fc44.x86_64.rpm
+(end)

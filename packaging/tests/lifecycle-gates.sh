@@ -132,8 +132,13 @@ need_abs_path "--pkgdir" "$PKGDIR" || abort "--pkgdir must be absolute"
 ok "every package in $PKGDIR verifies against SHA256SUMS"
 
 case "$DISTRO" in
-    fedora44) PKGEXT="rpm"; want_pkgs=3 ;;
-    *)        PKGEXT="deb"; want_pkgs=2 ;;
+    # The release set per distribution: pliwee, pliwee-gui and the transitional
+    # omnibridge package(s) that upgrade an OmniBridge 1.0.0 install (plus the
+    # SRPM on Fedora). The transitional ones are delivered and verified with
+    # the rest, and deliberately NOT installed: these gates measure a clean
+    # Pliwee install. The upgrade from OmniBridge is upgrade-gates.sh (G7-UP).
+    fedora44) PKGEXT="rpm"; want_pkgs=4 ;;
+    *)        PKGEXT="deb"; want_pkgs=4 ;;
 esac
 mapfile -t PKGS < <(find "$PKGDIR" -maxdepth 1 -name "*.$PKGEXT" -printf '%f\n' | sort)
 # A glob that matched nothing is how L17 silently skipped its whole group, and
@@ -147,9 +152,9 @@ ok "found exactly $want_pkgs *.$PKGEXT package(s): ${PKGS[*]}"
 
 # Nothing of ours may be installed already, or "clean install" means nothing.
 if [ "$PKGEXT" = "deb" ]; then
-    pre="$(gx 'dpkg-query -W -f "\${Package} \${Status}\n" omnibridge omnibridge-gui 2>/dev/null | grep -c " install ok installed" || true')"
+    pre="$(gx 'dpkg-query -W -f "\${Package} \${Status}\n" pliwee pliwee-gui 2>/dev/null | grep -c " install ok installed" || true')"
 else
-    pre="$(gx 'rpm -q --qf "%{NAME}\n" omnibridge omnibridge-gui 2>/dev/null | grep -c "^omnibridge" || true')"
+    pre="$(gx 'rpm -q --qf "%{NAME}\n" pliwee pliwee-gui 2>/dev/null | grep -c "^pliwee" || true')"
 fi
 [ "${pre//[[:space:]]/}" = "0" ] \
     || abort "OmniBridge is already installed in the guest ($pre package(s)) — L1 cannot measure a clean install"
@@ -192,14 +197,14 @@ fi
 # ---------------------------------------------------------------------------
 section "Delivering the packages over virtio-serial (no IP path)"
 # ---------------------------------------------------------------------------
-gx 'rm -rf /root/omnibridge-pkgs && mkdir -p /root/omnibridge-pkgs' >/dev/null
+gx 'rm -rf /root/pliwee-pkgs && mkdir -p /root/pliwee-pkgs' >/dev/null
 for p in "${PKGS[@]}"; do
-    ga_put "$DOMAIN" "$PKGDIR/$p" "/root/omnibridge-pkgs/$p" \
+    ga_put "$DOMAIN" "$PKGDIR/$p" "/root/pliwee-pkgs/$p" \
         || abort "could not deliver $p into the guest"
 done
-ga_put "$DOMAIN" "$PKGDIR/SHA256SUMS" "/root/omnibridge-pkgs/SHA256SUMS" \
+ga_put "$DOMAIN" "$PKGDIR/SHA256SUMS" "/root/pliwee-pkgs/SHA256SUMS" \
     || abort "could not deliver SHA256SUMS into the guest"
-gx 'cd /root/omnibridge-pkgs && sha256sum -c SHA256SUMS' >/dev/null 2>&1 \
+gx 'cd /root/pliwee-pkgs && sha256sum -c SHA256SUMS' >/dev/null 2>&1 \
     || abort "the delivered packages do not verify inside the guest"
 ok "all ${#PKGS[@]} package(s) delivered and digest-verified inside the guest"
 
@@ -207,9 +212,9 @@ ok "all ${#PKGS[@]} package(s) delivered and digest-verified inside the guest"
 section "L1 — clean install"
 # ---------------------------------------------------------------------------
 if [ "$PKGEXT" = "deb" ]; then
-    install_cmd='cd /root/omnibridge-pkgs && DEBIAN_FRONTEND=noninteractive apt-get install -y ./*.deb 2>&1'
+    install_cmd='cd /root/pliwee-pkgs && DEBIAN_FRONTEND=noninteractive apt-get install -y ./pliwee_*_amd64.deb ./pliwee-gui_*_amd64.deb 2>&1'
 else
-    install_cmd='cd /root/omnibridge-pkgs && dnf install -y --disablerepo="*" ./omnibridge-0*.rpm ./omnibridge-gui-*.rpm 2>&1'
+    install_cmd='cd /root/pliwee-pkgs && dnf install -y --disablerepo="*" ./pliwee-[0-9]*.x86_64.rpm ./pliwee-gui-[0-9]*.x86_64.rpm 2>&1'
 fi
 install_out="$(gx "$install_cmd")"; install_rc=$?
 printf '%s\n' "$install_out" | save "01-L1-install.txt"
@@ -233,9 +238,9 @@ if [ "$PKGEXT" = "deb" ]; then
     # NOTE: ${...} must stay escaped -- the command crosses a `sh -c` inside the
     # guest, where an unescaped ${Status} expands to the empty string and the
     # count silently becomes 0.
-    n_inst="$(gx 'dpkg-query -W -f "\${Status}\n" omnibridge omnibridge-gui 2>/dev/null | grep -c "install ok installed" || true')"
+    n_inst="$(gx 'dpkg-query -W -f "\${Status}\n" pliwee pliwee-gui 2>/dev/null | grep -c "install ok installed" || true')"
 else
-    n_inst="$(gx 'rpm -q omnibridge omnibridge-gui >/dev/null 2>&1 && echo 2 || echo 0')"
+    n_inst="$(gx 'rpm -q pliwee pliwee-gui >/dev/null 2>&1 && echo 2 || echo 0')"
 fi
 # NOTE: the count crosses a `sh -c` in the guest. Packaging v1's version lost
 # `${Status}` to that shell and the count silently became 0 -- which is why
@@ -244,20 +249,20 @@ need_exact_count "L1: installed package count" "$n_inst" "2" \
     && ok "L1: both packages report installed" \
     || notok "L1: expected 2 installed packages, dpkg/rpm reports ${n_inst//[[:space:]]/}"
 
-ver="$(gx 'omnibridged --version 2>&1 | head -1')"
+ver="$(gx 'pliweed --version 2>&1 | head -1')"
 [ -n "${ver//[[:space:]]/}" ] \
     && ok "L1: the installed daemon runs: $ver" \
-    || notok "L1: /usr/bin/omnibridged produced no --version output"
+    || notok "L1: /usr/bin/pliweed produced no --version output"
 
 # ---------------------------------------------------------------------------
 section "L2 — installed files manifest"
 # ---------------------------------------------------------------------------
 if [ "$PKGEXT" = "deb" ]; then
-    core_files="$(gx 'dpkg -L omnibridge | while read -r p; do [ -f "$p" ] && echo "$p"; done | sort')"
-    gui_files="$(gx 'dpkg -L omnibridge-gui | while read -r p; do [ -f "$p" ] && echo "$p"; done | sort')"
+    core_files="$(gx 'dpkg -L pliwee | while read -r p; do [ -f "$p" ] && echo "$p"; done | sort')"
+    gui_files="$(gx 'dpkg -L pliwee-gui | while read -r p; do [ -f "$p" ] && echo "$p"; done | sort')"
 else
-    core_files="$(gx 'rpm -ql omnibridge | while read -r p; do [ -f "$p" ] && echo "$p"; done | sort')"
-    gui_files="$(gx 'rpm -ql omnibridge-gui | while read -r p; do [ -f "$p" ] && echo "$p"; done | sort')"
+    core_files="$(gx 'rpm -ql pliwee | while read -r p; do [ -f "$p" ] && echo "$p"; done | sort')"
+    gui_files="$(gx 'rpm -ql pliwee-gui | while read -r p; do [ -f "$p" ] && echo "$p"; done | sort')"
 fi
 printf 'core:\n%s\n\ngui:\n%s\n' "$core_files" "$gui_files" | save "02-L2-manifest.txt"
 
@@ -268,17 +273,17 @@ n_gui="$(printf '%s\n' "$gui_files" | grep -c . || true)"
 ok "L2: core owns $n_core file(s), gui owns $n_gui file(s)"
 
 # §12.1 / §12.2, asserted by name rather than by count alone.
-for f in /usr/bin/omnibridged /usr/bin/omnibridge \
-         /usr/lib/systemd/user/omnibridged.service \
-         /usr/share/icons/hicolor/scalable/apps/io.github.yurisismotto.omnibridge.svg; do
+for f in /usr/bin/pliweed /usr/bin/pliwee \
+         /usr/lib/systemd/user/pliweed.service \
+         /usr/share/icons/hicolor/scalable/apps/io.github.yurisismotto.pliwee.svg; do
     grep -qx "$f" <<<"$core_files" \
         && ok "L2: core owns $f" \
         || notok "L2: core does NOT own $f"
 done
-for f in /usr/bin/omnibridge-gui \
-         /usr/share/applications/io.github.yurisismotto.omnibridge.desktop \
-         /usr/share/dbus-1/services/io.github.yurisismotto.omnibridge.service \
-         /usr/share/metainfo/io.github.yurisismotto.omnibridge.metainfo.xml; do
+for f in /usr/bin/pliwee-gui \
+         /usr/share/applications/io.github.yurisismotto.pliwee.desktop \
+         /usr/share/dbus-1/services/io.github.yurisismotto.pliwee.service \
+         /usr/share/metainfo/io.github.yurisismotto.pliwee.metainfo.xml; do
     grep -qx "$f" <<<"$gui_files" \
         && ok "L2: gui owns $f" \
         || notok "L2: gui does NOT own $f"
@@ -297,7 +302,7 @@ dupes="$(comm -12 <(printf '%s\n' "$core_files") <(printf '%s\n' "$gui_files") |
     || notok "L2: $dupes file(s) owned by both packages"
 
 # The unit ships disabled (R7).
-unit_state="$(gu 'systemctl --user is-enabled omnibridged.service 2>&1' | tr -d '[:space:]')"
+unit_state="$(gu 'systemctl --user is-enabled pliweed.service 2>&1' | tr -d '[:space:]')"
 [ "$unit_state" = "disabled" ] \
     && ok "L2/R7: the unit is installed disabled (is-enabled=$unit_state)" \
     || notok "L2/R7: the unit is not shipped disabled (is-enabled=$unit_state)"
@@ -306,7 +311,7 @@ unit_state="$(gu 'systemctl --user is-enabled omnibridged.service 2>&1' | tr -d 
 # A package built before fix/systemd-user-unit-capabilities-v1 carries a unit
 # that cannot start on Ubuntu at all, and every runtime gate below would fail
 # for that reason rather than for anything they are testing.
-inst_unit="$(gx 'cat /usr/lib/systemd/user/omnibridged.service 2>/dev/null')"
+inst_unit="$(gx 'cat /usr/lib/systemd/user/pliweed.service 2>/dev/null')"
 [ -n "${inst_unit//[[:space:]]/}" ] \
     || abort "the installed unit file is empty or missing; no runtime gate below could mean anything"
 n_harden="$(printf '%s\n' "$inst_unit" | grep -cE '^(NoNewPrivileges|PrivateTmp|ProtectSystem|ProtectHome|ProtectKernelTunables|ProtectControlGroups|RestrictNamespaces|RestrictRealtime|RestrictSUIDSGID|LockPersonality|MemoryDenyWriteExecute|SystemCallArchitectures|SystemCallFilter|RestrictAddressFamilies)=' || true)"
@@ -323,10 +328,10 @@ else
 fi
 printf '%s\n' "$inst_unit" | save "02b-installed-unit.service"
 
-running_after_install="$(gx 'pgrep -c -x omnibridged || true' | tr -d '[:space:]')"
+running_after_install="$(gx 'pgrep -c -x pliweed || true' | tr -d '[:space:]')"
 [ "$running_after_install" = "0" ] \
     && ok "L1: installing the package started no daemon" \
-    || notok "L1: installing the package left $running_after_install omnibridged process(es) running"
+    || notok "L1: installing the package left $running_after_install pliweed process(es) running"
 
 # ---------------------------------------------------------------------------
 section "L8 — D-Bus activation immediately after install, in the SAME live session"
@@ -344,8 +349,8 @@ activatable="$(gu 'busctl --user list --activatable --no-pager 2>/dev/null' || t
 n_act="$(printf '%s\n' "$activatable" | grep -c . || true)"
 ok "L8: the session bus reports $n_act activatable name(s)"
 
-if grep -q 'io.github.yurisismotto.omnibridge' <<<"$activatable"; then
-    ok "L8: io.github.yurisismotto.omnibridge is activatable with NO logout"
+if grep -q 'io.github.yurisismotto.pliwee' <<<"$activatable"; then
+    ok "L8: io.github.yurisismotto.pliwee is activatable with NO logout"
 else
     notok "L8: the name is NOT activatable in the live session after install"
 fi
@@ -354,14 +359,14 @@ printf '%s\n' "$activatable" | save "03-L8-activatable.txt"
 # ---------------------------------------------------------------------------
 section "L4, L5, L18 — the daemon, its runtime directory, and restart"
 # ---------------------------------------------------------------------------
-gu 'systemctl --user start omnibridged.service' >/dev/null 2>&1
-ga_wait_for "$DOMAIN" 60 "pgrep -x omnibridged >/dev/null" \
-    || abort "omnibridged did not start in the guest; L4/L5/L18 would measure nothing"
+gu 'systemctl --user start pliweed.service' >/dev/null 2>&1
+ga_wait_for "$DOMAIN" 60 "pgrep -x pliweed >/dev/null" \
+    || abort "pliweed did not start in the guest; L4/L5/L18 would measure nothing"
 
 ps_out="$(gx 'ps -eo user,pid,cmd | grep "[o]mnibridged"')"
-[ -n "${ps_out//[[:space:]]/}" ] || abort "no omnibridged process found after start"
+[ -n "${ps_out//[[:space:]]/}" ] || abort "no pliweed process found after start"
 printf '%s\n' "$ps_out" | save "04-L4-process.txt"
-ok "L4: omnibridged is running: $(printf '%s' "$ps_out" | head -1 | awk '{print $1, $2}')"
+ok "L4: pliweed is running: $(printf '%s' "$ps_out" | head -1 | awk '{print $1, $2}')"
 
 daemon_user="$(printf '%s' "$ps_out" | awk 'NR==1{print $1}')"
 [ "$daemon_user" = "$GUEST_USER" ] \
@@ -370,10 +375,10 @@ daemon_user="$(printf '%s' "$ps_out" | awk 'NR==1{print $1}')"
 
 root_daemons="$(gx 'ps -eo user,cmd | grep "[o]mnibridged" | grep -c "^root " || true')"
 [ "${root_daemons//[[:space:]]/}" = "0" ] \
-    && ok "L4: no omnibridged process runs as root" \
-    || notok "L4: ${root_daemons//[[:space:]]/} omnibridged process(es) run as root"
+    && ok "L4: no pliweed process runs as root" \
+    || notok "L4: ${root_daemons//[[:space:]]/} pliweed process(es) run as root"
 
-rt_dir="/run/user/$GUEST_UID/omnibridge"
+rt_dir="/run/user/$GUEST_UID/pliwee"
 stat_dir="$(gx "stat -c '%a %U %n' $rt_dir 2>&1")"
 stat_sock="$(gx "stat -c '%a %U %n' $rt_dir/control.sock 2>&1")"
 printf '%s\n%s\n' "$stat_dir" "$stat_sock" | save "05-L5-runtime-dir.txt"
@@ -393,7 +398,7 @@ esac
 # in every earlier start on this machine -- including, on a guest that has been
 # used to characterise a defect, the failures that defect produced. A gate that
 # greps that window is reading somebody else's evidence.
-invocation="$(gu 'systemctl --user show omnibridged.service -p InvocationID --value 2>/dev/null' | tr -d '[:space:]')"
+invocation="$(gu 'systemctl --user show pliweed.service -p InvocationID --value 2>/dev/null' | tr -d '[:space:]')"
 [ -n "$invocation" ] \
     || abort "the unit reports no InvocationID; the S3 capture could not be bound to this run"
 ok "S3: journal capture bound to invocation $invocation"
@@ -408,10 +413,10 @@ else
 fi
 
 # L18 — restart. The socket must be recreated at 0600.
-gu 'systemctl --user restart omnibridged.service' >/dev/null 2>&1
+gu 'systemctl --user restart pliweed.service' >/dev/null 2>&1
 ga_wait_for "$DOMAIN" 60 "test -S $rt_dir/control.sock" \
     || notok "L18: control.sock was not recreated within 60s of restart"
-restart_active="$(gu 'systemctl --user is-active omnibridged.service' | tr -d '[:space:]')"
+restart_active="$(gu 'systemctl --user is-active pliweed.service' | tr -d '[:space:]')"
 [ "$restart_active" = "active" ] \
     && ok "L18: the unit is active again after restart" \
     || notok "L18: after restart the unit is '$restart_active'"
@@ -420,10 +425,10 @@ stat_sock2="$(gx "stat -c '%a %U' $rt_dir/control.sock 2>&1")"
     && ok "L18: the socket is recreated at 0600, owned by $GUEST_USER" \
     || notok "L18: after restart the socket is '$stat_sock2'"
 
-n_daemons="$(gx 'pgrep -c -x omnibridged || true' | tr -d '[:space:]')"
+n_daemons="$(gx 'pgrep -c -x pliweed || true' | tr -d '[:space:]')"
 [ "$n_daemons" = "1" ] \
-    && ok "L18: exactly one omnibridged process after restart" \
-    || notok "L18: $n_daemons omnibridged process(es) after restart, expected 1"
+    && ok "L18: exactly one pliweed process after restart" \
+    || notok "L18: $n_daemons pliweed process(es) after restart, expected 1"
 
 # ---------------------------------------------------------------------------
 section "L11 — TCP 55432 and the firewall"
@@ -442,14 +447,14 @@ ok "L11: firewall state recorded — ufw: ${fw_state}; firewalld: ${fwd_state}"
 # ---------------------------------------------------------------------------
 section "L7 — D-Bus cold activation"
 # ---------------------------------------------------------------------------
-gu 'pkill -x omnibridge-gui' >/dev/null 2>&1
+gu 'pkill -x pliwee-gui' >/dev/null 2>&1
 sleep 2
-gui_before="$(gx 'pgrep -c -x omnibridge-gui || true' | tr -d '[:space:]')"
+gui_before="$(gx 'pgrep -c -x pliwee-gui || true' | tr -d '[:space:]')"
 [ "$gui_before" = "0" ] \
-    || abort "omnibridge-gui is still running; L7 requires the cold case and would measure nothing"
-ok "L7: no omnibridge-gui process before activation (the cold case)"
+    || abort "pliwee-gui is still running; L7 requires the cold case and would measure nothing"
+ok "L7: no pliwee-gui process before activation (the cold case)"
 
-act_out="$(gu 'gdbus call --session --dest io.github.yurisismotto.omnibridge --object-path /io/github/yurisismotto/omnibridge --method org.freedesktop.DBus.Peer.Ping 2>&1' || true)"
+act_out="$(gu 'gdbus call --session --dest io.github.yurisismotto.pliwee --object-path /io/github/yurisismotto/pliwee --method org.freedesktop.DBus.Peer.Ping 2>&1' || true)"
 printf '%s\n' "$act_out" | save "09-L7-activation.txt"
 if grep -q 'ServiceUnknown\|NameHasNoOwner' <<<"$act_out"; then
     notok "L7: activation failed — $act_out"
@@ -458,15 +463,15 @@ elif grep -q '()' <<<"$act_out"; then
 else
     notok "L7: unexpected activation result: ${act_out:-<empty>}"
 fi
-gui_after="$(gx 'pgrep -c -x omnibridge-gui || true' | tr -d '[:space:]')"
+gui_after="$(gx 'pgrep -c -x pliwee-gui || true' | tr -d '[:space:]')"
 [ "${gui_after:-0}" -ge 1 ] 2>/dev/null \
-    && ok "L7: the bus started omnibridge-gui on demand ($gui_after process)" \
-    || notok "L7: no omnibridge-gui process appeared after activation"
+    && ok "L7: the bus started pliwee-gui on demand ($gui_after process)" \
+    || notok "L7: no pliwee-gui process appeared after activation"
 
 # ---------------------------------------------------------------------------
 section "L6 — the GUI launches from the application menu"
 # ---------------------------------------------------------------------------
-desktop_file="/usr/share/applications/io.github.yurisismotto.omnibridge.desktop"
+desktop_file="/usr/share/applications/io.github.yurisismotto.pliwee.desktop"
 gx "test -f $desktop_file" \
     || abort "$desktop_file is missing; L6 cannot be measured"
 
@@ -492,12 +497,12 @@ fi
 
 # Launching it. `gtk-launch` takes the *same* desktop entry the menu uses, so
 # this exercises the entry rather than the binary path.
-gu 'pkill -x omnibridge-gui' >/dev/null 2>&1; sleep 2
+gu 'pkill -x pliwee-gui' >/dev/null 2>&1; sleep 2
 virsh -c "$GA_CONNECT" screenshot "$DOMAIN" "$EVIDENCE/10-L6-before.ppm" >/dev/null 2>&1 \
     || abort "virsh screenshot failed; the visual half of L6/L9 cannot be measured"
-gu "gtk-launch io.github.yurisismotto.omnibridge" >/dev/null 2>&1 &
-ga_wait_for "$DOMAIN" 45 "pgrep -x omnibridge-gui >/dev/null" \
-    && ok "L6: the .desktop entry started omnibridge-gui" \
+gu "gtk-launch io.github.yurisismotto.pliwee" >/dev/null 2>&1 &
+ga_wait_for "$DOMAIN" 45 "pgrep -x pliwee-gui >/dev/null" \
+    && ok "L6: the .desktop entry started pliwee-gui" \
     || notok "L6: gtk-launch of the .desktop entry started no process"
 sleep 6
 virsh -c "$GA_CONNECT" screenshot "$DOMAIN" "$EVIDENCE/11-L6-after.ppm" >/dev/null 2>&1
@@ -532,7 +537,7 @@ if [ "${watcher:-0}" -ge 1 ] 2>/dev/null; then
         || notok "L9: a tray host is present but OmniBridge registered no StatusNotifierItem"
 else
     ok "L9: no StatusNotifierWatcher — this desktop has no tray host, which is the documented GNOME case"
-    daemon_ok="$(gx 'pgrep -c -x omnibridged || true' | tr -d '[:space:]')"
+    daemon_ok="$(gx 'pgrep -c -x pliweed || true' | tr -d '[:space:]')"
     [ "${daemon_ok:-0}" -ge 1 ] 2>/dev/null \
         && ok "L9: with no tray, the daemon still runs — 'everything else works'" \
         || notok "L9: no tray AND no daemon"
@@ -541,9 +546,9 @@ fi
 # The packages must not have installed or enabled a shell extension.
 ext="$(gx 'ls /usr/share/gnome-shell/extensions 2>/dev/null | grep -ci appindicator || true' | tr -d '[:space:]')"
 if [ "$PKGEXT" = "deb" ]; then
-    owns_ext="$(gx 'dpkg -S /usr/share/gnome-shell/extensions 2>/dev/null | grep -c omnibridge || true' | tr -d '[:space:]')"
+    owns_ext="$(gx 'dpkg -S /usr/share/gnome-shell/extensions 2>/dev/null | grep -c pliwee || true' | tr -d '[:space:]')"
 else
-    owns_ext="$(gx 'rpm -qf /usr/share/gnome-shell/extensions 2>/dev/null | grep -c omnibridge || true' | tr -d '[:space:]')"
+    owns_ext="$(gx 'rpm -qf /usr/share/gnome-shell/extensions 2>/dev/null | grep -c pliwee || true' | tr -d '[:space:]')"
 fi
 [ "${owns_ext:-0}" = "0" ] \
     && ok "L9: no OmniBridge package owns a GNOME Shell extension (appindicator present on system: ${ext:-0})" \
@@ -555,16 +560,16 @@ section "L10 — mDNS advertisement"
 # What is asserted here is that the service record is on the wire from this
 # guest. Whether the PHONE sees it is L12 and is taken from the phone.
 if gx 'command -v avahi-browse >/dev/null 2>&1'; then
-    browse="$(gx 'timeout 12 avahi-browse -rpt _omnibridge._tcp 2>/dev/null' || true)"
+    browse="$(gx 'timeout 12 avahi-browse -rpt _pliwee._tcp 2>/dev/null' || true)"
     printf '%s\n' "$browse" | save "13-L10-avahi.txt"
     n_rec="$(printf '%s\n' "$browse" | grep -c '^=' || true)"
     [ "${n_rec:-0}" -ge 1 ] 2>/dev/null \
-        && ok "L10: _omnibridge._tcp.local. is resolvable on the LAN ($n_rec record(s))" \
-        || notok "L10: avahi-browse resolved 0 _omnibridge._tcp records"
+        && ok "L10: _pliwee._tcp.local. is resolvable on the LAN ($n_rec record(s))" \
+        || notok "L10: avahi-browse resolved 0 _pliwee._tcp records"
 else
     na "L10: avahi-browse is not installed in the guest; using the daemon journal instead"
 fi
-mdns_jnl="$(gu 'journalctl --user -u omnibridged --no-pager -n 400 2>/dev/null | grep -iE "mdns|advertis|_omnibridge" | tail -20' || true)"
+mdns_jnl="$(gu 'journalctl --user -u pliweed --no-pager -n 400 2>/dev/null | grep -iE "mdns|advertis|_pliwee|_omnibridge" | tail -20' || true)"
 [ -n "${mdns_jnl//[[:space:]]/}" ] \
     && ok "L10: the daemon journal records mDNS advertisement ($(printf '%s\n' "$mdns_jnl" | grep -c .) line(s))" \
     || notok "L10: no mDNS line in the daemon journal"
@@ -597,18 +602,18 @@ else
     ok "L3: linger is off, so a logout really does tear the user manager down"
 fi
 
-gu 'systemctl --user enable omnibridged.service' >/dev/null 2>&1
-en="$(gu 'systemctl --user is-enabled omnibridged.service' | tr -d '[:space:]')"
+gu 'systemctl --user enable pliweed.service' >/dev/null 2>&1
+en="$(gu 'systemctl --user is-enabled pliweed.service' | tr -d '[:space:]')"
 [ "$en" = "enabled" ] \
     && ok "L3: the unit is now enabled for $GUEST_USER" \
     || abort "could not enable the unit (is-enabled=$en); L3 cannot proceed"
-gx "test -L /home/$GUEST_USER/.config/systemd/user/default.target.wants/omnibridged.service" \
+gx "test -L /home/$GUEST_USER/.config/systemd/user/default.target.wants/pliweed.service" \
     && ok "L3: the enable created the user's own default.target.wants symlink" \
-    || notok "L3: no default.target.wants/omnibridged.service symlink"
+    || notok "L3: no default.target.wants/pliweed.service symlink"
 
-pid_before="$(gx 'pgrep -x omnibridged | head -1' | tr -d '[:space:]')"
-[ -n "$pid_before" ] || abort "no omnibridged pid before the session cycle; nothing to compare against"
-ok "L3/L19: omnibridged pid before the cycle is $pid_before"
+pid_before="$(gx 'pgrep -x pliweed | head -1' | tr -d '[:space:]')"
+[ -n "$pid_before" ] || abort "no pliweed pid before the session cycle; nothing to compare against"
+ok "L3/L19: pliweed pid before the cycle is $pid_before"
 
 gx "loginctl terminate-user $GUEST_USER" >/dev/null 2>&1
 if ga_wait_for "$DOMAIN" 90 "! pgrep -u $GUEST_UID -f 'systemd --user' >/dev/null"; then
@@ -648,23 +653,23 @@ fi
 ga_wait_for "$DOMAIN" 120 "pgrep -u $GUEST_UID -f 'systemd --user' >/dev/null" \
     || abort "the user manager did not come back"
 
-if ga_wait_for "$DOMAIN" 120 "pgrep -x omnibridged >/dev/null"; then
-    pid_after="$(gx 'pgrep -x omnibridged | head -1' | tr -d '[:space:]')"
+if ga_wait_for "$DOMAIN" 120 "pgrep -x pliweed >/dev/null"; then
+    pid_after="$(gx 'pgrep -x pliweed | head -1' | tr -d '[:space:]')"
     ok "L3: the daemon autostarted after login without being asked (pid $pid_after)"
     [ "$pid_after" != "$pid_before" ] \
         && ok "L3: it is a NEW process ($pid_before -> $pid_after), so the restart is real" \
         || notok "L3: the pid is unchanged — the daemon never actually stopped"
 else
-    notok "L3: omnibridged did not autostart after login"
+    notok "L3: pliweed did not autostart after login"
 fi
-active_after="$(gu 'systemctl --user is-active omnibridged.service' | tr -d '[:space:]')"
+active_after="$(gu 'systemctl --user is-active pliweed.service' | tr -d '[:space:]')"
 [ "$active_after" = "active" ] \
     && ok "L3: systemctl --user is-active reports active after login" \
     || notok "L3: after login the unit is '$active_after'"
 
 # L19's second half: cold activation must still work in the NEW session.
-gu 'pkill -x omnibridge-gui' >/dev/null 2>&1; sleep 2
-act2="$(gu 'gdbus call --session --dest io.github.yurisismotto.omnibridge --object-path /io/github/yurisismotto/omnibridge --method org.freedesktop.DBus.Peer.Ping 2>&1' || true)"
+gu 'pkill -x pliwee-gui' >/dev/null 2>&1; sleep 2
+act2="$(gu 'gdbus call --session --dest io.github.yurisismotto.pliwee --object-path /io/github/yurisismotto/pliwee --method org.freedesktop.DBus.Peer.Ping 2>&1' || true)"
 printf '%s\n' "$act2" | save "15-L19-activation.txt"
 grep -q '()' <<<"$act2" \
     && ok "L19: D-Bus cold activation still works in the new session" \
@@ -689,10 +694,10 @@ ga_wait_for "$DOMAIN" 300 "loginctl list-sessions --no-legend 2>/dev/null | grep
 ok "L20: a graphical session for $GUEST_USER exists after reboot"
 
 # L20 is defined as "L3, L5, L7, L10 all still pass".
-if ga_wait_for "$DOMAIN" 180 "pgrep -x omnibridged >/dev/null"; then
+if ga_wait_for "$DOMAIN" 180 "pgrep -x pliweed >/dev/null"; then
     ok "L20/L3: the daemon autostarted after the reboot"
 else
-    notok "L20/L3: omnibridged did not autostart after the reboot"
+    notok "L20/L3: pliweed did not autostart after the reboot"
 fi
 st_dir="$(gx "stat -c '%a %U' $rt_dir 2>&1")"
 st_sock="$(gx "stat -c '%a %U' $rt_dir/control.sock 2>&1")"
@@ -701,8 +706,8 @@ st_sock="$(gx "stat -c '%a %U' $rt_dir/control.sock 2>&1")"
 [ "$st_sock" = "600 $GUEST_USER" ] && ok "L20/L5: control.sock is 0600 $GUEST_USER after reboot" \
     || notok "L20/L5: control.sock after reboot is '$st_sock'"
 
-gu 'pkill -x omnibridge-gui' >/dev/null 2>&1; sleep 2
-act3="$(gu 'gdbus call --session --dest io.github.yurisismotto.omnibridge --object-path /io/github/yurisismotto/omnibridge --method org.freedesktop.DBus.Peer.Ping 2>&1' || true)"
+gu 'pkill -x pliwee-gui' >/dev/null 2>&1; sleep 2
+act3="$(gu 'gdbus call --session --dest io.github.yurisismotto.pliwee --object-path /io/github/yurisismotto/pliwee --method org.freedesktop.DBus.Peer.Ping 2>&1' || true)"
 printf '%s\n' "$act3" | save "16-L20-activation.txt"
 grep -q '()' <<<"$act3" \
     && ok "L20/L7: D-Bus cold activation works after the reboot" \
@@ -733,7 +738,7 @@ fi
 # ---------------------------------------------------------------------------
 section "L21–L26 — remove, reinstall, purge, and the user's trust store"
 # ---------------------------------------------------------------------------
-STATE_DIR="/home/$GUEST_USER/.local/share/omnibridge"
+STATE_DIR="/home/$GUEST_USER/.local/share/pliwee"
 gx "test -f $STATE_DIR/identity.key" \
     || abort "no $STATE_DIR/identity.key in the guest; every trust-store assertion below would compare two absent files"
 before_state="$(gx "cd $STATE_DIR && sha256sum * 2>/dev/null | sort; stat -c '%a %U %n' . * 2>/dev/null | sort")"
@@ -743,21 +748,21 @@ n_state="$(printf '%s\n' "$before_state" | grep -c . || true)"
 printf '%s\n' "$before_state" | save "20-L23-state-before.txt"
 ok "L23: trust store fingerprinted before removal ($n_state line(s), digest+mode+owner)"
 
-gu 'systemctl --user stop omnibridged.service' >/dev/null 2>&1
+gu 'systemctl --user stop pliweed.service' >/dev/null 2>&1
 
 if [ "$PKGEXT" = "deb" ]; then
-    rm_out="$(gx 'DEBIAN_FRONTEND=noninteractive apt-get remove -y omnibridge-gui omnibridge 2>&1')"
+    rm_out="$(gx 'DEBIAN_FRONTEND=noninteractive apt-get remove -y pliwee-gui pliwee 2>&1')"
 else
-    rm_out="$(gx 'dnf remove -y omnibridge-gui omnibridge 2>&1')"
+    rm_out="$(gx 'dnf remove -y pliwee-gui pliwee 2>&1')"
 fi
 rm_rc=$?
 printf '%s\n' "$rm_out" | save "21-L21-remove.txt"
 [ "$rm_rc" -eq 0 ] && ok "L21: remove exited 0" || notok "L21: remove exited $rm_rc"
 
-for f in /usr/bin/omnibridged /usr/bin/omnibridge /usr/bin/omnibridge-gui \
-         /usr/lib/systemd/user/omnibridged.service \
-         /usr/share/applications/io.github.yurisismotto.omnibridge.desktop \
-         /usr/share/dbus-1/services/io.github.yurisismotto.omnibridge.service; do
+for f in /usr/bin/pliweed /usr/bin/pliwee /usr/bin/pliwee-gui \
+         /usr/lib/systemd/user/pliweed.service \
+         /usr/share/applications/io.github.yurisismotto.pliwee.desktop \
+         /usr/share/dbus-1/services/io.github.yurisismotto.pliwee.service; do
     gx "test -e $f" \
         && notok "L25: $f survived removal" \
         || ok "L25: $f is gone"
@@ -770,16 +775,16 @@ after_remove="$(gx "cd $STATE_DIR && sha256sum * 2>/dev/null | sort; stat -c '%a
 
 # L22 reinstall
 if [ "$PKGEXT" = "deb" ]; then
-    ri_out="$(gx 'cd /root/omnibridge-pkgs && DEBIAN_FRONTEND=noninteractive apt-get install -y ./*.deb 2>&1')"
+    ri_out="$(gx 'cd /root/pliwee-pkgs && DEBIAN_FRONTEND=noninteractive apt-get install -y ./pliwee_*_amd64.deb ./pliwee-gui_*_amd64.deb 2>&1')"
 else
-    ri_out="$(gx 'cd /root/omnibridge-pkgs && dnf install -y --disablerepo="*" ./omnibridge-0*.rpm ./omnibridge-gui-*.rpm 2>&1')"
+    ri_out="$(gx 'cd /root/pliwee-pkgs && dnf install -y --disablerepo="*" ./pliwee-[0-9]*.x86_64.rpm ./pliwee-gui-[0-9]*.x86_64.rpm 2>&1')"
 fi
 ri_rc=$?
 printf '%s\n' "$ri_out" | save "22-L22-reinstall.txt"
 [ "$ri_rc" -eq 0 ] && ok "L22: reinstall exited 0" || notok "L22: reinstall exited $ri_rc"
-gx 'test -x /usr/bin/omnibridged' \
+gx 'test -x /usr/bin/pliweed' \
     && ok "L22: the daemon binary is back" \
-    || notok "L22: /usr/bin/omnibridged is not present after reinstall"
+    || notok "L22: /usr/bin/pliweed is not present after reinstall"
 
 after_reinstall="$(gx "cd $STATE_DIR && sha256sum * 2>/dev/null | sort; stat -c '%a %U %n' . * 2>/dev/null | sort")"
 [ "$after_reinstall" = "$before_state" ] \
@@ -787,8 +792,8 @@ after_reinstall="$(gx "cd $STATE_DIR && sha256sum * 2>/dev/null | sort; stat -c 
     || notok "L22/L23: the trust store CHANGED across reinstall"
 
 # The daemon must find the SAME identity it had before the package left.
-gu 'systemctl --user start omnibridged.service' >/dev/null 2>&1
-if ga_wait_for "$DOMAIN" 60 "pgrep -x omnibridged >/dev/null"; then
+gu 'systemctl --user start pliweed.service' >/dev/null 2>&1
+if ga_wait_for "$DOMAIN" 60 "pgrep -x pliweed >/dev/null"; then
     ok "L22: the daemon starts again after reinstall"
     id_now="$(gx "sha256sum $STATE_DIR/identity.key | cut -d' ' -f1" | tr -d '[:space:]')"
     id_was="$(printf '%s\n' "$before_state" | grep 'identity.key' | head -1 | cut -d' ' -f1)"
@@ -801,8 +806,8 @@ fi
 
 # L24 purge — DEB only, and the gate that matters most.
 if [ "$PKGEXT" = "deb" ]; then
-    gu 'systemctl --user stop omnibridged.service' >/dev/null 2>&1
-    pg_out="$(gx 'DEBIAN_FRONTEND=noninteractive apt-get purge -y omnibridge-gui omnibridge 2>&1')"
+    gu 'systemctl --user stop pliweed.service' >/dev/null 2>&1
+    pg_out="$(gx 'DEBIAN_FRONTEND=noninteractive apt-get purge -y pliwee-gui pliwee 2>&1')"
     pg_rc=$?
     printf '%s\n' "$pg_out" | save "23-L24-purge.txt"
     [ "$pg_rc" -eq 0 ] && ok "L24: purge exited 0" || notok "L24: purge exited $pg_rc"
@@ -814,7 +819,7 @@ if [ "$PKGEXT" = "deb" ]; then
         && ok "L24/L23: the trust store is byte-, mode- and owner-identical after PURGE" \
         || notok "L24/L23: the trust store CHANGED across purge"
     printf '%s\n' "$after_purge" | save "24-L23-state-after-purge.txt"
-    conff="$(gx 'dpkg-query -W -f "\${Conffiles}\n" omnibridge omnibridge-gui 2>/dev/null | grep -c . || true' | tr -d '[:space:]')"
+    conff="$(gx 'dpkg-query -W -f "\${Conffiles}\n" pliwee pliwee-gui 2>/dev/null | grep -c . || true' | tr -d '[:space:]')"
     [ "${conff:-0}" = "0" ] \
         && ok "L24: no conffile left registered for either package" \
         || notok "L24: ${conff} conffile entries remain"
@@ -823,7 +828,7 @@ else
 fi
 
 # L26 — nothing in the user's state may be root-owned, on any path taken above.
-foreign="$(gx "find $STATE_DIR /home/$GUEST_USER/Downloads/OmniBridge /run/user/$GUEST_UID/omnibridge ! -user $GUEST_USER 2>/dev/null | head -20" || true)"
+foreign="$(gx "find $STATE_DIR /home/$GUEST_USER/Downloads/Pliwee /run/user/$GUEST_UID/pliwee ! -user $GUEST_USER 2>/dev/null | head -20" || true)"
 [ -z "${foreign//[[:space:]]/}" ] \
     && ok "L26: no file in the user's OmniBridge state is owned by anyone but $GUEST_USER" \
     || notok "L26: $(printf '%s\n' "$foreign" | grep -c .) path(s) in the user's state are not owned by $GUEST_USER"

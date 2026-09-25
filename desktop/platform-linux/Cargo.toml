@@ -20,7 +20,7 @@ unwrap_used = "warn"
 
 [features]
 # The KDE Plasma tray item. On by default, because the crate's own consumer
-# that matters — `omnibridged` — wants it, and a default-off feature is a feature
+# that matters — `pliweed` — wants it, and a default-off feature is a feature
 # `cargo test --workspace` does not compile.
 #
 # `pliwee-gui` and `pliwee-cli` turn it off. Not because it would break
@@ -59,7 +59,7 @@ tracing = "0.1"
 
 # The session bus, for the StatusNotifierItem. Already in this workspace's
 # resolved graph — `pliwee-capability-notifications` and
-# `pliwee-capability-battery` each take it optionally, and `omnibridged` enables
+# `pliwee-capability-battery` each take it optionally, and `pliweed` enables
 # both — so this adds a direct edge rather than a new crate. Same
 # `default-features = false` + `tokio` as those two: zbus's own executor would
 # be a second runtime inside a process that already has one.

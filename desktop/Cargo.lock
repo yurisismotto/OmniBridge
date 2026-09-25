@@ -1359,7 +1359,7 @@ checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 
 [[package]]
 name = "pliwee-capability-battery"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "pliwee-core",
@@ -1372,7 +1372,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-capability-clipboard"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "pliwee-core",
@@ -1390,7 +1390,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-capability-files"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "hmac",
@@ -1408,7 +1408,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-capability-notifications"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "futures-lite",
@@ -1423,7 +1423,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-cli"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -1435,7 +1435,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-control"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "serde",
@@ -1444,7 +1444,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-core"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "bytes",
@@ -1471,7 +1471,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-daemon"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1501,7 +1501,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-gui"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -1517,7 +1517,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-linux"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "futures-lite",
@@ -1533,7 +1533,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-proto"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "prost",
  "prost-build",
@@ -1543,7 +1543,7 @@ dependencies = [
 
 [[package]]
 name = "pliwee-runtime"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "async-trait",

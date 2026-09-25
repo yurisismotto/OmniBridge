@@ -501,7 +501,7 @@ async fn a_decision_for_an_offer_the_provider_was_never_shown_is_ignored() {
         other => panic!("expected the abandoned offer to be declined, got {other:?}"),
     }
 
-    // The newcomer knows the id — it could have read it from `omnibridge
+    // The newcomer knows the id — it could have read it from `pliwee
     // transfers` — and answering it does nothing at all.
     newcomer.decide(&request.transfer_id, true).await;
     assert!(captured

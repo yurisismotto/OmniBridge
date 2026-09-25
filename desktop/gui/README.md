@@ -1,4 +1,4 @@
-# `omnibridge-gui` — desktop front end
+# `pliwee-gui` — desktop front end
 
 GTK4 + libadwaita. A native Linux desktop application, deliberately not an
 Electron app and not an embedded web view.
@@ -6,7 +6,7 @@ Electron app and not an embedded web view.
 ## What it is
 
 A **client of the daemon**, and nothing more. It speaks the same
-newline-delimited JSON control protocol the `omnibridge` CLI speaks, over the
+newline-delimited JSON control protocol the `pliwee` CLI speaks, over the
 same Unix socket in `$XDG_RUNTIME_DIR/pliwee/control.sock`, using the very
 same `Request`/`Response` types from `pliwee-daemon`. Sharing those types is
 the point: if the socket contract changes, this crate stops compiling.
@@ -53,7 +53,7 @@ any GNOME system.
 ## Running
 
 ```bash
-omnibridged &            # the daemon must be running
+pliweed &               # the daemon must be running
 cargo run -p pliwee-gui
 ```
 

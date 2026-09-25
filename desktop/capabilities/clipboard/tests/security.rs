@@ -1135,7 +1135,7 @@ async fn a_backend_failure_is_reported_and_releases_the_suppression_entry() {
 /// person applying it:
 ///
 ///  * the daemon's log said "the session is locked: wl-copy and wl-paste
-///    cannot obtain a seat behind the lock screen", while `omnibridge clipboard
+///    cannot obtain a seat behind the lock screen", while `pliwee clipboard
 ///    apply` said only "the clipboard backend refused the write". The
 ///    actionable half was thrown away at the one place a human reads it.
 ///  * the clip was removed from the pending map *before* the write was

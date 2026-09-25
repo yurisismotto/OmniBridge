@@ -6,8 +6,8 @@
 //! selection and `loginctl show-session … LockedHint` reading `no` **before and
 //! after** the call:
 //!
-//! * `omnibridge clipboard status` said *"Clipboard auto-send cannot run;
-//!   **manual send still works**"* — and `omnibridge clipboard send` failed;
+//! * `pliwee clipboard status` said *"Clipboard auto-send cannot run;
+//!   **manual send still works**"* — and `pliwee clipboard send` failed;
 //! * the failure said *"this **normally means the session is locked**"* — and
 //!   the session was not locked, and Xwayland was running.
 //!

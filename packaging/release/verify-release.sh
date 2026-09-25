@@ -21,7 +21,7 @@
 
 set -uo pipefail
 
-DIR=""; KEYRING=""; EXPECT_FPR="${OMNIBRIDGE_SIGNING_FPR:-}"; ALLOW_UNSIGNED=0
+DIR=""; KEYRING=""; EXPECT_FPR="${PLIWEE_SIGNING_FPR:-}"; ALLOW_UNSIGNED=0
 usage() {
     cat >&2 <<USAGE
 usage: $0 --dir RELEASE_DIR [--keyring FILE] [--fingerprint FPR] [--allow-unsigned]
@@ -30,7 +30,7 @@ usage: $0 --dir RELEASE_DIR [--keyring FILE] [--fingerprint FPR] [--allow-unsign
   --keyring       a keyring holding ONLY the expected public key; without it,
                   the user's default gpg keyring is used
   --fingerprint   the full fingerprint the signature must carry; defaults to
-                  \$OMNIBRIDGE_SIGNING_FPR. Without one, any key the keyring
+                  \$PLIWEE_SIGNING_FPR. Without one, any key the keyring
                   trusts is accepted, which is weaker and is said so.
   --allow-unsigned  proceed when there is no signature at all. Prints what is
                   not being checked. Not the default, and never in CI.

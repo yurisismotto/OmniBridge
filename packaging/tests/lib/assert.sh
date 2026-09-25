@@ -42,7 +42,7 @@
 # re-sourcing is harmless, but the flag makes "did the harness load this?"
 # answerable, which packaging-checks.sh asks statically.
 # shellcheck disable=SC2034  # read by packaging-checks.sh H2, not by this file
-export OMNIBRIDGE_ASSERT_SH=1
+export PLIWEE_ASSERT_SH=1
 
 _af() { printf 'assert: FAILED: %s\n' "$*" >&2; return 1; }
 
@@ -145,7 +145,7 @@ need_glob() {
 # need_stdin_answer CMD_DESCRIPTION
 #
 # Packaging v1: `bash -s` with no stdin. Lifecycle closure §5 defect 4:
-# `omnibridge pair` backgrounded with no stdin read EOF from its `[y/N]` prompt
+# `pliwee pair` backgrounded with no stdin read EOF from its `[y/N]` prompt
 # and DECLINED the pairing, exiting 0. Two operator scans were lost to it.
 #
 # The lesson generalises past stdin: a command that prompts and is given
@@ -174,7 +174,7 @@ need_stdin_answer() {
 # ---------------------------------------------------------------------------
 need_writable() {
     local path="$1" as_user="${2:-}" probe
-    probe="$path/.omnibridge-write-probe.$$"
+    probe="$path/.pliwee-write-probe.$$"
     if [ -n "$as_user" ]; then
         runuser -u "$as_user" -- sh -c "touch '$probe' 2>/dev/null && rm -f '$probe'" \
             || { _af "$as_user cannot write to $path; anything staged there would be silently absent"; return 1; }

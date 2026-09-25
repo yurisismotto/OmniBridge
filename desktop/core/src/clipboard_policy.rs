@@ -46,7 +46,7 @@ use serde::{Deserialize, Serialize};
 /// ```
 ///
 /// The split is the point. Reaching these defaults already required an
-/// explicit `omnibridge grant <device> clipboard.v1`, which is never automatic —
+/// explicit `pliwee grant <device> clipboard.v1`, which is never automatic —
 /// so the two `allow_*` flags are not a silent widening, they are what the
 /// human just asked for. The two `auto_*` flags are the ones the brief cares
 /// about and they are off: nothing leaves this machine because of a copy, and
@@ -58,12 +58,12 @@ use serde::{Deserialize, Serialize};
 /// * copying locally sends nothing anywhere;
 /// * a peer's update is accepted, held in memory, and reported
 ///   `PENDING_USER` — it does not touch the system clipboard;
-/// * `omnibridge clipboard send <device>` works, because the human asked.
+/// * `pliwee clipboard send <device>` works, because the human asked.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClipboardPolicy {
     /// May this device send clipboard text to that peer at all — manually or
     /// automatically? Off makes every send a no-op, including
-    /// `omnibridge clipboard send`.
+    /// `pliwee clipboard send`.
     #[serde(default = "default_true")]
     pub allow_send: bool,
 

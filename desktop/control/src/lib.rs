@@ -313,7 +313,7 @@ pub struct TransferReport {
     /// and never a list index.
     ///
     /// `#[serde(default)]` for the reason the clipboard report's fields are:
-    /// a version skew between `omnibridge` and the agent must not fail to parse
+    /// a version skew between `pliwee` and the agent must not fail to parse
     /// a whole status report over one display field.
     #[serde(default)]
     pub seq: u64,
@@ -456,7 +456,7 @@ pub struct ClipboardStatusReport {
     /// not, or claim sensitive clips will be written, which they will not.
     ///
     /// `#[serde(default)]` for the same reason as the field below: a version
-    /// skew between `omnibridge` and the agent must not fail to parse a status
+    /// skew between `pliwee` and the agent must not fail to parse a status
     /// report over a display field.
     ///
     /// [`sensitive_available`]: Self::sensitive_available
@@ -474,7 +474,7 @@ pub struct ClipboardStatusReport {
     /// capability does not have to lie about what it supports — `wl-copy`
     /// gained `--sensitive` only in wl-clipboard 2.3.0.
     ///
-    /// `#[serde(default)]` because an older `omnibridge` binary talking to a
+    /// `#[serde(default)]` because an older `pliwee` binary talking to a
     /// newer agent, or the reverse, must not fail to parse a status report
     /// over a display field.
     #[serde(default = "default_true")]

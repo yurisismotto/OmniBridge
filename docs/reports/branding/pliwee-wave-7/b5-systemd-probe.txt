@@ -1,0 +1,58 @@
+systemd 259 (259.9-1.fc44)
+
+=== A. install logic, systemctl --root (scratch tree) ===
+A0  OmniBridge 1.0.0 state: omnibridged.service a real unit, enabled
+    Created symlink '/tmp/b5-root.xnxIh0/etc/systemd/user/default.target.wants/omnibridged.service' → '/usr/lib/systemd/user/omnibridged.service'.
+    link /etc/systemd/user/default.target.wants/omnibridged.service -> /usr/lib/systemd/user/omnibridged.service
+    is-enabled pliweed.service      disabled
+    is-enabled omnibridged.service  enabled
+A1  after the upgrade: omnibridged.service -> pliweed.service, legacy link kept
+    link /etc/systemd/user/default.target.wants/omnibridged.service -> /usr/lib/systemd/user/omnibridged.service
+    is-enabled pliweed.service      disabled
+    is-enabled omnibridged.service  alias
+A2  disable pliweed.service (legacy link only)
+    Removed '/tmp/b5-root.xnxIh0/etc/systemd/user/default.target.wants/omnibridged.service'.
+    is-enabled pliweed.service      disabled
+    is-enabled omnibridged.service  alias
+A3  enable pliweed.service with the legacy link present
+    Created symlink '/tmp/b5-root.xnxIh0/etc/systemd/user/default.target.wants/pliweed.service' → '/usr/lib/systemd/user/pliweed.service'.
+    link /etc/systemd/user/default.target.wants/omnibridged.service -> /usr/lib/systemd/user/omnibridged.service
+    link /etc/systemd/user/default.target.wants/pliweed.service -> /usr/lib/systemd/user/pliweed.service
+    is-enabled pliweed.service      enabled
+    is-enabled omnibridged.service  alias
+A4  ...then disable pliweed.service
+    Removed '/tmp/b5-root.xnxIh0/etc/systemd/user/default.target.wants/pliweed.service'.
+    Removed '/tmp/b5-root.xnxIh0/etc/systemd/user/default.target.wants/omnibridged.service'.
+    is-enabled pliweed.service      disabled
+    is-enabled omnibridged.service  alias
+A5  disable omnibridged.service (the alias name)
+    Removed '/tmp/b5-root.xnxIh0/etc/systemd/user/default.target.wants/omnibridged.service'.
+    is-enabled pliweed.service      disabled
+    is-enabled omnibridged.service  alias
+A6  reenable pliweed.service with the legacy link present (the logged fix)
+    Removed '/tmp/b5-root.xnxIh0/etc/systemd/user/default.target.wants/omnibridged.service'.
+    Created symlink '/tmp/b5-root.xnxIh0/etc/systemd/user/default.target.wants/pliweed.service' → '/usr/lib/systemd/user/pliweed.service'.
+    link /etc/systemd/user/default.target.wants/pliweed.service -> /usr/lib/systemd/user/pliweed.service
+    is-enabled pliweed.service      enabled
+    is-enabled omnibridged.service  alias
+A7  reenable pliweed.service again (idempotence)
+    Removed '/tmp/b5-root.xnxIh0/etc/systemd/user/default.target.wants/pliweed.service'.
+    Created symlink '/tmp/b5-root.xnxIh0/etc/systemd/user/default.target.wants/pliweed.service' → '/usr/lib/systemd/user/pliweed.service'.
+    link /etc/systemd/user/default.target.wants/pliweed.service -> /usr/lib/systemd/user/pliweed.service
+    is-enabled pliweed.service      enabled
+    is-enabled omnibridged.service  alias
+A8  never enabled, then upgraded: nothing enabled
+    is-enabled pliweed.service      disabled
+    is-enabled omnibridged.service  alias
+
+=== B. the running user manager (disposable runtime units) ===
+B1  a target that Wants the OLD name, which is an alias of the new unit
+    old name: Id=b5probenew.service Names=b5probenew.service b5probeold.service ActiveState=active MainPID=210519 
+    new name: Id=b5probenew.service Names=b5probenew.service b5probeold.service ActiveState=active MainPID=210519 
+    after also starting both names explicitly: sleep-600 processes = 1
+B2  the upgrade while the old unit is RUNNING: file -> alias, then daemon-reload
+    before: Id=b5probeold.service Names=b5probeold.service ActiveState=active MainPID=210561 
+    after reload, old name: Id=b5probenew.service Names=b5probenew.service b5probeold.service ActiveState=active MainPID=210561 
+    after reload, new name: Id=b5probenew.service Names=b5probenew.service b5probeold.service ActiveState=active MainPID=210561 
+    after 'start' of the new name: old-binary processes = 1, new-binary processes = 0
+    cleanup: probe processes left = 0, probe files left = 0

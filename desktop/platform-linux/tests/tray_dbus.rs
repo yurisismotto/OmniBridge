@@ -270,7 +270,7 @@ async fn d2_an_absent_watcher_is_not_an_error() {
     )
     .await;
     let id: String = proxy.get_property("Id").await.expect("Id");
-    assert_eq!(id, "io.github.yurisismotto.omnibridge");
+    assert_eq!(id, "io.github.yurisismotto.pliwee");
 
     // And the task that follows the shell is still alive, waiting.
     stays(
@@ -395,7 +395,7 @@ async fn d13_a_shell_that_announces_itself_repeatedly_is_registered_with_once() 
 // ===========================================================================
 
 #[tokio::test(flavor = "multi_thread")]
-async fn d6_the_watcher_sees_exactly_one_omnibridge_item() {
+async fn d6_the_watcher_sees_exactly_one_pliwee_item() {
     let bus = TestBus::start();
     let (watcher_conn, log) = start_watcher(&bus).await;
     let _item = start_item(&bus, &Recorder::default()).await;
@@ -495,10 +495,10 @@ async fn d7_the_item_properties_have_the_types_and_values_the_spec_requires() {
 
     // And the values.
     assert_eq!(text("Category"), "ApplicationStatus");
-    assert_eq!(text("Id"), "io.github.yurisismotto.omnibridge");
+    assert_eq!(text("Id"), "io.github.yurisismotto.pliwee");
     assert_eq!(text("Title"), "Pliwee");
     assert_eq!(text("Status"), "Active");
-    assert_eq!(text("IconName"), "io.github.yurisismotto.omnibridge");
+    assert_eq!(text("IconName"), "io.github.yurisismotto.pliwee");
     assert_eq!(text("IconThemePath"), "", "the item names a directory");
     assert_eq!(text("AttentionIconName"), "");
     assert_eq!(text("AttentionMovieName"), "");
@@ -1034,7 +1034,7 @@ async fn d15_every_string_on_the_tray_objects_is_one_of_eight_constants() {
 
     let allowed = [
         "",
-        "io.github.yurisismotto.omnibridge",
+        "io.github.yurisismotto.pliwee",
         "Pliwee",
         "ApplicationStatus",
         "Active",

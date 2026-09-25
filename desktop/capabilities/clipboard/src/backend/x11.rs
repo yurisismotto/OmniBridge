@@ -48,7 +48,7 @@ const XFIXES_MINOR: u32 = 0;
 
 /// Checks that an XFIXES clipboard watch can be established here.
 ///
-/// Called once, at backend detection, so that `omnibridge clipboard status` can
+/// Called once, at backend detection, so that `pliwee clipboard status` can
 /// state the truth before anything is attempted. Everything it opens is
 /// closed again.
 pub fn probe() -> Result<(), String> {

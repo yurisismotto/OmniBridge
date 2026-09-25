@@ -1,6 +1,6 @@
 //! Session-lifecycle regressions.
 //!
-//! These cover the "zombie session" defect: `omnibridge status` reporting a
+//! These cover the "zombie session" defect: `pliwee status` reporting a
 //! device as connected when its session was already gone, and the mirror
 //! image of it — a live session being evicted by an older one's late close.
 //!

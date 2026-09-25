@@ -469,7 +469,7 @@ fn receive_switch(peer: &NotificationPeerReport, pages: &Pages) -> gtk::Box {
             },
             move |reply| {
                 if let Ok(Response::Error { message }) = reply {
-                    eprintln!("omnibridge-gui: the daemon refused the grant change: {message}");
+                    eprintln!("pliwee-gui: the daemon refused the grant change: {message}");
                 }
                 // Re-read rather than assume: the daemon is the authority, and
                 // a refused change must not leave a switch claiming otherwise.
@@ -517,7 +517,7 @@ fn policy_switch(
             },
             move |reply| {
                 if let Ok(Response::Error { message }) = reply {
-                    eprintln!("omnibridge-gui: the daemon refused the policy change: {message}");
+                    eprintln!("pliwee-gui: the daemon refused the policy change: {message}");
                 }
                 pages.refresh_now();
             },
@@ -592,7 +592,7 @@ fn lock_choices(peer: &NotificationPeerReport, pages: &Pages) -> gtk::ListBox {
             },
             move |reply| {
                 if let Ok(Response::Error { message }) = reply {
-                    eprintln!("omnibridge-gui: the daemon refused the lock policy: {message}");
+                    eprintln!("pliwee-gui: the daemon refused the lock policy: {message}");
                 }
                 pages.refresh_now();
             },
@@ -660,7 +660,7 @@ fn dismiss_sync_row(peer: &NotificationPeerReport, pages: &Pages) -> gtk::Box {
             },
             move |reply| {
                 if let Ok(Response::Error { message }) = reply {
-                    eprintln!("omnibridge-gui: the daemon refused the policy change: {message}");
+                    eprintln!("pliwee-gui: the daemon refused the policy change: {message}");
                 }
                 // Re-read rather than assume: the daemon is the authority.
                 pages.refresh_now();

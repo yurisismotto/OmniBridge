@@ -40,7 +40,7 @@ command -v gpg >/dev/null 2>&1 || die "gpg is not installed; these tests cannot 
 [ -x "$SIGN" ]   || die "$SIGN is missing or not executable"
 [ -x "$VERIFY" ] || die "$VERIFY is missing or not executable"
 
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/omnibridge-signing.XXXXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/pliwee-signing.XXXXXXXX")"
 export GNUPGHOME="$WORK/gnupg"
 mkdir -p "$GNUPGHOME"; chmod 700 "$GNUPGHOME"
 cleanup() {
@@ -51,7 +51,7 @@ trap cleanup EXIT
 
 # The tracked-tree private-armour scanner, held in a variable so the shell
 # never has to nest one heredoc inside another.
-OMNIBRIDGE_SCANNER_PY='import os, re, sys
+PLIWEE_SCANNER_PY='import os, re, sys
 root = sys.argv[1]
 hdr = re.compile(r'\''-----BEGIN (?:PGP |OPENSSH |ENCRYPTED |RSA |EC |DSA )?PRIVATE KEY(?: BLOCK)?-----'\'')
 b64 = re.compile(r'\''^[A-Za-z0-9+/=]{40,}$'\'')
@@ -119,13 +119,13 @@ section "A release directory shaped like the real one"
 mkrelease() {
     local d="$1"
     mkdir -p "$d/fedora44" "$d/ubuntu2404" "$d/ubuntu2604" "$d/debian13" "$d/sbom"
-    printf 'source tarball %s\n'  "$RANDOM$RANDOM" > "$d/omnibridge-0.0.0-test.tar.gz"
-    printf 'vendor tarball %s\n'  "$RANDOM$RANDOM" > "$d/omnibridge-0.0.0-test-vendor.tar.xz"
-    printf 'rpm %s\n'             "$RANDOM$RANDOM" > "$d/fedora44/omnibridge-0.0.0-test.x86_64.rpm"
-    printf 'deb u2404 %s\n'       "$RANDOM$RANDOM" > "$d/ubuntu2404/omnibridge_0.0.0-test_amd64.deb"
-    printf 'deb u2604 %s\n'       "$RANDOM$RANDOM" > "$d/ubuntu2604/omnibridge_0.0.0-test_amd64.deb"
-    printf 'deb d13 %s\n'         "$RANDOM$RANDOM" > "$d/debian13/omnibridge_0.0.0-test_amd64.deb"
-    printf '{"sbom":"%s"}\n'      "$RANDOM$RANDOM" > "$d/sbom/omnibridge-0.0.0-test.cdx.json"
+    printf 'source tarball %s\n'  "$RANDOM$RANDOM" > "$d/pliwee-0.0.0-test.tar.gz"
+    printf 'vendor tarball %s\n'  "$RANDOM$RANDOM" > "$d/pliwee-0.0.0-test-vendor.tar.xz"
+    printf 'rpm %s\n'             "$RANDOM$RANDOM" > "$d/fedora44/pliwee-0.0.0-test.x86_64.rpm"
+    printf 'deb u2404 %s\n'       "$RANDOM$RANDOM" > "$d/ubuntu2404/pliwee_0.0.0-test_amd64.deb"
+    printf 'deb u2604 %s\n'       "$RANDOM$RANDOM" > "$d/ubuntu2604/pliwee_0.0.0-test_amd64.deb"
+    printf 'deb d13 %s\n'         "$RANDOM$RANDOM" > "$d/debian13/pliwee_0.0.0-test_amd64.deb"
+    printf '{"sbom":"%s"}\n'      "$RANDOM$RANDOM" > "$d/sbom/pliwee-0.0.0-test.cdx.json"
     ( cd "$d" && find . -type f ! -name 'SHA256SUMS*' -printf '%P\n' | sort | xargs sha256sum > SHA256SUMS )
 }
 REL="$WORK/release"
@@ -165,7 +165,7 @@ refute() {
 
 # 1. a modified artifact
 T1="$WORK/t1"; cp -r "$REL" "$T1"
-printf 'tampered\n' >> "$T1/ubuntu2404/omnibridge_0.0.0-test_amd64.deb"
+printf 'tampered\n' >> "$T1/ubuntu2404/pliwee_0.0.0-test_amd64.deb"
 refute "a modified artifact" "$VERIFY" --dir "$T1" --keyring "$WORK/omnibridge-release.gpg" --fingerprint "$FPR"
 
 # 2. the wrong key
@@ -181,7 +181,7 @@ refute "a signature by a key the keyring does not hold" \
 # 3. a modified checksum manifest — digests edited to match a tampered file,
 #    which is exactly what an attacker who can replace files would do
 T3="$WORK/t3"; cp -r "$REL" "$T3"
-printf 'tampered\n' >> "$T3/fedora44/omnibridge-0.0.0-test.x86_64.rpm"
+printf 'tampered\n' >> "$T3/fedora44/pliwee-0.0.0-test.x86_64.rpm"
 ( cd "$T3" && find . -type f ! -name 'SHA256SUMS*' -printf '%P\n' | sort | xargs sha256sum > SHA256SUMS )
 ( cd "$T3" && sha256sum -c --quiet SHA256SUMS ) \
     && ok "the tampered release is internally consistent, so only the signature can catch it" \
@@ -207,7 +207,7 @@ else
 fi
 
 # 5. a missing artifact
-T5="$WORK/t5"; cp -r "$REL" "$T5"; rm -f "$T5/sbom/omnibridge-0.0.0-test.cdx.json"
+T5="$WORK/t5"; cp -r "$REL" "$T5"; rm -f "$T5/sbom/pliwee-0.0.0-test.cdx.json"
 refute "an artifact named in the manifest but absent" \
     "$VERIFY" --dir "$T5" --keyring "$WORK/omnibridge-release.gpg" --fingerprint "$FPR"
 
@@ -229,7 +229,7 @@ section "The signer must also refuse"
 # ---------------------------------------------------------------------------
 # 9. it must not sign a manifest that does not describe the files beside it
 T9="$WORK/t9"; cp -r "$REL" "$T9"; rm -f "$T9/SHA256SUMS.asc"
-printf 'tampered\n' >> "$T9/debian13/omnibridge_0.0.0-test_amd64.deb"
+printf 'tampered\n' >> "$T9/debian13/pliwee_0.0.0-test_amd64.deb"
 if "$SIGN" --dir "$T9" --key "$FPR" >"$WORK/s9.log" 2>&1; then
     notok "sign-release.sh signed a manifest that does not match its files"
 else
@@ -343,7 +343,7 @@ else
     fi
 
     SCANPY="$WORK/scan-tracked.py"
-    printf '%s' "$OMNIBRIDGE_SCANNER_PY" > "$SCANPY"
+    printf '%s' "$PLIWEE_SCANNER_PY" > "$SCANPY"
 
     # The controls run through the SAME scanner, on a scratch tree, so a
     # scanner broken in a way that reports nothing cannot pass this file.
@@ -458,7 +458,7 @@ fi
 # and it must NOT have become permissive in the process
 refute "a master+subkey signature against an unrelated fingerprint"     "$VERIFY" --dir "$SR" --keyring "$WORK/subkey-pub.gpg" --fingerprint "$FPR"
 T11="$WORK/t11"; cp -r "$SR" "$T11"
-printf 'tampered\n' >> "$T11/ubuntu2404/omnibridge_0.0.0-test_amd64.deb"
+printf 'tampered\n' >> "$T11/ubuntu2404/pliwee_0.0.0-test_amd64.deb"
 refute "a modified artifact under a master+subkey signature"     "$VERIFY" --dir "$T11" --keyring "$WORK/subkey-pub.gpg" --fingerprint "$MFPR"
 
 # ---------------------------------------------------------------------------

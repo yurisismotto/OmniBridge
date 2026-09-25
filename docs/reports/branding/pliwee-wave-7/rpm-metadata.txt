@@ -1,0 +1,74 @@
+=== omnibridge-1.1.0-1.fc44.noarch.rpm
+-- obsoletes:
+-- provides:
+   omnibridge = 1.1.0-1.fc44
+-- requires:
+   pliwee = 1.1.0-1.fc44
+-- files:
+ (contains 
+=== pliwee-1.1.0-1.fc44.src.rpm
+-- obsoletes:
+-- provides:
+   pliwee = 1.1.0-1.fc44
+   omnibridge = 1.1.0-1.fc44
+   pliwee-gui = 1.1.0-1.fc44
+-- requires:
+   cargo
+   dbus-daemon
+   desktop-file-utils
+   firewalld-filesystem
+   gcc
+   glib2-devel
+   gtk4-devel >= 4.12
+   libadwaita-devel >= 1.5
+   libappstream-glib
+   pkgconf-pkg-config
+   rust >= 1.88
+   systemd-rpm-macros
+-- files:
+ -rw-r--r-- pliwee-1.1.0-vendor.tar.xz
+ -rw-r--r-- pliwee-1.1.0.tar.gz
+ -rw-r--r-- pliwee.spec
+=== pliwee-1.1.0-1.fc44.x86_64.rpm
+-- obsoletes:
+-- provides:
+   pliwee = 1.1.0-1.fc44
+   pliwee(x86-64) = 1.1.0-1.fc44
+-- requires:
+   firewalld-filesystem
+   ld-linux-x86-64.so.2()(64bit)
+   ld-linux-x86-64.so.2(GLIBC_2.3)(64bit)
+-- files:
+ -rwxr-xr-x /usr/bin/pliwee
+ -rwxr-xr-x /usr/bin/pliweed
+ -rw-r--r-- /usr/lib/firewalld/services/omnibridge.xml
+ -rw-r--r-- /usr/lib/firewalld/services/pliwee.xml
+ lrwxrwxrwx /usr/lib/systemd/user/omnibridged.service -> pliweed.service
+ -rw-r--r-- /usr/lib/systemd/user/pliweed.service
+ drwxr-xr-x /usr/share/doc/pliwee
+ -rw-r--r-- /usr/share/doc/pliwee/README.md
+ -rw-r--r-- /usr/share/icons/hicolor/scalable/apps/io.github.yurisismotto.pliwee.svg
+ drwxr-xr-x /usr/share/licenses/pliwee
+ -rw-r--r-- /usr/share/licenses/pliwee/LICENSE
+=== pliwee-gui-1.1.0-1.fc44.x86_64.rpm
+-- obsoletes:
+   omnibridge-gui < 1.1.0
+-- provides:
+   application()
+   application(io.github.yurisismotto.pliwee.desktop)
+   metainfo()
+   metainfo(io.github.yurisismotto.pliwee.metainfo.xml)
+   omnibridge-gui = 1.1.0-1.fc44
+   pliwee-gui = 1.1.0-1.fc44
+   pliwee-gui(x86-64) = 1.1.0-1.fc44
+-- requires:
+   ld-linux-x86-64.so.2()(64bit)
+   ld-linux-x86-64.so.2(GLIBC_2.3)(64bit)
+   pliwee = 1.1.0-1.fc44
+-- files:
+ -rwxr-xr-x /usr/bin/pliwee-gui
+ -rw-r--r-- /usr/share/applications/io.github.yurisismotto.pliwee.desktop
+ -rw-r--r-- /usr/share/dbus-1/services/io.github.yurisismotto.pliwee.service
+ drwxr-xr-x /usr/share/licenses/pliwee-gui
+ -rw-r--r-- /usr/share/licenses/pliwee-gui/LICENSE
+ -rw-r--r-- /usr/share/metainfo/io.github.yurisismotto.pliwee.metainfo.xml

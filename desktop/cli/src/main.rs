@@ -1,4 +1,4 @@
-//! `omnibridge` — control the local daemon.
+//! `pliwee` — control the local daemon.
 //!
 //! Talks to the daemon over its Unix control socket. It holds no keys, no
 //! trust store and no protocol logic: if the daemon is not running, every
@@ -216,7 +216,7 @@ enum ClipboardCommand {
     /// Apply clips from a device to this clipboard as they arrive.
     ///
     /// Off by default. With it off, a clip is held in memory and applied only
-    /// when you run `omnibridge clipboard apply`, so a paired device cannot
+    /// when you run `pliwee clipboard apply`, so a paired device cannot
     /// replace what you are about to paste.
     AutoReceive {
         device: String,
@@ -253,7 +253,7 @@ async fn main() -> anyhow::Result<()> {
     let stream = UnixStream::connect(&path).await.map_err(|e| {
         anyhow::anyhow!(
             "cannot reach the daemon at {} ({e}).\n\
-             Start it with: systemctl --user start omnibridged.service",
+             Start it with: systemctl --user start pliweed.service",
             path.display()
         )
     })?;
@@ -416,7 +416,7 @@ async fn simple(stream: UnixStream, request: Request) -> anyhow::Result<()> {
             }
 
             if s.devices.is_empty() {
-                println!("\n  no paired devices. Run: omnibridge pair");
+                println!("\n  no paired devices. Run: pliwee pair");
             } else {
                 println!("\n  devices:");
                 for d in &s.devices {
@@ -426,7 +426,7 @@ async fn simple(stream: UnixStream, request: Request) -> anyhow::Result<()> {
         }
         Response::Devices(devices) => {
             if devices.is_empty() {
-                println!("no paired devices. Run: omnibridge pair");
+                println!("no paired devices. Run: pliwee pair");
                 return Ok(());
             }
             for d in &devices {
@@ -490,7 +490,7 @@ fn print_device(d: &DeviceReport, indent: &str) {
     }
 }
 
-/// Renders `omnibridge clipboard status`.
+/// Renders `pliwee clipboard status`.
 ///
 /// Three facts are kept visibly apart, because collapsing them is how a user
 /// comes to believe sync is running when it is not: whether the capability is
@@ -581,7 +581,7 @@ fn print_clipboard_status(report: &ClipboardStatusReport) {
     );
 
     if report.peers.is_empty() {
-        println!("\n  no paired devices. Run: omnibridge pair");
+        println!("\n  no paired devices. Run: pliwee pair");
         return;
     }
 
@@ -597,7 +597,7 @@ fn print_clipboard_status(report: &ClipboardStatusReport) {
                 // paired would send them down the wrong path.
                 (true, _) => "unavailable — this device's pairing was revoked",
                 (false, true) => "granted",
-                (false, false) => "NOT granted (run: omnibridge grant <device> clipboard.v1)",
+                (false, false) => "NOT granted (run: pliwee grant <device> clipboard.v1)",
             }
         );
         println!("      connected    {}", yes_no(p.connected));
@@ -635,7 +635,7 @@ fn print_clipboard_status(report: &ClipboardStatusReport) {
                 human_duration(clip.age_secs),
             );
             println!(
-                "      apply with: omnibridge clipboard apply {}",
+                "      apply with: pliwee clipboard apply {}",
                 clip.fingerprint_short.replace(' ', "").to_lowercase()
             );
         }
@@ -678,7 +678,7 @@ fn human_duration(secs: u64) -> String {
 
 /// Prints one transfer.
 fn print_transfer(t: &TransferReport, indent: &str) {
-    // The short id is what a user types into `omnibridge cancel`.
+    // The short id is what a user types into `pliwee cancel`.
     println!(
         "{indent}{}  {} {} {}",
         &t.transfer_id[..8],
@@ -862,7 +862,7 @@ async fn pair(stream: UnixStream, ttl: Option<u64>) -> anyhow::Result<()> {
                 match status.as_str() {
                     "paired" => println!("\nPaired with {detail}."),
                     "declined" => println!("\nDeclined. {detail} was not paired."),
-                    "expired" => println!("\nPairing window expired. Run `omnibridge pair` again."),
+                    "expired" => println!("\nPairing window expired. Run `pliwee pair` again."),
                     other => println!("\nPairing ended: {other} ({detail})"),
                 }
                 return Ok(());
@@ -900,7 +900,7 @@ async fn write_json<W: AsyncWriteExt + Unpin>(w: &mut W, value: &Request) -> any
     Ok(())
 }
 
-/// Renders `omnibridge notifications status`.
+/// Renders `pliwee notifications status`.
 ///
 /// Every line here is a count, a state or a platform identifier. **No line can
 /// carry a notification's title, body or application name**, because no field
@@ -959,7 +959,7 @@ fn print_notifications_status(report: &NotificationsStatusReport) {
                 (_, true) => "device REVOKED".to_string(),
                 (true, false) => "granted".to_string(),
                 (false, false) =>
-                    "NOT granted (run: omnibridge grant <device> notifications.v1)".to_string(),
+                    "NOT granted (run: pliwee grant <device> notifications.v1)".to_string(),
             }
         );
         println!(

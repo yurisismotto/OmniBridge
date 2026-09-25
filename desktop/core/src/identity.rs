@@ -249,7 +249,7 @@ pub fn random_device_id() -> Result<String> {
 
 /// How the private key is protected on this device.
 ///
-/// Reported locally — `omnibridge status` shows it — and **never** put on the
+/// Reported locally — `pliwee status` shows it — and **never** put on the
 /// wire. A peer's claim about its own key storage is unverifiable, and an
 /// unverifiable self-report is not a security property (PLAT-DEC-012).
 ///
@@ -279,7 +279,7 @@ impl KeyBacking {
         matches!(self, Self::Software)
     }
 
-    /// One word for `omnibridge status`.
+    /// One word for `pliwee status`.
     pub fn label(&self) -> &'static str {
         match self {
             Self::Software => "software",

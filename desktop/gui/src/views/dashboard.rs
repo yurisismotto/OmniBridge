@@ -354,7 +354,7 @@ fn choose_and_send_file(button: &gtk::Button, action: &Action) {
                 // dashboard picks the transfer up on its next refresh, so only an
                 // outright refusal needs reporting here.
                 if let Ok(Response::Error { message }) = reply {
-                    eprintln!("omnibridge-gui: could not offer the file: {message}");
+                    eprintln!("pliwee-gui: could not offer the file: {message}");
                 }
             });
         },

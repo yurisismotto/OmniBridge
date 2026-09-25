@@ -563,7 +563,7 @@ pub async fn do_grant(
 
     // Only a capability this build actually implements can be granted.
     // Storing a grant for an unknown id would produce a permission that looks
-    // real in `omnibridge devices` and does nothing.
+    // real in `pliwee devices` and does nothing.
     if !state.registry.supports(capability) {
         return Response::Error {
             message: format!("this daemon does not implement '{capability}'"),
@@ -701,7 +701,7 @@ async fn do_cancel_transfer(state: &Arc<DaemonState>, selector: &str) -> Respons
 // clipboard.v1
 // ---------------------------------------------------------------------------
 
-/// Everything `omnibridge clipboard status` shows.
+/// Everything `pliwee clipboard status` shows.
 ///
 /// Deliberately assembled from three independent sources — the backend's
 /// probed capability, the trust store's grants, and the manager's live state
@@ -902,7 +902,7 @@ async fn do_clipboard_policy(
     } else {
         format!(
             "\nNote: {} is not granted for this device, so clipboard policy \
-             has no effect yet. Run: omnibridge grant {} clipboard.v1",
+             has no effect yet. Run: pliwee grant {} clipboard.v1",
             pliwee_capability_clipboard::CAPABILITY_ID,
             device
         )
@@ -1031,7 +1031,7 @@ async fn run_send_session(
 /// This is the missing product surface from U2: an Android device offers a
 /// file, `files.v1` asks [`FileApproval`], `FileApproval` asks whoever is on
 /// the other end of this socket, and the answer comes back down it. The
-/// daemon depends on no toolkit to do it — a GTK window, a `omnibridge` command
+/// daemon depends on no toolkit to do it — a GTK window, a `pliwee` command
 /// and a test are all the same client from here.
 ///
 /// The provider's attachment lives exactly as long as this connection. When
@@ -1170,7 +1170,7 @@ async fn run_file_approval_session(
 ///
 /// The `open` check is not belt and braces over the seam's own keying: it is
 /// what stops a client from answering a question it was never asked, on a
-/// transfer it learned about from `omnibridge transfers`.
+/// transfer it learned about from `pliwee transfers`.
 fn apply_file_decision(
     approval: &crate::approval::FileApproval,
     open: &mut std::collections::BTreeSet<pliwee_capability_files::transfer::TransferId>,
@@ -1479,7 +1479,7 @@ async fn build_notifications_status(state: &Arc<DaemonState>) -> NotificationsSt
 
 /// Changes one per-peer notification setting.
 ///
-/// The grant is a separate command (`omnibridge grant <device>
+/// The grant is a separate command (`pliwee grant <device>
 /// notifications.v1`) and is deliberately not settable from here: a policy
 /// edit must not be able to hand out the permission the policy is scoped by.
 ///

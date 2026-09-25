@@ -99,7 +99,7 @@ fn the_tray_activates_a_bus_name_the_session_bus_can_start() {
         "the bus cannot start the name the tray calls"
     );
     // Cold activation is the case the tray exists for: a freshly booted
-    // session where `omnibridged` runs as a user service and no GUI process
+    // session where `pliweed` runs as a user service and no GUI process
     // exists at all.
     assert!(key(&service, "[D-BUS Service]", "Exec")
         .expect("Exec")
@@ -150,7 +150,7 @@ fn every_tray_action_is_an_action_the_gui_exports() {
 
 #[test]
 fn the_daemon_starts_the_tray_and_does_not_race_it_against_anything() {
-    // The supervision decision, asserted where it can be read. `omnibridged`
+    // The supervision decision, asserted where it can be read. `pliweed`
     // races the network listener, the control server and `ctrl_c` in a
     // `select!`, and the first of those to finish ends the process. The tray
     // must not be in that race: it is convenience, and convenience must not be
@@ -176,7 +176,7 @@ fn the_daemon_starts_the_tray_and_does_not_race_it_against_anything() {
     );
 
     // And it is not spawning a process. The whole point of activating over
-    // the bus is that the GUI does not inherit `omnibridged`'s sandbox.
+    // the bus is that the GUI does not inherit `pliweed`'s sandbox.
     for forbidden in [
         "Command::new",
         "std::process::Command",

@@ -1,0 +1,26 @@
+   Compiling pliwee-proto v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/proto)
+    Checking pliwee-control v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/control)
+   Compiling pliwee-gui v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/gui)
+    Checking pliwee-core v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/core)
+    Checking pliwee-linux v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/platform-linux)
+    Checking pliwee-capability-notifications v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/notifications)
+    Checking pliwee-capability-clipboard v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/clipboard)
+    Checking pliwee-capability-battery v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/battery)
+    Checking pliwee-capability-files v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/files)
+    Checking pliwee-runtime v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/runtime)
+    Checking pliwee-daemon v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/daemon)
+    Checking pliwee-cli v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.69s
+   Compiling pliwee-proto v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/proto)
+    Checking miette v7.6.0
+   Compiling pliwee-gui v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/gui)
+    Checking pliwee-control v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/control)
+    Checking pliwee-core v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/core)
+    Checking prost-types v0.14.4
+    Checking pliwee-linux v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/platform-linux)
+    Checking logos v0.16.1
+    Checking logos v0.15.1
+    Checking prost-reflect v0.16.5
+    Checking protox-parse v0.9.0
+    Checking protox v0.9.1
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.91s

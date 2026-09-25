@@ -1,0 +1,18 @@
+$ gpg --import omnibridge-release-pubkey.asc
+gpg: keybox '/tmp/w7-gpg.bj0w/pubring.kbx' criada
+gpg: /tmp/w7-gpg.bj0w/trustdb.gpg: trustdb criada
+gpg: chave 64963019E731BE07: chave pública "OmniBridge Release Signing Key" importada
+gpg:          Número total processado: 1
+gpg:                       importadas: 1
+$ gpg --fingerprint F545DC184E909192C3FB6F6E64963019E731BE07
+pub   ed25519 2026-09-23 [C]
+      F545 DC18 4E90 9192 C3FB  6F6E 6496 3019 E731 BE07
+uid         [desconhec.] OmniBridge Release Signing Key
+sub   ed25519 2026-09-23 [S] [expira: 2028-09-22]
+
+$ gpg --status-fd 1 --verify SHA256SUMS.asc SHA256SUMS
+[GNUPG:] GOODSIG 4C48CB81694FD134 OmniBridge Release Signing Key
+[GNUPG:] VALIDSIG E8EDE4706F067739A8D3A8B74C48CB81694FD134 2026-09-24 1790221342 0 4 0 22 10 00 F545DC184E909192C3FB6F6E64963019E731BE07
+$ sha256 of the two Fedora RPMs against the signed list
+OK  omnibridge-1.0.0-1.fc44.x86_64.rpm ad0d5a8c1fb900e149ac8bfc88a4adae88653a7a6cc9a64ed5959660c40ba8df
+OK  omnibridge-gui-1.0.0-1.fc44.x86_64.rpm 5504d81e53e4230a4d79028c8978278c73c9fb18d2361498e7aec2d3515cb8e0

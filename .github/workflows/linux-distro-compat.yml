@@ -2,8 +2,8 @@
 #
 # What this proves, and what it does not
 # --------------------------------------
-# It proves **BUILD COMPATIBILITY**: that `omnibridged`, `omnibridge` and
-# `omnibridge-gui` compile on Ubuntu 24.04 LTS, Ubuntu 26.04 LTS and Debian 13
+# It proves **BUILD COMPATIBILITY**: that `pliweed`, `pliwee` and
+# `pliwee-gui` compile on Ubuntu 24.04 LTS, Ubuntu 26.04 LTS and Debian 13
 # trixie, against **those distributions' own** GTK, libadwaita, glib and C
 # toolchain, from the committed `Cargo.lock`.
 #
@@ -74,7 +74,7 @@ env:
   # The declared floor, in one place. `desktop/Cargo.toml` carries the same
   # number and the `msrv` job asserts the two agree, so this cannot drift into
   # testing a version nothing claims.
-  OMNIBRIDGE_MSRV: '1.88.0'
+  PLIWEE_MSRV: '1.88.0'
 
 jobs:
   # ---------------------------------------------------------------------- 1 --
@@ -107,13 +107,13 @@ jobs:
           set -eu
           declared=$(sed -n 's/^rust-version *= *"\(.*\)"/\1/p' Cargo.toml)
           echo "desktop/Cargo.toml declares: ${declared}"
-          echo "this job pins:              ${OMNIBRIDGE_MSRV}"
+          echo "this job pins:              ${PLIWEE_MSRV}"
           # `1.88` and `1.88.0` name the same toolchain, so both are reduced
           # to major.minor before comparing and the manifest need not carry a
           # patch level it does not mean.
           minor() { echo "$1" | awk -F. '{ printf "%s.%s", $1, $2 }'; }
-          if [ "$(minor "${declared}")" != "$(minor "${OMNIBRIDGE_MSRV}")" ]; then
-            echo "::error::rust-version is '${declared}' but this gate pins '${OMNIBRIDGE_MSRV}'."
+          if [ "$(minor "${declared}")" != "$(minor "${PLIWEE_MSRV}")" ]; then
+            echo "::error::rust-version is '${declared}' but this gate pins '${PLIWEE_MSRV}'."
             echo "::error::Raising the declared MSRV must be a deliberate edit in both places,"
             echo "::error::with the dependency that moved the floor named in the commit."
             exit 1
@@ -122,9 +122,9 @@ jobs:
       - name: Toolchain identity
         run: |
           set -eux
-          rustup toolchain install "${OMNIBRIDGE_MSRV}" --profile minimal
-          rustup run "${OMNIBRIDGE_MSRV}" rustc -Vv
-          rustup run "${OMNIBRIDGE_MSRV}" cargo -V
+          rustup toolchain install "${PLIWEE_MSRV}" --profile minimal
+          rustup run "${PLIWEE_MSRV}" rustc -Vv
+          rustup run "${PLIWEE_MSRV}" cargo -V
 
       # THE GATE. If this goes red, a dependency update has raised the real
       # compiler floor above the declared one. The fix is NOT to bump
@@ -133,17 +133,17 @@ jobs:
       # claim became false.
       - name: Lockfile resolves on the declared MSRV
         working-directory: desktop
-        run: rustup run "${OMNIBRIDGE_MSRV}" cargo metadata --locked --format-version 1 > /dev/null
+        run: rustup run "${PLIWEE_MSRV}" cargo metadata --locked --format-version 1 > /dev/null
 
       - name: cargo check · daemon, CLI, GUI
         working-directory: desktop
         run: |
-          rustup run "${OMNIBRIDGE_MSRV}" cargo check --locked \
+          rustup run "${PLIWEE_MSRV}" cargo check --locked \
             -p pliwee-daemon -p pliwee-cli -p pliwee-gui
 
       - name: cargo check · the whole desktop workspace, tests included
         working-directory: desktop
-        run: rustup run "${OMNIBRIDGE_MSRV}" cargo check --locked --workspace --all-targets
+        run: rustup run "${PLIWEE_MSRV}" cargo check --locked --workspace --all-targets
 
   # ---------------------------------------------------------------------- 2 --
   # The distro matrix. Every row is mandatory; none may be allowed to fail.
@@ -256,7 +256,7 @@ jobs:
         run: |
           set -eux
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-            | sh -s -- -y --profile minimal --default-toolchain "${OMNIBRIDGE_MSRV}"
+            | sh -s -- -y --profile minimal --default-toolchain "${PLIWEE_MSRV}"
           echo "${HOME}/.cargo/bin" >> "${GITHUB_PATH}"
           # `desktop/rust-toolchain.toml` pins `channel = "stable"`, which is
           # right for a developer and wrong here: rustup honours that file over
@@ -265,7 +265,7 @@ jobs:
           # MSRV. Measured, not guessed — the first local container probe of
           # this workflow ran on 1.98.1 while reporting that it had installed
           # 1.88.0. `RUSTUP_TOOLCHAIN` outranks the file.
-          echo "RUSTUP_TOOLCHAIN=${OMNIBRIDGE_MSRV}" >> "${GITHUB_ENV}"
+          echo "RUSTUP_TOOLCHAIN=${PLIWEE_MSRV}" >> "${GITHUB_ENV}"
 
       - name: Toolchain identity — and that the pin actually took
         run: |
@@ -273,9 +273,9 @@ jobs:
           rustc -Vv
           cargo -V
           case "$(rustc -V)" in
-            *"${OMNIBRIDGE_MSRV}"*) echo "pinned to ${OMNIBRIDGE_MSRV} as intended" ;;
+            *"${PLIWEE_MSRV}"*) echo "pinned to ${PLIWEE_MSRV} as intended" ;;
             *)
-              echo "::error::expected rustc ${OMNIBRIDGE_MSRV}, got: $(rustc -V)"
+              echo "::error::expected rustc ${PLIWEE_MSRV}, got: $(rustc -V)"
               echo "::error::Something is overriding the toolchain — check rust-toolchain.toml."
               exit 1
               ;;

@@ -180,7 +180,7 @@ struct QueueState {
     high_water: usize,
 }
 
-/// Counters, for `omnibridge notifications status` and for a log line. No
+/// Counters, for `pliwee notifications status` and for a log line. No
 /// identities and no content.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct QueueStats {

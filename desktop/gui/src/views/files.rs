@@ -106,7 +106,7 @@ fn transfer_card(t: &TransferReport, active: bool) -> gtk::Box {
                 },
                 |reply| {
                     if let Ok(Response::Error { message }) = reply {
-                        eprintln!("omnibridge-gui: could not cancel: {message}");
+                        eprintln!("pliwee-gui: could not cancel: {message}");
                     }
                 },
             );

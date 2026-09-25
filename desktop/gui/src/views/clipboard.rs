@@ -57,7 +57,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
     text.set_hexpand(true);
     row.append(&text);
     // The diagnostics are not deleted, just demoted: they stay on the wire,
-    // in `omnibridge status`, and here on hover for anyone debugging a
+    // in `pliwee status`, and here on hover for anyone debugging a
     // clipboard that is misbehaving.
     row.set_tooltip_text(Some(&format!(
         "{} — {}",
@@ -167,7 +167,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
                     },
                     move |reply| {
                         if let Ok(Response::Error { message }) = reply {
-                            eprintln!("omnibridge-gui: could not apply the clip: {message}");
+                            eprintln!("pliwee-gui: could not apply the clip: {message}");
                         }
                         pages.refresh_now();
                     },
@@ -433,7 +433,7 @@ fn peer_card(peer: &ClipboardPeerReport, watch_available: bool, pages: &Pages) -
                 },
                 move |reply| {
                     if let Ok(Response::Error { message }) = reply {
-                        eprintln!("omnibridge-gui: could not send the clipboard: {message}");
+                        eprintln!("pliwee-gui: could not send the clipboard: {message}");
                     }
                     pages.refresh_now();
                 },
@@ -499,7 +499,7 @@ fn policy_switch(
             },
             move |reply| {
                 if let Ok(Response::Error { message }) = reply {
-                    eprintln!("omnibridge-gui: the daemon refused the policy change: {message}");
+                    eprintln!("pliwee-gui: the daemon refused the policy change: {message}");
                 }
                 // Re-read rather than assume: the daemon is the authority on
                 // policy, and a refused change must not leave the switch

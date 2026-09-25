@@ -52,7 +52,7 @@ pub struct DaemonState {
 
     /// The single open pairing window, if any.
     pairing: Mutex<Option<PairingSession>>,
-    /// Where to send confirmation questions. Present only while a `omnibridge
+    /// Where to send confirmation questions. Present only while a `pliwee
     /// pair` control session is attached: with no operator watching there is
     /// nobody to answer, and auto-accepting would defeat the whole point.
     confirm_tx: Mutex<Option<tokio::sync::mpsc::Sender<ConfirmRequest>>>,

@@ -11,7 +11,7 @@
 # lifecycle gates that never ran, so the deferral had no destination. The
 # Release Readiness baseline §6.3 names the three open rows:
 #
-#     journalctl --user -u omnibridged after a real transfer   -- open
+#     journalctl --user -u pliweed after a real transfer   -- open
 #     Android logcat after a real transfer                     -- open
 #     a real file crossing the wire between two real devices   -- open (L15)
 #
@@ -60,7 +60,7 @@ GUEST_USER="${GUEST_USER:-anyflow}"; GUEST_UID="${GUEST_UID:-1000}"
 APP_PKG="io.github.yurisismotto.pliwee"
 FIXTURE_PKG="io.github.yurisismotto.pliwee.fixture"
 FIXTURE_ACT="$FIXTURE_PKG/.FixtureActivity"
-DROPIN="/etc/systemd/user/omnibridged.service.d/99-omnibridge-trace.conf"
+DROPIN="/etc/systemd/user/pliweed.service.d/99-pliwee-trace.conf"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -89,7 +89,7 @@ gx() { ga_exec "$DOMAIN" "$@"; }
 gu() {
     ga_exec "$DOMAIN" "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$GUEST_UID/bus sh -c $(printf '%q' "$*")"
 }
-ob() { gu "omnibridge $*"; }
+ob() { gu "pliwee $*"; }
 PUI="$HERE/lib/phone-ui.py"
 
 # The daemon's own output is colourised, so the level is preceded by an ANSI
@@ -103,8 +103,8 @@ strip_ansi() { sed 's/\x1b\[[0-9;]*m//g'; }
 TRACE_INSTALLED=0
 restore_trace() {
     [ "$TRACE_INSTALLED" = "1" ] || return 0
-    gx "rm -f $DROPIN; rmdir /etc/systemd/user/omnibridged.service.d 2>/dev/null; true" >/dev/null 2>&1
-    gu "systemctl --user daemon-reload; systemctl --user restart omnibridged.service" >/dev/null 2>&1
+    gx "rm -f $DROPIN; rmdir /etc/systemd/user/pliweed.service.d 2>/dev/null; true" >/dev/null 2>&1
+    gu "systemctl --user daemon-reload; systemctl --user restart pliweed.service" >/dev/null 2>&1
     sleep 5
     if gx "test -e $DROPIN"; then
         printf 'WARNING: the TRACE drop-in is still present at %s\n' "$DROPIN" >&2
@@ -156,7 +156,7 @@ ok "guest $guest_ip reaches the phone at $PHONE_IP"
 status_out="$(ob status 2>&1)"
 guest_dev_name="$(printf '%s\n' "$status_out" | sed -n 's/^ *device *\([^ ]*\) .*/\1/p' | head -1)"
 guest_fpr="$(printf '%s\n' "$status_out" | sed -n 's/^ *fingerprint *//p' | head -1)"
-[ -n "$guest_dev_name" ] && [ -n "$guest_fpr" ] || abort "could not read the guest's identity from 'omnibridge status'"
+[ -n "$guest_dev_name" ] && [ -n "$guest_fpr" ] || abort "could not read the guest's identity from 'pliwee status'"
 ok "the guest under test is '$guest_dev_name', fingerprint $guest_fpr"
 
 devs="$(ob devices 2>&1)"
@@ -194,7 +194,7 @@ ensure_connected() {
         || abort "no Connect control for $guest_dev_name on the phone ($why)"
     # shellcheck disable=SC2086
     ptap $xy
-    ga_wait_for "$DOMAIN" 90 "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID omnibridge devices 2>/dev/null | grep -q 'connected *yes'" \
+    ga_wait_for "$DOMAIN" 90 "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID pliwee devices 2>/dev/null | grep -q 'connected *yes'" \
         || abort "the phone did not connect to $guest_dev_name ($why)"
     ok "connected to $guest_dev_name before $why"
 }
@@ -205,15 +205,15 @@ section "Raising the daemon to TRACE"
 # Security Certification v1 §7's method, applied to the journal: capture at
 # TRACE, which is strictly more than journalctl ever shows, so a sentinel
 # absent here is absent from any log a user or a bug report could carry.
-gx "mkdir -p /etc/systemd/user/omnibridged.service.d && printf '[Service]\nEnvironment=RUST_LOG=trace\n' > $DROPIN" \
+gx "mkdir -p /etc/systemd/user/pliweed.service.d && printf '[Service]\nEnvironment=RUST_LOG=trace\n' > $DROPIN" \
     || abort "could not install the TRACE drop-in"
 TRACE_INSTALLED=1
-gu "systemctl --user daemon-reload && systemctl --user restart omnibridged.service" >/dev/null 2>&1
-ga_wait_for "$DOMAIN" 90 'pgrep -x omnibridged >/dev/null' || abort "the daemon did not come back after the restart"
+gu "systemctl --user daemon-reload && systemctl --user restart pliweed.service" >/dev/null 2>&1
+ga_wait_for "$DOMAIN" 90 'pgrep -x pliweed >/dev/null' || abort "the daemon did not come back after the restart"
 sleep 5
 
-dpid="$(gx 'pgrep -x omnibridged | head -1' | tr -d '[:space:]')"
-[ -n "$dpid" ] || abort "no omnibridged process after the restart"
+dpid="$(gx 'pgrep -x pliweed | head -1' | tr -d '[:space:]')"
+[ -n "$dpid" ] || abort "no pliweed process after the restart"
 gx "tr '\0' '\n' < /proc/$dpid/environ | grep -qx 'RUST_LOG=trace'" \
     || abort "the running daemon (pid $dpid) does not carry RUST_LOG=trace; the capture would be at the packaged level"
 ok "the daemon is running at pid $dpid with RUST_LOG=trace in its environment"
@@ -222,7 +222,7 @@ ok "the daemon is running at pid $dpid with RUST_LOG=trace in its environment"
 # because a filter that parsed but did not apply would give a quieter journal
 # and a sentinel search over it would look clean for the wrong reason.
 sleep 6
-lvl="$(gu "journalctl --user -u omnibridged --no-pager -o cat -n 200" | strip_ansi | grep -c '^TRACE' || true)"
+lvl="$(gu "journalctl --user -u pliweed --no-pager -o cat -n 200" | strip_ansi | grep -c '^TRACE' || true)"
 [ "${lvl:-0}" -ge 1 ] 2>/dev/null \
     || abort "no TRACE-level line appears in the journal after the restart; RUST_LOG is set but not in effect"
 ok "the journal is carrying TRACE-level events ($lvl in the last 200 lines)"
@@ -248,17 +248,17 @@ ok "SEC-LOG-03: the source file exists, is ${fsize} B, and provably carries the 
 # parses --since in the guest's local time while the harness reads the clock in
 # UTC, so the two agree only while the guest happens to be on UTC. A cursor is
 # exact and carries no timezone at all.
-cur="$(gu "journalctl --user -u omnibridged --no-pager -n 0 --show-cursor 2>/dev/null | sed -n 's/^-- cursor: //p'" | tr -d '\r\n')"
+cur="$(gu "journalctl --user -u pliweed --no-pager -n 0 --show-cursor 2>/dev/null | sed -n 's/^-- cursor: //p'" | tr -d '\r\n')"
 [ -n "$cur" ] || abort "could not obtain a journal cursor; the capture window could not be bounded"
 ok "SEC-LOG-03: journal cursor taken BEFORE the transfer"
 "${ADB[@]}" logcat -c >/dev/null 2>&1
 ok "SEC-LOG-03: logcat cleared before the transfer"
 
 ensure_connected "the file transfer"
-gx "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$GUEST_UID/bus sh -c 'nohup omnibridge send $peer_id $SENDDIR/$SENT_FNAME.txt > /tmp/obsec-snd.out 2>&1 &'" >/dev/null 2>&1
+gx "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$GUEST_UID/bus sh -c 'nohup pliwee send $peer_id $SENDDIR/$SENT_FNAME.txt > /tmp/obsec-snd.out 2>&1 &'" >/dev/null 2>&1
 sleep 7
 snd_err="$(gx 'cat /tmp/obsec-snd.out 2>/dev/null' | grep -i '^error:' | head -1 || true)"
-[ -z "${snd_err//[[:space:]]/}" ] || abort "'omnibridge send' refused the offer: $snd_err"
+[ -z "${snd_err//[[:space:]]/}" ] || abort "'pliwee send' refused the offer: $snd_err"
 
 # Accept on the phone, on THIS file's row.
 "${ADB[@]}" shell am start -n "$APP_PKG/.ui.MainActivity" >/dev/null 2>&1
@@ -287,7 +287,7 @@ xfer_id="$(printf '%s' "$xfers" | grep -B4 "$SENT_FNAME" | sed -n 's/^ *\([0-9a-
 ok "SEC-LOG-03: the transfer completed — id $xfer_id, ${fsize} B, to $phone_model"
 
 # --- the guest journal -----------------------------------------------------
-jnl="$(gu "journalctl --user -u omnibridged --no-pager -o cat --after-cursor '$cur'" | strip_ansi)"
+jnl="$(gu "journalctl --user -u pliweed --no-pager -o cat --after-cursor '$cur'" | strip_ansi)"
 printf '%s\n' "$jnl" | save "13-journal-file.txt"
 n_jnl="$(printf '%s\n' "$jnl" | grep -c . || true)"
 need_nonempty "SEC-LOG-03: the journal capture" "$jnl" 20 \
@@ -379,7 +379,7 @@ before_n="$(ob 'notifications status' 2>&1 | sed -n 's/^ *mirrored now *//p' | h
 before_n="${before_n:-0}"
 ok "L16: baseline after clearing the fixture's own notifications — $before_n mirrored"
 
-ncur="$(gu "journalctl --user -u omnibridged --no-pager -n 0 --show-cursor 2>/dev/null | sed -n 's/^-- cursor: //p'" | tr -d '\r\n')"
+ncur="$(gu "journalctl --user -u pliweed --no-pager -n 0 --show-cursor 2>/dev/null | sed -n 's/^-- cursor: //p'" | tr -d '\r\n')"
 [ -n "$ncur" ] || abort "could not obtain a journal cursor for the notification window"
 "${ADB[@]}" logcat -c >/dev/null 2>&1
 
@@ -409,7 +409,7 @@ else
     abort "the Notify capture does not carry the sentinels; the content never reached the desktop and 'absent from the journal' would be vacuous"
 fi
 
-njnl="$(gu "journalctl --user -u omnibridged --no-pager -o cat --after-cursor '$ncur'" | strip_ansi)"
+njnl="$(gu "journalctl --user -u pliweed --no-pager -o cat --after-cursor '$ncur'" | strip_ansi)"
 printf '%s\n' "$njnl" | save "22-journal-notification.txt"
 n_njnl="$(printf '%s\n' "$njnl" | grep -c . || true)"
 need_nonempty "L16: the journal capture" "$njnl" 20 \

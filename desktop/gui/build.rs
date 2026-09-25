@@ -13,24 +13,24 @@
 use std::path::Path;
 
 /// Must match `APP_ID` in `src/lib.rs`: the icon is looked up by that name.
-const APP_ID: &str = "io.github.yurisismotto.omnibridge";
+const APP_ID: &str = "io.github.yurisismotto.pliwee";
 
 fn main() {
-    println!("cargo:rerun-if-changed=data/omnibridge.gresource.xml");
+    println!("cargo:rerun-if-changed=data/pliwee.gresource.xml");
     println!("cargo:rerun-if-changed=../../docs/design/assets");
 
     let out = std::env::var("OUT_DIR").expect("cargo sets OUT_DIR");
     let icon_dir = Path::new(&out).join("icons/scalable/apps");
     std::fs::create_dir_all(&icon_dir).expect("the icon theme directory should be creatable");
     std::fs::copy(
-        "../../docs/design/assets/omnibridge-app-icon.svg",
+        "../../docs/design/assets/pliwee-app-icon.svg",
         icon_dir.join(format!("{APP_ID}.svg")),
     )
-    .expect("the canonical OmniBridge app icon should be readable");
+    .expect("the canonical Pliwee app icon should be readable");
 
     glib_build_tools::compile_resources(
         &["data", "../../docs/design/assets", &out],
-        "data/omnibridge.gresource.xml",
-        "omnibridge.gresource",
+        "data/pliwee.gresource.xml",
+        "pliwee.gresource",
     );
 }

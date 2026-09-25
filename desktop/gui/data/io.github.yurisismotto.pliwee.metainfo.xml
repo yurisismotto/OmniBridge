@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  AppStream metadata for OmniBridge.
+  AppStream metadata for Pliwee.
 
   Why this file exists
   ====================
-  Without it OmniBridge is invisible in GNOME Software and KDE Discover: both
+  Without it Pliwee is invisible in GNOME Software and KDE Discover: both
   build their catalogue from /usr/share/metainfo, not from .desktop entries.
   Nothing about the product needs it — the application runs, launches and
   activates identically whether or not it is here — which is why it is the one
@@ -13,7 +13,7 @@
 
   What is deliberately not here
   =============================
-  <screenshots>. OmniBridge has no published screenshots, and a metainfo file
+  <screenshots>. Pliwee has no published screenshots, and a metainfo file
   that pointed at URLs which do not resolve would make the catalogue entry
   worse than no entry at all. `appstream-util validate-relax` accepts their
   absence; the strict validator warns, and that warning is correct and is
@@ -22,9 +22,15 @@
   <releases> carries the version from desktop/Cargo.toml. It is a literal for
   the same reason the spec's Version: is — nothing reads TOML at this point in
   the build — and packaging/tests/packaging-checks.sh asserts the two agree.
+
+  <replaces> names the OmniBridge 1.0.0 component id. The product was renamed
+  (ADR-0020), so a software centre that listed OmniBridge should treat this
+  entry as its successor rather than as an unrelated application. The two
+  URLs still point at the OmniBridge repository: they move with the
+  repository itself, in Wave 10 of the rebrand plan, not before it exists.
 -->
 <component type="desktop-application">
-  <id>io.github.yurisismotto.omnibridge</id>
+  <id>io.github.yurisismotto.pliwee</id>
 
   <!-- The metadata's licence, not the program's. CC0 is what the AppStream
        specification recommends so that distributors can redistribute the
@@ -32,12 +38,12 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>Apache-2.0</project_license>
 
-  <name>OmniBridge</name>
+  <name>Pliwee</name>
   <summary>Send files, clipboard and notifications between this computer and your phone</summary>
 
   <description>
     <p>
-      OmniBridge connects an Android phone to this computer over your own
+      Pliwee connects an Android phone to this computer over your own
       local network. There is no cloud service, no account and no telemetry:
       the two devices talk to each other directly, and to nothing else.
     </p>
@@ -56,12 +62,15 @@
     </ul>
   </description>
 
-  <launchable type="desktop-id">io.github.yurisismotto.omnibridge.desktop</launchable>
+  <launchable type="desktop-id">io.github.yurisismotto.pliwee.desktop</launchable>
   <provides>
-    <binary>omnibridge-gui</binary>
-    <binary>omnibridge</binary>
-    <binary>omnibridged</binary>
+    <binary>pliwee-gui</binary>
+    <binary>pliwee</binary>
+    <binary>pliweed</binary>
   </provides>
+  <replaces>
+    <id>io.github.yurisismotto.omnibridge</id>
+  </replaces>
 
   <url type="homepage">https://github.com/yurisismotto/omnibridge</url>
   <url type="bugtracker">https://github.com/yurisismotto/omnibridge/issues</url>
@@ -84,18 +93,25 @@
   </keywords>
 
   <!-- OARS. Every category is "none" and that is a statement about the
-       product, not a default that was left alone: OmniBridge has no chat, no
+       product, not a default that was left alone: Pliwee has no chat, no
        user-generated content it publishes, no advertising and no purchases.
        It moves the user's own data between the user's own devices. -->
   <content_rating type="oars-1.1"/>
 
-  <!-- Two things OmniBridge genuinely does that a catalogue should disclose. -->
+  <!-- Two things Pliwee genuinely does that a catalogue should disclose. -->
   <recommends>
     <control>pointing</control>
     <control>keyboard</control>
   </recommends>
 
   <releases>
+    <!-- The first Pliwee version (rebrand plan, decision B4). Marked
+         "development" until it is published in Wave 10. -->
+    <release version="1.1.0" date="2026-09-25" type="development">
+      <description>
+        <p>OmniBridge is now Pliwee. Pairings, grants and the device identity carry over from OmniBridge 1.0.0.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-09-23">
       <description>
         <p>First public release.</p>

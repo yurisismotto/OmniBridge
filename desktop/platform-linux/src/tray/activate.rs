@@ -4,7 +4,7 @@
 //!
 //! ```text
 //! TrayAction  ->  ApplicationActivator  ->  org.freedesktop.Application
-//!                                            io.github.yurisismotto.omnibridge
+//!                                            io.github.yurisismotto.pliwee
 //!                                              -> the GAction the GUI already exports
 //! ```
 //!
@@ -20,7 +20,7 @@
 //!
 //! # What this must never become
 //!
-//! Not `Command::new("omnibridge-gui")`, and not `sh -c` around it. `omnibridged`
+//! Not `Command::new("pliwee-gui")`, and not `sh -c` around it. `pliweed`
 //! runs under a hardened `systemd --user` unit — `NoNewPrivileges`,
 //! `ProtectSystem=strict`, `ProtectHome=read-only`, `MemoryDenyWriteExecute`,
 //! `SystemCallFilter=@system-service` minus `@privileged`, and
@@ -33,8 +33,8 @@
 //! Activation over the bus has none of that problem, and it was measured
 //! rather than assumed. A cold activation on this machine produced a GUI whose
 //! parent is the systemd user manager and whose cgroup is
-//! `app.slice/dbus-:1.2-io.github.yurisismotto.omnibridge@0.service` — a
-//! transient unit of its own, with no relationship to `omnibridged.service` at
+//! `app.slice/dbus-:1.2-io.github.yurisismotto.pliwee@0.service` — a
+//! transient unit of its own, with no relationship to `pliweed.service` at
 //! all.
 
 use std::collections::HashMap;

@@ -142,7 +142,7 @@ impl std::fmt::Display for SendError {
         match self {
             Self::NotPermitted => f.write_str(
                 "this device is not allowed to send clipboard text to that peer. \
-                 Grant it with `omnibridge grant <device> clipboard.v1`.",
+                 Grant it with `pliwee grant <device> clipboard.v1`.",
             ),
             Self::NotConnected => f.write_str("that device is not currently connected"),
             Self::NothingToSend => f.write_str("the clipboard is empty, or does not contain text"),
@@ -551,7 +551,7 @@ impl ClipboardManager {
 
     /// Sends the current local clipboard to one peer, by explicit request.
     ///
-    /// This is the manual path — `omnibridge clipboard send <device>` — and it
+    /// This is the manual path — `pliwee clipboard send <device>` — and it
     /// is deliberately not gated on `auto_send`: a human asking is a
     /// different act from a watcher firing, and only the second one needs the
     /// automatic opt-in.
@@ -704,7 +704,7 @@ impl ClipboardManager {
         }
     }
 
-    /// The last outcome each peer reported, for `omnibridge clipboard status`.
+    /// The last outcome each peer reported, for `pliwee clipboard status`.
     pub async fn last_results(&self) -> HashMap<Fingerprint, Outcome> {
         self.last_results.lock().await.clone()
     }

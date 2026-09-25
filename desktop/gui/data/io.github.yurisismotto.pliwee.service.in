@@ -1,4 +1,4 @@
-# D-Bus activation for OmniBridge's desktop application.
+# D-Bus activation for Pliwee's desktop application.
 #
 # ---------------------------------------------------------------------------
 # Why this file exists
@@ -7,9 +7,9 @@
 # The desktop entry has carried `DBusActivatable=true` since the Quick Panel
 # sprint, and the GtkApplication has exported `app.quick-panel`,
 # `app.settings` and `app.transfers` on the session bus since then too. That
-# is enough for a caller to raise a surface of an OmniBridge that is *already
+# is enough for a caller to raise a surface of a Pliwee that is *already
 # running*. It is not enough to start one, and the difference was measured
-# rather than assumed:
+# rather than assumed (on the OmniBridge build, under its names at the time):
 #
 #     $ pkill -x omnibridge-gui
 #     $ gdbus call --session --dest io.github.yurisismotto.omnibridge \
@@ -24,26 +24,26 @@
 # the name, which is why the call above fails while the identical call against
 # a running instance succeeds.
 #
-# The tray item needs the cold case: someone clicks OmniBridge in the system tray
-# on a freshly booted session, where `omnibridged` is running as a user service
+# The tray item needs the cold case: someone clicks Pliwee in the system tray
+# on a freshly booted session, where `pliweed` is running as a user service
 # and no GUI process exists at all.
 #
 # ---------------------------------------------------------------------------
 # Why `--gapplication-service`
 # ---------------------------------------------------------------------------
 #
-# Without it, the bus starts `omnibridge-gui` with no arguments, which is a bare
+# Without it, the bus starts `pliwee-gui` with no arguments, which is a bare
 # launch — and a bare launch opens Settings. The person who clicked "Quick
 # Panel" would get two windows, one of them unasked for. With it, GApplication
 # enters service mode: it registers the bus name, opens nothing, and waits for
-# the activation message that is already on its way. Measured on this build:
-# the process owns `io.github.yurisismotto.omnibridge`, exports no window object,
-# and exits by itself after ten idle seconds.
+# the activation message that is already on its way. Measured on the OmniBridge
+# build (then named omnibridge-gui): the process owns its application id,
+# exports no window object, and exits by itself after ten idle seconds.
 #
 # That last part is the lifecycle this whole sprint is built to protect. The
 # GUI does not become resident in order to have a tray icon; it is started for
-# a window and it leaves when the window is gone. `omnibridged` stays the only
-# long-lived OmniBridge process, and it is the daemon — not this — that owns the
+# a window and it leaves when the window is gone. `pliweed` stays the only
+# long-lived Pliwee process, and it is the daemon — not this — that owns the
 # StatusNotifierItem.
 #
 # ---------------------------------------------------------------------------
@@ -56,5 +56,5 @@
 # under `/usr` produce the same file with the one line that has to differ.
 # Nothing here is written by hand and no repository path can reach it.
 [D-BUS Service]
-Name=io.github.yurisismotto.omnibridge
-Exec=@BINDIR@/omnibridge-gui --gapplication-service
+Name=io.github.yurisismotto.pliwee
+Exec=@BINDIR@/pliwee-gui --gapplication-service

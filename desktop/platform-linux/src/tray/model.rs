@@ -24,7 +24,7 @@
 /// crate's [`ICON_NAME`]. `tray_identity.rs` reads the repository's own files
 /// and asserts every one of those copies agrees, so the tray cannot be the
 /// place the identity drifts.
-pub const DESKTOP_APP_ID: &str = "io.github.yurisismotto.omnibridge";
+pub const DESKTOP_APP_ID: &str = "io.github.yurisismotto.pliwee";
 
 /// Where `org.freedesktop.Application` lives for [`DESKTOP_APP_ID`].
 ///
@@ -33,14 +33,13 @@ pub const DESKTOP_APP_ID: &str = "io.github.yurisismotto.omnibridge";
 /// implements. Written out rather than computed so that it is greppable, and
 /// checked against the rule by a test so that writing it out cannot make it
 /// wrong.
-pub const DESKTOP_APP_OBJECT_PATH: &str = "/io/github/yurisismotto/omnibridge";
+pub const DESKTOP_APP_OBJECT_PATH: &str = "/io/github/yurisismotto/pliwee";
 
 /// The icon the shell is asked to draw.
 ///
 /// A *theme name*, never a path. The icon it resolves to is the one
-/// `install-desktop-metadata.sh` puts in `hicolor`, which is the canonical
-/// the OmniBridge mark from `docs/design/assets/omnibridge-app-icon.svg`. A tray
-/// item that carried an
+/// `install-desktop-metadata.sh` puts in `hicolor`: the Pliwee mark, from
+/// `docs/design/assets/pliwee-app-icon.svg`. A tray item that carried an
 /// absolute path would be naming this checkout, and one that carried pixels
 /// would be a second copy of the mark that the brand documentation does not
 /// know about.
@@ -53,6 +52,11 @@ pub const ICON_NAME: &str = DESKTOP_APP_ID;
 /// into `m_shownItems` / `m_hiddenItems`), so it has to be the same string on
 /// the next login — and it has to be ours alone, because a collision means
 /// inheriting somebody else's "hidden".
+///
+/// It changed once, from `io.github.yurisismotto.omnibridge`, with the rename
+/// (ADR-0020): a pin or hide the user set on the OmniBridge item is keyed by
+/// the old string and does not carry over. That reset is deliberate and
+/// documented; nothing edits the tray host's configuration.
 pub const ITEM_ID: &str = DESKTOP_APP_ID;
 
 /// The item's human-readable name.
@@ -67,7 +71,7 @@ pub const ITEM_TITLE: &str = "Pliwee";
 ///
 /// The categories are `ApplicationStatus`, `Communications`,
 /// `SystemServices`, `Hardware` and `Reserved`. `SystemServices` is tempting
-/// — `omnibridged` genuinely is a background service — but the category
+/// — `pliweed` genuinely is a background service — but the category
 /// describes *the icon*, and this icon is the entry point to an application
 /// with windows, which is precisely what `ApplicationStatus` is documented as
 /// ("an icon for a normal application, can be seen as its taskbar entry").
@@ -197,7 +201,7 @@ pub struct MenuEntry {
 /// where the person can see what they are deciding about — not two clicks
 /// deep in a menu that is drawn by another process. "Quit Pliwee" is absent
 /// for a different reason: the only thing it could honestly quit is
-/// `omnibridged`, and stopping the continuity service from a tray menu is not
+/// `pliweed`, and stopping the continuity service from a tray menu is not
 /// closing a window, it is turning the product off.
 pub const MENU: &[MenuEntry] = &[
     MenuEntry {

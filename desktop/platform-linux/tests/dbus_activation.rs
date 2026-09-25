@@ -21,7 +21,7 @@
 //! The developer's session bus. Every test here raises its own `dbus-daemon`
 //! with a service directory the fixture owns, and the only file that reaches
 //! that directory names `Exec=/bin/true`. Nothing in this file can start
-//! `omnibridge-gui`, and nothing in it reads `DBUS_SESSION_BUS_ADDRESS`.
+//! `pliwee-gui`, and nothing in it reads `DBUS_SESSION_BUS_ADDRESS`.
 
 #![cfg(feature = "desktop-activation")]
 
@@ -295,7 +295,7 @@ async fn the_production_adapter_reuses_the_connection_it_is_given() {
 #[test]
 fn the_self_heal_asks_for_the_name_the_service_file_declares() {
     let template = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../gui/data/io.github.yurisismotto.omnibridge.service.in");
+        .join("../gui/data/io.github.yurisismotto.pliwee.service.in");
     let text = std::fs::read_to_string(&template)
         .unwrap_or_else(|e| panic!("reading {}: {e}", template.display()));
     let declared = text
@@ -350,7 +350,7 @@ fn this_crate_never_opens_the_system_bus() {
         let text = std::fs::read_to_string(file).expect("reading a source file");
         assert!(
             !text.contains(&forbidden),
-            "{} reaches the system bus; omnibridged is a user service and must not",
+            "{} reaches the system bus; pliweed is a user service and must not",
             file.display()
         );
         opens_session |= text.contains(&wanted);
@@ -375,7 +375,7 @@ fn this_crate_never_opens_the_system_bus() {
 ///
 /// # What it touches, and what it puts back
 ///
-/// One file, `io.github.yurisismotto.omnibridge.SelfHealProbe.service`, in the
+/// One file, `io.github.yurisismotto.pliwee.SelfHealProbe.service`, in the
 /// user's own `~/.local/share/dbus-1/services`. A name nothing else uses, with
 /// `Exec=/bin/true`. It is removed and the bus reloaded before the test
 /// returns, on the success path and on the failure path. It never touches

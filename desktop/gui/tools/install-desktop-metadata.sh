@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Installs OmniBridge's desktop entry, application icon and D-Bus activation
+# Installs Pliwee's desktop entry, application icon and D-Bus activation
 # entry into an XDG data directory.
 #
 # ---------------------------------------------------------------------------
@@ -10,13 +10,13 @@
 # On a Wayland session the shell — not the application — decides what icon a
 # window gets, and it has exactly one way to work it out:
 #
-#     xdg_toplevel.set_app_id("io.github.yurisismotto.omnibridge")
+#     xdg_toplevel.set_app_id("io.github.yurisismotto.pliwee")
 #         -> the .desktop file with that id, from XDG_DATA_DIRS
 #             -> its Icon= name
 #                 -> that name in the *shell's* icon theme
 #
 # Every link in that chain is outside this process. An icon compiled into the
-# OmniBridge binary is private to OmniBridge, and `gtk_window_set_default_icon_name`
+# Pliwee binary is private to Pliwee, and `gtk_window_set_default_icon_name`
 # has no transport at all under xdg-shell: Mutter advertises no
 # `xdg_toplevel_icon_manager_v1`, and there is no Wayland equivalent of X11's
 # `_NET_WM_ICON`. So on Wayland the window falls back to a generic glyph until
@@ -31,7 +31,7 @@
 # The third file, the D-Bus activation entry, is the one exception and is a
 # template for a reason the file's own header explains: a service file's
 # `Exec` must be an absolute path, so exactly one line has to be derived from
-# the prefix. Nothing about OmniBridge's *identity* is derived — the bus name in
+# the prefix. Nothing about Pliwee's *identity* is derived — the bus name in
 # it is the same literal as everywhere else.
 #
 # ---------------------------------------------------------------------------
@@ -40,13 +40,25 @@
 #
 #   ./install-desktop-metadata.sh                     # into ~/.local
 #   ./install-desktop-metadata.sh --link-binary PATH  # ...and put PATH on PATH
-#   ./install-desktop-metadata.sh --uninstall
+#   ./install-desktop-metadata.sh --uninstall         # ...and the OmniBridge files
 #
 #   # what packaging does, writing into a buildroot and never into a live /usr:
 #   ./install-desktop-metadata.sh --prefix /usr --destdir "$RPM_BUILD_ROOT"
 #
 # It needs no root, touches nothing outside the prefix it is given, and is not
-# run by the application: OmniBridge never installs anything at startup.
+# run by the application: Pliwee never installs anything at startup.
+#
+# ---------------------------------------------------------------------------
+# Upgrading a development install from OmniBridge
+# ---------------------------------------------------------------------------
+#
+# The application id changed with the rename (ADR-0020): an OmniBridge
+# checkout installed its files under io.github.yurisismotto.omnibridge. Those
+# are not overwritten by an install under the new id, and left alone they are
+# a second launcher, a second D-Bus name and a second catalogue entry pointing
+# at a binary that no longer exists. `--uninstall` removes them too, each one
+# by its exact name (LEGACY_FILES below), and prints every file it removes.
+# Nothing is matched by pattern, and nothing outside the prefix is touched.
 
 set -euo pipefail
 
@@ -54,7 +66,10 @@ set -euo pipefail
 # desktop file's basename, its Icon= key, the D-Bus service file's basename
 # and its Name= key, and the tray item's IconName. One string, and tests in
 # both `pliwee-gui` and `pliwee-linux` assert every copy of it agrees.
-APP_ID="io.github.yurisismotto.omnibridge"
+APP_ID="io.github.yurisismotto.pliwee"
+# The OmniBridge 1.0.0 id. Only ever used to remove a development install
+# made from an OmniBridge checkout; nothing is installed under it.
+LEGACY_APP_ID="io.github.yurisismotto.omnibridge"
 
 here() { cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd; }
 TOOLS="$(here)"
@@ -65,12 +80,12 @@ DESKTOP_SRC="$TOOLS/../data/$APP_ID.desktop"
 # is not enough on its own.
 DBUS_SRC="$TOOLS/../data/$APP_ID.service.in"
 # AppStream metadata. Installed verbatim like the desktop entry: nothing in it
-# is derived from the prefix, and it is what makes OmniBridge visible in GNOME
+# is derived from the prefix, and it is what makes Pliwee visible in GNOME
 # Software and KDE Discover. Readiness audit §10, Q3.
 METAINFO_SRC="$TOOLS/../data/$APP_ID.metainfo.xml"
 # The canonical mark, from the one place the brand documentation points at.
 # build.rs derives the compiled-in copy from this same file.
-ICON_SRC="$TOOLS/../../../docs/design/assets/omnibridge-app-icon.svg"
+ICON_SRC="$TOOLS/../../../docs/design/assets/pliwee-app-icon.svg"
 
 prefix="${HOME}/.local"
 destdir=""
@@ -88,7 +103,7 @@ while [ $# -gt 0 ]; do
         --link-binary) [ $# -ge 2 ] || die "--link-binary needs a path"; link_binary="$2"; shift 2 ;;
         --link-binary=*) link_binary="${1#*=}"; shift ;;
         --uninstall) uninstall=1; shift ;;
-        -h|--help) sed -n '2,50p' -- "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,61p' -- "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) die "unknown argument: $1" ;;
     esac
 done
@@ -106,7 +121,16 @@ desktop_dst="$apps_dir/$APP_ID.desktop"
 icon_dst="$icon_dir/$APP_ID.svg"
 dbus_dst="$dbus_dir/$APP_ID.service"
 metainfo_dst="$metainfo_dir/$APP_ID.metainfo.xml"
-bin_dst="$destdir$prefix/bin/omnibridge-gui"
+bin_dst="$destdir$prefix/bin/pliwee-gui"
+legacy_bin_dst="$destdir$prefix/bin/omnibridge-gui"
+# Every file an OmniBridge checkout's copy of this script could have
+# installed, by exact name. `--uninstall` removes these as well.
+LEGACY_FILES=(
+    "$apps_dir/$LEGACY_APP_ID.desktop"
+    "$icon_dir/$LEGACY_APP_ID.svg"
+    "$dbus_dir/$LEGACY_APP_ID.service"
+    "$metainfo_dir/$LEGACY_APP_ID.metainfo.xml"
+)
 
 # Refreshing the caches is for a live session only. In DESTDIR mode the
 # package's own file triggers do it on the installing machine, and running it
@@ -140,12 +164,14 @@ refresh_caches() {
 
 if [ "$uninstall" -eq 1 ]; then
     removed=0
-    for f in "$desktop_dst" "$icon_dst" "$dbus_dst" "$metainfo_dst"; do
+    for f in "$desktop_dst" "$icon_dst" "$dbus_dst" "$metainfo_dst" "${LEGACY_FILES[@]}"; do
         if [ -e "$f" ]; then rm -f -- "$f"; printf 'removed  %s\n' "$f"; removed=1; fi
     done
     # Only ever a symlink this script made, never a real binary someone put
     # there.
-    if [ -L "$bin_dst" ]; then rm -f -- "$bin_dst"; printf 'removed  %s\n' "$bin_dst"; removed=1; fi
+    for b in "$bin_dst" "$legacy_bin_dst"; do
+        if [ -L "$b" ]; then rm -f -- "$b"; printf 'removed  %s\n' "$b"; removed=1; fi
+    done
     refresh_caches
     [ "$removed" -eq 1 ] || printf 'nothing to remove under %s\n' "$prefix"
     exit 0
@@ -166,7 +192,7 @@ fi
 # Same reasoning for the catalogue entry: a metainfo file that does not parse
 # is dropped by the AppStream cache builder without a word, which is
 # indistinguishable from this script never having run. `validate-relax` rather
-# than `validate` because OmniBridge ships no screenshots, which the strict
+# than `validate` because Pliwee ships no screenshots, which the strict
 # validator reports and which is a recorded debt, not a defect to be papered
 # over with a placeholder image.
 if command -v appstream-util >/dev/null 2>&1; then
@@ -212,13 +238,13 @@ cat <<EOF
 
 Desktop metadata installed under $prefix.
 
-The D-Bus activation entry means the session bus can *start* OmniBridge when
+The D-Bus activation entry means the session bus can *start* Pliwee when
 something asks for one of its actions by name — which is what the KDE tray
 item does when no GUI is running. The bus rereads this directory on demand,
 so no restart is needed.
 
 GNOME Shell matches a window to this entry by its Wayland app_id, which is
 already $APP_ID — so a window opened from now on
-resolves the OmniBridge icon. A window that was already open when this ran may
+resolves the Pliwee icon. A window that was already open when this ran may
 keep the generic one until it is reopened.
 EOF

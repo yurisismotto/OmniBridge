@@ -36,7 +36,7 @@
 # whatever 1.88 knew and defeat the point. And a new lint appearing on stable
 # is a reason to fix the code, never a reason to raise `rust-version` — the
 # declared floor moves only when a dependency actually moves it, deliberately,
-# in `desktop/Cargo.toml` and in that workflow's `OMNIBRIDGE_MSRV` together.
+# in `desktop/Cargo.toml` and in that workflow's `PLIWEE_MSRV` together.
 #
 # Why `--all-features`
 # --------------------

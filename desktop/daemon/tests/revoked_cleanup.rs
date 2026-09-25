@@ -283,7 +283,7 @@ async fn a_fresh_pairing_brings_a_removed_device_back_exactly_once() {
     pair_then_revoke(&server, &phone).await;
     ok_message(control.remove(&phone.fingerprint.to_hex()).await);
 
-    // The owner runs `omnibridge pair` and confirms the fingerprint by hand.
+    // The owner runs `pliwee pair` and confirms the fingerprint by hand.
     let fresh = server.open_pairing(TTL).await;
     let session = phone
         .connect(server.addr, server.fingerprint, Some(&fresh))

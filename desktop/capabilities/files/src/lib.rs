@@ -328,7 +328,7 @@ pub struct TransferManager {
     dialer: RwLock<Option<Arc<dyn DataStreamDialer>>>,
     events: broadcast::Sender<TransferEvent>,
     /// The control channel of each connected peer, so a transfer can be
-    /// started from outside a session — `omnibridge send`, or a tap in the
+    /// started from outside a session — `pliwee send`, or a tap in the
     /// phone's UI — rather than only in reply to an inbound message.
     sessions: RwLock<BTreeMap<Fingerprint, (mpsc::Sender<OutboundMessage>, Profile)>>,
 }
@@ -1922,7 +1922,7 @@ impl Capability for FilesCapability {
     async fn on_peer_connected(&self, ctx: &CapabilityContext) -> Result<()> {
         // Recorded so a transfer can be started from outside a session. This
         // runs only when `files.v1` was both mutually supported and granted,
-        // so an ungranted peer never gets an entry and `omnibridge send` to it
+        // so an ungranted peer never gets an entry and `pliwee send` to it
         // fails with "not connected" rather than silently doing nothing.
         self.manager
             .attach_session(ctx.peer, ctx.outbound.clone(), ctx.profile)

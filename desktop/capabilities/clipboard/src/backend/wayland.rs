@@ -74,7 +74,7 @@ pub enum WatchSource {
     ///
     /// Receiving is unaffected — writing a clip with `wl-copy` needs no
     /// data-control protocol. The reason is shown in
-    /// `omnibridge clipboard status`, which reports `auto-send`, `manual send`
+    /// `pliwee clipboard status`, which reports `auto-send`, `manual send`
     /// and `receiving` separately for exactly this distinction.
     None(String),
 }
@@ -130,7 +130,7 @@ pub struct WaylandBackend {
 impl WaylandBackend {
     /// Probes the session once, at construction.
     ///
-    /// Probing here rather than per call means `omnibridge clipboard status` can
+    /// Probing here rather than per call means `pliwee clipboard status` can
     /// tell the user what will and will not work *before* they try it, and
     /// that the answer does not change under them mid-session.
     pub fn detect() -> Self {
@@ -746,7 +746,7 @@ mod tests {
 
     #[test]
     fn an_old_wl_copy_does_not_claim_it_can_mark_a_clip() {
-        // The capability must not lie about what it supports: `omnibridge
+        // The capability must not lie about what it supports: `pliwee
         // clipboard status` has to be able to tell the user before they turn
         // anything on.
         let backend = WaylandBackend::with_sensitive_support(SensitiveSupport::Unsupported(

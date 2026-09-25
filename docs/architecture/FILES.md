@@ -115,8 +115,8 @@ file to someone's disk is a side effect, and ADR-0008 requires those to be
 explicit. On the desktop:
 
 ```bash
-omnibridge grant <device> files.v1     # allow
-omnibridge revoke <device> files.v1    # withdraw, immediately
+pliwee grant <device> files.v1     # allow
+pliwee revoke <device> files.v1    # withdraw, immediately
 ```
 
 On the phone, a per-computer toggle on the device card does the same.
@@ -281,16 +281,16 @@ nothing a peer could set that would name a location on the receiver.
 
 ## Desktop destination
 
-`<XDG downloads>/OmniBridge`, resolved without hardcoding a home directory:
+`<XDG downloads>/Pliwee`, resolved without hardcoding a home directory:
 
 1. `$XDG_DOWNLOAD_DIR` if absolute;
 2. `XDG_DOWNLOAD_DIR` from `${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs`,
    which is where `xdg-user-dirs` records a localised Downloads folder;
 3. `$HOME/Downloads`.
 
-Overridable with `omnibridged --download-dir`.
+Overridable with `pliweed --download-dir`.
 
-Received bytes go to a hidden `.omnibridge-<id>.part` **inside that directory**,
+Received bytes go to a hidden `.pliwee-<id>.part` **inside that directory**,
 not `/tmp`. That is not tidiness: `rename(2)` is atomic only within one
 filesystem and `/tmp` is routinely a different one, so a temp file next to its
 destination is what makes the final promotion a genuine atomic rename.
@@ -307,7 +307,7 @@ the first. Nothing is ever overwritten.
 
 ## Android destination
 
-`MediaStore.Downloads` with `RELATIVE_PATH = Download/OmniBridge`. On API 29+ —
+`MediaStore.Downloads` with `RELATIVE_PATH = Download/Pliwee`. On API 29+ —
 this app's floor — that needs **no storage permission at all**. There is no
 `MANAGE_EXTERNAL_STORAGE`, no `WRITE_EXTERNAL_STORAGE`, and no path anywhere.
 
@@ -348,15 +348,15 @@ increment (see *Not in this version*).
 ## Desktop send: the CLI
 
 ```bash
-omnibridge send <device> <file>
-omnibridge transfers
-omnibridge cancel <transfer-id-prefix>
+pliwee send <device> <file>
+pliwee transfers
+pliwee cancel <transfer-id-prefix>
 ```
 
 `<device>` is a device id or a fingerprint prefix of at least 8 characters. An
 ambiguous prefix is an **error**, never a guess — sending a file to the wrong
 device because a prefix matched two of them is not a failure mode worth
-having. `omnibridge cancel` follows the same rule with a 4-character minimum.
+having. `pliwee cancel` follows the same rule with a 4-character minimum.
 
 ## Receiver approval
 
@@ -367,7 +367,7 @@ size and the sender's short fingerprint.
 
 **The desktop** daemon has no terminal of its own — it runs under
 `systemd --user` — so it cannot prompt. It **declines and logs**, rather than
-inventing a silent yes. `omnibridged --accept-files-without-asking` is the
+inventing a silent yes. `pliweed --accept-files-without-asking` is the
 documented escape hatch for an unattended test rig; it warns on startup and on
 every accepted file. A desktop GUI, and a per-device "always allow from this
 trusted device", are the planned real answers (see *Not in this version*).
@@ -407,7 +407,7 @@ record of partial state, which this version deliberately does not keep.
 Unpairing a device, or withdrawing its `files.v1` grant, stops its in-flight
 transfers **immediately**, by two independent mechanisms:
 
-* **deterministic**: `omnibridge unpair` and `omnibridge revoke` call into the
+* **deterministic**: `pliwee unpair` and `pliwee revoke` call into the
   transfer manager directly, before the session is torn down, so the peer
   still receives the cancellation;
 * **backstop**: the reaper re-asks the authorizer for every active transfer,

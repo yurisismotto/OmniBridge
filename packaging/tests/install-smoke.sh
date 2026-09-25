@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 #
-# Installs built OmniBridge packages in a throwaway container and measures what
+# Installs built Pliwee packages in a throwaway container and measures what
 # the install, the removal and the reinstall actually did.
 #
 #   ./install-smoke.sh --image registry.fedoraproject.org/fedora:44 out/*.rpm
 #   ./install-smoke.sh --image docker.io/library/debian:trixie out/*.deb
 #
-#   # gate L17 — install an older build, then upgrade to the new one
+#   # gate L17 — install an older build, then upgrade to the new one. Since
+#   # the rename (ADR-0020) the older build is OmniBridge 1.0.0, and the new
+#   # set is pliwee, pliwee-gui and the transitional omnibridge package(s):
 #   ./install-smoke.sh --image registry.fedoraproject.org/fedora:44 \
-#       --upgrade-from old/omnibridge-0.1.0-2.rpm  new/*.rpm
+#       --upgrade-from old/omnibridge-1.0.0-1.fc44.x86_64.rpm \
+#       --upgrade-from old/omnibridge-gui-1.0.0-1.fc44.x86_64.rpm \
+#       new/pliwee-1.1.0-1.fc44.x86_64.rpm new/pliwee-gui-1.1.0-1.fc44.x86_64.rpm \
+#       new/omnibridge-1.1.0-1.fc44.noarch.rpm
 #
 # The container is always disposable: it is created for the run and removed
 # afterwards, so there is nothing to keep and no flag to keep it with.
@@ -40,7 +45,7 @@
 # The central assertion. A fake identity is planted as a non-root user before
 # the package is removed, and its digest and mode are compared afterwards. If
 # any maintainer script ever grows a line that removes `~/.local/share/
-# omnibridge`, this is what fails.
+# pliwee`, this is what fails.
 
 set -euo pipefail
 
@@ -79,7 +84,7 @@ case "${PACKAGES[0]}" in
     *) die "cannot tell the package format from ${PACKAGES[0]}" ;;
 esac
 
-STAGE="$(mktemp -d "${TMPDIR:-/tmp}/omnibridge-smoke.XXXXXXXX")"
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/pliwee-smoke.XXXXXXXX")"
 trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE/pkgs"
 cp -- "${PACKAGES[@]}" "$STAGE/pkgs/"
@@ -107,7 +112,7 @@ fail() { printf '  FAIL  %s\n' "$*"; FAIL=$((FAIL + 1)); }
 group() { printf '\n%s\n' "$*"; }
 
 FORMAT="$1"
-APP_ID="io.github.yurisismotto.omnibridge"
+APP_ID="io.github.yurisismotto.pliwee"
 UPGRADE_REQUESTED="${UPGRADE_REQUESTED:-0}"
 
 # --------------------------------------------------------------------------
@@ -138,9 +143,10 @@ fi
 group "The files that must be there (audit §12, R8)"
 # --------------------------------------------------------------------------
 for f in \
-    /usr/bin/omnibridged \
-    /usr/bin/omnibridge \
-    /usr/bin/omnibridge-gui \
+    /usr/bin/pliweed \
+    /usr/bin/pliwee \
+    /usr/bin/pliwee-gui \
+    /usr/lib/systemd/user/pliweed.service \
     /usr/lib/systemd/user/omnibridged.service \
     "/usr/share/icons/hicolor/scalable/apps/$APP_ID.svg" \
     "/usr/share/applications/$APP_ID.desktop" \
@@ -154,7 +160,7 @@ done
 group "Desktop metadata is valid on the installed system"
 # --------------------------------------------------------------------------
 exec_line="$(grep '^Exec=' "/usr/share/dbus-1/services/$APP_ID.service" 2>/dev/null || true)"
-if [ "$exec_line" = "Exec=/usr/bin/omnibridge-gui --gapplication-service" ]; then
+if [ "$exec_line" = "Exec=/usr/bin/pliwee-gui --gapplication-service" ]; then
     pass "P5: the D-Bus Exec is the absolute installed path"
 else
     fail "P5: D-Bus Exec is '${exec_line:-<none>}'"
@@ -179,18 +185,26 @@ fi
 # --------------------------------------------------------------------------
 group "The systemd user unit (audit §4.3)"
 # --------------------------------------------------------------------------
-unit=/usr/lib/systemd/user/omnibridged.service
-if grep -qx 'RuntimeDirectory=omnibridge' "$unit" \
+unit=/usr/lib/systemd/user/pliweed.service
+if grep -qx 'RuntimeDirectory=pliwee' "$unit" \
    && grep -qx 'ReadWritePaths=%h/.local/share' "$unit" \
    && grep -qx 'ProtectSystem=strict' "$unit"; then
     pass "the installed unit carries the S1/S2 directives and keeps ProtectSystem=strict"
 else
     fail "the installed unit is not the hardened one"
 fi
+# The OmniBridge unit name is an alias: a symlink to pliweed.service in the
+# same directory. A regular file there would be a second unit (ADR-0020).
+alias_target="$(readlink /usr/lib/systemd/user/omnibridged.service 2>/dev/null || true)"
+if [ "$alias_target" = pliweed.service ]; then
+    pass "omnibridged.service is a symlink to pliweed.service (an alias, not a second unit)"
+else
+    fail "omnibridged.service is not a symlink to pliweed.service (readlink: '${alias_target:-<none>}')"
+fi
 # Shipped disabled: a global enable would raise a LAN listener for every
 # account on the machine.
-if [ -e /etc/systemd/user/default.target.wants/omnibridged.service ] \
-   || [ -e /usr/lib/systemd/user/default.target.wants/omnibridged.service ]; then
+if [ -e /etc/systemd/user/default.target.wants/pliweed.service ] \
+   || [ -e /usr/lib/systemd/user/default.target.wants/pliweed.service ]; then
     fail "R7: the unit was enabled globally by the install"
 else
     pass "R7: the unit is installed disabled"
@@ -201,9 +215,9 @@ group "Nothing runs, and nothing runs as root"
 # --------------------------------------------------------------------------
 # The package starts no daemon. It cannot: a root scriptlet has no route to a
 # user's service manager, and it must not try.
-if pgrep -x omnibridged >/dev/null 2>&1; then
-    fail "installing the package started omnibridged"
-    ps -o user,pid,cmd -C omnibridged | sed 's/^/        /'
+if pgrep -x pliweed >/dev/null 2>&1; then
+    fail "installing the package started pliweed"
+    ps -o user,pid,cmd -C pliweed | sed 's/^/        /'
 else
     pass "installing the package started no daemon"
 fi
@@ -211,8 +225,8 @@ fi
 # --------------------------------------------------------------------------
 group "%doc is documentation, not the evidence tree (R10)"
 # --------------------------------------------------------------------------
-docs_shipped="$(find /usr/share/doc/omnibridge -type f 2>/dev/null | wc -l)"
-if [ -d /usr/share/doc/omnibridge/docs ]; then
+docs_shipped="$(find /usr/share/doc/pliwee -type f 2>/dev/null | wc -l)"
+if [ -d /usr/share/doc/pliwee/docs ]; then
     fail "R10: the docs/ evidence tree is installed ($docs_shipped files under doc/)"
 else
     pass "R10: no docs/ tree installed ($docs_shipped file(s) under doc/)"
@@ -221,19 +235,23 @@ fi
 # --------------------------------------------------------------------------
 group "The firewall was shipped and not touched (audit §9)"
 # --------------------------------------------------------------------------
-if [ "$FORMAT" = rpm ]; then
-    if [ -e /usr/lib/firewalld/services/omnibridge.xml ]; then
-        pass "the firewalld service definition is installed"
+# Both service definitions on Fedora: `pliwee`, and the OmniBridge 1.0.0
+# `omnibridge`, kept so that a zone naming it still loads (ADR-0020).
+for fw in pliwee omnibridge; do
+    if [ "$FORMAT" = rpm ]; then
+        if [ -e "/usr/lib/firewalld/services/$fw.xml" ]; then
+            pass "the firewalld service definition $fw.xml is installed"
+        else
+            fail "the firewalld service definition $fw.xml is missing"
+        fi
     else
-        fail "the firewalld service definition is missing"
+        if [ -e "/usr/lib/firewalld/services/$fw.xml" ]; then
+            fail "a .deb shipped firewalld metadata ($fw.xml); audit §9.3 says it must not"
+        else
+            pass "no firewalld metadata ($fw.xml) in the .deb (audit §9.3)"
+        fi
     fi
-else
-    if [ -e /usr/lib/firewalld/services/omnibridge.xml ]; then
-        fail "a .deb shipped firewalld metadata; audit §9.3 says it must not"
-    else
-        pass "no firewalld metadata in the .deb (audit §9.3)"
-    fi
-fi
+done
 
 # --------------------------------------------------------------------------
 group "Upgrade (gate L17, L13)"
@@ -254,14 +272,21 @@ fi
 if [ "$old_count" -gt 0 ]; then
     # The fixture has to exist before the upgrade, or the comparison after it
     # is between two absences.
+    #
+    # Both directories: the OmniBridge 1.0.0 one, which is what an upgraded
+    # user actually has and what the Pliwee daemon later copies from (ADR-0020
+    # D9), and the Pliwee one. No package transaction may touch either.
     id -u upgrader >/dev/null 2>&1 || useradd -m upgrader
-    UDATA=/home/upgrader/.local/share/omnibridge
-    mkdir -p "$UDATA"
-    printf 'PRETEND-PRIVATE-KEY-UPGRADE\n' > "$UDATA/identity.key"
-    printf '{"schema":1,"peers":["SM-X620"]}\n' > "$UDATA/state.json"
-    chmod 700 "$UDATA"; chmod 600 "$UDATA/identity.key" "$UDATA/state.json"
+    UDATA=/home/upgrader/.local/share/pliwee
+    LDATA=/home/upgrader/.local/share/omnibridge
+    for d in "$UDATA" "$LDATA"; do
+        mkdir -p "$d"
+        printf 'PRETEND-PRIVATE-KEY-UPGRADE %s\n' "$d" > "$d/identity.key"
+        printf '{"schema":1,"peers":["SM-X620"]}\n' > "$d/state.json"
+        chmod 700 "$d"; chmod 600 "$d/identity.key" "$d/state.json"
+    done
     chown -R upgrader:upgrader /home/upgrader/.local
-    before_up="$(sha256sum $UDATA/identity.key $UDATA/state.json; stat -c '%a %U %n' $UDATA $UDATA/identity.key $UDATA/state.json)"
+    before_up="$(for d in "$UDATA" "$LDATA"; do sha256sum "$d/identity.key" "$d/state.json"; stat -c '%a %U %n' "$d" "$d/identity.key" "$d/state.json"; done)"
     if grep -q identity.key <<<"$before_up"; then
         pass "L17: trust-store fixture planted before the upgrade"
     else
@@ -272,17 +297,19 @@ if [ "$old_count" -gt 0 ]; then
     # older NEVRA over a newer one, which is why this is `downgrade`/`install
     # --allow-downgrade` rather than `install`.
     if [ "$FORMAT" = rpm ]; then
-        dnf -y remove omnibridge omnibridge-gui > /dev/null 2>&1 || true
+        dnf -y remove pliwee pliwee-gui > /dev/null 2>&1 || true
         dnf -y install /old/*.rpm > /tmp/old.log 2>&1
     else
-        apt-get -y remove omnibridge omnibridge-gui > /dev/null 2>&1 || true
+        apt-get -y remove pliwee pliwee-gui > /dev/null 2>&1 || true
         apt-get -y install /old/*.deb > /tmp/old.log 2>&1
     fi
     rc=$?
     if [ "$rc" -eq 0 ]; then
-        old_ver="$(rpm -q --qf '%{VERSION}-%{RELEASE}' omnibridge 2>/dev/null \
-                   || dpkg-query -W -f '${Version}' omnibridge 2>/dev/null)"
-        pass "L17: the older build installed ($old_ver)"
+        # The older build is OmniBridge: its package is still called that.
+        old_ver="$(rpm -q --qf '%{NAME} %{VERSION}-%{RELEASE}\n' omnibridge pliwee 2>/dev/null | grep -v 'not installed' \
+                   || dpkg-query -W -f '${Package} ${Version}\n' omnibridge pliwee 2>/dev/null \
+                   || true)"
+        pass "L17: the older build installed ($(printf '%s' "$old_ver" | tr '\n' ' '))"
     else
         fail "L17: could not install the older build"
         tail -15 /tmp/old.log | sed 's/^/        /'
@@ -295,8 +322,8 @@ if [ "$old_count" -gt 0 ]; then
     fi
     rc=$?
     if [ "$rc" -eq 0 ]; then
-        new_ver="$(rpm -q --qf '%{VERSION}-%{RELEASE}' omnibridge 2>/dev/null \
-                   || dpkg-query -W -f '${Version}' omnibridge 2>/dev/null)"
+        new_ver="$(rpm -q --qf '%{VERSION}-%{RELEASE}' pliwee 2>/dev/null \
+                   || dpkg-query -W -f '${Version}' pliwee 2>/dev/null)"
         pass "L17: upgraded to $new_ver (exit 0)"
     else
         fail "L17: the upgrade failed (exit $rc)"
@@ -308,7 +335,7 @@ if [ "$old_count" -gt 0 ]; then
         pass "L17: no scriptlet error during the upgrade"
     fi
 
-    after_up="$(sha256sum $UDATA/identity.key $UDATA/state.json 2>/dev/null; stat -c '%a %U %n' $UDATA $UDATA/identity.key $UDATA/state.json 2>/dev/null)"
+    after_up="$(for d in "$UDATA" "$LDATA"; do sha256sum "$d/identity.key" "$d/state.json" 2>/dev/null; stat -c '%a %U %n' "$d" "$d/identity.key" "$d/state.json" 2>/dev/null; done)"
     if [ "$before_up" = "$after_up" ]; then
         pass "L13/L17: the trust store is byte- and mode-identical across the upgrade"
     else
@@ -316,8 +343,30 @@ if [ "$old_count" -gt 0 ]; then
         diff <(printf '%s\n' "$before_up") <(printf '%s\n' "$after_up") | sed 's/^/        /'
     fi
 
+    # The OmniBridge -> Pliwee package transition, when the older build was
+    # OmniBridge: the core name is UPGRADED to the transitional package (so
+    # its %preun saw $1 = 1 and disabled nobody), not erased.
+    if grep -q '^omnibridge ' <<<"$old_ver"; then
+        if [ "$FORMAT" = rpm ]; then
+            trans="$(rpm -q --qf '%{VERSION}' omnibridge 2>/dev/null || true)"
+        else
+            trans="$(dpkg-query -W -f '${Version}' omnibridge 2>/dev/null || true)"
+        fi
+        case "$trans" in
+            1.0.0*|""|*"not installed"*)
+                fail "L17: omnibridge was not upgraded to the transitional package (now: '${trans:-<absent>}')" ;;
+            *)  pass "L17: omnibridge was upgraded in place to the transitional $trans" ;;
+        esac
+        if [ -L /usr/lib/systemd/user/omnibridged.service ] \
+           && [ "$(readlink /usr/lib/systemd/user/omnibridged.service)" = pliweed.service ]; then
+            pass "L17: after the upgrade omnibridged.service is the alias of pliweed.service"
+        else
+            fail "L17: after the upgrade omnibridged.service is not the alias of pliweed.service"
+        fi
+    fi
+
     # §4.9: an upgrade cannot restart a running user daemon, and must not try.
-    if pgrep -x omnibridged >/dev/null 2>&1; then
+    if pgrep -x pliweed >/dev/null 2>&1; then
         fail "L17: the upgrade started or left a daemon running"
     else
         pass "L17: the upgrade started no daemon (a root scriptlet cannot reach a user's service manager)"
@@ -330,7 +379,7 @@ group "User state survives remove and reinstall (audit §11, R6, gates L21-L23)"
 # A user who has paired a phone. The bytes are fake; the paths, modes and the
 # promise about them are the real thing.
 id -u tester >/dev/null 2>&1 || useradd -m tester
-DATA=/home/tester/.local/share/omnibridge
+DATA=/home/tester/.local/share/pliwee
 # Created as root and then chowned, rather than through runuser or su. Neither
 # is present in a minimal Fedora image, and the first version of this script
 # used runuser: it failed, the fixture was never created, and every assertion
@@ -362,9 +411,9 @@ else
 fi
 
 if [ "$FORMAT" = rpm ]; then
-    dnf -y remove omnibridge omnibridge-gui > /tmp/remove.log 2>&1
+    dnf -y remove pliwee pliwee-gui > /tmp/remove.log 2>&1
 else
-    apt-get -y remove omnibridge omnibridge-gui > /tmp/remove.log 2>&1
+    apt-get -y remove pliwee pliwee-gui > /tmp/remove.log 2>&1
 fi
 rc=$?
 if [ "$rc" -eq 0 ]; then pass "remove succeeded (exit 0)"; else fail "remove failed (exit $rc)"; fi
@@ -379,12 +428,14 @@ fi
 
 # L25: nothing package-owned is left behind.
 left=""
-for f in /usr/bin/omnibridged /usr/bin/omnibridge /usr/bin/omnibridge-gui \
-         /usr/lib/systemd/user/omnibridged.service \
+for f in /usr/bin/pliweed /usr/bin/pliwee /usr/bin/pliwee-gui \
+         /usr/lib/systemd/user/pliweed.service \
          "/usr/share/applications/$APP_ID.desktop" \
          "/usr/share/dbus-1/services/$APP_ID.service" \
          "/usr/share/metainfo/$APP_ID.metainfo.xml" \
          "/usr/share/icons/hicolor/scalable/apps/$APP_ID.svg" \
+         /usr/lib/systemd/user/omnibridged.service \
+         /usr/lib/firewalld/services/pliwee.xml \
          /usr/lib/firewalld/services/omnibridge.xml
 do
     [ -e "$f" ] && left="$left $f"
@@ -414,7 +465,7 @@ fi
 # Debian only: purge is the transaction most likely to grow a destructive
 # postrm, so it gets its own assertion.
 if [ "$FORMAT" = deb ]; then
-    apt-get -y purge omnibridge omnibridge-gui > /tmp/purge.log 2>&1
+    apt-get -y purge pliwee pliwee-gui > /tmp/purge.log 2>&1
     rc=$?
     if [ "$rc" -eq 0 ]; then pass "L24: purge succeeded"; else fail "L24: purge failed (exit $rc)"; fi
     after_purge="$(sha256sum $DATA/identity.key $DATA/state.json 2>/dev/null; stat -c '%a %U %n' $DATA $DATA/identity.key $DATA/state.json 2>/dev/null)"
@@ -426,7 +477,7 @@ if [ "$FORMAT" = deb ]; then
 fi
 
 # L26: no root-owned file anywhere in the user's OmniBridge state.
-rooted="$(find /home/tester/.local/share/omnibridge ! -user tester 2>/dev/null)"
+rooted="$(find /home/tester/.local/share/pliwee ! -user tester 2>/dev/null)"
 if [ -n "$rooted" ]; then
     fail "L26: root-owned files in the user's state:"
     printf '%s\n' "$rooted" | sed 's/^/        /'

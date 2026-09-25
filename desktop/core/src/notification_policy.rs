@@ -94,7 +94,7 @@ impl LockPolicy {
 /// ```
 ///
 /// `allow_mirror` defaulting on is not a silent widening: reaching this type
-/// at all already required an explicit `omnibridge grant <device>
+/// at all already required an explicit `pliwee grant <device>
 /// notifications.v1`, which is never automatic. What the default *does* say is
 /// that the grant means what it looks like it means.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

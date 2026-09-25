@@ -9,19 +9,19 @@ build, and what is deliberately absent. This file is the map.
 
 ## Two packages, the same two as the RPM
 
-| `omnibridge` | `omnibridge-gui` |
+| `pliwee` | `pliwee-gui` |
 | --- | --- |
-| `/usr/bin/omnibridged` | `/usr/bin/omnibridge-gui` |
-| `/usr/bin/omnibridge` | `/usr/share/applications/…omnibridge.desktop` |
-| `/usr/lib/systemd/user/omnibridged.service` | `/usr/share/dbus-1/services/…omnibridge.service` |
-| `/usr/share/icons/hicolor/scalable/apps/…omnibridge.svg` | `/usr/share/metainfo/…omnibridge.metainfo.xml` |
+| `/usr/bin/pliweed` | `/usr/bin/pliwee-gui` |
+| `/usr/bin/pliwee` | `/usr/share/applications/…pliwee.desktop` |
+| `/usr/lib/systemd/user/pliweed.service` | `/usr/share/dbus-1/services/…pliwee.service` |
+| `/usr/share/icons/hicolor/scalable/apps/…pliwee.svg` | `/usr/share/metainfo/…pliwee.metainfo.xml` |
 
-`omnibridge-gui` depends on `omnibridge (= ${binary:Version})` — the exact
+`pliwee-gui` depends on `pliwee (= ${binary:Version})` — the exact
 build, because the GUI speaks the daemon's control socket and a version skew
 there is a protocol skew.
 
 The icon is in the **core** package for the same reason it is on Fedora:
-`omnibridged` owns the StatusNotifierItem and a shell resolves its icon name
+`pliweed` owns the StatusNotifierItem and a shell resolves its icon name
 out of `hicolor`, so a core-only install would otherwise draw a grey square.
 
 ## Nothing here is a second copy
@@ -29,7 +29,7 @@ out of `hicolor`, so a core-only install would otherwise draw a grey square.
 Two files that could easily have been duplicated are not:
 
 * **the systemd unit.** `debian/rules` installs
-  `packaging/common/omnibridged.service`, the same file `%install` copies. It
+  `packaging/common/pliweed.service`, the same file `%install` copies. It
   is where `ProtectSystem=strict`, the syscall filter and the address-family
   restriction live, and a second copy is how a hardening change lands on one
   distribution and misses the other.
@@ -48,8 +48,9 @@ unit file has appeared under `packaging/debian/`.
 None are written by hand, and each omission is deliberate — the table is in
 `README.source`. The one that matters most:
 
-> **No script may create, move or delete `~/.local/share/omnibridge`, on any
-> path, including `purge`.**
+> **No script may create, move or delete `~/.local/share/pliwee` — nor the
+> OmniBridge `~/.local/share/omnibridge` it is migrated from — on any path,
+> including `purge`.**
 
 That directory holds the user's identity key and the record of every device
 they have paired. `packaging/tests/packaging-checks.sh` greps every maintainer

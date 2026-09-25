@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# OmniBridge, for Debian and Ubuntu.
+# Pliwee, for Debian and Ubuntu.
 #
 # The shape of this file is dictated by two things: the build must work with no
 # network, and the desktop metadata must be byte-identical to what the RPM
@@ -52,12 +52,12 @@ override_dh_auto_test:
 	cd desktop && cargo test --release --locked --offline
 
 override_dh_auto_install:
-	install -Dm0755 desktop/target/release/omnibridged \
-	    debian/tmp/usr/bin/omnibridged
-	install -Dm0755 desktop/target/release/omnibridge \
-	    debian/tmp/usr/bin/omnibridge
-	install -Dm0755 desktop/target/release/omnibridge-gui \
-	    debian/tmp/usr/bin/omnibridge-gui
+	install -Dm0755 desktop/target/release/pliweed \
+	    debian/tmp/usr/bin/pliweed
+	install -Dm0755 desktop/target/release/pliwee \
+	    debian/tmp/usr/bin/pliwee
+	install -Dm0755 desktop/target/release/pliwee-gui \
+	    debian/tmp/usr/bin/pliwee-gui
 # The same script, with the same arguments, as the RPM's %install. That is what
 # makes the desktop entry, the icon, the D-Bus activation entry and the
 # AppStream metadata identical across formats: three of the four are installed
@@ -66,8 +66,13 @@ override_dh_auto_install:
 	    --prefix /usr --destdir debian/tmp
 # One unit, every format. Copied from packaging/common/ rather than duplicated,
 # so a hardening change cannot land on one distribution and miss the other.
-	install -Dm0644 packaging/common/omnibridged.service \
-	    debian/tmp/usr/lib/systemd/user/omnibridged.service
+	install -Dm0644 packaging/common/pliweed.service \
+	    debian/tmp/usr/lib/systemd/user/pliweed.service
+# The OmniBridge 1.0.0 unit name, omnibridged.service, is shipped by
+# debian/pliwee.links as a symlink to pliweed.service in the same directory.
+# systemd loads it as an alias, so an account that enabled the old name starts
+# Pliwee at its next login, once (packaging/common/README.md, "Upgrading from
+# OmniBridge"). No maintainer script writes into a home directory.
 
 # Shipped disabled, on every format. A global enable would raise a LAN listener
 # for every account on the machine, and the daemon does nothing useful before a
@@ -96,5 +101,7 @@ override_dh_strip:
 # — the docs/ tree is engineering evidence and belongs in the repository.
 
 # No dh_installdeb-generated purge logic beyond debhelper's own. The user's
-# trust store lives in ~/.local/share/omnibridge and is not this package's to
-# create, move or remove, on install, upgrade, remove or purge. Audit §11.
+# trust store lives in ~/.local/share/pliwee (copied there by the daemon from
+# an OmniBridge ~/.local/share/omnibridge, which stays as it was) and neither is
+# this package's to create, move or remove, on install, upgrade, remove or
+# purge. Audit §11.

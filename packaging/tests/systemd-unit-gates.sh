@@ -6,7 +6,7 @@
 #
 #   S1  the unit starts on a machine where the daemon's data directory does
 #       not exist — i.e. every fresh install — and the daemon creates it
-#   S2  $XDG_RUNTIME_DIR/omnibridge is 0700 and control.sock is 0600, both
+#   S2  $XDG_RUNTIME_DIR/pliwee is 0700 and control.sock is 0600, both
 #       owned by the invoking user
 #   S3  the journal for the unit carries no sandbox denial
 #
@@ -23,16 +23,16 @@
 # trust store. That is not squeamishness: S1's whole question is what happens
 # when the data directory does NOT exist, which cannot be asked of a machine
 # where it does. The throwaway directory is created one level under
-# ~/.local/share, exactly mirroring the real ~/.local/share/omnibridge, so the
+# ~/.local/share, exactly mirroring the real ~/.local/share/pliwee, so the
 # ReadWritePaths= grant is exercised at the same depth it will be in service.
 #
-# The real ~/.local/share/omnibridge is digested before and after and the run
+# The real ~/.local/share/pliwee is digested before and after and the run
 # fails if anything moved. Nothing in here deletes it, on any path, including
 # the error paths.
 #
 # Usage
 # -----
-#   ./systemd-unit-gates.sh                        # unit from the repo, /usr/bin/omnibridged
+#   ./systemd-unit-gates.sh                        # unit from the repo, /usr/bin/pliweed
 #   ./systemd-unit-gates.sh --binary <path>        # test a build that is not installed
 #   ./systemd-unit-gates.sh --unit <path>          # test a specific unit file
 #   ./systemd-unit-gates.sh --keep                 # leave the unit installed for inspection
@@ -42,10 +42,10 @@
 set -euo pipefail
 
 ROOT="$(git -C "$(dirname -- "${BASH_SOURCE[0]}")" rev-parse --show-toplevel 2>/dev/null || echo "")"
-UNIT_SRC="${ROOT:+$ROOT/packaging/common/omnibridged.service}"
-BINARY="/usr/bin/omnibridged"
+UNIT_SRC="${ROOT:+$ROOT/packaging/common/pliweed.service}"
+BINARY="/usr/bin/pliweed"
 KEEP=0
-UNIT_NAME="omnibridged.service"
+UNIT_NAME="pliweed.service"
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -66,7 +66,7 @@ FAIL=0
 pass() { printf '  ok    %s\n' "$*"; PASS=$((PASS + 1)); }
 fail() { printf '  FAIL  %s\n' "$*"; FAIL=$((FAIL + 1)); }
 
-[ "$(id -u)" -ne 0 ] || die "refusing to run as root: omnibridged is a user service"
+[ "$(id -u)" -ne 0 ] || die "refusing to run as root: pliweed is a user service"
 [ -n "${XDG_RUNTIME_DIR:-}" ] || die "XDG_RUNTIME_DIR is unset; there is no user session to measure"
 [ -n "$UNIT_SRC" ] && [ -f "$UNIT_SRC" ] || die "no unit file: pass --unit <path>"
 [ -x "$BINARY" ] || die "no daemon binary at $BINARY: pass --binary <path>"
@@ -76,7 +76,7 @@ systemctl --user show-environment >/dev/null 2>&1 || die "no systemd --user mana
 # The real trust store is read-only to this script. Digest it up front so the
 # final check can prove that, rather than assert it.
 # --------------------------------------------------------------------------
-REAL_DATA="${XDG_DATA_HOME:-$HOME/.local/share}/omnibridge"
+REAL_DATA="${XDG_DATA_HOME:-$HOME/.local/share}/pliwee"
 fingerprint_real() {
     if [ -d "$REAL_DATA" ]; then
         # Modes and ownership matter as much as content: a run that left the
@@ -94,13 +94,13 @@ REAL_BEFORE="$(fingerprint_real)"
 # measure a first start, and a second daemon would fail its bind for reasons
 # that have nothing to do with the unit.
 # --------------------------------------------------------------------------
-if pgrep -x omnibridged >/dev/null 2>&1; then
-    die "omnibridged is already running (pid $(pgrep -x omnibridged | tr '\n' ' ')).
+if pgrep -x pliweed >/dev/null 2>&1; then
+    die "pliweed is already running (pid $(pgrep -x pliweed | tr '\n' ' ')).
 Stop it first — including a hand-started development build — and start it again
 afterwards. This script will not stop a daemon it did not start."
 fi
 
-SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/omnibridge-gates.XXXXXXXX")"
+SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/pliwee-gates.XXXXXXXX")"
 UNIT_DIR="$HOME/.config/systemd/user"
 UNIT_DST="$UNIT_DIR/$UNIT_NAME"
 DROPIN_DIR="$UNIT_DIR/$UNIT_NAME.d"
@@ -111,7 +111,7 @@ HAD_UNIT=0
 # The disposable data root. One level under ~/.local/share so that the
 # daemon's own directory sits exactly where the real one does relative to the
 # ReadWritePaths= grant.
-PROBE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/omnibridge-gate-probe.$$"
+PROBE_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/pliwee-gate-probe.$$"
 
 cleanup() {
     status=$?
@@ -126,7 +126,7 @@ cleanup() {
     # script's own PID and is re-checked here so no edit can widen it into
     # something that removes real state.
     case "$PROBE_ROOT" in
-        *"/omnibridge-gate-probe."*) rm -rf "$PROBE_ROOT" ;;
+        *"/pliwee-gate-probe."*) rm -rf "$PROBE_ROOT" ;;
     esac
     rm -rf "$SCRATCH"
     exit $status
@@ -178,7 +178,7 @@ fi
 # --------------------------------------------------------------------------
 group "Gate S1 — first start with no data directory"
 # --------------------------------------------------------------------------
-PROBE_DATA="$PROBE_ROOT/omnibridge"
+PROBE_DATA="$PROBE_ROOT/pliwee"
 [ ! -e "$PROBE_DATA" ] || die "the probe data directory already exists; refusing"
 note "XDG_DATA_HOME=$PROBE_ROOT (data directory $PROBE_DATA does not exist)"
 
@@ -193,7 +193,7 @@ fi
 
 # The socket is the daemon's own readiness signal: it appears after the
 # identity is on disk. Polling for it beats sleeping for a guess.
-SOCK="$XDG_RUNTIME_DIR/omnibridge/control.sock"
+SOCK="$XDG_RUNTIME_DIR/pliwee/control.sock"
 for _ in $(seq 100); do
     [ -S "$SOCK" ] && break
     sleep 0.1
@@ -233,7 +233,7 @@ fi
 # --------------------------------------------------------------------------
 group "Gate S2 — runtime directory and control socket"
 # --------------------------------------------------------------------------
-RUNDIR="$XDG_RUNTIME_DIR/omnibridge"
+RUNDIR="$XDG_RUNTIME_DIR/pliwee"
 if [ -d "$RUNDIR" ]; then
     pass "S2: $RUNDIR exists"
     read -r mode owner _ <<EOF

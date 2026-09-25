@@ -1,4 +1,4 @@
-//! `omnibridged` — the Linux row of the Pliwee Agent.
+//! `pliweed` — the Linux row of the Pliwee Agent.
 //!
 //! After Wave 0 this crate is a *composition*, not an implementation: it
 //! wires the portable agent (`pliwee-runtime`) to the Linux adapter

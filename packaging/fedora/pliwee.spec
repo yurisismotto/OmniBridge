@@ -3,7 +3,7 @@
 # docs/audits/packaging/PACKAGING-V1-READINESS-AUDIT.md §19 Q2.
 %global debug_package %{nil}
 
-Name:           omnibridge
+Name:           pliwee
 # AUTHORITATIVE SOURCE: desktop/Cargo.toml [workspace.package] version.
 #
 # rpm cannot read a TOML file at spec-parse time, and an SRPM does not carry
@@ -11,7 +11,7 @@ Name:           omnibridge
 # not an unguarded one: packaging/release/make-source-bundle.sh refuses to
 # build a bundle when the two disagree, and packaging/tests/packaging-checks.sh
 # asserts it without building anything. Audit §13.1.
-Version:        1.0.0
+Version:        1.1.0
 Release:        1%{?dist}
 Summary:        Local-first device continuity between Android and Fedora
 
@@ -37,7 +37,7 @@ BuildRequires:  gcc
 
 # --- GUI build dependencies (audit B1) -------------------------------------
 #
-# %%build compiles omnibridge-gui, and it used to do so with none of this
+# %%build compiles pliwee-gui, and it used to do so with none of this
 # declared, so the package could not build at all. Each line below is here
 # because something in the build asks for it by name:
 #
@@ -133,30 +133,67 @@ Suggests:       wl-clipboard
 # Directory ownership only, for the firewalld service definition in %%files.
 Requires:       firewalld-filesystem
 
+# --- the OmniBridge -> Pliwee package transition (ADR-0020) -----------------
+#
+# The first Pliwee version is 1.1.0 (rebrand plan, decision B4: adopted in
+# Wave 7, to be confirmed by the owner before anything is published). The bound
+# below is written against it as a literal: it describes the one upgrade path
+# from OmniBridge and must not move with later versions.
+#
+# The core package is replaced by a TRANSITIONAL `omnibridge` 1.1.0 that
+# requires `pliwee`, and deliberately NOT by `Obsoletes: omnibridge`. MEASURED
+# with dnf5 on Fedora 44 (rebrand Wave 7 report, R1-R3): an obsoleted
+# omnibridge-1.0.0 is erased, so its %%preun runs with $1 = 0, and on this
+# systemd that is `systemd-update-helper remove-user-units omnibridged.service`,
+# which disables and stops the unit for every logged-in user. The person
+# running `dnf upgrade` would lose their enablement and their running daemon.
+# Upgraded instead, the same %%preun sees $1 = 1 and does nothing. With both a
+# transitional package and an Obsoletes:, dnf still took the Obsoletes: path
+# ($1 = 0), so there is no Obsoletes: on the core at all.
+#
+# omnibridge-gui 1.0.0 has no systemd scriptlet, so for it the ordinary
+# Obsoletes: + Provides: is both correct and what the plan asks for.
+
 %description
-OmniBridge connects an Android phone to a Fedora workstation over the
+Pliwee connects an Android phone to a Fedora workstation over the
 local network. It is local-first: there is no cloud service, no account and
 no telemetry. Devices authenticate each other with pinned public keys over
 TLS 1.3 after an explicit, human-confirmed pairing.
 
-This package provides the user-session daemon and the omnibridge command-line
+This package provides the user-session daemon and the pliwee command-line
 tool. The daemon runs unprivileged under systemd --user and never requires
-root. The desktop application ships separately, as omnibridge-gui.
+root. The desktop application ships separately, as pliwee-gui.
+
+Pliwee was called OmniBridge until 1.0.0. An OmniBridge install upgrades to
+this package in place, keeping its device identity and every pairing.
+
+%package -n omnibridge
+Summary:        Transitional package: OmniBridge is now Pliwee
+BuildArch:      noarch
+Requires:       %{name} = %{version}-%{release}
+
+%description -n omnibridge
+OmniBridge was renamed Pliwee. This empty package upgrades an OmniBridge
+1.0.0 install to Pliwee without removing the old package first, which would
+disable the daemon for every logged-in user. It can be removed once Pliwee is
+installed.
 
 %package gui
-Summary:        Desktop application for OmniBridge
+Summary:        Desktop application for Pliwee
 # The exact build. The GUI speaks the daemon's control socket, so a version
 # skew between the two is a protocol skew.
 Requires:       %{name} = %{version}-%{release}
+Obsoletes:      omnibridge-gui < 1.1.0
+Provides:       omnibridge-gui = %{version}-%{release}
 
 %description gui
-The OmniBridge desktop application: pairing, the device list, transfers, the
+The Pliwee desktop application: pairing, the device list, transfers, the
 Quick Panel and per-capability grants.
 
 It is not a resident process. It is started when a window is wanted — from the
 application menu, from the tray item the daemon publishes, or by the session
 bus through D-Bus activation — and it exits when the window is closed.
-The daemon remains the only long-lived OmniBridge process.
+The daemon remains the only long-lived Pliwee process.
 
 %prep
 %autosetup -n %{name}-%{version}
@@ -185,20 +222,34 @@ cargo build --release --locked --offline \
     -p pliwee-gui
 
 %install
-install -Dpm0755 desktop/target/release/omnibridged   %{buildroot}%{_bindir}/omnibridged
-install -Dpm0755 desktop/target/release/omnibridge    %{buildroot}%{_bindir}/omnibridge
-install -Dpm0755 desktop/target/release/omnibridge-gui %{buildroot}%{_bindir}/omnibridge-gui
+install -Dpm0755 desktop/target/release/pliweed    %{buildroot}%{_bindir}/pliweed
+install -Dpm0755 desktop/target/release/pliwee     %{buildroot}%{_bindir}/pliwee
+install -Dpm0755 desktop/target/release/pliwee-gui %{buildroot}%{_bindir}/pliwee-gui
 
 # One unit, two formats. packaging/common/ is the canonical location: the
 # Debian packaging installs this same file, so a hardening change cannot land
 # on one distribution and miss the other.
-install -Dpm0644 packaging/common/omnibridged.service \
-    %{buildroot}%{_userunitdir}/omnibridged.service
+install -Dpm0644 packaging/common/pliweed.service \
+    %{buildroot}%{_userunitdir}/pliweed.service
+# The OmniBridge 1.0.0 unit name, as a symlink in the same directory: systemd
+# loads it as an alias of pliweed.service, so an account whose
+# ~/.config/systemd/user still enables omnibridged.service starts Pliwee at its
+# next login, and only once. No scriptlet writes into a home directory; this
+# file is the whole mechanism. Shipped through Pliwee v1.x (ADR-0020;
+# packaging/common/README.md, "Upgrading from OmniBridge").
+ln -s pliweed.service %{buildroot}%{_userunitdir}/omnibridged.service
 
-# firewalld service definition: TCP 55432, installed and never enabled. No
+# firewalld service definitions: TCP 55432, installed and never enabled. No
 # scriptlet in this spec runs firewall-cmd, on install or on removal. mDNS is
 # deliberately not redeclared — firewalld ships its own, correctly scoped.
 # Audit §9.2.
+#
+# Two files, one port. `pliwee` is the service to use. `omnibridge` is the
+# OmniBridge 1.0.0 file, unchanged, and it stays through Pliwee v1.x so that a
+# zone which names the `omnibridge` service still loads and still reloads
+# after the upgrade (ADR-0020). Neither is added to any zone.
+install -Dpm0644 packaging/fedora/pliwee-firewalld.xml \
+    %{buildroot}%{_prefix}/lib/firewalld/services/pliwee.xml
 install -Dpm0644 packaging/fedora/omnibridge-firewalld.xml \
     %{buildroot}%{_prefix}/lib/firewalld/services/omnibridge.xml
 
@@ -232,23 +283,28 @@ cargo test --release --locked --offline
 # documentation. It also shipped mock buildroot paths inside a packaged file,
 # which rpmlint reports as an error and is right to. Audit §12.1 and R10.
 %doc README.md
-%{_bindir}/omnibridged
-%{_bindir}/omnibridge
+%{_bindir}/pliweed
+%{_bindir}/pliwee
+%{_userunitdir}/pliweed.service
 %{_userunitdir}/omnibridged.service
-# The icon belongs to the CORE package, not the GUI. omnibridged owns the
+# The icon belongs to the CORE package, not the GUI. pliweed owns the
 # StatusNotifierItem and its icon name is the application id, which a shell
 # resolves out of hicolor — not out of the GUI's compiled-in GResource. If the
-# icon shipped only with omnibridge-gui, a core-only install would draw a grey
+# icon shipped only with pliwee-gui, a core-only install would draw a grey
 # square on KDE. Audit §10.
-%{_datadir}/icons/hicolor/scalable/apps/io.github.yurisismotto.omnibridge.svg
+%{_datadir}/icons/hicolor/scalable/apps/io.github.yurisismotto.pliwee.svg
+%{_prefix}/lib/firewalld/services/pliwee.xml
 %{_prefix}/lib/firewalld/services/omnibridge.xml
+
+# Transitional: no files. Its whole job is to be the upgrade of omnibridge.
+%files -n omnibridge
 
 %files gui
 %license LICENSE
-%{_bindir}/omnibridge-gui
-%{_datadir}/applications/io.github.yurisismotto.omnibridge.desktop
-%{_datadir}/dbus-1/services/io.github.yurisismotto.omnibridge.service
-%{_datadir}/metainfo/io.github.yurisismotto.omnibridge.metainfo.xml
+%{_bindir}/pliwee-gui
+%{_datadir}/applications/io.github.yurisismotto.pliwee.desktop
+%{_datadir}/dbus-1/services/io.github.yurisismotto.pliwee.service
+%{_datadir}/metainfo/io.github.yurisismotto.pliwee.metainfo.xml
 
 # --- systemd user lifecycle -------------------------------------------------
 #
@@ -259,7 +315,7 @@ cargo test --release --locked --offline
 #   %%systemd_user_post    runs `systemctl --global preset`, which consults
 #                         /usr/lib/systemd/user-preset/. Fedora 44 ships
 #                         90-default-user.preset and 99-default-disable.preset
-#                         and neither names omnibridged.service, so the preset
+#                         and neither names pliweed.service, so the preset
 #                         leaves it DISABLED. That is the intended outcome, not
 #                         an accident: a global enable would raise a LAN
 #                         listener for every account on the machine, including
@@ -280,30 +336,37 @@ cargo test --release --locked --offline
 # There is deliberately NO scriptlet for the desktop database, the icon cache
 # or the session bus. The first two are handled by the distribution's own rpm
 # file triggers (measured, audit §4.4). The third cannot be done from root at
-# all, which is why omnibridged repairs its own activation from inside the
+# all, which is why pliweed repairs its own activation from inside the
 # user's session instead (audit §8.2).
 #
 # And no firewall-cmd, on any path.
+#
+# The scriptlets name pliweed.service only. The omnibridged.service alias is a
+# file, not a unit of its own: disabling pliweed.service removes an account's
+# legacy omnibridged.service link as well (measured, systemd 259).
 %post
-%systemd_user_post omnibridged.service
+%systemd_user_post pliweed.service
 cat <<'EOF'
 
-OmniBridge installed. To start it for your user:
+Pliwee installed. To start it for your user:
 
-    systemctl --user enable --now omnibridged.service
-    omnibridge status
+    systemctl --user enable --now pliweed.service
+    pliwee status
 
 Then pair your phone:
 
-    omnibridge pair
+    pliwee pair
+
+Upgrading from OmniBridge 1.0.0: your device identity and pairings carry over,
+and if you had enabled omnibridged.service, Pliwee starts at your next login.
 
 The daemon runs as your user and never needs root. If your firewall zone is not
 the Fedora Workstation default, see the Firewall section of
-/usr/share/doc/omnibridge/README.md.
+/usr/share/doc/pliwee/README.md.
 EOF
 
 %preun
-%systemd_user_preun omnibridged.service
+%systemd_user_preun pliweed.service
 
 # On %%postun, and why rpmlint's `empty-%%postun` is correct and ignored:
 #
@@ -323,10 +386,18 @@ EOF
 # rpmlint, and naming the package manager in a comment is reported as a
 # dangerous command.
 %postun
-%systemd_user_postun omnibridged.service
+%systemd_user_postun pliweed.service
 
 
 %changelog
+* Fri Sep 25 2026 Yuri Converso Sismotto <yuri.sismotto@gmail.com> - 1.1.0-1
+- OmniBridge is now Pliwee (ADR-0020). Binaries pliwee, pliweed and
+  pliwee-gui; user unit pliweed.service; application id
+  io.github.yurisismotto.pliwee; firewalld service pliwee.
+- Upgrade path from omnibridge 1.0.0: a transitional omnibridge package that
+  requires pliwee, and Obsoletes/Provides for omnibridge-gui.
+- omnibridged.service ships as an alias of pliweed.service, and
+  omnibridge.xml stays installed unchanged, through Pliwee 1.x.
 * Wed Sep 23 2026 Yuri Converso Sismotto <yuri.sismotto@gmail.com> - 1.0.0-1
 - First general-availability release. No product, protocol or packaging change
   from 0.1.0-3: this is the release-version bump alone, and the payload the

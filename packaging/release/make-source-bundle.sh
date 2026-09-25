@@ -6,7 +6,7 @@
 # Why this exists
 # ---------------------------------------------------------------------------
 #
-# `packaging/fedora/omnibridge.spec` declares `Source0: %{name}-%{version}.tar.gz`
+# `packaging/fedora/pliwee.spec` declares `Source0: %{name}-%{version}.tar.gz`
 # and nothing in the repository ever produced that file. Worse, the spec's
 # `%build` ran plain `cargo build --locked`, which reads the committed
 # lockfile but still *downloads* all 270 crates from crates.io — and `mock`,
@@ -16,8 +16,8 @@
 #
 # This script closes it by emitting the two tarballs the spec now consumes:
 #
-#   omnibridge-<V>.tar.gz          Source0 — the upstream source
-#   omnibridge-<V>-vendor.tar.xz   Source1 — every locked crate, vendored
+#   pliwee-<V>.tar.gz          Source0 — the upstream source
+#   pliwee-<V>-vendor.tar.xz   Source1 — every locked crate, vendored
 #
 # They are separate on purpose rather than one combined archive. Source0 stays
 # a pristine upstream tarball, which is what an RPM expects, what a Debian
@@ -101,7 +101,7 @@ command -v tar >/dev/null || die "tar is required"
 command -v xz >/dev/null || die "xz is required"
 
 ROOT="$(git -C "$(dirname -- "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
-SPEC="$ROOT/packaging/fedora/omnibridge.spec"
+SPEC="$ROOT/packaging/fedora/pliwee.spec"
 VENDOR_CONFIG="$ROOT/packaging/common/cargo-vendor-config.toml"
 OUTPUT="${OUTPUT:-$ROOT/dist}"
 
@@ -139,7 +139,7 @@ $SPEC says '$SPEC_VERSION'. desktop/Cargo.toml is authoritative — fix the spec
 fi
 
 V="$WORKSPACE_VERSION"
-PREFIX="omnibridge-$V"
+PREFIX="pliwee-$V"
 note "version $V (workspace and spec agree)"
 
 # --------------------------------------------------------------------------
@@ -177,7 +177,7 @@ note "Cargo.lock resolves --locked --offline"
 # --------------------------------------------------------------------------
 # 4. Stage the source tree.
 # --------------------------------------------------------------------------
-SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/omnibridge-bundle.XXXXXXXX")"
+SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/pliwee-bundle.XXXXXXXX")"
 trap 'rm -rf "$SCRATCH"' EXIT
 STAGE="$SCRATCH/$PREFIX"
 mkdir -p "$STAGE"
@@ -238,16 +238,17 @@ done
 for required in \
     desktop/Cargo.toml \
     desktop/Cargo.lock \
-    packaging/fedora/omnibridge.spec \
-    packaging/common/omnibridged.service \
+    packaging/fedora/pliwee.spec \
+    packaging/common/pliweed.service \
     packaging/common/cargo-vendor-config.toml \
+    packaging/fedora/pliwee-firewalld.xml \
     packaging/fedora/omnibridge-firewalld.xml \
     protocol/proto \
-    docs/design/assets/omnibridge-app-icon.svg \
+    docs/design/assets/pliwee-app-icon.svg \
     desktop/gui/tools/install-desktop-metadata.sh \
-    desktop/gui/data/io.github.yurisismotto.omnibridge.desktop \
-    desktop/gui/data/io.github.yurisismotto.omnibridge.service.in \
-    desktop/gui/data/io.github.yurisismotto.omnibridge.metainfo.xml \
+    desktop/gui/data/io.github.yurisismotto.pliwee.desktop \
+    desktop/gui/data/io.github.yurisismotto.pliwee.service.in \
+    desktop/gui/data/io.github.yurisismotto.pliwee.metainfo.xml \
     LICENSE
 do
     [ -e "$STAGE/$required" ] || die "the bundle is missing $required"

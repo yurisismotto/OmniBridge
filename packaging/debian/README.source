@@ -1,4 +1,4 @@
-Building OmniBridge on Debian and Ubuntu
+Building Pliwee on Debian and Ubuntu
 ========================================
 
 Two things about this source package are unusual, and both are deliberate.
@@ -55,8 +55,8 @@ into the build tree. A network fetch during the build is not merely
 unnecessary, it is impossible — which is what a buildd requires and what
 `packaging/release/make-source-bundle.sh` produces the inputs for:
 
-    omnibridge-<version>.tar.gz          the upstream source
-    omnibridge-<version>-vendor.tar.xz   every crate in desktop/Cargo.lock
+    pliwee-<version>.tar.gz          the upstream source
+    pliwee-<version>-vendor.tar.xz   every crate in desktop/Cargo.lock
 
 The build script unpacks the vendor tarball into `desktop/vendor` and copies
 `packaging/common/cargo-vendor-config.toml` to `desktop/.cargo/config.toml`,
@@ -99,12 +99,12 @@ deliberate:
                                    on /usr/share/applications
     postinst, icon cache           hicolor-icon-theme declares a trigger on
                                    /usr/share/icons/hicolor
-    postinst, D-Bus ReloadConfig   impossible as root; omnibridged repairs its
+    postinst, D-Bus ReloadConfig   impossible as root; pliweed repairs its
                                    own activation from inside the user session
     prerm, stop the daemon         root cannot reach a user's service manager
     postrm purge, remove user data MUST NOT EXIST
 
-That last line is the one that matters most. `~/.local/share/omnibridge`
+That last line is the one that matters most. `~/.local/share/pliwee`
 holds the user's identity key and the record of every device they have
 paired. No transaction — install, upgrade, remove or **purge** — may create,
 move or delete it. `packaging/tests/packaging-checks.sh` greps every

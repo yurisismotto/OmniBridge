@@ -4,16 +4,16 @@
 //! # The problem, in one sentence
 //!
 //! A package installs
-//! `/usr/share/dbus-1/services/io.github.yurisismotto.omnibridge.service`, and
+//! `/usr/share/dbus-1/services/io.github.yurisismotto.pliwee.service`, and
 //! the session bus that is *already running* does not read it until something
 //! tells it to — so until the user logs out, clicking Pliwee in the tray
 //! gets `org.freedesktop.DBus.Error.ServiceUnknown` on a machine where
 //! everything is installed correctly.
 //!
 //! ```text
-//!   dnf install omnibridge          (as root)
+//!   dnf install pliwee              (as root)
 //!        │
-//!        ├─► /usr/share/dbus-1/services/…omnibridge.service   written
+//!        ├─► /usr/share/dbus-1/services/…pliwee.service       written
 //!        │
 //!        └─►  the user's session bus                          has not re-read it
 //!                     │
@@ -35,7 +35,7 @@
 //! the session bus has no root-side equivalent of
 //! `update-desktop-database`.
 //!
-//! `omnibridged` is the process that *is* in the right place. It runs as the
+//! `pliweed` is the process that *is* in the right place. It runs as the
 //! user, in the user's session, and it already holds a session-bus connection
 //! for the tray and for notifications. It fires at precisely the right
 //! moments: fresh install → the user enables the unit → the daemon starts →
@@ -55,7 +55,7 @@
 //! | let the daemon start regardless of the outcome | make D-Bus a startup dependency |
 //!
 //! `ReloadConfig` asks the bus to re-read its own configuration. It starts no
-//! process — including `omnibridge-gui`, which this must never cause to
+//! process — including `pliwee-gui`, which this must never cause to
 //! launch. Nothing here reads a peer's input, touches the trust store, or
 //! changes the protocol.
 //!
@@ -85,7 +85,7 @@ pub enum Activation {
     HealedByReload,
     /// The name was missing and one `ReloadConfig` did not make it appear.
     ///
-    /// Not an error here. It is what a machine with no `omnibridge-gui`
+    /// Not an error here. It is what a machine with no `pliwee-gui`
     /// installed looks like — the daemon and the GUI are separable — and it is
     /// also what a genuinely broken install looks like. Distinguishing them is
     /// not this code's job.
@@ -161,8 +161,8 @@ pub trait SessionBusControl: Send + Sync {
 /// call graph.
 ///
 /// The name comparison is `==`. Not `contains`, not `starts_with`:
-/// `io.github.yurisismotto.omnibridge` and
-/// `io.github.yurisismotto.omnibridge.Devel` are different applications, and a
+/// `io.github.yurisismotto.pliwee` and
+/// `io.github.yurisismotto.pliwee.Devel` are different applications, and a
 /// prefix match would report the wrong one as healed.
 pub async fn ensure_activatable(bus: &dyn SessionBusControl, name: &str) -> Activation {
     let names = match bus.list_activatable_names().await {
@@ -305,7 +305,7 @@ pub fn log(outcome: &Activation) {
         Activation::StillMissing => {
             tracing::debug!(
                 "the desktop application is not activatable on this session bus after a \
-                 reload; omnibridge-gui is probably not installed. The daemon is unaffected"
+                 reload; pliwee-gui is probably not installed. The daemon is unaffected"
             );
         }
         Activation::Unavailable(why) => {
@@ -320,7 +320,7 @@ mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Mutex;
 
-    const NAME: &str = "io.github.yurisismotto.omnibridge";
+    const NAME: &str = "io.github.yurisismotto.pliwee";
 
     /// A bus whose answers are scripted and whose calls are counted.
     ///
@@ -465,13 +465,16 @@ mod tests {
     #[tokio::test]
     async fn the_name_must_match_exactly() {
         // Every one of these contains the name as a substring, is a prefix of
-        // it, or differs only in case. None of them is OmniBridge.
+        // it, or differs only in case. None of them is Pliwee. The last is the
+        // OmniBridge 1.0.0 id: a stale service file an upgrade left behind must
+        // not count as Pliwee's own (ADR-0020, desktop integration).
         for near_miss in [
-            "io.github.yurisismotto.omnibridge.Devel",
-            "io.github.yurisismotto.omnibridg",
-            "io.github.yurisismotto.OmniBridge",
-            "xio.github.yurisismotto.omnibridge",
-            "io.github.yurisismotto.omnibridge2",
+            "io.github.yurisismotto.pliwee.Devel",
+            "io.github.yurisismotto.pliwe",
+            "io.github.yurisismotto.Pliwee",
+            "xio.github.yurisismotto.pliwee",
+            "io.github.yurisismotto.pliwee2",
+            "io.github.yurisismotto.omnibridge",
         ] {
             let bus = FakeBus::new(vec![Ok(vec![near_miss.into()]), Ok(vec![near_miss.into()])]);
             assert_eq!(

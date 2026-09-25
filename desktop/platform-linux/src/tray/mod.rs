@@ -2,33 +2,33 @@
 //!
 //! # Who owns the icon
 //!
-//! `omnibridged` does. That is the decision this module exists to implement and
+//! `pliweed` does. That is the decision this module exists to implement and
 //! the one worth defending, because the alternative is easier and wrong.
 //!
 //! A tray icon has to be there whenever the product is there. Pliwee's
-//! "whenever the product is there" is `omnibridged`: a `systemd --user` service
+//! "whenever the product is there" is `pliweed`: a `systemd --user` service
 //! that starts at login and holds the TCP listener, the mDNS record, the trust
 //! store and every capability. The GUI is not that, deliberately — it is two
 //! windows a person opens and closes, and `desktop/gui/src/lib.rs` has said so
-//! since the Quick Panel sprint: *"the agent is `omnibridged` and stays the only
+//! since the Quick Panel sprint: *"the agent is `pliweed` and stays the only
 //! long-lived process Pliwee runs."*
 //!
 //! So the item is owned by the process that is already always running. The
-//! obvious shortcut — keep `omnibridge-gui` alive forever, hidden, because GTK
+//! obvious shortcut — keep `pliwee-gui` alive forever, hidden, because GTK
 //! makes drawing a tray icon easy — would have made Pliwee a product with two
 //! resident processes, one of which exists only to hold an icon, and would
 //! have reversed a stated architectural position as a side effect of a UI
 //! feature.
 //!
 //! ```text
-//! omnibridged  ──owns──►  StatusNotifierItem  ──click──►  session D-Bus
+//! pliweed      ──owns──►  StatusNotifierItem  ──click──►  session D-Bus
 //!  (always)             /StatusNotifierItem                 │
 //!                       /MenuBar (DBusMenu)                 ▼
-//!                                              io.github.yurisismotto.omnibridge
+//!                                              io.github.yurisismotto.pliwee
 //!                                                 org.freedesktop.Application
 //!                                                     ActivateAction(…)
 //!                                                          │
-//!                                              omnibridge-gui, started by the bus
+//!                                              pliwee-gui, started by the bus
 //!                                              if it is not already running,
 //!                                              and gone again when its window
 //!                                              is closed
@@ -67,7 +67,7 @@ pub use model::{TrayAction, ICON_NAME, ITEM_ID, ITEM_STATUS, ITEM_TITLE};
 /// Distinguishes items within one process, exactly as KDE's client does.
 ///
 /// KDE names an item `org.kde.StatusNotifierItem-<pid>-<n>` with `n` counting
-/// up per process. `omnibridged` publishes one item and one only, so `n` is
+/// up per process. `pliweed` publishes one item and one only, so `n` is
 /// always 1 in production — the counter exists so that the deterministic tests
 /// can raise two items in a single test binary without inventing a naming
 /// scheme no shell has ever seen.
@@ -180,7 +180,7 @@ impl Drop for TrayHandle {
 /// else in the daemon reads its state — so its failure must cost exactly the
 /// tray and nothing more. Two things make that true:
 ///
-/// * **it is not in the daemon's `select!`.** `omnibridged` races the network
+/// * **it is not in the daemon's `select!`.** `pliweed` races the network
 ///   listener, the control server and `ctrl_c`, and the first of those to
 ///   finish ends the process. The tray is a separate `tokio::spawn`, so it can
 ///   end — cleanly, with an error, or by panicking — without the daemon

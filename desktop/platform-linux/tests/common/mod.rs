@@ -6,7 +6,7 @@
 //! algorithm, what it introspects, which menu calls it makes. What must not
 //! differ is the bus underneath, because a suite that silently ran against a
 //! bus with service directories would be a suite that could start the
-//! developer's real `omnibridge-gui` and pass for the wrong reason.
+//! developer's real `pliwee-gui` and pass for the wrong reason.
 //!
 //! So the bus lives here, once.
 
@@ -42,7 +42,7 @@ impl TestBus {
     /// **No `<servicedir>`.** Two consequences, both deliberate:
     ///
     /// * nothing in these tests can reach the developer's session — no real
-    ///   Plasma, no real GNOME Shell, and above all no real `omnibridge-gui`,
+    ///   Plasma, no real GNOME Shell, and above all no real `pliwee-gui`,
     ///   which a bus with the normal service directories would happily start;
     /// * nothing is activatable, so a test that expected D-Bus activation to
     ///   rescue it fails rather than quietly succeeding for the wrong reason.

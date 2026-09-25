@@ -438,7 +438,7 @@ pub struct NotificationManager {
 impl NotificationManager {
     /// Builds the manager and probes the backend once.
     ///
-    /// Probing here rather than lazily is what lets `omnibridge notifications
+    /// Probing here rather than lazily is what lets `pliwee notifications
     /// status` report what this session can actually do, and it is what
     /// decides the first role announcement. A desktop with no notification
     /// server is a normal, reportable state — not an error, and not a reason
@@ -661,7 +661,7 @@ impl NotificationManager {
             // Replacing it on attach alone was almost enough, and the gap is
             // the one N5 exists to close: a session that is rebuilt *without*
             // this capability negotiated never calls `attach_session` at all,
-            // so the previous session's roles survived it — and `omnibridge
+            // so the previous session's roles survived it — and `pliwee
             // notifications status` went on reporting "the device can source
             // notifications (epoch 2)" for a peer whose current session has
             // no channel to say so on. Nothing could flow, because the grant

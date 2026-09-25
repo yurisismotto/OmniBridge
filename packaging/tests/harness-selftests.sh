@@ -87,7 +87,7 @@ accepts() {
     fi
 }
 
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/omnibridge-selftest.XXXXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/pliwee-selftest.XXXXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 
 # ---------------------------------------------------------------------------
@@ -157,8 +157,8 @@ accepts "a count with the whitespace guests add" need_exact_count "installed pac
 section "A glob that matched nothing  (Packaging v1: L17 skipped its group)"
 # ---------------------------------------------------------------------------
 mkdir -p "$WORK/pkgs"
-: > "$WORK/pkgs/omnibridge_1.0_amd64.deb"
-: > "$WORK/pkgs/omnibridge-gui_1.0_amd64.deb"
+: > "$WORK/pkgs/pliwee_1.0_amd64.deb"
+: > "$WORK/pkgs/pliwee-gui_1.0_amd64.deb"
 rejects "a glob that matches nothing"        need_glob "$WORK/pkgs" '*.rpm' 2
 rejects "a glob that matches the wrong number" need_glob "$WORK/pkgs" '*.deb' 3
 rejects "a directory that does not exist"    need_glob "$WORK/nope" '*.deb' 2
@@ -201,7 +201,7 @@ accepts "a delta of one from a cleared baseline"     need_delta "mirrored" "0" "
 # ---------------------------------------------------------------------------
 section "A prompt with no stdin  (Packaging v1 bash -s; defect 4: silent decline)"
 # ---------------------------------------------------------------------------
-# The mechanical half. `omnibridge pair` read EOF from its [y/N] prompt and
+# The mechanical half. `pliwee pair` read EOF from its [y/N] prompt and
 # answered "no" while exiting 0, and two operator scans were lost before one
 # journal line explained it. What a harness can check before starting such a
 # command is that its stdin is not already closed.
@@ -209,9 +209,9 @@ section "A prompt with no stdin  (Packaging v1 bash -s; defect 4: silent decline
 # arrays and here-strings. On an Ubuntu runner /bin/sh is dash, which cannot
 # parse it -- see the note in rejects() for what that cost.
 accepts "a command given a real answer on stdin" \
-    bash -c '. '"$HERE"'/lib/assert.sh; need_stdin_answer "omnibridge pair" <<<"y"'
+    bash -c '. '"$HERE"'/lib/assert.sh; need_stdin_answer "pliwee pair" <<<"y"'
 rejects "a command whose stdin is closed" \
-    bash -c '. '"$HERE"'/lib/assert.sh; exec 0<&-; need_stdin_answer "omnibridge pair"'
+    bash -c '. '"$HERE"'/lib/assert.sh; exec 0<&-; need_stdin_answer "pliwee pair"'
 
 printf '\n-----------------------------------------------\n'
 printf '%d passed, %d failed\n' "$PASS" "$FAIL"

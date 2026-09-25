@@ -1,5 +1,5 @@
 [Unit]
-Description=OmniBridge — local device continuity daemon
+Description=Pliwee — local device continuity daemon
 Documentation=https://github.com/yurisismotto/omnibridge
 # Wait for a usable network, but do not fail without one: the daemon retries
 # and mDNS comes and goes with the link.
@@ -7,7 +7,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/omnibridged
+ExecStart=/usr/bin/pliweed
 Restart=on-failure
 RestartSec=5
 
@@ -19,7 +19,7 @@ ProtectSystem=strict
 ProtectHome=read-only
 
 # --- the runtime directory -------------------------------------------------
-# $XDG_RUNTIME_DIR/omnibridge holds control.sock. systemd creates it, owns it,
+# $XDG_RUNTIME_DIR/pliwee holds control.sock. systemd creates it, owns it,
 # and removes it when the unit stops.
 #
 # It is systemd's job and not the daemon's because ProtectSystem=strict IS
@@ -32,14 +32,20 @@ ProtectHome=read-only
 # 0700 is the same mode the daemon applies to the directory itself when it is
 # run outside systemd (platform-linux/src/lib.rs `bind`), so the two paths
 # agree rather than one relaxing what the other tightened.
-RuntimeDirectory=omnibridge
+RuntimeDirectory=pliwee
 RuntimeDirectoryMode=0700
 
 # --- the data directory ----------------------------------------------------
-# $XDG_DATA_HOME/omnibridge holds identity.key and state.json — the trust
+# $XDG_DATA_HOME/pliwee holds identity.key and state.json — the trust
 # store. It is the one path outside the runtime directory the daemon writes,
 # and it is deliberately NOT package-owned: the package must never create,
 # move or remove it.
+#
+# On the first start after an upgrade from OmniBridge the daemon also READS
+# $XDG_DATA_HOME/omnibridge, to copy the identity across (ADR-0020 D9), and
+# ~/.config/systemd/user, to notice an enablement still made under the old
+# unit name. Both are reads; ProtectHome=read-only already permits them, and
+# nothing below was widened for either.
 #
 # The grant is the parent, ~/.local/share, and not the leaf. Two measured
 # reasons, both in PACKAGING-V1-SYSTEMD-UNIT.md gate S1:
@@ -117,3 +123,9 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 
 [Install]
 WantedBy=default.target
+# The OmniBridge 1.0.0 name, omnibridged.service, is NOT an Alias= here. An
+# Alias= only takes effect when someone runs `enable`, and the accounts that
+# need it enabled the old name long before this file existed. The packages
+# instead ship omnibridged.service as a symlink to this file in the same
+# directory, which systemd loads as an alias whether or not anything is
+# re-enabled: see packaging/common/README.md, "Upgrading from OmniBridge".

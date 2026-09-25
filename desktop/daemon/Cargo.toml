@@ -22,7 +22,7 @@ todo = "warn"
 unwrap_used = "warn"
 
 [[bin]]
-name = "omnibridged"
+name = "pliweed"
 path = "src/main.rs"
 
 [features]

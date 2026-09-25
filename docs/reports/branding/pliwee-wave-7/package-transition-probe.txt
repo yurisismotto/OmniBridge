@@ -1,0 +1,138 @@
+rpm: RPM versão 6.0.2; systemd-rpm-macros-259.9-1.fc44.noarch
+--- what %systemd_user_preun expands to on this host:
+    if [ $1 -eq 0 ] && [ -x "/usr/lib/systemd/systemd-update-helper" ]; then 
+        # Package removal, not upgrade 
+        /usr/lib/systemd/systemd-update-helper remove-user-units omnibridged.service || : 
+    fi 
+--- and what remove-user-units does:
+        remove-user-units)
+            systemctl --global disable --no-warn "$@"
+    
+            [ -d /run/systemd/system ] || exit 0
+    
+            users=$(systemctl list-units 'user@*' --legend=no | sed -n -r 's/.*user@([0-9]+).service.*/\1/p')
+            for user in $users; do
+                SYSTEMD_BUS_TIMEOUT=15s \
+                        systemctl --user -M "$user@" disable --now --no-warn "$@" &
+            done
+            wait
+            ;;
+
+=== r1: dnf upgrade from omnibridge-1.0.0
+    >>> W7PROBE omnibridge-1.0.0 preun arg=0
+    -- installed after:
+    pliwee-1.1.0-1.noarch
+
+=== r2: dnf upgrade from omnibridge-1.0.0
+    >>> W7PROBE omnibridge-1.0.0 preun arg=1
+    -- installed after:
+    omnibridge-1.1.0-1.noarch
+    pliwee-1.1.0-1.noarch
+
+=== r3: dnf upgrade from omnibridge-1.0.0
+    >>> W7PROBE omnibridge-1.0.0 preun arg=0
+    -- installed after:
+    pliwee-1.1.0-1.noarch
+
+=== RF: the shipped shape — dnf upgrade, then again (idempotence), then rollback to 1.0.0
+    -- installed before:
+    omnibridge-1.0.0-1.noarch
+    omnibridge-gui-1.0.0-1.noarch
+    >>> W7PROBE omnibridge-gui-1.0.0 preun arg=0
+    >>> W7PROBE omnibridge-1.0.0 preun arg=1
+    -- installed after:
+    omnibridge-1.1.0-1.noarch
+    pliwee-1.1.0-1.noarch
+    pliwee-gui-1.1.0-1.noarch
+    -- omnibridged.service:
+    omnibridged.service -> pliweed.service
+    -- firewalld services:
+    omnibridge.xml
+    pliwee.xml
+    -- rpm -V pliwee:
+    clean
+    -- second upgrade:
+    Nothing to do.
+    -- rollback: rpm -e omnibridge pliwee-gui pliwee; rpm -i the 1.0.0 set:
+    omnibridge-1.0.0-1.noarch
+    omnibridge-gui-1.0.0-1.noarch
+    -- omnibridged.service after rollback:
+    old-unit
+
+=== RL: dnf upgrade with the new set as local files
+    Packages for argument '/w/rf-repo/pliwee-1.1.0-1.noarch.rpm' available, but not installed.
+    >>> W7PROBE omnibridge-gui-1.0.0 preun arg=0
+    >>> W7PROBE omnibridge-1.0.0 preun arg=1
+    -- installed after:
+    omnibridge-1.1.0-1.noarch
+    pliwee-1.1.0-1.noarch
+    pliwee-gui-1.1.0-1.noarch
+    -- omnibridged.service -> pliweed.service
+
+=== RL: dnf install with the new set as local files
+    >>> W7PROBE omnibridge-gui-1.0.0 preun arg=0
+    >>> W7PROBE omnibridge-1.0.0 preun arg=1
+    -- installed after:
+    omnibridge-1.1.0-1.noarch
+    pliwee-1.1.0-1.noarch
+    pliwee-gui-1.1.0-1.noarch
+    -- omnibridged.service -> pliweed.service
+
+=== DEB on docker.io/library/ubuntu:24.04 (b2b7ea366714)
+    --- d1 / apt upgrade
+    0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+    -- omnibridge 1.0.0-1 ii 
+    -- omnibridge-gui 1.0.0-1 ii 
+    --- d2 / apt upgrade
+    2 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
+    W7PROBE omnibridge-gui-1.0.0-1 postrm arg=upgrade
+    W7PROBE omnibridge-1.0.0-1 postrm arg=upgrade
+    -- omnibridge 1.1.0-1 ii 
+    -- omnibridge-gui 1.1.0-1 ii 
+    -- pliwee 1.1.0-1 ii 
+    -- pliwee-gui 1.1.0-1 ii 
+    --- d2 / apt-get upgrade
+    The following packages have been kept back:
+    0 upgraded, 0 newly installed, 0 to remove and 2 not upgraded.
+    -- omnibridge 1.0.0-1 ii 
+    -- omnibridge-gui 1.0.0-1 ii 
+    --- d2 / apt-get dist-upgrade
+    2 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
+    W7PROBE omnibridge-gui-1.0.0-1 postrm arg=upgrade
+    W7PROBE omnibridge-1.0.0-1 postrm arg=upgrade
+    -- omnibridge 1.1.0-1 ii 
+    -- omnibridge-gui 1.1.0-1 ii 
+    -- pliwee 1.1.0-1 ii 
+    -- pliwee-gui 1.1.0-1 ii 
+    --- d2: apt upgrade a second time
+    0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+
+=== DEB on docker.io/library/ubuntu:26.04 (e2e49769ecc7)
+    --- d1 / apt upgrade
+      Upgrading: 0, Installing: 0, Removing: 0, Not Upgrading: 0
+    -- omnibridge 1.0.0-1 ii 
+    -- omnibridge-gui 1.0.0-1 ii 
+    --- d2 / apt upgrade
+    Upgrading:
+      Upgrading: 2, Installing: 2, Removing: 0, Not Upgrading: 0
+    W7PROBE omnibridge-gui-1.0.0-1 postrm arg=upgrade
+    W7PROBE omnibridge-1.0.0-1 postrm arg=upgrade
+    -- omnibridge 1.1.0-1 ii 
+    -- omnibridge-gui 1.1.0-1 ii 
+    -- pliwee 1.1.0-1 ii 
+    -- pliwee-gui 1.1.0-1 ii 
+    --- d2 / apt-get upgrade
+    The following packages have been kept back:
+    0 upgraded, 0 newly installed, 0 to remove and 2 not upgraded.
+    -- omnibridge 1.0.0-1 ii 
+    -- omnibridge-gui 1.0.0-1 ii 
+    --- d2 / apt-get dist-upgrade
+    2 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
+    W7PROBE omnibridge-gui-1.0.0-1 postrm arg=upgrade
+    W7PROBE omnibridge-1.0.0-1 postrm arg=upgrade
+    -- omnibridge 1.1.0-1 ii 
+    -- omnibridge-gui 1.1.0-1 ii 
+    -- pliwee 1.1.0-1 ii 
+    -- pliwee-gui 1.1.0-1 ii 
+    --- d2: apt upgrade a second time
+      Upgrading: 0, Installing: 0, Removing: 0, Not Upgrading: 0

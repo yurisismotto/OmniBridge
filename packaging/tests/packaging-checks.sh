@@ -19,14 +19,21 @@
 set -euo pipefail
 
 ROOT="$(git -C "$(dirname -- "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
-SPEC="$ROOT/packaging/fedora/omnibridge.spec"
+SPEC="$ROOT/packaging/fedora/pliwee.spec"
 VENDOR_CONFIG="$ROOT/packaging/common/cargo-vendor-config.toml"
 
-UNIT="$ROOT/packaging/common/omnibridged.service"
-FIREWALLD="$ROOT/packaging/fedora/omnibridge-firewalld.xml"
+UNIT="$ROOT/packaging/common/pliweed.service"
+FIREWALLD="$ROOT/packaging/fedora/pliwee-firewalld.xml"
+# The OmniBridge 1.0.0 firewalld file. Kept, byte for byte, through Pliwee
+# v1.x (ADR-0020): a zone that names the `omnibridge` service must still load.
+LEGACY_FIREWALLD="$ROOT/packaging/fedora/omnibridge-firewalld.xml"
+LEGACY_FIREWALLD_SHA256="af8fa0c6865e35fad996cd7540a7e7c30cb93b90403839a7333ede01b449ab2d"
+# The first Pliwee version (rebrand plan B4). Every transition bound is
+# written against this literal; see the "OmniBridge -> Pliwee" group below.
+FIRST_PLIWEE_VERSION="1.1.0"
 DEBIAN="$ROOT/packaging/debian"
 GUI_DATA="$ROOT/desktop/gui/data"
-APP_ID="io.github.yurisismotto.omnibridge"
+APP_ID="io.github.yurisismotto.pliwee"
 
 BUNDLE_DIR=""
 RPM_FILES=()
@@ -44,7 +51,7 @@ done
 # `set -o pipefail` then reports as a failed check — a false negative that
 # only appears once the listing outgrows the 64 KiB pipe buffer, which is
 # exactly the kind of test that lies quietly for months.
-SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/omnibridge-checks.XXXXXXXX")"
+SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/pliwee-checks.XXXXXXXX")"
 trap 'rm -rf "$SCRATCH"' EXIT
 
 PASS=0
@@ -93,7 +100,7 @@ for br in pkgconf-pkg-config gtk4-devel libadwaita-devel glib2-devel; do
     if grep -qE "^BuildRequires:[[:space:]]+$br( |$)" "$SPEC"; then
         pass "B1: BuildRequires $br"
     else
-        fail "B1: the spec builds omnibridge-gui without BuildRequires: $br"
+        fail "B1: the spec builds pliwee-gui without BuildRequires: $br"
     fi
 done
 
@@ -155,7 +162,7 @@ fi
 # --------------------------------------------------------------------------
 group "The package installs everything it builds (audit P7)"
 # --------------------------------------------------------------------------
-for bin in omnibridged omnibridge omnibridge-gui; do
+for bin in pliweed pliwee pliwee-gui; do
     if grep -qE "^%\{_bindir\}/$bin$" "$SPEC"; then
         pass "%files lists $bin"
     else
@@ -177,19 +184,19 @@ group "The canonical systemd user unit (audit §7.1; gates S1-S3)"
 # is where a Debian package would have grown a second copy and where a
 # hardening change would have landed on one distribution and missed the other.
 if [ -f "$UNIT" ]; then
-    pass "the unit is at packaging/common/omnibridged.service"
+    pass "the unit is at packaging/common/pliweed.service"
 else
-    fail "packaging/common/omnibridged.service is missing"
+    fail "packaging/common/pliweed.service is missing"
 fi
-if [ -e "$ROOT/packaging/fedora/omnibridged.service" ]; then
+if [ -e "$ROOT/packaging/fedora/pliweed.service" ]; then
     fail "a second copy of the unit survives under packaging/fedora/"
 else
     pass "no duplicate unit under packaging/fedora/"
 fi
-if grep -qE '^install .*packaging/common/omnibridged\.service' "$SPEC"; then
+if grep -qE '^install .*packaging/common/pliweed\.service' "$SPEC"; then
     pass "the spec installs the common unit"
 else
-    fail "the spec does not install packaging/common/omnibridged.service"
+    fail "the spec does not install packaging/common/pliweed.service"
 fi
 
 if [ -f "$UNIT" ]; then
@@ -199,12 +206,12 @@ if [ -f "$UNIT" ]; then
     grep -vE '^[[:space:]]*(#|$)' "$UNIT" > "$SCRATCH/unit.directives"
 
     # P2, first defect: without this the daemon cannot create
-    # $XDG_RUNTIME_DIR/omnibridge under ProtectSystem=strict and has nowhere
+    # $XDG_RUNTIME_DIR/pliwee under ProtectSystem=strict and has nowhere
     # to bind control.sock.
-    if grep -qx 'RuntimeDirectory=omnibridge' "$SCRATCH/unit.directives"; then
-        pass "S2: RuntimeDirectory=omnibridge"
+    if grep -qx 'RuntimeDirectory=pliwee' "$SCRATCH/unit.directives"; then
+        pass "S2: RuntimeDirectory=pliwee"
     else
-        fail "S2: RuntimeDirectory=omnibridge is absent; the control socket has no directory"
+        fail "S2: RuntimeDirectory=pliwee is absent; the control socket has no directory"
     fi
     if grep -qx 'RuntimeDirectoryMode=0700' "$SCRATCH/unit.directives"; then
         pass "S2: RuntimeDirectoryMode=0700"
@@ -265,7 +272,7 @@ if [ -f "$UNIT" ]; then
     # The protection it nominally adds is already present twice: the module
     # syscalls are absent from the SystemCallFilter=@system-service allow-list,
     # and NoNewPrivileges=true stops the bounding set being re-gained across an
-    # execve. See packaging/common/omnibridged.service for the measurements.
+    # execve. See packaging/common/pliweed.service for the measurements.
     #
     # Same rule for the two directives that name the capability machinery
     # outright: neither belongs in a unit the user's own manager starts.
@@ -289,10 +296,10 @@ if [ -f "$UNIT" ]; then
     else
         fail "the unit is not installed into default.target"
     fi
-    if grep -qx 'ExecStart=/usr/bin/omnibridged' "$SCRATCH/unit.directives"; then
+    if grep -qx 'ExecStart=/usr/bin/pliweed' "$SCRATCH/unit.directives"; then
         pass "ExecStart is the absolute installed path"
     else
-        fail "ExecStart is not /usr/bin/omnibridged"
+        fail "ExecStart is not /usr/bin/pliweed"
     fi
     # The trust store is not the unit's to own. ReadWritePaths grants the
     # parent and stops there; anything that named the leaf as a directory to
@@ -326,7 +333,7 @@ fi
 # PATH. The template's placeholder is what makes that true after substitution,
 # and a template that lost it would install a relative Exec.
 dbus_template="$GUI_DATA/$APP_ID.service.in"
-if grep -qE '^Exec=@BINDIR@/omnibridge-gui' "$dbus_template"; then
+if grep -qE '^Exec=@BINDIR@/pliwee-gui' "$dbus_template"; then
     pass "P5: the D-Bus template's Exec is built from @BINDIR@"
 else
     fail "P5: $dbus_template does not derive Exec from @BINDIR@"
@@ -369,7 +376,7 @@ group "Every shipped XML parses"
 # a comment underline, which is illegal inside an XML comment and made them
 # unparseable. A malformed metainfo file is dropped by the AppStream cache
 # builder in silence, and a malformed firewalld service is rejected at load.
-for xml in "$FIREWALLD" "$metainfo" ; do
+for xml in "$FIREWALLD" "$LEGACY_FIREWALLD" "$metainfo" ; do
     [ -f "$xml" ] || continue
     if python3 -c 'import sys,xml.dom.minidom; xml.dom.minidom.parse(sys.argv[1])' "$xml" 2>/dev/null; then
         pass "parses: ${xml#"$ROOT"/}"
@@ -381,11 +388,13 @@ done
 # --------------------------------------------------------------------------
 group "Firewall: shipped, never enabled (audit §9)"
 # --------------------------------------------------------------------------
-if grep -q 'firewalld/services/omnibridge.xml' "$SPEC"; then
-    pass "the core package installs a firewalld service definition"
-else
-    fail "no firewalld service definition is installed"
-fi
+for fw in pliwee omnibridge; do
+    if grep -q "firewalld/services/$fw.xml" "$SPEC"; then
+        pass "the core package installs the firewalld service definition $fw.xml"
+    else
+        fail "the spec does not install firewalld/services/$fw.xml"
+    fi
+done
 # The whole design in one assertion: a package that runs firewall-cmd is
 # opening or closing a port the user did not ask it to.
 if grep -nE '^[^#]*firewall-cmd' "$SPEC" > "$SCRATCH/fw" 2>/dev/null && [ -s "$SCRATCH/fw" ]; then
@@ -394,11 +403,13 @@ if grep -nE '^[^#]*firewall-cmd' "$SPEC" > "$SCRATCH/fw" 2>/dev/null && [ -s "$S
 else
     pass "no scriptlet runs firewall-cmd, on any path"
 fi
-if [ -f "$FIREWALLD" ]; then
+for fw_file in "$FIREWALLD" "$LEGACY_FIREWALLD"; do
+[ -f "$fw_file" ] || { fail "firewalld file missing: ${fw_file#"$ROOT"/}"; continue; }
+if [ -f "$fw_file" ]; then
     # Parsed, not grepped. The file's own comment explains why UDP 5353 is
     # absent, and a grep over the raw text reads that explanation as a
     # declaration — which is exactly the false positive this replaced.
-    python3 - "$FIREWALLD" > "$SCRATCH/fw-ports" <<'PYEOF'
+    python3 - "$fw_file" > "$SCRATCH/fw-ports" <<'PYEOF'
 import sys, xml.dom.minidom
 doc = xml.dom.minidom.parse(sys.argv[1])
 for el in doc.getElementsByTagName("port"):
@@ -406,22 +417,31 @@ for el in doc.getElementsByTagName("port"):
 PYEOF
     declared="$(tr '\n' ' ' < "$SCRATCH/fw-ports" | sed 's/ $//')"
     if [ "$declared" = "tcp/55432" ]; then
-        pass "the firewalld service declares exactly tcp/55432 and nothing else"
+        pass "$(basename "$fw_file") declares exactly tcp/55432 and nothing else"
     else
-        fail "the firewalld service declares '$declared'; OmniBridge needs exactly tcp/55432"
+        fail "$(basename "$fw_file") declares '$declared'; Pliwee needs exactly tcp/55432"
     fi
     if grep -q '^udp/5353$' "$SCRATCH/fw-ports"; then
-        fail "the firewalld service redeclares mDNS; firewalld ships its own, correctly scoped"
+        fail "$(basename "$fw_file") redeclares mDNS; firewalld ships its own, correctly scoped"
     else
-        pass "mDNS is not redeclared (firewalld's own mdns service covers it)"
+        pass "$(basename "$fw_file"): mDNS is not redeclared (firewalld's own mdns service covers it)"
     fi
+fi
+done
+# "Keep installing omnibridge.xml, identical" (rebrand plan, Wave 7): the
+# legacy file is the one OmniBridge 1.0.0 shipped, not a re-authored copy.
+legacy_fw_sha="$(sha256sum "$LEGACY_FIREWALLD" 2>/dev/null | cut -d' ' -f1)"
+if [ "$legacy_fw_sha" = "$LEGACY_FIREWALLD_SHA256" ]; then
+    pass "omnibridge-firewalld.xml is byte-identical to the file OmniBridge 1.0.0 shipped"
+else
+    fail "omnibridge-firewalld.xml changed (sha256 ${legacy_fw_sha:-<unreadable>}); it must stay as shipped"
 fi
 
 # --------------------------------------------------------------------------
 group "systemd user lifecycle (audit §7.3, §4.3)"
 # --------------------------------------------------------------------------
 for macro in systemd_user_post systemd_user_preun systemd_user_postun; do
-    if grep -qE "^%$macro omnibridged\.service" "$SPEC"; then
+    if grep -qE "^%$macro pliweed\.service" "$SPEC"; then
         pass "%$macro is called"
     else
         fail "%$macro is missing; the unit will not be handled on install or removal"
@@ -451,14 +471,14 @@ fi
 group "Subpackage split (audit §12)"
 # --------------------------------------------------------------------------
 if grep -q '^%package gui' "$SPEC"; then
-    pass "omnibridge-gui is its own subpackage"
+    pass "pliwee-gui is its own subpackage"
 else
     fail "the GUI is not split out"
 fi
 if grep -qE '^Requires:[[:space:]]*%\{name\} = %\{version\}-%\{release\}' "$SPEC"; then
-    pass "omnibridge-gui requires the exact core build"
+    pass "pliwee-gui requires the exact core build"
 else
-    fail "omnibridge-gui does not pin the core package's exact version-release"
+    fail "pliwee-gui does not pin the core package's exact version-release"
 fi
 if grep -qE '^Suggests:[[:space:]]*wl-clipboard$' "$SPEC"; then
     pass "R5: Suggests wl-clipboard, with no version constraint"
@@ -472,7 +492,7 @@ fi
 group "Debian / Ubuntu packaging (audit §6)"
 # --------------------------------------------------------------------------
 for f in control rules changelog copyright source/format README.source \
-         omnibridge.install omnibridge-gui.install; do
+         pliwee.install pliwee-gui.install; do
     if [ -e "$DEBIAN/$f" ]; then
         pass "debian/$f"
     else
@@ -487,12 +507,12 @@ fi
 
 # One unit, every format. The Debian packaging must install the SAME file the
 # RPM does, not a copy that can drift.
-if grep -q 'packaging/common/omnibridged.service' "$DEBIAN/rules"; then
+if grep -q 'packaging/common/pliweed.service' "$DEBIAN/rules"; then
     pass "debian/rules installs the canonical unit from packaging/common/"
 else
-    fail "debian/rules does not install packaging/common/omnibridged.service"
+    fail "debian/rules does not install packaging/common/pliweed.service"
 fi
-if [ -e "$DEBIAN/omnibridged.service" ] || [ -e "$DEBIAN/omnibridge.user.service" ]; then
+if [ -e "$DEBIAN/pliweed.service" ] || [ -e "$DEBIAN/omnibridge.user.service" ]; then
     fail "a second copy of the unit exists under packaging/debian/"
 else
     pass "no duplicate unit under packaging/debian/"
@@ -556,7 +576,7 @@ fi
 # --------------------------------------------------------------------------
 group "No maintainer script may touch the trust store, on any path (R6)"
 # --------------------------------------------------------------------------
-# The one that matters most. ~/.local/share/omnibridge holds the identity key
+# The one that matters most. ~/.local/share/pliwee holds the identity key
 # and every pairing. A postrm that removed it on purge would look like
 # tidiness in review and would destroy the user's trust store silently.
 scripts_found=0
@@ -605,8 +625,8 @@ fi
 if [ -n "$BUNDLE_DIR" ]; then
 group "Generated source bundle"
 # --------------------------------------------------------------------------
-src_tarball="$(find "$BUNDLE_DIR" -maxdepth 1 -name 'omnibridge-*.tar.gz' | head -1)"
-vendor_tarball="$(find "$BUNDLE_DIR" -maxdepth 1 -name 'omnibridge-*-vendor.tar.xz' | head -1)"
+src_tarball="$(find "$BUNDLE_DIR" -maxdepth 1 -name 'pliwee-*.tar.gz' | head -1)"
+vendor_tarball="$(find "$BUNDLE_DIR" -maxdepth 1 -name 'pliwee-*-vendor.tar.xz' | head -1)"
 
 if [ -n "$src_tarball" ]; then pass "source tarball: $(basename "$src_tarball")"
 else fail "no source tarball in $BUNDLE_DIR"; fi
@@ -625,18 +645,19 @@ if [ -n "$src_tarball" ]; then
     for required in \
         desktop/Cargo.lock \
         desktop/Cargo.toml \
-        packaging/fedora/omnibridge.spec \
+        packaging/fedora/pliwee.spec \
         packaging/common/cargo-vendor-config.toml \
-        packaging/common/omnibridged.service \
+        packaging/common/pliweed.service \
+        packaging/fedora/pliwee-firewalld.xml \
         packaging/fedora/omnibridge-firewalld.xml \
         desktop/gui/tools/install-desktop-metadata.sh \
-        desktop/gui/data/io.github.yurisismotto.omnibridge.desktop \
-        desktop/gui/data/io.github.yurisismotto.omnibridge.service.in \
-        desktop/gui/data/io.github.yurisismotto.omnibridge.metainfo.xml \
-        docs/design/assets/omnibridge-app-icon.svg \
+        desktop/gui/data/io.github.yurisismotto.pliwee.desktop \
+        desktop/gui/data/io.github.yurisismotto.pliwee.service.in \
+        desktop/gui/data/io.github.yurisismotto.pliwee.metainfo.xml \
+        docs/design/assets/pliwee-app-icon.svg \
         docs/audits/linux-compat/LINUX-UBUNTU-DEBIAN-COMPAT-U2.md
     do
-        if grep -qE "^omnibridge-[^/]+/$required$" "$SCRATCH/src.list"; then
+        if grep -qE "^pliwee-[^/]+/$required$" "$SCRATCH/src.list"; then
             pass "bundle carries $required"
         else
             fail "bundle is missing $required"
@@ -687,15 +708,19 @@ else
     : > "$SCRATCH/all.list"
     core_list=""
     gui_list=""
+    transitional_list=""
     for rpm_file in "${RPM_FILES[@]}"; do
         name="$(rpm -qp --qf '%{NAME}' "$rpm_file" 2>/dev/null || basename "$rpm_file")"
         listing="$SCRATCH/$name.list"
-        rpm -qpl "$rpm_file" 2>/dev/null > "$listing"
+        # LC_ALL=C: rpm localises "(contains no files)", and a translated
+        # placeholder line would be read as a file (measured on a pt_BR host).
+        LC_ALL=C rpm -qpl "$rpm_file" 2>/dev/null > "$listing"
         cat "$listing" >> "$SCRATCH/all.list"
-        pass "read $name ($(wc -l < "$listing") files)"
+        pass "read $name ($(grep -vcx '(contains no files)' "$listing" || true) files)"
         case "$name" in
-            omnibridge-gui) gui_list="$listing" ;;
-            omnibridge)     core_list="$listing" ;;
+            pliwee-gui) gui_list="$listing" ;;
+            pliwee)     core_list="$listing" ;;
+            omnibridge) transitional_list="$listing" ;;
         esac
     done
 
@@ -703,11 +728,13 @@ else
 
     if [ -n "$core_list" ]; then
         for path in \
-            /usr/bin/omnibridged \
-            /usr/bin/omnibridge \
-            /usr/lib/systemd/user/omnibridged.service \
+            /usr/bin/pliweed \
+            /usr/bin/pliwee \
+            /usr/lib/systemd/user/pliweed.service \
             "/usr/share/icons/hicolor/scalable/apps/$APP_ID.svg" \
-            /usr/lib/firewalld/services/omnibridge.xml
+            /usr/lib/firewalld/services/pliwee.xml \
+            /usr/lib/firewalld/services/omnibridge.xml \
+            /usr/lib/systemd/user/omnibridged.service
         do
             if has "$core_list" "$path"; then
                 pass "core: $path"
@@ -717,18 +744,18 @@ else
         done
         # The GUI binary moved out. If it is still here, the split did not
         # happen and the two packages both own it.
-        if has "$core_list" /usr/bin/omnibridge-gui; then
-            fail "core package still contains /usr/bin/omnibridge-gui"
+        if has "$core_list" /usr/bin/pliwee-gui; then
+            fail "core package still contains /usr/bin/pliwee-gui"
         else
-            pass "core: the GUI binary is not here (it is in omnibridge-gui)"
+            pass "core: the GUI binary is not here (it is in pliwee-gui)"
         fi
         # R10. The evidence tree must not be in the package.
-        if grep -q '^/usr/share/doc/omnibridge/docs' "$core_list"; then
-            fail "R10: the docs/ evidence tree is in the package ($(grep -c '^/usr/share/doc/omnibridge/docs' "$core_list") files)"
+        if grep -q '^/usr/share/doc/pliwee/docs' "$core_list"; then
+            fail "R10: the docs/ evidence tree is in the package ($(grep -c '^/usr/share/doc/pliwee/docs' "$core_list") files)"
         else
             pass "R10: no docs/ tree in the package"
         fi
-        if has "$core_list" /usr/share/doc/omnibridge/README.md; then
+        if has "$core_list" /usr/share/doc/pliwee/README.md; then
             pass "core: README.md is shipped"
         else
             fail "core package ships no README.md"
@@ -737,7 +764,7 @@ else
 
     if [ -n "$gui_list" ]; then
         for path in \
-            /usr/bin/omnibridge-gui \
+            /usr/bin/pliwee-gui \
             "/usr/share/applications/$APP_ID.desktop" \
             "/usr/share/dbus-1/services/$APP_ID.service" \
             "/usr/share/metainfo/$APP_ID.metainfo.xml"
@@ -745,7 +772,7 @@ else
             if has "$gui_list" "$path"; then
                 pass "gui: $path"
             else
-                fail "omnibridge-gui is missing $path"
+                fail "pliwee-gui is missing $path"
             fi
         done
     fi
@@ -758,13 +785,47 @@ else
                 | cpio -i --to-stdout "./usr/share/dbus-1/services/$APP_ID.service" 2>/dev/null \
                 | grep '^Exec=' || true)"
             case "$exec_line" in
-                "Exec=/usr/bin/omnibridge-gui --gapplication-service")
+                "Exec=/usr/bin/pliwee-gui --gapplication-service")
                     pass "P5: the packaged D-Bus Exec is the absolute installed path" ;;
                 Exec=/*)
                     fail "P5: unexpected absolute Exec: $exec_line" ;;
                 *)
                     fail "P5: the packaged D-Bus Exec is not absolute: ${exec_line:-<none>}" ;;
             esac
+        fi
+    done
+
+    # The OmniBridge name for the unit is a symlink to pliweed.service in the
+    # same directory, which is what makes systemd load it as an alias. A
+    # regular file there would be a second unit and a second daemon.
+    for rpm_file in "${RPM_FILES[@]}"; do
+        [ "$(rpm -qp --qf '%{NAME}' "$rpm_file" 2>/dev/null)" = pliwee ] || continue
+        link="$(rpm -qp --qf '[%{FILENAMES} %{FILELINKTOS}\n]' "$rpm_file" 2>/dev/null \
+            | awk '$1 == "/usr/lib/systemd/user/omnibridged.service" { print $2 }')"
+        if [ "$link" = "pliweed.service" ]; then
+            pass "core: omnibridged.service is a symlink to pliweed.service (an alias)"
+        else
+            fail "core: omnibridged.service is not a symlink to pliweed.service (got '${link:-<not a symlink>}')"
+        fi
+    done
+    # The transitional package, when it is given: no files at all, and it
+    # requires the exact core build. Counted from the header's FILENAMES
+    # array, which is empty for a package with no files and is never
+    # translated, rather than from `rpm -qpl`'s human-readable placeholder.
+    for rpm_file in "${RPM_FILES[@]}"; do
+        [ "$(rpm -qp --qf '%{NAME}' "$rpm_file" 2>/dev/null)" = omnibridge ] || continue
+        n_files="$(rpm -qp --qf '[%{FILENAMES}\n]' "$rpm_file" 2>/dev/null | grep -c . || true)"
+        if [ "${n_files:-x}" = 0 ]; then
+            pass "transitional omnibridge: no files (FILENAMES is empty)"
+        else
+            fail "the transitional omnibridge package carries ${n_files:-?} file(s)"
+        fi
+        req="$(rpm -qp --requires "$rpm_file" 2>/dev/null | grep -E '^pliwee ' || true)"
+        ver="$(rpm -qp --qf '%{VERSION}-%{RELEASE}' "$rpm_file" 2>/dev/null)"
+        if [ "$req" = "pliwee = $ver" ]; then
+            pass "transitional omnibridge requires exactly pliwee = $ver"
+        else
+            fail "the transitional omnibridge requires '${req:-<no pliwee>}', not pliwee = $ver"
         fi
     done
 
@@ -781,6 +842,148 @@ else
         pass "no unexpanded rpm macro in any file list"
     fi
 fi
+fi
+
+# --------------------------------------------------------------------------
+group "OmniBridge -> Pliwee transition (ADR-0020; rebrand Wave 7)"
+# --------------------------------------------------------------------------
+# The bounds are exact, and the reasons they have the shape they do are
+# measurements, recorded in docs/reports/branding/PLIWEE-WAVE-7-*.md:
+#
+#   * RPM core: a TRANSITIONAL `omnibridge` package, NOT `Obsoletes:`. An
+#     obsoleted omnibridge-1.0.0 is erased, its %preun runs with $1 = 0, and
+#     that is `systemd-update-helper remove-user-units omnibridged.service`:
+#     disable --now for every logged-in user. Measured, dnf5, Fedora 44.
+#   * RPM gui: Obsoletes: + Provides: (omnibridge-gui has no systemd scriptlet).
+#   * Debian: Replaces: + Breaks: on both, and transitional packages, because
+#     `apt upgrade` installs nothing that no package depends on. Measured.
+
+version_gt() { [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -1)" = "$1" ]; }
+if version_gt "$FIRST_PLIWEE_VERSION" "1.0.0"; then
+    pass "the first Pliwee version $FIRST_PLIWEE_VERSION is above OmniBridge 1.0.0"
+else
+    fail "the first Pliwee version $FIRST_PLIWEE_VERSION is not above 1.0.0"
+fi
+if [ "$workspace_version" = "$FIRST_PLIWEE_VERSION" ] || version_gt "$workspace_version" "$FIRST_PLIWEE_VERSION"; then
+    pass "the workspace version $workspace_version is at or above the first Pliwee version"
+else
+    fail "the workspace version $workspace_version is below the first Pliwee version $FIRST_PLIWEE_VERSION"
+fi
+
+# The package set, from rpmspec when it is here. Without it the check is
+# recorded as not measured rather than passed.
+if command -v rpmspec >/dev/null 2>&1; then
+    rpmspec -q --qf '%{NAME}\n' --define 'dist %{nil}' "$SPEC" 2>/dev/null | sort > "$SCRATCH/spec-names"
+    if [ "$(tr '\n' ' ' < "$SCRATCH/spec-names")" = "omnibridge pliwee pliwee-gui " ]; then
+        pass "the spec builds exactly pliwee, pliwee-gui and the transitional omnibridge (rpmspec)"
+    else
+        fail "the spec builds '$(tr '\n' ' ' < "$SCRATCH/spec-names")'; expected omnibridge pliwee pliwee-gui"
+    fi
+else
+    printf '  n/a   rpmspec is not installed: the package set was not parsed (the line checks below still run)\n'
+fi
+spec_directives="$(grep -vE '^[[:space:]]*#' "$SPEC")"
+# The section of the spec that belongs to one (sub)package's preamble.
+preamble() {
+    awk -v want="$1" '
+        /^%package / { cur = ($2 == "-n") ? $3 : "pliwee-" $2; next }
+        /^%(description|prep|build|install|check|files|post|preun|postun|changelog)/ { cur = "" }
+        cur == want && !/^[[:space:]]*#/ { print }
+    ' "$SPEC"
+}
+{ awk '/^%package |^%description/ { exit } !/^[[:space:]]*#/ { print }' "$SPEC"; } > "$SCRATCH/pre-core"
+preamble omnibridge > "$SCRATCH/pre-trans"
+preamble pliwee-gui > "$SCRATCH/pre-gui"
+
+if grep -qE '^Obsoletes:' "$SCRATCH/pre-core"; then
+    fail "the core package declares Obsoletes:; an obsoleted omnibridge 1.0.0 runs remove-user-units (\$1 = 0)"
+else
+    pass "the core package declares no Obsoletes: (the transitional package upgrades omnibridge instead)"
+fi
+if grep -qE '^Provides:[[:space:]]*omnibridge([[:space:]]|$)' "$SCRATCH/pre-core"; then
+    fail "the core package Provides: omnibridge; the name belongs to the transitional package"
+else
+    pass "the core package does not Provide: omnibridge"
+fi
+if grep -q '^%package -n omnibridge$' <<<"$spec_directives" \
+    && grep -qxE 'Requires:[[:space:]]+%\{name\} = %\{version\}-%\{release\}' "$SCRATCH/pre-trans" \
+    && grep -qxE 'BuildArch:[[:space:]]+noarch' "$SCRATCH/pre-trans"; then
+    pass "transitional %package -n omnibridge: noarch, Requires: pliwee = %{version}-%{release}"
+else
+    fail "the transitional omnibridge package is missing or does not require the exact pliwee build"
+fi
+if grep -q '^%files -n omnibridge$' <<<"$spec_directives"; then
+    pass "the transitional omnibridge package has a %files section (and it is empty)"
+else
+    fail "no %files -n omnibridge: rpmbuild would not produce the transitional package"
+fi
+if grep -qxE "Obsoletes:[[:space:]]+omnibridge-gui < $FIRST_PLIWEE_VERSION" "$SCRATCH/pre-gui"; then
+    pass "pliwee-gui: Obsoletes: omnibridge-gui < $FIRST_PLIWEE_VERSION (exact bound)"
+else
+    fail "pliwee-gui does not declare exactly 'Obsoletes: omnibridge-gui < $FIRST_PLIWEE_VERSION'"
+fi
+if grep -qxE 'Provides:[[:space:]]+omnibridge-gui = %\{version\}-%\{release\}' "$SCRATCH/pre-gui"; then
+    pass "pliwee-gui: Provides: omnibridge-gui = %{version}-%{release}"
+else
+    fail "pliwee-gui does not Provide: omnibridge-gui = %{version}-%{release}"
+fi
+
+# The unit alias, in both formats.
+if grep -qxF 'ln -s pliweed.service %{buildroot}%{_userunitdir}/omnibridged.service' <<<"$spec_directives" \
+    && grep -qxF '%{_userunitdir}/omnibridged.service' <<<"$spec_directives"; then
+    pass "the spec ships omnibridged.service as a symlink to pliweed.service, and lists it"
+else
+    fail "the spec does not ship the omnibridged.service alias symlink (and list it in %files)"
+fi
+if [ "$(cat "$DEBIAN/pliwee.links" 2>/dev/null)" = "usr/lib/systemd/user/pliweed.service usr/lib/systemd/user/omnibridged.service" ]; then
+    pass "debian/pliwee.links ships omnibridged.service as a symlink to pliweed.service"
+else
+    fail "debian/pliwee.links does not ship exactly the omnibridged.service alias"
+fi
+# And the alias is a symlink, not an Alias= a user would have to re-enable to
+# get: the accounts that need it enabled the old name before this existed.
+if grep -qE '^Alias=' "$SCRATCH/unit.directives" 2>/dev/null; then
+    fail "the unit declares Alias=; the alias is shipped as a symlink, and an Alias= would only act on enable"
+else
+    pass "no Alias= in the unit (the alias is the shipped symlink)"
+fi
+
+# Debian relations, read per stanza.
+stanza() { awk -v want="$1" '/^Package: /{ p = ($2 == want) } p && !/^#/' "$DEBIAN/control"; }
+for pair in "pliwee omnibridge" "pliwee-gui omnibridge-gui"; do
+    set -- $pair
+    st="$(stanza "$1")"
+    for rel in Replaces Breaks; do
+        if grep -qxF "$rel: $2 (<< $FIRST_PLIWEE_VERSION~)" <<<"$st"; then
+            pass "debian $1: $rel: $2 (<< $FIRST_PLIWEE_VERSION~)"
+        else
+            fail "debian $1 does not declare exactly '$rel: $2 (<< $FIRST_PLIWEE_VERSION~)'"
+        fi
+    done
+    if grep -qE "^Provides:.*\b$2\b" <<<"$st"; then
+        fail "debian $1 Provides: $2; the name belongs to the transitional package"
+    else
+        pass "debian $1 does not Provide: $2"
+    fi
+    tr_st="$(stanza "$2")"
+    if grep -qx 'Architecture: all' <<<"$tr_st" \
+        && grep -qE "^Depends: $1 \(>= \\\$\{binary:Version\}\)" <<<"$tr_st"; then
+        pass "debian transitional $2: Architecture: all, Depends: $1 (>= \${binary:Version})"
+    else
+        fail "debian transitional $2 is missing, or does not depend on $1"
+    fi
+done
+if [ "$(awk 'NR == 1 { print $1, $2 }' "$DEBIAN/changelog")" = "pliwee ($FIRST_PLIWEE_VERSION-1)" ]; then
+    pass "debian/changelog's top entry is the pliwee source: $(head -1 "$DEBIAN/changelog")"
+else
+    fail "debian/changelog's top entry is not the pliwee source"
+fi
+
+# The desktop catalogue knows the old component was renamed.
+if grep -qF '<id>io.github.yurisismotto.omnibridge</id>' <<<"$(sed -n '/<replaces>/,/<\/replaces>/p' "$metainfo")"; then
+    pass "the metainfo <replaces> the OmniBridge component id"
+else
+    fail "the metainfo does not <replace> io.github.yurisismotto.omnibridge"
 fi
 
 # ---------------------------------------------------------------------------
@@ -833,7 +1036,7 @@ done
 # to remember all of them in prose.
 printf '\n== H2: the guest harnesses load lib/assert.sh ==\n'
 h2_bad=0
-for h in lifecycle-gates.sh lifecycle-peer-gates.sh security-log-evidence.sh; do
+for h in lifecycle-gates.sh lifecycle-peer-gates.sh security-log-evidence.sh upgrade-gates.sh; do
     f="$ROOT/packaging/tests/$h"
     [ -f "$f" ] || { fail "H2: $h is missing"; h2_bad=$((h2_bad + 1)); continue; }
     if grep -q 'lib/assert.sh' "$f"; then

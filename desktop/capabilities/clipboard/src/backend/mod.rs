@@ -72,7 +72,7 @@ impl std::fmt::Display for BackendError {
                  are waiting for a seat the compositor has not granted. A \
                  locked session is one cause; a session where no client may \
                  read a selection it does not own is another. Run \
-                 `omnibridge clipboard status` to see which applies here.",
+                 `pliwee clipboard status` to see which applies here.",
             ),
         }
     }
@@ -93,7 +93,7 @@ pub struct ClipboardWatch {
     /// Fires once per clipboard change. Carries no content: see the module
     /// docs.
     pub changes: mpsc::Receiver<()>,
-    /// What is doing the watching, for `omnibridge clipboard status`.
+    /// What is doing the watching, for `pliwee clipboard status`.
     pub source: &'static str,
     /// Dropped last, stopping the platform side.
     _guard: Box<dyn Send + Sync>,
@@ -210,7 +210,7 @@ pub trait ClipboardBackend: Send + Sync {
     /// Whether [`watch_changes`] can succeed on this session.
     ///
     /// A pure predicate answered from what was probed at startup: it must not
-    /// perform I/O and must not start a watcher. `omnibridge clipboard status`
+    /// perform I/O and must not start a watcher. `pliwee clipboard status`
     /// needs to tell the user whether `auto_send` will work *before* they
     /// turn it on, and finding out by starting a helper process would be a
     /// side effect in a status command.
@@ -219,7 +219,7 @@ pub trait ClipboardBackend: Send + Sync {
     fn watch_availability(&self) -> std::result::Result<(), String>;
 
     /// One line describing what this backend can actually do here, for
-    /// `omnibridge clipboard status`. Must not perform I/O.
+    /// `pliwee clipboard status`. Must not perform I/O.
     fn describe(&self) -> String {
         self.id().to_string()
     }
@@ -269,7 +269,7 @@ fn detect_linux() -> Arc<dyn ClipboardBackend> {
 /// The backend for a session that has no clipboard we can use.
 ///
 /// It exists so the capability can still be registered, still answer peers
-/// with an honest `FAILED`, and still report *why* in `omnibridge clipboard
+/// with an honest `FAILED`, and still report *why* in `pliwee clipboard
 /// status` — rather than the daemon refusing to start or the capability
 /// silently vanishing from the advertised set.
 pub struct Unsupported {

@@ -677,7 +677,7 @@ impl Outcome {
 /// # What this is not
 ///
 /// Not history. These are read out of the daemon's in-memory list for the
-/// current run and nothing here is written anywhere: restarting `omnibridged`
+/// current run and nothing here is written anywhere: restarting `pliweed`
 /// empties it, which is the intended behaviour and not a defect.
 ///
 /// # What it deliberately cannot carry

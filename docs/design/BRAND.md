@@ -55,6 +55,18 @@ hand-built `Settings`. Neither renames a device that already exists.
 > by `docs/reports/branding/pliwee-wave-6/derive_android_icons.py`, and
 > `BrandingResourcesTest` asserts them against those masters. What follows
 > still describes the **Linux desktop** artwork, until W7.
+>
+> **2026-09-25 (Pliwee Wave 7).** The Linux desktop is re-pointed too, so no
+> build draws the OmniBridge artwork any more. The GTK `brand_mark` (app bar,
+> empty states, Settings) compiles in `pliwee-mark.svg` itself, byte for byte.
+> The application icon — the hicolor `io.github.yurisismotto.pliwee.svg`, the
+> window icon and the tray `IconName` — is
+> [`pliwee-app-icon.svg`](assets/pliwee-app-icon.svg): the master's `<defs>`
+> copied byte for byte and placed once, square, on the 512-unit grid, by
+> `docs/reports/branding/pliwee-wave-7/derive_desktop_app_icon.py`.
+> `desktop/gui/tests/brand_assets.rs` re-proves both from the files. The
+> OmniBridge files below stay in the tree, unused, and are described as
+> history.
 
 The official OmniBridge artwork was supplied and installed on 2026-09-21. The
 `BLOCKED_VISUAL_ASSET` notice that stood here is withdrawn: there is no
@@ -258,9 +270,9 @@ the cyan → blue → violet sweep.
 
 | Cut | File | Where it is used |
 |---|---|---|
-| Full colour | [`omnibridge-mark.svg`](assets/omnibridge-mark.svg) | **Canonical** (desktop, until W7). App bar, empty states, GTK `brand_mark`. Android `logo_omnibridge_mark` until Pliwee W6, now `logo_pliwee_mark` from `pliwee-mark.svg` |
+| Full colour | [`omnibridge-mark.svg`](assets/omnibridge-mark.svg) | Canonical until Pliwee W7 (app bar, empty states, GTK `brand_mark`), now `pliwee-mark.svg`. Android `logo_omnibridge_mark` until Pliwee W6, now `logo_pliwee_mark` from `pliwee-mark.svg` |
 | Single colour | [`omnibridge-mark-mono.svg`](assets/omnibridge-mark-mono.svg) | Anywhere the mark must inherit the text colour |
-| Application icon | [`omnibridge-app-icon.svg`](assets/omnibridge-app-icon.svg) | Linux hicolor icon (Android adaptive foreground until Pliwee W6) |
+| Application icon | [`omnibridge-app-icon.svg`](assets/omnibridge-app-icon.svg) | Linux hicolor icon until Pliwee W7, now `pliwee-app-icon.svg` (Android adaptive foreground until Pliwee W6) |
 | Themed icon | [`omnibridge-android-monochrome.svg`](assets/omnibridge-android-monochrome.svg) | Android 13+ themed launcher layer until Pliwee W6; no build uses it now |
 | Wordmark | [`omnibridge-wordmark.svg`](assets/omnibridge-wordmark.svg) | Wordmark alone |
 | Lockup | [`omnibridge-logo-lockup.svg`](assets/omnibridge-logo-lockup.svg) | Mark + wordmark + tagline |
@@ -516,6 +528,7 @@ No screen contains a literal hex value.
 | [`omnibridge-logo-lockup.svg`](assets/omnibridge-logo-lockup.svg) | Mark + wordmark + tagline |
 | [`assets/icons/`](assets/icons/) | The 28-glyph Pliwee icon family — brand-neutral UI glyphs, carried over unchanged from the OmniBridge era |
 | `assets/pliwee-*.svg` | The five Pliwee masters — **BRAND APPROVED, canonical and frozen** (2026-09-24, `1ea65e6`); the Android drawables derive from them since W6, the desktop from W7; see [Pliwee vector masters](#pliwee-vector-masters) |
+| [`pliwee-app-icon.svg`](assets/pliwee-app-icon.svg) | 512 px desktop application icon (hicolor, window, tray) — a placement of `pliwee-mark.svg`, not a master (Pliwee W7) |
 
 Android adaptive icon: `res/mipmap-anydpi-v26/ic_launcher.xml` with a Dark
 (`#0B1020`) background, the mark as the adaptive foreground inside the 72 dp

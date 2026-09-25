@@ -264,7 +264,7 @@ async fn a_revoked_device_is_refused_on_its_next_connection() {
     session.close().await;
     server.state.end_pairing().await;
 
-    // The user runs `omnibridge unpair`.
+    // The user runs `pliwee unpair`.
     {
         let mut store = server.state.store.lock().await;
         assert!(store.revoke_peer(&phone.fingerprint).expect("revoke"));
@@ -311,7 +311,7 @@ async fn a_revoked_device_cannot_re_pair_without_a_new_token() {
     );
 }
 
-/// Revocation must be reversible by the owner, or `omnibridge unpair` is a
+/// Revocation must be reversible by the owner, or `pliwee unpair` is a
 /// permanent brick rather than a control.
 ///
 /// The defect this covers was found on real hardware during G17: a revoked
@@ -346,7 +346,7 @@ async fn a_revoked_device_can_pair_again_when_the_owner_opens_a_new_window() {
         .expect_err("a revoked device must be refused with no window open");
     assert!(matches!(err, Error::NotAuthorized), "{err:?}");
 
-    // The owner runs `omnibridge pair` again and confirms at the terminal.
+    // The owner runs `pliwee pair` again and confirms at the terminal.
     let fresh = server.open_pairing(TTL).await;
     let session = phone
         .connect(server.addr, server.fingerprint, Some(&fresh))

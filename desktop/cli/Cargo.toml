@@ -22,7 +22,7 @@ todo = "warn"
 unwrap_used = "warn"
 
 [[bin]]
-name = "omnibridge"
+name = "pliwee"
 path = "src/main.rs"
 
 [dependencies]

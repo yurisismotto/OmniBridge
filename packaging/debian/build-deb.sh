@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Builds OmniBridge's .deb packages in a disposable container, offline.
+# Builds Pliwee's .deb packages in a disposable container, offline.
 #
 #   ./build-deb.sh --image docker.io/library/debian:trixie dist
 #   ./build-deb.sh --image docker.io/library/ubuntu:24.04 dist --output out/u24
@@ -65,17 +65,17 @@ mkdir -p "$OUTPUT"
 # files it had just written, and the host had nothing.
 OUTPUT="$(cd -- "$OUTPUT" && pwd)"
 
-SRC_TARBALL="$(find "$BUNDLE" -maxdepth 1 -name 'omnibridge-*.tar.gz' ! -name '*vendor*' | head -1)"
-VENDOR_TARBALL="$(find "$BUNDLE" -maxdepth 1 -name 'omnibridge-*-vendor.tar.xz' | head -1)"
+SRC_TARBALL="$(find "$BUNDLE" -maxdepth 1 -name 'pliwee-*.tar.gz' ! -name '*vendor*' | head -1)"
+VENDOR_TARBALL="$(find "$BUNDLE" -maxdepth 1 -name 'pliwee-*-vendor.tar.xz' | head -1)"
 [ -n "$SRC_TARBALL" ] || die "no source tarball in $BUNDLE"
 [ -n "$VENDOR_TARBALL" ] || die "no vendor tarball in $BUNDLE"
 
-VERSION="$(basename "$SRC_TARBALL" | sed 's/^omnibridge-//; s/\.tar\.gz$//')"
+VERSION="$(basename "$SRC_TARBALL" | sed 's/^pliwee-//; s/\.tar\.gz$//')"
 
 printf '\n==> %s, OmniBridge %s\n' "$IMAGE" "$VERSION"
 printf '    source %s\n    vendor %s\n' "$(basename "$SRC_TARBALL")" "$(basename "$VENDOR_TARBALL")"
 
-STAGE="$(mktemp -d "${TMPDIR:-/tmp}/omnibridge-deb.XXXXXXXX")"
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/pliwee-deb.XXXXXXXX")"
 trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$STAGE/in"
 cp -- "$SRC_TARBALL" "$VENDOR_TARBALL" "$STAGE/in/"
@@ -133,11 +133,11 @@ rust_ok || { echo "the available rustc is below the 1.88 floor"; exit 1; }
 step "Unpack the bundle"
 # --------------------------------------------------------------------------
 mkdir -p /build && cd /build
-tar -xzf "/in/omnibridge-$OB_VERSION.tar.gz"
-cd "omnibridge-$OB_VERSION"
+tar -xzf "/in/pliwee-$OB_VERSION.tar.gz"
+cd "pliwee-$OB_VERSION"
 # The vendored crates, and the config that points cargo at them. From here on
 # every dependency resolves out of this tree.
-tar -xf "/in/omnibridge-$OB_VERSION-vendor.tar.xz" -C desktop
+tar -xf "/in/pliwee-$OB_VERSION-vendor.tar.xz" -C desktop
 install -Dm0644 packaging/common/cargo-vendor-config.toml desktop/.cargo/config.toml
 # The packaging under test, not whatever the tarball happened to carry.
 rm -rf debian
@@ -204,4 +204,12 @@ produced="$(find "$OUTPUT" -maxdepth 1 -name '*.deb' | wc -l)"
 if [ "$produced" -eq 0 ]; then
     die "the build reported success but no .deb reached $OUTPUT"
 fi
+# Exact, by name: the two Pliwee packages and the two transitional ones that
+# let `apt upgrade` move an OmniBridge 1.0.0 install (debian/control).
+for want in 'pliwee_*_amd64.deb' 'pliwee-gui_*_amd64.deb' \
+            'omnibridge_*_all.deb' 'omnibridge-gui_*_all.deb'; do
+    n="$(find "$OUTPUT" -maxdepth 1 -name "$want" | wc -l)"
+    [ "$n" -eq 1 ] || die "expected exactly one $want in $OUTPUT, found $n"
+done
+[ "$produced" -eq 4 ] || die "expected exactly 4 .deb files in $OUTPUT, found $produced"
 printf '\n%s package(s) in %s\n' "$produced" "$OUTPUT"

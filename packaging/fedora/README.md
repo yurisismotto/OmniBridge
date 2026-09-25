@@ -2,7 +2,7 @@
 
 ## systemd user unit
 
-The unit is **not** here. It is `packaging/common/omnibridged.service`, one
+The unit is **not** here. It is `packaging/common/pliweed.service`, one
 file that the RPM and the Debian packaging both install, so a hardening change
 cannot land on one distribution and miss the other. `packaging/common/README.md`
 explains what it does and why each directive is there; `%install` copies it
@@ -10,46 +10,51 @@ into `%{_userunitdir}`.
 
 The RPM ships it **disabled**. `systemctl --global preset` consults
 `/usr/lib/systemd/user-preset/`, Fedora 44 ships no line naming
-`omnibridged.service`, so the preset leaves it off — which is the intended
+`pliweed.service`, so the preset leaves it off — which is the intended
 outcome, not an accident (audit §4.3). The user turns it on:
 
 ```bash
-systemctl --user enable --now omnibridged.service
+systemctl --user enable --now pliweed.service
 ```
 
 ## RPM
 
-`omnibridge.spec` builds `omnibridged`, `omnibridge` and `omnibridge-gui` and
-produces **two** packages. `%check` runs the full test suite as part of the
-build, so a package that fails its own security tests does not get built.
+`pliwee.spec` builds `pliweed`, `pliwee` and `pliwee-gui` and
+produces **two** packages, plus an empty transitional `omnibridge` package
+that exists only to upgrade an OmniBridge 1.0.0 install in place (see
+[Upgrading from OmniBridge](#upgrading-from-omnibridge)). `%check` runs the
+full test suite as part of the build, so a package that fails its own security
+tests does not get built.
 
 It does **not** need `protobuf-compiler` — the build compiles the schema with
 `protox` in pure Rust (ADR-0004).
 
 ### What each package contains
 
-| `omnibridge` — core | |
+| `pliwee` — core | |
 | --- | --- |
-| `/usr/bin/omnibridged` | the daemon |
-| `/usr/bin/omnibridge` | the CLI |
-| `/usr/lib/systemd/user/omnibridged.service` | the user unit, shipped **disabled** |
-| `/usr/share/icons/hicolor/scalable/apps/io.github.yurisismotto.omnibridge.svg` | the app icon |
-| `/usr/lib/firewalld/services/omnibridge.xml` | TCP 55432, installed and **not enabled** |
-| `/usr/share/doc/omnibridge/README.md` | this project's README, and nothing else |
-| `/usr/share/licenses/omnibridge/LICENSE` | |
+| `/usr/bin/pliweed` | the daemon |
+| `/usr/bin/pliwee` | the CLI |
+| `/usr/lib/systemd/user/pliweed.service` | the user unit, shipped **disabled** |
+| `/usr/lib/systemd/user/omnibridged.service` | symlink to `pliweed.service`: the OmniBridge name, as an alias |
+| `/usr/share/icons/hicolor/scalable/apps/io.github.yurisismotto.pliwee.svg` | the app icon |
+| `/usr/lib/firewalld/services/pliwee.xml` | TCP 55432, installed and **not enabled** |
+| `/usr/lib/firewalld/services/omnibridge.xml` | the OmniBridge 1.0.0 file, unchanged: same port, kept through v1.x |
+| `/usr/share/doc/pliwee/README.md` | this project's README, and nothing else |
+| `/usr/share/licenses/pliwee/LICENSE` | |
 
-| `omnibridge-gui` — desktop application | |
+| `pliwee-gui` — desktop application | |
 | --- | --- |
-| `/usr/bin/omnibridge-gui` | |
-| `/usr/share/applications/io.github.yurisismotto.omnibridge.desktop` | installed verbatim |
-| `/usr/share/dbus-1/services/io.github.yurisismotto.omnibridge.service` | `Exec=/usr/bin/omnibridge-gui --gapplication-service` |
-| `/usr/share/metainfo/io.github.yurisismotto.omnibridge.metainfo.xml` | GNOME Software / KDE Discover |
+| `/usr/bin/pliwee-gui` | |
+| `/usr/share/applications/io.github.yurisismotto.pliwee.desktop` | installed verbatim |
+| `/usr/share/dbus-1/services/io.github.yurisismotto.pliwee.service` | `Exec=/usr/bin/pliwee-gui --gapplication-service` |
+| `/usr/share/metainfo/io.github.yurisismotto.pliwee.metainfo.xml` | GNOME Software / KDE Discover |
 
-`omnibridge-gui` requires `omnibridge = %{version}-%{release}` — the exact
+`pliwee-gui` requires `pliwee = %{version}-%{release}` — the exact
 build, because the GUI speaks the daemon's control socket and a version skew
 between the two is a protocol skew.
 
-**The icon is in the core package, not the GUI.** `omnibridged` owns the
+**The icon is in the core package, not the GUI.** `pliweed` owns the
 StatusNotifierItem and its icon name is the application id, which a shell
 resolves out of `hicolor` rather than out of the GUI's compiled-in GResource.
 A core-only install would otherwise draw a grey square on KDE.
@@ -65,7 +70,7 @@ development install to disagree about the application's identity.
 The package writes **no scriptlet** for the desktop database or the icon
 cache: Fedora's own rpm file triggers on `/usr/share/applications` and
 `/usr/share/icons/hicolor` already do both. It writes none for the session bus
-either, because root cannot reach a user's session bus — `omnibridged` repairs
+either, because root cannot reach a user's session bus — `pliweed` repairs
 its own D-Bus activation from inside the session instead.
 
 ### What the package does **not** contain
@@ -90,30 +95,53 @@ permits both flows (MEASURED, audit §4.6). The rest of this section is for
 `public`, `FedoraServer`, and anyone who has tightened their own zone.
 
 ```bash
-sudo firewall-cmd --permanent --add-service=omnibridge   # TCP 55432
+sudo firewall-cmd --permanent --add-service=pliwee       # TCP 55432
 sudo firewall-cmd --permanent --add-service=mdns         # discovery
+sudo firewall-cmd --reload
+```
+
+**Upgraded from OmniBridge?** A zone you added the `omnibridge` service to
+keeps working: `omnibridge.xml` is still installed, unchanged, and opens the
+same single port. Nothing edits your zone for you. To move the rule to the
+new name, once:
+
+```bash
+sudo firewall-cmd --permanent --add-service=pliwee --remove-service=omnibridge
 sudo firewall-cmd --reload
 ```
 
 Two services, because they are two different things and firewalld already
 ships the second. `mdns.xml` is correctly scoped to `224.0.0.251` and
-`ff02::fb`; redeclaring UDP 5353 in OmniBridge's own file would be a second
+`ff02::fb`; redeclaring UDP 5353 in Pliwee's own file would be a second
 definition to keep right and a broader rule than the stock one.
 
 Nothing else is opened. No port range, no outbound rule, no forwarding.
 
 ### Removing it
 
-Package removal deletes `/usr/lib/firewalld/services/omnibridge.xml`. If you
+Package removal deletes `/usr/lib/firewalld/services/pliwee.xml` (and
+`omnibridge.xml`). If you
 had added the service, firewalld keeps a permanent configuration naming a
 definition that no longer exists and warns about it. The package will not
 clean that up for you — removing a rule you added is the same violation as
 adding one you did not:
 
 ```bash
-sudo firewall-cmd --permanent --remove-service=omnibridge
+sudo firewall-cmd --permanent --remove-service=pliwee
 sudo firewall-cmd --reload
 ```
+
+## Upgrading from OmniBridge
+
+`sudo dnf upgrade ./pliwee-*.x86_64.rpm ./pliwee-gui-*.x86_64.rpm
+./omnibridge-*.noarch.rpm` (`dnf install` with the same files does the same;
+measured, dnf5 on Fedora 44) moves an OmniBridge 1.0.0 install to Pliwee in place. `omnibridge` is
+*upgraded* to the empty transitional package, which pulls in `pliwee`;
+`omnibridge-gui` is replaced by `pliwee-gui` through `Obsoletes:`. Why the core
+package is not simply obsoleted — the OmniBridge 1.0.0 `%preun` would disable
+the daemon for every logged-in user — and what carries over, what resets and
+how to go back, are in
+[`../common/README.md`](../common/README.md#upgrading-from-omnibridge).
 
 ### The package is built from a source bundle, not from a checkout
 
@@ -121,8 +149,8 @@ The spec takes two sources:
 
 | Source | File | What it is |
 | --- | --- | --- |
-| `Source0` | `omnibridge-<version>.tar.gz` | the upstream source |
-| `Source1` | `omnibridge-<version>-vendor.tar.xz` | every crate in `desktop/Cargo.lock`, vendored |
+| `Source0` | `pliwee-<version>.tar.gz` | the upstream source |
+| `Source1` | `pliwee-<version>-vendor.tar.xz` | every crate in `desktop/Cargo.lock`, vendored |
 
 The second one exists because `mock`, `koji` and Debian `buildd` all build
 with networking switched off, and `cargo build --locked` reads the committed
@@ -154,9 +182,9 @@ which is what is committed and what is authoritative.
 Artifacts land in `dist/` unless `--output` says otherwise:
 
 ```
-dist/omnibridge-1.0.0.tar.gz            Source0
-dist/omnibridge-1.0.0-vendor.tar.xz     Source1
-dist/omnibridge-1.0.0-SOURCES.sha256    checksums over both
+dist/pliwee-1.0.0.tar.gz            Source0
+dist/pliwee-1.0.0-vendor.tar.xz     Source1
+dist/pliwee-1.0.0-SOURCES.sha256    checksums over both
 ```
 
 `dist/` is a build output. Do not commit it.
@@ -190,14 +218,14 @@ second without building anything, so CI can gate on it the way
 rather than a prose copy that can drift:
 
 ```bash
-sudo dnf builddep packaging/fedora/omnibridge.spec
+sudo dnf builddep packaging/fedora/pliwee.spec
 ```
 
 Three groups, each there for a reason the spec names inline: the Rust
 toolchain at the measured MSRV (**1.88**, from `desktop/Cargo.toml`);
 `systemd-rpm-macros`, without which `%{_userunitdir}` does not expand and
 `%files` fails on a directory called `%{_userunitdir}`; and the GTK 4 /
-libadwaita development packages, without which `omnibridge-gui` does not
+libadwaita development packages, without which `pliwee-gui` does not
 compile — it is a workspace member, so it was always being built, just never
 with its dependencies declared.
 
@@ -205,9 +233,9 @@ with its dependencies declared.
 
 ```bash
 ./packaging/release/make-source-bundle.sh --rev v1.0.0 --output ~/rpmbuild/SOURCES
-cp packaging/fedora/omnibridge.spec ~/rpmbuild/SPECS/
-rpmbuild -bs ~/rpmbuild/SPECS/omnibridge.spec
-mock -r fedora-44-x86_64 --rebuild ~/rpmbuild/SRPMS/omnibridge-1.0.0-1.fc44.src.rpm
+cp packaging/fedora/pliwee.spec ~/rpmbuild/SPECS/
+rpmbuild -bs ~/rpmbuild/SPECS/pliwee.spec
+mock -r fedora-44-x86_64 --rebuild ~/rpmbuild/SRPMS/pliwee-1.0.0-1.fc44.src.rpm
 ```
 
 `mock` disables networking during `%build` by default, which is the point:
@@ -230,23 +258,23 @@ fails the build instead of being silently covered by the host's own packages;
 and it builds as a normal user, like mock.
 
 ```bash
-podman build -t omnibridge-buildroot:f44 -f - . <<'CONTAINERFILE'
+podman build -t pliwee-buildroot:f44 -f - . <<'CONTAINERFILE'
 FROM registry.fedoraproject.org/fedora:44
 RUN dnf -y install rpm-build rpmlint dnf-plugins-core && dnf clean all
-COPY packaging/fedora/omnibridge.spec /tmp/omnibridge.spec
-RUN dnf -y builddep /tmp/omnibridge.spec && dnf clean all
+COPY packaging/fedora/pliwee.spec /tmp/pliwee.spec
+RUN dnf -y builddep /tmp/pliwee.spec && dnf clean all
 RUN useradd -m -u 1000 builder && mkdir -p /build /out && chown builder /build /out
 USER builder
 CONTAINERFILE
 
 podman run --rm --network=none \
     -v "$PWD/dist":/sources:ro,z -v "$PWD/out":/out:z \
-    omnibridge-buildroot:f44 bash -c '
+    pliwee-buildroot:f44 bash -c '
         mkdir -p /build/{SOURCES,SPECS,RPMS,SRPMS,BUILD,BUILDROOT}
         cp /sources/*.tar.* /build/SOURCES/
-        tar -xzOf /build/SOURCES/omnibridge-*.tar.gz \
-            "omnibridge-*/packaging/fedora/omnibridge.spec" > /build/SPECS/omnibridge.spec
-        rpmbuild --define "_topdir /build" -ba /build/SPECS/omnibridge.spec
+        tar -xzOf /build/SOURCES/pliwee-*.tar.gz \
+            "pliwee-*/packaging/fedora/pliwee.spec" > /build/SPECS/pliwee.spec
+        rpmbuild --define "_topdir /build" -ba /build/SPECS/pliwee.spec
         find /build/RPMS /build/SRPMS -name "*.rpm" -exec cp {} /out/ \;'
 ```
 
@@ -255,7 +283,7 @@ podman run --rm --network=none \
 ```bash
 ./packaging/tests/packaging-checks.sh                      # static
 ./packaging/tests/packaging-checks.sh --bundle dist        # ...and the bundle
-./packaging/tests/packaging-checks.sh --rpm out/omnibridge-1.0.0-1.fc44.x86_64.rpm
+./packaging/tests/packaging-checks.sh --rpm out/pliwee-1.0.0-1.fc44.x86_64.rpm
 ```
 
 Cheap assertions over the things this tree has already been observed to get
@@ -269,7 +297,7 @@ script growing a reference to a user-state path.
 
 | Open | Where it belongs |
 | --- | --- |
-| Man pages for `omnibridged` and `omnibridge` | Not in any phase of the plan. `--help` is complete for both; `rpmlint` reports the gap and the report records it. |
+| Man pages for `pliweed` and `pliwee` | Not in any phase of the plan. `--help` is complete for both; `rpmlint` reports the gap and the report records it. |
 | Screenshots in the AppStream metadata | Needs published images. The strict validator warns; `validate-relax` does not, and a placeholder would be worse than the gap. |
 | `-debuginfo` / `-debugsource` | Deliberately off for v1 — `%global debug_package %{nil}`, audit Q2. |
 | Debian and Ubuntu packages | Phase 4. They install the same unit from `packaging/common/`. |

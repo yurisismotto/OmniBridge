@@ -97,7 +97,7 @@ where
                     // Said out loud because the alternative is a person
                     // waiting for a dialog that will never appear.
                     eprintln!(
-                        "omnibridge-gui: the daemon is running with \
+                        "pliwee-gui: the daemon is running with \
                          --accept-files-without-asking, so incoming files are \
                          accepted without a prompt."
                     );

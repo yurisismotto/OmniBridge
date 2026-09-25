@@ -1,0 +1,25 @@
+# Offline RPM build: podman, image localhost/omnibridge-rpm-buildroot:708828 (Fedora 44, systemd 259.9, rust 1.98.1), --network=none, user builder, CARGO_BUILD_JOBS=2 RUST_TEST_THREADS=2.
+# Inputs: pliwee-1.1.0.tar.gz sha256 f08172bf…894f, pliwee-1.1.0-vendor.tar.xz sha256 2ec86117…3b2 (make-source-bundle.sh --worktree), packaging/fedora/pliwee.spec from the tree.
+
+Wrote: /build/SRPMS/pliwee-1.1.0-1.fc44.src.rpm
+Executing(%mkbuilddir): /bin/sh -e /var/tmp/rpm-tmp.rYWt9N
+Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.jMuqdO
+Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.S2s7b1
+Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.fSHGan
+Executing(%check): /bin/sh -e /var/tmp/rpm-tmp.1gwoX2
+Executing(%doc): /bin/sh -e /var/tmp/rpm-tmp.eKVkpu
+Executing(%license): /bin/sh -e /var/tmp/rpm-tmp.iBV1Tp
+Executing(%license): /bin/sh -e /var/tmp/rpm-tmp.mSSunJ
+Wrote: /build/RPMS/noarch/omnibridge-1.1.0-1.fc44.noarch.rpm
+Wrote: /build/RPMS/x86_64/pliwee-gui-1.1.0-1.fc44.x86_64.rpm
+Wrote: /build/RPMS/x86_64/pliwee-1.1.0-1.fc44.x86_64.rpm
+Executing(rmbuild): /bin/sh -e /var/tmp/rpm-tmp.dLZCuz
+
+# %check (cargo test --release --locked --offline, whole workspace):
+binaries=75 passed=1121 failed=0 ignored=25
+
+# produced:
+e5e87adc314a1883dd96cdbabc78ad4a23b0ada360f5dbae73dd773ff6142d14  omnibridge-1.1.0-1.fc44.noarch.rpm
+4b69c8ca25dc2253bf5684ea7d382964f8f9615749692c9382bad89ac100fc01  pliwee-1.1.0-1.fc44.src.rpm
+aa2060e4e1e1d660d2da7e293e11100e67f63418129b93c746e066590b410f07  pliwee-1.1.0-1.fc44.x86_64.rpm
+5001391376db20e246342d05d151e9f83de1af49062874416a646f707d7e291c  pliwee-gui-1.1.0-1.fc44.x86_64.rpm

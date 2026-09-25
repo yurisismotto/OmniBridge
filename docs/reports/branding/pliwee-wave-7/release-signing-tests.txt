@@ -1,0 +1,92 @@
+
+== A test-only keyring ==
+gpg: verificando a trustdb
+gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+gpg: profundidade: 0 válidas:   2 assinadas:   0 confiáveis: 0-, 0i, 0n, 0m, 0c, 2p
+ok    two ephemeral test keys exist, FE17237C2A3CC4CDDBEE0B710D4079BDF7052B02 and 087F9E6A1481B1B3D56D55408CB6709375FC7BBC
+ok    the test key's user id says DO NOT TRUST in words
+ok    the test key's address is under .invalid, which RFC 2606 reserves
+ok    GNUPGHOME is a temporary directory, not the operator's own keyring
+ok    exported a public keyring holding only the expected key
+
+== A release directory shaped like the real one ==
+ok    a fixture release of 7 artifacts exists, with SHA256SUMS over paths
+
+== Positive control — an untampered, correctly signed release verifies ==
+ok    sign-release.sh signed the fixture release
+ok    SHA256SUMS.asc was written
+ok    POSITIVE CONTROL: verify-release.sh accepts the untampered release
+
+== Negative tests — each must FAIL verification ==
+ok    a modified artifact: rejected — at least one file does not match its digest in SHA256SUMS
+ok    a signature by the wrong key: rejected — the signature on SHA256SUMS is not good for /tmp/pliwee-signing.UcuMzi0K/omnibridge-release.gpg. gpg said: [GNUPG:] NEWSIG [GNUPG:] ERRSIG 8CB6709375F
+ok    a signature by a key the keyring does not hold: rejected — the signature on SHA256SUMS is not good for /tmp/pliwee-signing.UcuMzi0K/omnibridge-release.gpg. gpg said: [GNUPG:] NEWSIG [GNUPG:] ERRSIG 8CB6709375F
+ok    the tampered release is internally consistent, so only the signature can catch it
+ok    a re-generated manifest over tampered files: rejected — the signature on SHA256SUMS is not good for /tmp/pliwee-signing.UcuMzi0K/omnibridge-release.gpg. gpg said: [GNUPG:] NEWSIG [GNUPG:] KEY_CONSIDERED FE1
+ok    a missing signature: rejected — no SHA256SUMS.asc in '/tmp/pliwee-signing.UcuMzi0K/t4'. An unsigned release is not verified. Pass --allow-unsigned only if you understand that this ch
+ok    --allow-unsigned proceeds but reports the result as UNSIGNED
+ok    --allow-unsigned warns what is not being checked
+ok    an artifact named in the manifest but absent: rejected — 1 file(s) named in SHA256SUMS are not present
+ok    a truncated signature: rejected — the signature on SHA256SUMS is not good for /tmp/pliwee-signing.UcuMzi0K/omnibridge-release.gpg. gpg said: [GNUPG:] NODATA 1 [GNUPG:] NODATA 2 [GNUPG:
+ok    an empty signature file: rejected — SHA256SUMS.asc is empty
+ok    a good signature by an unexpected fingerprint: rejected — the signature is by FE17237C2A3CC4CDDBEE0B710D4079BDF7052B02 (primary FE17237C2A3CC4CDDBEE0B710D4079BDF7052B02), but 087F9E6A1481B1B3D56D55408CB670937
+
+== The signer must also refuse ==
+ok    sign-release.sh refuses to sign a manifest that does not match its files
+ok    no signature was written when the signer refused
+ok    sign-release.sh refuses to sign a release that would publish a private key
+
+== No signing material leaks ==
+ok    no private key material anywhere in the signed release directory
+ok    no secret key material in any script output captured by this run
+ok    sign-release.sh contains no passphrase-handling code at all; the gpg agent or the secret store holds it
+not ok  a key-shaped file is committed to the repository: android/signing/certs/legacy-omnibridge/app-signing-certificate.pem android/signing/certs/legacy-omnibridge/upload-certificate.pem 
+ok    tracked-tree precondition: a REAL armoured private key (492 bytes) is available as a control
+ok    tracked-scan control: the scanner FINDS a planted armoured private key
+ok    tracked-scan control: a header with no payload is NOT mistaken for a key
+ok    no tracked file carries private key armour (740 files scanned)
+ok    README.md publishes a primary fingerprint to compare against (F545DC184E909192C3FB6F6E64963019E731BE07)
+ok    README.md's verification recipe pins the key with --fingerprint
+ok    README.md tells the reader to obtain the key from the release page
+ok    README.md does not point at a repository copy of the public key
+
+== A certify-only master with a signing subkey ==
+gpg: verificando a trustdb
+gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+gpg: profundidade: 0 válidas:   3 assinadas:   0 confiáveis: 0-, 0i, 0n, 0m, 0c, 3p
+ok    certify-only master B926BDCAAAC358642906A9C1C5A0C6FD762FAC14 with signing subkey 26BE5EDF0BE99E4B0B4E61C3F06B5AE719BC226C
+ok    the master's own capability is certify (flags: cSC)
+ok    the master cannot sign data itself, so a compromised signing subkey does not imply a compromised identity
+ok    gpg pre-generated a revocation certificate at openpgp-revocs.d/B926BDCAAAC358642906A9C1C5A0C6FD762FAC14.rev (1275 bytes)
+ok    sign-release.sh signs when given the MASTER fingerprint
+ok    sign-release.sh reports that a subkey made the signature
+ok    verify-release.sh accepts the PUBLISHED primary fingerprint
+ok    verify-release.sh also accepts the signing subkey's own fingerprint
+ok    a master+subkey signature against an unrelated fingerprint: rejected — the signature is by 26BE5EDF0BE99E4B0B4E61C3F06B5AE719BC226C (primary B926BDCAAAC358642906A9C1C5A0C6FD762FAC14), but FE17237C2A3CC4CDDBEE0B710D4079BDF
+ok    a modified artifact under a master+subkey signature: rejected — at least one file does not match its digest in SHA256SUMS
+
+== A --keyring that gpg silently ignores ==
+ok    verify-release.sh's code does not rely on --no-default-keyring/--keyring, which keyboxd silently ignores
+ok    verify-release.sh verifies inside a private GNUPGHOME it built from --keyring
+ok    a keyboxd-configured fixture keyring is in effect, so the regression is measurable here
+ok    positive control: on that keyboxd host, the CORRECT keyring verifies
+ok    FALSE PASS: a keyring without the signer, on a keyboxd host whose own keyring has it: rejected — the signature on SHA256SUMS is not good for /tmp/pliwee-signing.UcuMzi0K/stranger-pub.gpg. gpg said: [GNUPG:] NEWSIG [GNUPG:] ERRSIG F06B5AE719BC226C 
+ok    FALSE FAIL: a genuine release verifies on a keyboxd host that never imported the key
+ok    a --keyring file that yields no public key: rejected — nothing could be imported from --keyring '/tmp/pliwee-signing.UcuMzi0K/garbage-keyring.gpg'; gpg cannot read it as a keyring
+ok    a --keyring carrying secret key material: rejected — --keyring '/tmp/pliwee-signing.UcuMzi0K/secret-keyring.gpg' carried secret key material; a verifier must hold none
+
+== An operational keyring holding only the signing subkey ==
+ok    the operational keyring lists the primary as 'sec#' — its secret half is absent
+ok    the operational keyring holds the signing subkey's secret ('ssb')
+ok    the primary's keygrip has no secret key file in the operational keyring
+ok    exactly one secret key file — the signing subkey — in the operational keyring
+ok    sign-release.sh signs by the PRIMARY fingerprint although the primary's secret is absent
+ok    a subkey-only signature verifies against the published primary fingerprint
+ok    a UID cannot be added from the operational keyring — certification needs the offline master
+ok    the primary's expiry cannot be changed from the operational keyring
+
+-----------------------------------------------
+61 passed, 1 failed
+
+Failed:
+  a key-shaped file is committed to the repository: android/signing/certs/legacy-omnibridge/app-signing-certificate.pem android/signing/certs/legacy-omnibridge/upload-certificate.pem 

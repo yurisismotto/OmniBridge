@@ -22,7 +22,7 @@ const GRACE: Duration = Duration::from_secs(20);
 ///
 /// Note the reconnection. A session's effective capability set is fixed at
 /// handshake time, so *widening* a grant takes effect on the next connection —
-/// which is the real flow too: `omnibridge pair`, then `omnibridge grant`, then the
+/// which is the real flow too: `pliwee pair`, then `pliwee grant`, then the
 /// phone reconnects. *Narrowing* is immediate, and that asymmetry is the safe
 /// direction: see `f15_*` and `f1_a_withdrawn_grant_*`.
 async fn paired(server: &TestServer, phone: &TestClient) -> ConnectedSession {

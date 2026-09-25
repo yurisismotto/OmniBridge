@@ -25,7 +25,7 @@
 //! authorised. It opens no socket of its own beyond the control client the
 //! rest of the application uses, starts no process, holds no state the
 //! Settings window cannot see, and adds no authority: every button here ends
-//! in a control request the `omnibridge` CLI could make by hand.
+//! in a control request the `pliwee` CLI could make by hand.
 //!
 //! # What it deliberately is not
 //!

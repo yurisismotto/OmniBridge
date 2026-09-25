@@ -1,4 +1,4 @@
-//! What `omnibridge status` and `omnibridge devices` actually report.
+//! What `pliwee status` and `pliwee devices` actually report.
 //!
 //! The defect behind these: one boolean called `connected` stood in for three
 //! different facts — is this device paired, does it have a session right now,

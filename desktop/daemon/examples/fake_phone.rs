@@ -6,15 +6,15 @@
 //!
 //! ```bash
 //! # terminal 1
-//! omnibridged
+//! pliweed
 //! # terminal 2
-//! omnibridge pair                       # copy the payload it prints
+//! pliwee pair                       # copy the payload it prints
 //! # terminal 3
 //! cargo run -p pliwee-daemon --example fake_phone -- pair '<payload>'
 //! cargo run -p pliwee-daemon --example fake_phone -- connect
 //!
 //! # files.v1: send a file to the desktop, or sit and receive one
-//! omnibridge grant <device> files.v1
+//! pliwee grant <device> files.v1
 //! cargo run -p pliwee-daemon --example fake_phone -- send ~/photo.jpg
 //! cargo run -p pliwee-daemon --example fake_phone -- receive
 //! ```
@@ -170,7 +170,7 @@ async fn run_files(
         .any(|c| c == "files.v1")
     {
         anyhow::bail!(
-            "files.v1 was not granted. Run: omnibridge grant <device> files.v1, \
+            "files.v1 was not granted. Run: pliwee grant <device> files.v1, \
              then reconnect."
         );
     }
@@ -554,7 +554,7 @@ async fn run(
         println!("sent battery.v1: 87% charging");
     }
 
-    // Stay connected briefly so `omnibridge status` can be run against a live
+    // Stay connected briefly so `pliwee status` can be run against a live
     // session in another terminal.
     tokio::time::sleep(Duration::from_secs(
         std::env::var("FAKE_PHONE_HOLD_SECS")

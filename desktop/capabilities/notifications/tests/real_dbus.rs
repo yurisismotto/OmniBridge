@@ -331,19 +331,19 @@ async fn the_real_session_can_report_human_dismissals() {
 /// exercised end to end.
 ///
 /// ```console
-/// OMNIBRIDGE_HUMAN_DISMISS=1 cargo test -p pliwee-capability-notifications \
+/// PLIWEE_HUMAN_DISMISS=1 cargo test -p pliwee-capability-notifications \
 ///     --test real_dbus -- --ignored --test-threads=1 human
 /// ```
 ///
-/// Without `OMNIBRIDGE_HUMAN_DISMISS` it skips loudly rather than failing, so an
+/// Without `PLIWEE_HUMAN_DISMISS` it skips loudly rather than failing, so an
 /// unattended `--ignored` run of this file does not hang for two minutes
 /// waiting for a person who is not there.
 #[tokio::test]
-#[ignore = "needs a person to dismiss a notification; set OMNIBRIDGE_HUMAN_DISMISS=1"]
+#[ignore = "needs a person to dismiss a notification; set PLIWEE_HUMAN_DISMISS=1"]
 async fn a_human_dismissal_on_this_desktop_is_reported_as_reason_two() {
-    if std::env::var_os("OMNIBRIDGE_HUMAN_DISMISS").is_none() {
+    if std::env::var_os("PLIWEE_HUMAN_DISMISS").is_none() {
         eprintln!(
-            "SKIPPED: set OMNIBRIDGE_HUMAN_DISMISS=1 to run the human-dismiss gate. \
+            "SKIPPED: set PLIWEE_HUMAN_DISMISS=1 to run the human-dismiss gate. \
              It posts one notification and waits for you to close it."
         );
         return;
@@ -397,11 +397,11 @@ async fn a_human_dismissal_on_this_desktop_is_reported_as_reason_two() {
 /// identity and origin the source sent, and that nothing else goes out.
 ///
 /// ```console
-/// OMNIBRIDGE_HUMAN_DISMISS=1 cargo test -p pliwee-capability-notifications \
+/// PLIWEE_HUMAN_DISMISS=1 cargo test -p pliwee-capability-notifications \
 ///     --test real_dbus -- --ignored --test-threads=1 end_to_end
 /// ```
 #[tokio::test]
-#[ignore = "needs a person to dismiss a notification; set OMNIBRIDGE_HUMAN_DISMISS=1"]
+#[ignore = "needs a person to dismiss a notification; set PLIWEE_HUMAN_DISMISS=1"]
 async fn a_human_dismissal_end_to_end_produces_exactly_one_dismiss_request() {
     use pliwee_capability_notifications::backend::{LockSource, UnknownLock};
     use pliwee_capability_notifications::{
@@ -412,8 +412,8 @@ async fn a_human_dismissal_end_to_end_produces_exactly_one_dismiss_request() {
     use pliwee_proto::Message as _;
     use std::sync::Arc;
 
-    if std::env::var_os("OMNIBRIDGE_HUMAN_DISMISS").is_none() {
-        eprintln!("SKIPPED: set OMNIBRIDGE_HUMAN_DISMISS=1 to run the end-to-end human gate.");
+    if std::env::var_os("PLIWEE_HUMAN_DISMISS").is_none() {
+        eprintln!("SKIPPED: set PLIWEE_HUMAN_DISMISS=1 to run the end-to-end human gate.");
         return;
     }
 
@@ -589,17 +589,17 @@ async fn a_human_dismissal_end_to_end_produces_exactly_one_dismiss_request() {
 /// report rather than simulated and claimed.
 ///
 /// ```console
-/// OMNIBRIDGE_SOAK=1 cargo test -p pliwee-capability-notifications \
+/// PLIWEE_SOAK=1 cargo test -p pliwee-capability-notifications \
 ///     --test real_dbus -- --ignored --test-threads=1 soak
 ///
 /// # a shorter or longer run
-/// OMNIBRIDGE_SOAK=1 OMNIBRIDGE_SOAK_SECS=3600 cargo test … soak
+/// PLIWEE_SOAK=1 PLIWEE_SOAK_SECS=3600 cargo test … soak
 /// ```
 ///
 /// **It closes everything it posts.** A soak that left an hour of
 /// notifications in somebody's shade would be worse than no soak.
 #[tokio::test]
-#[ignore = "runs for 30 minutes against the real notification server; set OMNIBRIDGE_SOAK=1"]
+#[ignore = "runs for 30 minutes against the real notification server; set PLIWEE_SOAK=1"]
 async fn a_thirty_minute_soak_stays_bounded_and_converges() {
     use pliwee_capability_notifications::backend::{logind::LogindLock, LockSource, UnknownLock};
     use pliwee_capability_notifications::{
@@ -611,11 +611,11 @@ async fn a_thirty_minute_soak_stays_bounded_and_converges() {
     use std::sync::Arc;
     use tokio::sync::RwLock;
 
-    if std::env::var_os("OMNIBRIDGE_SOAK").is_none() {
-        eprintln!("SKIPPED: set OMNIBRIDGE_SOAK=1 to run the N5 soak.");
+    if std::env::var_os("PLIWEE_SOAK").is_none() {
+        eprintln!("SKIPPED: set PLIWEE_SOAK=1 to run the N5 soak.");
         return;
     }
-    let seconds: u64 = std::env::var("OMNIBRIDGE_SOAK_SECS")
+    let seconds: u64 = std::env::var("PLIWEE_SOAK_SECS")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(30 * 60);

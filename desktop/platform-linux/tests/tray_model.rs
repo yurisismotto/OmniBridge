@@ -275,7 +275,7 @@ fn t11_nothing_on_the_public_tray_object_is_about_a_person_or_a_file() {
         MENU[2].label,
     ];
     let allowed: HashSet<&str> = HashSet::from([
-        "io.github.yurisismotto.omnibridge",
+        "io.github.yurisismotto.pliwee",
         "Pliwee",
         "ApplicationStatus",
         "Active",
@@ -336,7 +336,7 @@ fn t11_nothing_on_the_public_tray_object_is_about_a_person_or_a_file() {
 
 #[test]
 fn t12_the_icon_and_the_item_id_are_the_application_id() {
-    assert_eq!(ICON_NAME, "io.github.yurisismotto.omnibridge");
+    assert_eq!(ICON_NAME, "io.github.yurisismotto.pliwee");
     assert_eq!(ICON_NAME, DESKTOP_APP_ID);
     assert_eq!(ITEM_ID, DESKTOP_APP_ID);
     assert_eq!(ITEM_TITLE, "Pliwee");

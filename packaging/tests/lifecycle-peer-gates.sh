@@ -77,7 +77,7 @@ gx() { ga_exec "$DOMAIN" "$@"; }
 gu() {
     ga_exec "$DOMAIN" "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$GUEST_UID/bus sh -c $(printf '%q' "$*")"
 }
-ob() { gu "omnibridge $*"; }
+ob() { gu "pliwee $*"; }
 
 # ---------------------------------------------------------------------------
 section "Preconditions"
@@ -123,17 +123,17 @@ guest_ip="$(gx "ip -4 -br addr show scope global | awk '{print \$3}' | cut -d/ -
 gx "ping -c 3 -W 3 $PHONE_IP >/dev/null 2>&1" || abort "the guest cannot reach the phone"
 ok "guest $guest_ip reaches the phone at $PHONE_IP"
 
-gx 'pgrep -x omnibridged >/dev/null' || abort "omnibridged is not running in the guest"
-ok "omnibridged is running in the guest"
+gx 'pgrep -x pliweed >/dev/null' || abort "pliweed is not running in the guest"
+ok "pliweed is running in the guest"
 
 status_out="$(ob status 2>&1)"
-[ -n "${status_out//[[:space:]]/}" ] || abort "'omnibridge status' produced no output in the guest"
+[ -n "${status_out//[[:space:]]/}" ] || abort "'pliwee status' produced no output in the guest"
 printf '%s\n' "$status_out" | save "30-guest-status-before.txt"
 guest_dev_name="$(printf '%s\n' "$status_out" | sed -n 's/^ *device *\([^ ]*\) .*/\1/p' | head -1)"
 guest_dev_id="$(printf '%s\n' "$status_out"   | sed -n 's/.*device *[^ ]* *(\([0-9a-f]*\)).*/\1/p' | head -1)"
 guest_fpr="$(printf '%s\n' "$status_out" | sed -n 's/^ *fingerprint *//p' | head -1)"
 [ -n "$guest_dev_name" ] && [ -n "$guest_dev_id" ] && [ -n "$guest_fpr" ] \
-    || abort "could not read the guest's device name, id and fingerprint from 'omnibridge status'"
+    || abort "could not read the guest's device name, id and fingerprint from 'pliwee status'"
 ok "the guest under test is '$guest_dev_name' ($guest_dev_id), fingerprint $guest_fpr"
 
 # The identity must belong to THIS guest and no other. Two guests sharing a
@@ -228,7 +228,7 @@ if [ "$ALREADY_PAIRED" = "1" ]; then
     ok "the phone is already paired with this guest; no operator action needed"
 else
     payload_file="$EVIDENCE/34-pair-payload.txt"
-    # `omnibridge pair` prints "Pair with this device? [y/N]" and reads the
+    # `pliwee pair` prints "Pair with this device? [y/N]" and reads the
     # answer from STDIN with a 60 s timeout. Backgrounded with no stdin it
     # reads EOF instantly and declines -- and the only trace is one line in the
     # daemon journal:
@@ -243,12 +243,12 @@ else
     # harness accepts the pairing it asked for and nothing more. Which peer was
     # actually accepted is asserted by fingerprint and platform below rather
     # than assumed.
-    gu "printf 'y\ny\ny\n' | nohup omnibridge pair --ttl $PAIR_TTL > /tmp/ob-pair.txt 2>&1 &" >/dev/null 2>&1
+    gu "printf 'y\ny\ny\n' | nohup pliwee pair --ttl $PAIR_TTL > /tmp/ob-pair.txt 2>&1 &" >/dev/null 2>&1
     sleep 6
-    payload="$(gx 'sed -n "s/^ *\(omnibridge1:.*\)$/\1/p" /tmp/ob-pair.txt | head -1' | tr -d '[:space:]')"
+    payload="$(gx 'sed -n "s/^ *\(pliwee1:.*\)$/\1/p" /tmp/ob-pair.txt | head -1' | tr -d '[:space:]')"
     [ -n "$payload" ] \
-        || abort "'omnibridge pair' produced no omnibridge1: payload in the guest; nothing can be displayed to scan"
-    case "$payload" in omnibridge1:*) : ;; *) abort "pairing payload has an unexpected shape: $payload" ;; esac
+        || abort "'pliwee pair' produced no pliwee1: payload in the guest; nothing can be displayed to scan"
+    case "$payload" in pliwee1:*) : ;; *) abort "pairing payload has an unexpected shape: $payload" ;; esac
     printf '%s\n' "$payload" > "$payload_file"
     ok "pairing payload obtained from the guest (${#payload} bytes, expires in ${PAIR_TTL}s)"
 
@@ -327,7 +327,7 @@ OPERATOR ACTION REQUIRED — scan the pairing QR
                    device list gains an entry for $phone_model
   Time limit       ${PAIR_TTL}s -- the code is single-use and then expires
   If it expires    re-run this script; it opens a fresh window
-  Rollback         'omnibridge unpair $phone_model' in the guest. The guest is
+  Rollback         'pliwee unpair $phone_model' in the guest. The guest is
                    a throwaway VM; the tablet's pairing with the HOST daemon
                    (fedora) is NOT touched by this and must not be reset.
 =========================================================
@@ -477,7 +477,7 @@ ensure_connected() {
         pdump || true
     fi
     ptap_label "$guest_dev_name" '^Connect$' || abort "could not tap Connect for $guest_dev_name ($why)"
-    ga_wait_for "$DOMAIN" 90 "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID omnibridge devices 2>/dev/null | grep -q 'connected *yes'" \
+    ga_wait_for "$DOMAIN" 90 "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID pliwee devices 2>/dev/null | grep -q 'connected *yes'" \
         || abort "the phone did not reconnect to $guest_dev_name ($why); the gate below would measure a torn-down session"
     ok "reconnected to $guest_dev_name before $why"
 }
@@ -675,7 +675,7 @@ ob "notifications mirror $peer_id on" >/dev/null 2>&1
 state="$(ob devices 2>&1 | sed -n 's/^ *state *//p' | head -1 | tr -d '[:space:]')"
 if [ "$state" != "connected" ]; then
     ptap_label "$guest_dev_name" '^Connect$' || abort "could not tap Connect for $guest_dev_name"
-    ga_wait_for "$DOMAIN" 90 "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID omnibridge devices 2>/dev/null | grep -q 'connected *yes'" \
+    ga_wait_for "$DOMAIN" 90 "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID pliwee devices 2>/dev/null | grep -q 'connected *yes'" \
         || abort "the phone did not connect to $guest_dev_name; no capability gate below could run"
 fi
 ok "the phone is connected to $guest_dev_name"
@@ -692,7 +692,7 @@ ok "the phone is connected to $guest_dev_name"
 # So the line is bound to the LIVE session instead: of every session event in
 # the journal, the most recent one must be this device's establishment. If a
 # `connection ended` came after it, the line describes a session that is gone.
-sess_events="$(gu "journalctl --user -u omnibridged --no-pager -n 500 2>/dev/null | grep -E 'session established|connection ended'")"
+sess_events="$(gu "journalctl --user -u pliweed --no-pager -n 500 2>/dev/null | grep -E 'session established|connection ended'")"
 [ -n "${sess_events//[[:space:]]/}" ] \
     || abort "no session events at all in the guest journal; the connection cannot be characterised"
 printf '%s\n' "$sess_events" | save "38b-session-events.txt"
@@ -723,9 +723,9 @@ SENT_NOTIF_BODY="OBNBODY-$(head -c 15 /dev/urandom | base32 | tr -d '=' | head -
 section "L14 — clipboard, both directions"
 # ---------------------------------------------------------------------------
 clip_status="$(ob clipboard status 2>&1)"
-[ -n "${clip_status//[[:space:]]/}" ] || abort "'omnibridge clipboard status' produced no output"
+[ -n "${clip_status//[[:space:]]/}" ] || abort "'pliwee clipboard status' produced no output"
 printf '%s\n' "$clip_status" | save "40-L14-clipboard-status.txt"
-ok "L14: 'omnibridge clipboard status' answers ($(printf '%s\n' "$clip_status" | grep -c .) line(s))"
+ok "L14: 'pliwee clipboard status' answers ($(printf '%s\n' "$clip_status" | grep -c .) line(s))"
 
 # The gate asks specifically that status is HONEST about --sensitive. On
 # Ubuntu/Debian wl-clipboard is 2.2.1 and has no --sensitive; saying so is the
@@ -787,7 +787,7 @@ grep -qiF "Clipboard from $guest_dev_name" <<<"$("$PUI" "$EVIDENCE/.ui.xml" text
     || ok "L14: the phone carries no clipboard receipt from $guest_dev_name before the send"
 sleep 1
 
-send_out="$(gx "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$GUEST_UID/bus WAYLAND_DISPLAY=wayland-0 DISPLAY=:0 sh -c 'omnibridge clipboard send $peer_id > /tmp/cs.out 2>&1; echo rc=\$?; cat /tmp/cs.out'")"
+send_out="$(gx "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$GUEST_UID/bus WAYLAND_DISPLAY=wayland-0 DISPLAY=:0 sh -c 'pliwee clipboard send $peer_id > /tmp/cs.out 2>&1; echo rc=\$?; cat /tmp/cs.out'")"
 printf '%s\n' "$send_out" | save "41-L14-send-out.txt"
 send_rc="$(printf '%s' "$send_out" | sed -n 's/^rc=//p' | head -1)"
 
@@ -805,7 +805,7 @@ if [ "$send_rc" = "0" ]; then
         || notok "L14: the send does not report $clip_len bytes (sentinel length); the payload is not bound to this run"
 
     # The guest journal, inside the window opened above.
-    jc="$(gu "journalctl --user -u omnibridged --no-pager --since '$clip_mark' 2>/dev/null | grep -F 'clipboard update sent'")"
+    jc="$(gu "journalctl --user -u pliweed --no-pager --since '$clip_mark' 2>/dev/null | grep -F 'clipboard update sent'")"
     [ -n "${jc//[[:space:]]/}" ] \
         || abort "no 'clipboard update sent' line in the journal window opened at $clip_mark; the send cannot be corroborated"
     printf '%s\n' "$jc" | save "41d-L14-journal.txt"
@@ -879,7 +879,7 @@ if ptap_label "$guest_dev_name" '^Send clipboard$' 2>/dev/null || ptap_label 'Qu
         sleep 10
         caches_after="$(ob clipboard status 2>&1 | sed -n 's/^ *caches *\([0-9]*\) event id(s).*/\1/p' | head -1)"
         caches_after="${caches_after:-0}"
-        jr="$(gu "journalctl --user -u omnibridged --no-pager --since '$recv_mark' 2>/dev/null | grep -iE 'clipboard'")"
+        jr="$(gu "journalctl --user -u pliweed --no-pager --since '$recv_mark' 2>/dev/null | grep -iE 'clipboard'")"
         printf '%s\n' "$jr" | save "41g-L14-recv-journal.txt"
         if [ "$caches_after" -gt "$caches_before" ] 2>/dev/null; then
             ok "L14: phone -> guest arrived; the daemon's clipboard cache grew $caches_before -> $caches_after inside the bracketing window"
@@ -927,7 +927,7 @@ gx "test -s $SENDDIR/$SENT_FILE_NAME.txt" \
 ok "L15: source file staged in the guest's home with a unique name and a unique body"
 
 # NOT a force-stop. Stopping the app here is what tore the session down on the
-# first Ubuntu run: `omnibridge send` then answered "protocol violation: that
+# first Ubuntu run: `pliwee send` then answered "protocol violation: that
 # device is not connected", and L15's four checks failed against a connection
 # the harness had just killed. The app is brought forward instead, and the
 # session is asserted immediately before the offer.
@@ -935,14 +935,14 @@ ok "L15: source file staged in the guest's home with a unique name and a unique 
 sleep 6
 ensure_connected "L15"
 
-gx "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$GUEST_UID/bus sh -c 'nohup omnibridge send $peer_id $SENDDIR/$SENT_FILE_NAME.txt > /tmp/snd.out 2>&1 &'" >/dev/null 2>&1
+gx "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$GUEST_UID/bus sh -c 'nohup pliwee send $peer_id $SENDDIR/$SENT_FILE_NAME.txt > /tmp/snd.out 2>&1 &'" >/dev/null 2>&1
 sleep 6
 # The offer must have been ACCEPTED BY THE DAEMON before the phone is asked to
 # show a prompt. A send that never left the guest makes "no incoming-file
 # prompt appeared" a statement about the harness, not about the product.
 snd_err="$(gx 'cat /tmp/snd.out 2>/dev/null' | grep -i '^error:' | head -1 || true)"
 [ -z "${snd_err//[[:space:]]/}" ] \
-    || abort "'omnibridge send' refused the offer before the phone was ever involved: $snd_err"
+    || abort "'pliwee send' refused the offer before the phone was ever involved: $snd_err"
 ok "L15: the guest accepted the send with no error; the offer is on the wire"
 
 # The prompt is on the phone's FILES tab, and whatever screen the previous
@@ -998,7 +998,7 @@ sleep 12
 
 xfers="$(ob transfers 2>&1)"
 printf '%s\n' "$xfers" | save "43-L15-transfers.txt"
-[ -n "${xfers//[[:space:]]/}" ] || abort "'omnibridge transfers' produced no output"
+[ -n "${xfers//[[:space:]]/}" ] || abort "'pliwee transfers' produced no output"
 xfer_ctx="$(grep -A4 "$SENT_FILE_NAME" <<<"$xfers")"
 if grep -qE 'state +completed' <<<"$xfer_ctx"; then
     ok "L15: the guest reports the transfer completed"
@@ -1010,7 +1010,7 @@ fi
 # the same windowing flaw the S3 journal gate had, in a new place.
 xfer_id="$(printf '%s' "$xfers" | grep -B4 "$SENT_FILE_NAME" | sed -n 's/^ *\([0-9a-f]\{8\}\) *sending.*/\1/p' | tail -1)"
 if [ -n "$xfer_id" ]; then
-    jf="$(gu "journalctl --user -u omnibridged --no-pager --since '$files_mark' 2>/dev/null | grep -F 'transfer=$xfer_id'")"
+    jf="$(gu "journalctl --user -u pliweed --no-pager --since '$files_mark' 2>/dev/null | grep -F 'transfer=$xfer_id'")"
     need_window_covers "L15: the journal window" "$jf" "transfer=$xfer_id" \
         || abort "no journal line names transfer=$xfer_id; this transfer cannot be corroborated"
     printf '%s\n' "$jf" | save "43b-L15-journal.txt"
@@ -1019,7 +1019,7 @@ if [ -n "$xfer_id" ]; then
         && ok "L15: the guest journal records the peer confirming it stored THIS transfer" \
         || notok "L15: no 'peer confirmed it stored the file' line for transfer=$xfer_id"
 else
-    notok "L15: $SENT_FILE_NAME has no transfer id in 'omnibridge transfers'; nothing to corroborate"
+    notok "L15: $SENT_FILE_NAME has no transfer id in 'pliwee transfers'; nothing to corroborate"
 fi
 
 # The phone's own view, which is the half a user would check. The tab is found
@@ -1051,7 +1051,7 @@ fi
 # file belongs to another uid. Reaching it properly means the app's own
 # document picker, which is a human choosing a file. Recorded as NOT EXECUTED
 # with the reason rather than failed.
-dl="/home/$GUEST_USER/Downloads/OmniBridge"
+dl="/home/$GUEST_USER/Downloads/Pliwee"
 if gx "test -d $dl"; then
     n_recv="$(gx "find $dl -type f 2>/dev/null | wc -l" | tr -d '[:space:]')"
     modes="$(gx "find $dl -type f -printf '%m %u\n' 2>/dev/null | sort -u")"
@@ -1073,7 +1073,7 @@ section "L16 — notification mirroring, and no content in the journal"
 # ---------------------------------------------------------------------------
 ensure_connected "L16"
 nstatus_before="$(ob 'notifications status' 2>&1)"
-[ -n "${nstatus_before//[[:space:]]/}" ] || abort "'omnibridge notifications status' produced no output"
+[ -n "${nstatus_before//[[:space:]]/}" ] || abort "'pliwee notifications status' produced no output"
 printf '%s\n' "$nstatus_before" | save "46-L16-status-before.txt"
 
 # Role convergence first. Mirroring with the device claiming no source role
@@ -1154,7 +1154,7 @@ fi
 # The privacy half. It is only evidence if the capture is non-empty AND covers
 # the operation: grepping an empty journal for a sentinel returns 0 hits and
 # proves nothing whatsoever.
-jnl="$(gu "journalctl --user -u omnibridged --no-pager --since '$mark' 2>/dev/null" || true)"
+jnl="$(gu "journalctl --user -u pliweed --no-pager --since '$mark' 2>/dev/null" || true)"
 n_jnl="$(printf '%s\n' "$jnl" | grep -c . || true)"
 printf '%s\n' "$jnl" | save "48-L16-journal.txt"
 if [ "${n_jnl:-0}" -lt 2 ] 2>/dev/null; then

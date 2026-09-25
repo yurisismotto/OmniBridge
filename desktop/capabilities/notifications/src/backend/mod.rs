@@ -111,7 +111,7 @@ impl Urgency {
 /// Why a notification server call did not do what was asked.
 ///
 /// Coarse on purpose. These reach the local operator through the daemon log
-/// and `omnibridge notifications status`, and a reduced form of the *class* — not
+/// and `pliwee notifications status`, and a reduced form of the *class* — not
 /// the message — reaches a peer as a [`pliwee_proto::v1::capabilities::NotificationOutcome`].
 /// They never carry notification content, and the `Failed` variant carries a
 /// platform error *name* rather than a formatted message for the same reason.
@@ -297,7 +297,7 @@ pub trait NotificationSink: Send + Sync {
     fn id(&self) -> &'static str;
 
     /// One line describing what is actually there, for
-    /// `omnibridge notifications status`.
+    /// `pliwee notifications status`.
     fn describe(&self) -> String;
 
     /// What this server can do. Read once at connect; never re-negotiated.

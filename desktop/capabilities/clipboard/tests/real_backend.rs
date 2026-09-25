@@ -634,7 +634,7 @@ async fn a_watch_can_be_stopped_and_restarted() {
 // Detection
 // ---------------------------------------------------------------------------
 
-/// `omnibridge clipboard status` must be able to say what works *before* anything
+/// `pliwee clipboard status` must be able to say what works *before* anything
 /// is attempted, so a person is not told to turn on a flag that cannot work.
 #[tokio::test]
 #[ignore = "inspects the real session; run with --ignored --test-threads=1"]

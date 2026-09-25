@@ -73,7 +73,7 @@ const IFACE: &str = "org.freedesktop.Notifications";
 /// right name and icon for a mirrored notification, and so a future Linux
 /// source can recognise this process's own notifications by their
 /// `desktop-entry` hint.
-const APP_ID: &str = "io.github.yurisismotto.omnibridge";
+const APP_ID: &str = "io.github.yurisismotto.pliwee";
 
 /// `-1` asks the server for its own default expiry.
 ///
@@ -117,7 +117,7 @@ impl DbusSink {
 
         // `GetServerInformation` is the probe: it is the cheapest call that
         // fails when nothing owns the name, and its answer is what
-        // `omnibridge notifications status` reports.
+        // `pliwee notifications status` reports.
         let (name, vendor, version, spec): (String, String, String, String) =
             match proxy.call("GetServerInformation", &()).await {
                 Ok(info) => info,

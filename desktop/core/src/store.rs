@@ -368,7 +368,7 @@ impl Store {
 
     /// Reports what the stored identity looks like, without touching it.
     ///
-    /// A pure observation, for `omnibridge status` and for tests that need to
+    /// A pure observation, for `pliwee status` and for tests that need to
     /// prove nothing was regenerated.
     pub fn probe_identity(
         secrets: &dyn SecretStore,
@@ -492,7 +492,7 @@ impl Store {
 
     /// How this device's private key is protected.
     ///
-    /// Shown by `omnibridge status`. Never advertised to a peer: a device's
+    /// Shown by `pliwee status`. Never advertised to a peer: a device's
     /// claim about its own key storage is unverifiable, and an unverifiable
     /// self-report is not a security property (PLAT-DEC-012).
     pub fn key_backing(&self) -> KeyBacking {
@@ -546,7 +546,7 @@ impl Store {
         self.peers.get(fp).filter(|p| !p.revoked)
     }
 
-    /// Looks up a peer including revoked ones (for `omnibridge devices` output).
+    /// Looks up a peer including revoked ones (for `pliwee devices` output).
     pub fn peer_record(&self, fp: &Fingerprint) -> Option<&TrustedPeer> {
         self.peers.get(fp)
     }
