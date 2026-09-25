@@ -17,6 +17,10 @@
 use adw::prelude::*;
 use pliwee_control::{DeviceReport, Request, Response};
 
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
+
+use super::live::{Binder, Plan};
 use super::Pages;
 use crate::panel::model::{BATTERY, CLIPBOARD, FILES, NOTIFICATIONS};
 use crate::widgets::{self, Status, SPACING_SM};
@@ -179,15 +183,124 @@ pub(crate) fn capability_summary(device: &DeviceReport) -> String {
     format!("Granted: {}", names.join(", "))
 }
 
-pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
-    widgets::clear(container);
-    container.append(&widgets::title("Devices"));
-
-    let devices = state
+/// The devices this page lists: the `devices` reply when there is one, the
+/// list inside `status` until then.
+fn devices_of(state: &DaemonState) -> &[DeviceReport] {
+    state
         .devices
         .as_deref()
         .or(state.status.as_ref().map(|s| s.devices.as_slice()))
-        .unwrap_or(&[]);
+        .unwrap_or(&[])
+}
+
+/// What decides which widgets this page has and what each is called.
+///
+/// Everything a card's *controls* are built from, and nothing that moves on
+/// its own. `silent_secs`, `last_seen_secs_ago`, the connection state and the
+/// grants are deliberately absent: the daemon computes the ages when it
+/// answers, so they differ on every poll, and a page keyed on them was
+/// rebuilt every `REFRESH_SECS` under the W2-GNOME Orca gate. They are
+/// [`CardValues`] instead, written into the existing widgets in place.
+///
+/// Grants are values rather than structure so that the switch a person has
+/// just moved is still the same object when the daemon's answer arrives.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct CardLayout {
+    pub fingerprint: String,
+    pub fingerprint_short: String,
+    pub device_id: String,
+    pub name: String,
+    pub platform: String,
+    /// Decides the whole control set — see [`card_controls`] — and, across
+    /// the page, whether "Remove all revoked devices" exists and its count.
+    pub revoked: bool,
+}
+
+/// The page's key: one entry per card, in order. Empty draws the empty state.
+pub(crate) fn layout(devices: &[DeviceReport]) -> Vec<CardLayout> {
+    devices
+        .iter()
+        .map(|d| CardLayout {
+            fingerprint: d.fingerprint.clone(),
+            fingerprint_short: d.fingerprint_short.clone(),
+            device_id: d.device_id.clone(),
+            name: d.device_name.clone(),
+            platform: d.platform.clone(),
+            revoked: d.revoked,
+        })
+        .collect()
+}
+
+/// What on a card changes without its controls changing, as it is drawn.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct CardValues {
+    pub status: Status,
+    /// The always-visible line: trust, platform, ages, what is granted.
+    pub facts: String,
+    /// "Paired · Connected now", inside the disclosure.
+    pub connection: String,
+    /// Each switchable capability and whether the trust store grants it.
+    pub grants: Vec<(&'static str, bool)>,
+}
+
+pub(crate) fn card_values(device: &DeviceReport) -> CardValues {
+    // Paired is durable; connected is momentary. Reporting them together is
+    // what stops a dead session from reading as a live one.
+    let mut facts = vec![
+        trust_label(device).to_string(),
+        format!("Platform: {}", device.platform),
+    ];
+    if let Some(silent) = device.silent_secs {
+        facts.push(format!("Silent for {silent}s"));
+    }
+    if let Some(seen) = device.last_seen_secs_ago {
+        facts.push(format!("Last session ended {seen}s ago"));
+    }
+    facts.push(capability_summary(device));
+    CardValues {
+        status: Status::from_device_state(device.state),
+        facts: facts.join(" · "),
+        connection: format!(
+            "{} · {}",
+            if device.paired {
+                "Paired"
+            } else {
+                "Not paired"
+            },
+            if device.connected {
+                "Connected now"
+            } else {
+                "Not connected"
+            },
+        ),
+        grants: CAPABILITIES
+            .iter()
+            .map(|(id, ..)| (*id, device.granted_capabilities.iter().any(|c| c == id)))
+            .collect(),
+    }
+}
+
+/// The accessible name of a grant switch. Named after the device as well as
+/// the capability: with several cards on one page, "Clipboard for this
+/// device" was the same string on each.
+pub(crate) fn grant_accessible_label(title: &str, device_name: &str) -> String {
+    format!("{title} for {device_name}")
+}
+
+/// Draws the page, rebuilding it only when [`layout`] changed. See
+/// [`super::live`].
+pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) -> Plan {
+    let devices = devices_of(state);
+    pages
+        .devices_surface
+        .draw(container, layout(devices), state, |binder| {
+            build(container, devices, pages, binder)
+        })
+}
+
+fn build(container: &gtk::Box, devices: &[DeviceReport], pages: &Pages, binder: &mut Binder) {
+    widgets::clear(container);
+    container.append(&widgets::title("Devices"));
 
     if devices.is_empty() {
         container.append(&widgets::empty_state(
@@ -214,6 +327,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
                  Devices you still trust are not affected.",
                 fingerprints.len()
             ))]);
+            binder.focusable(BULK_KEY, &bulk);
             let pages = pages.clone();
             bulk.connect_clicked(move |button| {
                 confirm(button, control.clone(), pages.clone());
@@ -224,12 +338,22 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
     }
 
     for device in devices {
-        container.append(&device_card(device, pages));
+        container.append(&device_card(device, pages, binder));
     }
 }
 
+/// The focus name of "Remove all revoked devices".
+const BULK_KEY: &str = "bulk";
+
+/// Looks a card's device up again in a later state, by fingerprint.
+fn find<'a>(state: &'a DaemonState, fingerprint: &str) -> Option<&'a DeviceReport> {
+    devices_of(state)
+        .iter()
+        .find(|d| d.fingerprint == fingerprint)
+}
+
 /// One device: the summary always, the controls on request.
-fn device_card(device: &DeviceReport, pages: &Pages) -> gtk::Box {
+fn device_card(device: &DeviceReport, pages: &Pages, binder: &mut Binder) -> gtk::Box {
     let card = widgets::card();
     let row = widgets::row(SPACING_SM);
     row.append(&widgets::icon_tile(
@@ -251,10 +375,32 @@ fn device_card(device: &DeviceReport, pages: &Pages) -> gtk::Box {
     text.append(&fp);
     text.set_hexpand(true);
     row.append(&text);
-    row.append(&widgets::status_badge(Status::from_device_state(
-        device.state,
+    let values = card_values(device);
+    let badge = Rc::new(RefCell::new((
+        values.status,
+        widgets::status_badge(values.status),
     )));
+    row.append(&badge.borrow().1);
     card.append(&row);
+
+    // The badge is not focusable, so swapping it — only when the state it
+    // names actually changed — cannot take focus from anything.
+    {
+        let fingerprint = device.fingerprint.clone();
+        binder.live(move |state| {
+            let Some(device) = find(state, &fingerprint) else {
+                return;
+            };
+            let status = card_values(device).status;
+            let mut badge = badge.borrow_mut();
+            if badge.0 != status {
+                let fresh = widgets::status_badge(status);
+                row.remove(&badge.1);
+                row.append(&fresh);
+                *badge = (status, fresh);
+            }
+        });
+    }
 
     if device.revoked {
         // The badge is a word already (see `widgets::status_badge`), so the
@@ -273,60 +419,59 @@ fn device_card(device: &DeviceReport, pages: &Pages) -> gtk::Box {
         ))]);
     }
 
-    // Paired is durable; connected is momentary. Reporting them together is
-    // what stops a dead session from reading as a live one.
-    let mut facts = vec![
-        trust_label(device).to_string(),
-        format!("Platform: {}", device.platform),
-    ];
-    if let Some(silent) = device.silent_secs {
-        facts.push(format!("Silent for {silent}s"));
-    }
-    if let Some(seen) = device.last_seen_secs_ago {
-        facts.push(format!("Last session ended {seen}s ago"));
-    }
-    facts.push(capability_summary(device));
-    card.append(&widgets::caption(&facts.join(" · ")));
+    let facts = widgets::caption(&values.facts);
+    live_label(binder, &facts, &device.fingerprint, |v| v.facts);
+    card.append(&facts);
 
-    card.append(&details(device, pages));
+    card.append(&details(device, pages, binder));
     card
+}
+
+/// Keeps a label's text equal to one [`CardValues`] field, in place.
+fn live_label(
+    binder: &mut Binder,
+    label: &gtk::Label,
+    fingerprint: &str,
+    field: fn(CardValues) -> String,
+) {
+    let (label, fingerprint) = (label.clone(), fingerprint.to_string());
+    binder.live(move |state| {
+        if let Some(device) = find(state, &fingerprint) {
+            let text = field(card_values(device));
+            if label.label() != text {
+                label.set_label(&text);
+            }
+        }
+    });
 }
 
 /// The disclosure: everything the Trusted peers page showed for this device.
 ///
 /// A `gtk::Expander` rather than a custom toggle, because its title is
 /// focusable and opens with Enter or Space, and it exposes its state to
-/// AT-SPI. Whether it is open is remembered per *fingerprint* across
-/// redraws. The page is rebuilt whenever the daemon's status changes, and
-/// without that memory a disclosure would fold itself shut under the person
-/// using it.
-fn details(device: &DeviceReport, pages: &Pages) -> gtk::Expander {
+/// AT-SPI. Whether it is open is remembered per *fingerprint*, so a rebuild
+/// forced by a real change to the list — a device paired, revoked or removed
+/// — does not fold it shut under the person using it. A poll that changes
+/// only ages or grants does not rebuild it at all.
+fn details(device: &DeviceReport, pages: &Pages, binder: &mut Binder) -> gtk::Expander {
     let body = widgets::column(SPACING_SM);
     body.set_margin_top(SPACING_SM);
 
     // Never abbreviated for balance: this is the string compared against the
     // other device's screen, and it is the whole reason pairing is safe.
     body.append(&widgets::section_label("Device fingerprint"));
-    body.append(&widgets::fingerprint(&device.fingerprint));
+    let fingerprint = widgets::fingerprint(&device.fingerprint);
+    binder.focusable(format!("{}/fingerprint", device.fingerprint), &fingerprint);
+    body.append(&fingerprint);
     body.append(&widgets::caption(&format!(
         "Device id {}",
         device.device_id
     )));
 
     body.append(&widgets::section_label("Connection"));
-    body.append(&widgets::caption(&format!(
-        "{} · {}",
-        if device.paired {
-            "Paired"
-        } else {
-            "Not paired"
-        },
-        if device.connected {
-            "Connected now"
-        } else {
-            "Not connected"
-        },
-    )));
+    let connection = widgets::caption(&card_values(device).connection);
+    live_label(binder, &connection, &device.fingerprint, |v| v.connection);
+    body.append(&connection);
 
     let controls = card_controls(device);
     if controls.iter().any(|c| matches!(c, Control::Grant { .. })) {
@@ -335,7 +480,7 @@ fn details(device: &DeviceReport, pages: &Pages) -> gtk::Expander {
     }
     for control in controls {
         match &control {
-            Control::Grant { .. } => body.append(&grant_row(control, &device.device_name, pages)),
+            Control::Grant { .. } => body.append(&grant_row(control, device, pages, binder)),
             Control::Revoke { name, .. } => {
                 body.append(&widgets::separator());
                 let revoke = widgets::destructive_button("Revoke this device");
@@ -344,6 +489,7 @@ fn details(device: &DeviceReport, pages: &Pages) -> gtk::Expander {
                     "Revokes {name}. It will no longer be able to connect. Asks for \
                      confirmation first."
                 ))]);
+                binder.focusable(format!("{}/revoke", device.fingerprint), &revoke);
                 let pages = pages.clone();
                 revoke.connect_clicked(move |button| {
                     confirm(button, control.clone(), pages.clone());
@@ -375,6 +521,7 @@ fn details(device: &DeviceReport, pages: &Pages) -> gtk::Expander {
                     "Removes {name} from the list. It stays revoked and cannot reconnect \
                      unless you pair it again."
                 ))]);
+                binder.focusable(format!("{}/remove", device.fingerprint), &remove);
                 let pages = pages.clone();
                 remove.connect_clicked(move |button| {
                     confirm(button, control.clone(), pages.clone());
@@ -403,6 +550,7 @@ fn details(device: &DeviceReport, pages: &Pages) -> gtk::Expander {
             "capability switches and revocation"
         }
     ))]);
+    binder.focusable(device.fingerprint.clone(), &expander);
     let fingerprint = device.fingerprint.clone();
     let pages = pages.clone();
     expander.connect_expanded_notify(move |e| {
@@ -411,7 +559,21 @@ fn details(device: &DeviceReport, pages: &Pages) -> gtk::Expander {
     expander
 }
 
-fn grant_row(control: Control, device_name: &str, pages: &Pages) -> gtk::Box {
+/// The tint a grant's icon wears.
+fn grant_tile_class(granted: bool) -> &'static str {
+    if granted {
+        "ob-tile-cyan"
+    } else {
+        "ob-tile-neutral"
+    }
+}
+
+fn grant_row(
+    control: Control,
+    device: &DeviceReport,
+    pages: &Pages,
+    binder: &mut Binder,
+) -> gtk::Box {
     let Control::Grant {
         capability,
         granted,
@@ -427,14 +589,7 @@ fn grant_row(control: Control, device_name: &str, pages: &Pages) -> gtk::Box {
         .expect("every grant control names a capability in CAPABILITIES");
 
     let row = widgets::row(SPACING_SM);
-    let tile = widgets::icon_tile(
-        icon,
-        if granted {
-            "ob-tile-cyan"
-        } else {
-            "ob-tile-neutral"
-        },
-    );
+    let tile = widgets::icon_tile(icon, grant_tile_class(granted));
     tile.set_size_request(28, 28);
     row.append(&tile);
 
@@ -447,23 +602,57 @@ fn grant_row(control: Control, device_name: &str, pages: &Pages) -> gtk::Box {
     let sw = gtk::Switch::new();
     sw.set_active(granted);
     sw.set_valign(gtk::Align::Center);
-    // Named after the device as well as the capability: with several cards on
-    // one page, "Clipboard for this device" was the same string on each.
-    sw.update_property(&[gtk::accessible::Property::Label(&format!(
-        "{title} for {device_name}"
+    sw.update_property(&[gtk::accessible::Property::Label(&grant_accessible_label(
+        title,
+        &device.device_name,
     ))]);
-    let pages = pages.clone();
-    sw.connect_state_set(move |_, wanted| {
-        let pages = pages.clone();
-        client::send(control.request(wanted), move |reply| {
-            if let Ok(Response::Error { message }) = reply {
-                eprintln!("pliwee-gui: the daemon refused the grant change: {message}");
-            }
-            pages.refresh_now();
-        });
-        gtk::glib::Propagation::Proceed
-    });
+    binder.focusable(format!("{}/grant/{capability}", device.fingerprint), &sw);
+
+    // Set while this switch's own request is with the daemon, so a poll that
+    // lands in between does not flick it back to the answer to the previous
+    // question.
+    let pending = Rc::new(Cell::new(false));
+    let handler = {
+        let (pages, pending) = (pages.clone(), pending.clone());
+        sw.connect_state_set(move |_, wanted| {
+            pending.set(true);
+            let (pages, pending) = (pages.clone(), pending.clone());
+            client::send(control.request(wanted), move |reply| {
+                if let Ok(Response::Error { message }) = reply {
+                    eprintln!("pliwee-gui: the daemon refused the grant change: {message}");
+                }
+                pending.set(false);
+                // The daemon is the authority. Whatever it answered, the next
+                // poll re-reads the grant and the binding below moves this
+                // switch to it — including back, after a refusal, when that
+                // poll may be identical to the last one.
+                pages.resync_devices();
+                pages.refresh_now();
+            });
+            gtk::glib::Propagation::Proceed
+        })
+    };
+
     row.append(&sw);
+    let fingerprint = device.fingerprint.clone();
+    binder.live(move |state| {
+        if pending.get() {
+            return;
+        }
+        let Some(device) = find(state, &fingerprint) else {
+            return;
+        };
+        let granted = device.granted_capabilities.iter().any(|c| c == capability);
+        if sw.is_active() != granted {
+            // Blocked, or moving the switch to the daemon's answer would
+            // send that answer straight back to the daemon as a request.
+            sw.block_signal(&handler);
+            sw.set_active(granted);
+            sw.unblock_signal(&handler);
+        }
+        tile.remove_css_class(grant_tile_class(!granted));
+        tile.add_css_class(grant_tile_class(granted));
+    });
     row
 }
 
@@ -610,7 +799,11 @@ pub(in crate::views) mod tests {
     use std::cell::RefCell;
     use std::rc::Rc;
 
-    fn trusted(name: &str, fingerprint: &str, granted: &[&str]) -> DeviceReport {
+    pub(in crate::views) fn trusted(
+        name: &str,
+        fingerprint: &str,
+        granted: &[&str],
+    ) -> DeviceReport {
         DeviceReport {
             device_id: format!("id-{fingerprint}"),
             device_name: name.into(),
@@ -629,7 +822,7 @@ pub(in crate::views) mod tests {
         }
     }
 
-    fn revoked(name: &str, fingerprint: &str) -> DeviceReport {
+    pub(in crate::views) fn revoked(name: &str, fingerprint: &str) -> DeviceReport {
         DeviceReport {
             revoked: true,
             paired: false,
@@ -797,6 +990,194 @@ pub(in crate::views) mod tests {
         assert_eq!(capability_summary(&old), "No capabilities granted");
     }
 
+    // ---- W2-GNOME remediation: what a poll may and may not rebuild --------
+    //
+    // The Orca gate failed because every poll rebuilt this page. These pin the
+    // decision that replaced that — which differences are structure and which
+    // are values — as pure functions. They do not stand in for the real Orca
+    // gate: they prove the page is *not asked* to rebuild, not what a screen
+    // reader then does.
+
+    use crate::views::live::{plan, Plan};
+
+    pub(in crate::views) fn status_with(devices: Vec<DeviceReport>) -> DaemonState {
+        DaemonState {
+            status: Some(pliwee_control::StatusReport {
+                device_name: "Desk".into(),
+                device_id: "desk".into(),
+                fingerprint: "ff".into(),
+                fingerprint_short: "FF".into(),
+                key_backing: "software".into(),
+                listen_port: 1716,
+                listen_families: "IPv4+IPv6".into(),
+                protocol_version_min: 1,
+                protocol_version_max: 1,
+                capabilities: Vec::new(),
+                paired_devices: devices.len(),
+                connections: Vec::new(),
+                devices: devices.clone(),
+                pairing_active: false,
+                migrated_from: None,
+                legacy_partial_files: Vec::new(),
+            }),
+            devices: Some(devices),
+            ..DaemonState::default()
+        }
+    }
+
+    /// The measured state: one real connected tablet, one trusted fake phone,
+    /// two revoked fake phones.
+    fn gate_devices() -> Vec<DeviceReport> {
+        vec![
+            trusted("SM-X620", "aa11", &[CLIPBOARD]),
+            trusted("Fake Phone", "dd44", &[]),
+            revoked("Fake Phone", "bb22"),
+            revoked("Fake Phone", "cc33"),
+        ]
+    }
+
+    fn step(before: &[DeviceReport], after: &[DeviceReport]) -> Plan {
+        plan(Some(&layout(before)), &layout(after))
+    }
+
+    /// The defect, reproduced as data: two polls a second apart differ only in
+    /// the ages the daemon computes when it answers, and that was enough to
+    /// make the status slice — which used to key this page — unequal.
+    #[test]
+    fn an_age_only_poll_changes_the_status_slice_but_not_the_layout() {
+        let before = gate_devices();
+        let mut after = gate_devices();
+        after[0].silent_secs = Some(2);
+        after[1].silent_secs = Some(3);
+        after[0].battery = Some(pliwee_control::BatteryReport {
+            percentage: 80,
+            charging_state: "charging".into(),
+            age_secs: 5,
+            stale: false,
+        });
+        let mut earlier = before.clone();
+        earlier[0].battery = after[0].battery.clone().map(|mut b| {
+            b.age_secs = 3;
+            b
+        });
+        after[2].last_seen_secs_ago = Some(40);
+
+        assert_ne!(
+            status_with(earlier.clone()).status,
+            status_with(after.clone()).status,
+            "the old key: this inequality is what rebuilt the page every poll"
+        );
+        assert_eq!(step(&earlier, &after), Plan::Update);
+        // The live information is still there, written in place.
+        assert!(card_values(&after[0]).facts.contains("Silent for 2s"));
+        assert!(card_values(&after[2])
+            .facts
+            .contains("Last session ended 40s ago"));
+        assert_ne!(card_values(&before[0]), card_values(&after[0]));
+    }
+
+    #[test]
+    fn a_connection_change_updates_values_without_a_rebuild() {
+        let before = gate_devices();
+        let mut after = gate_devices();
+        after[1].connected = false;
+        after[1].state = DeviceState::Disconnected;
+        after[1].silent_secs = None;
+        after[1].last_seen_secs_ago = Some(0);
+        assert_eq!(step(&before, &after), Plan::Update);
+        assert_eq!(card_values(&after[1]).status, Status::Available);
+        assert_eq!(card_values(&after[1]).connection, "Paired · Not connected");
+        assert_eq!(card_values(&before[1]).connection, "Paired · Connected now");
+
+        let mut stale = gate_devices();
+        stale[0].state = DeviceState::Stale;
+        assert_eq!(step(&before, &stale), Plan::Update);
+        assert_eq!(card_values(&stale[0]).status, Status::Stale);
+    }
+
+    /// A grant is a value: the switch that asked for it must still exist when
+    /// the answer arrives, and must show the answer.
+    #[test]
+    fn a_grant_change_updates_the_switch_value_without_a_rebuild() {
+        let before = gate_devices();
+        let mut after = gate_devices();
+        after[0].granted_capabilities.push(FILES.into());
+        assert_eq!(step(&before, &after), Plan::Update);
+        let grants = |d: &DeviceReport| card_values(d).grants;
+        assert_eq!(
+            grants(&before[0]),
+            vec![(CLIPBOARD, true), (FILES, false), (BATTERY, false)]
+        );
+        assert_eq!(
+            grants(&after[0]),
+            vec![(CLIPBOARD, true), (FILES, true), (BATTERY, false)]
+        );
+        assert!(card_values(&after[0])
+            .facts
+            .contains("Granted: Clipboard, Files"));
+    }
+
+    #[test]
+    fn trusted_to_revoked_rebuilds_with_the_revoked_controls() {
+        let before = gate_devices();
+        let mut after = gate_devices();
+        after[1] = revoked("Fake Phone", "dd44");
+        assert_eq!(step(&before, &after), Plan::Rebuild);
+        assert!(card_controls(&after[1])
+            .iter()
+            .all(|c| matches!(c, Control::RemoveFromList { .. })));
+        assert_eq!(
+            page_controls(&after),
+            vec![Control::RemoveAllRevoked {
+                fingerprints: vec!["dd44".into(), "bb22".into(), "cc33".into()],
+            }]
+        );
+    }
+
+    #[test]
+    fn pairing_removing_or_renaming_a_device_rebuilds() {
+        let before = gate_devices();
+
+        let mut paired = gate_devices();
+        paired.push(trusted("New", "ee55", &[]));
+        assert_eq!(step(&before, &paired), Plan::Rebuild);
+
+        let mut renamed = gate_devices();
+        renamed[0].device_name = "Tablet".into();
+        assert_eq!(step(&before, &renamed), Plan::Rebuild);
+
+        // One revoked device removed from the list: the bulk action goes, as
+        // there is only one row left for it to refer to.
+        let one_removed: Vec<_> = gate_devices()
+            .into_iter()
+            .filter(|d| d.fingerprint != "bb22")
+            .collect();
+        assert_eq!(step(&before, &one_removed), Plan::Rebuild);
+        assert!(page_controls(&one_removed).is_empty());
+
+        // Bulk removal: every revoked row gone.
+        let bulk_removed: Vec<_> = gate_devices().into_iter().filter(|d| !d.revoked).collect();
+        assert_eq!(step(&before, &bulk_removed), Plan::Rebuild);
+        assert!(page_controls(&bulk_removed).is_empty());
+
+        assert_eq!(step(&before, &[]), Plan::Rebuild, "to the empty state");
+    }
+
+    #[test]
+    fn the_files_switch_is_named_after_its_device() {
+        assert_eq!(
+            grant_accessible_label("Files", "SM-X620"),
+            "Files for SM-X620"
+        );
+        let phone = trusted("SM-X620", "aa11", &[]);
+        let (_, title, ..) = CAPABILITIES
+            .iter()
+            .find(|(id, ..)| *id == FILES)
+            .copied()
+            .expect("files is switchable here");
+        assert!(grant_accessible_label(title, &phone.device_name).contains("Files for SM-X620"));
+    }
+
     // ---- G2: the widget tree (needs a display) ----------------------------
 
     fn descendants(root: &gtk::Widget) -> Vec<gtk::Widget> {
@@ -850,6 +1231,186 @@ pub(in crate::views) mod tests {
         revoked_devices_stay_visible_and_marked();
         each_confirmation_defaults_to_cancel();
         an_open_disclosure_survives_a_redraw();
+        an_age_only_poll_keeps_every_control_and_the_focus();
+        a_grant_answer_moves_the_same_switch();
+        a_structural_change_puts_focus_back_on_the_same_control();
+        revoking_hands_focus_to_the_cards_disclosure();
+        the_controls_keep_their_accessible_metadata();
+    }
+
+    /// A page inside a window, with the gate's four devices and the
+    /// tablet's disclosure open.
+    fn windowed(devices: Vec<DeviceReport>) -> (gtk::Window, gtk::Box, Pages) {
+        let (page, pages) = page(devices);
+        pages.set_expanded("aa11", true);
+        pages.devices_surface.forget();
+        render(&page, &pages.state.borrow(), &pages);
+        let window = gtk::Window::new();
+        window.set_child(Some(&page));
+        (window, page, pages)
+    }
+
+    fn redraw(page: &gtk::Box, pages: &Pages, devices: Vec<DeviceReport>) -> Plan {
+        *pages.state.borrow_mut() = DaemonState {
+            devices: Some(devices),
+            ..DaemonState::default()
+        };
+        let plan = render(page, &pages.state.borrow(), pages);
+        plan
+    }
+
+    fn widget(pages: &Pages, key: &str) -> gtk::Widget {
+        pages
+            .devices_surface
+            .widget(key)
+            .unwrap_or_else(|| panic!("no control named {key}"))
+    }
+
+    fn focus(window: &gtk::Window) -> Option<gtk::Widget> {
+        gtk::prelude::RootExt::focus(window)
+    }
+
+    fn an_age_only_poll_keeps_every_control_and_the_focus() {
+        let (window, page, pages) = windowed(gate_devices());
+        let files = widget(&pages, "aa11/grant/files.v1");
+        let bulk = widget(&pages, "bulk");
+        assert!(files.grab_focus(), "the Files switch takes focus");
+        assert_eq!(focus(&window).as_ref(), Some(&files));
+        let before = descendants(page.upcast_ref());
+
+        let mut aged = gate_devices();
+        aged[0].silent_secs = Some(9);
+        aged[3].last_seen_secs_ago = Some(77);
+        assert_eq!(redraw(&page, &pages, aged), Plan::Update);
+
+        assert_eq!(
+            descendants(page.upcast_ref())
+                .iter()
+                .filter(|w| !before.contains(w))
+                .count(),
+            0,
+            "an age-only poll created no widget"
+        );
+        assert_eq!(widget(&pages, "aa11/grant/files.v1"), files);
+        assert_eq!(widget(&pages, "bulk"), bulk);
+        assert_eq!(focus(&window).as_ref(), Some(&files), "focus stayed put");
+        let text = labels(page.upcast_ref()).join("\n");
+        assert!(text.contains("Silent for 9s"), "{text}");
+        assert!(text.contains("Last session ended 77s ago"), "{text}");
+        window.destroy();
+    }
+
+    fn a_grant_answer_moves_the_same_switch() {
+        let (window, page, pages) = windowed(gate_devices());
+        let files = widget(&pages, "aa11/grant/files.v1")
+            .downcast::<gtk::Switch>()
+            .expect("a switch");
+        assert!(!files.is_active());
+
+        let mut granted = gate_devices();
+        granted[0].granted_capabilities.push(FILES.into());
+        assert_eq!(redraw(&page, &pages, granted), Plan::Update);
+        assert_eq!(
+            widget(&pages, "aa11/grant/files.v1"),
+            files.clone().upcast::<gtk::Widget>()
+        );
+        assert!(files.is_active(), "the daemon's grant is shown");
+        assert!(files.state(), "and the switch's state follows it");
+
+        // Taken away again — a refusal looks the same from here.
+        assert_eq!(redraw(&page, &pages, gate_devices()), Plan::Update);
+        assert!(
+            !files.is_active(),
+            "no stale switch after the daemon says no"
+        );
+        window.destroy();
+    }
+
+    fn a_structural_change_puts_focus_back_on_the_same_control() {
+        let (window, page, pages) = windowed(gate_devices());
+        let files = widget(&pages, "aa11/grant/files.v1");
+        assert!(files.grab_focus());
+
+        let mut paired = gate_devices();
+        paired.push(trusted("New", "ee55", &[]));
+        assert_eq!(redraw(&page, &pages, paired), Plan::Rebuild);
+
+        let again = widget(&pages, "aa11/grant/files.v1");
+        assert_ne!(again, files, "a real change does build new widgets");
+        assert_eq!(
+            focus(&window).as_ref(),
+            Some(&again),
+            "and focus is on the same logical control, not the first button"
+        );
+        assert_ne!(focus(&window).as_ref(), Some(&widget(&pages, "bulk")));
+        assert!(
+            widget(&pages, "aa11")
+                .downcast::<gtk::Expander>()
+                .expect("an expander")
+                .is_expanded(),
+            "the open card stayed open through the rebuild"
+        );
+        window.destroy();
+    }
+
+    fn revoking_hands_focus_to_the_cards_disclosure() {
+        let (window, page, pages) = windowed(gate_devices());
+        assert!(widget(&pages, "aa11/revoke").grab_focus());
+
+        let mut revoked_now = gate_devices();
+        revoked_now[0] = revoked("SM-X620", "aa11");
+        assert_eq!(redraw(&page, &pages, revoked_now), Plan::Rebuild);
+        assert!(pages.devices_surface.widget("aa11/revoke").is_none());
+        assert!(pages
+            .devices_surface
+            .widget("aa11/grant/files.v1")
+            .is_none());
+        assert!(pages.devices_surface.widget("aa11/remove").is_some());
+        assert_eq!(focus(&window).as_ref(), Some(&widget(&pages, "aa11")));
+        window.destroy();
+    }
+
+    fn the_controls_keep_their_accessible_metadata() {
+        use gtk::AccessibleProperty as P;
+        let (window, _page, pages) = windowed(gate_devices());
+        let files = widget(&pages, "aa11/grant/files.v1");
+        // The value itself is `grant_accessible_label`, pinned by
+        // `the_files_switch_is_named_after_its_device`; GTK has no public
+        // getter for it, so here the property is asserted to be set.
+        assert!(gtk::test_accessible_has_property(&files, P::Label));
+        assert!(gtk::test_accessible_has_role(
+            &files,
+            gtk::AccessibleRole::Switch
+        ));
+
+        let revoke = widget(&pages, "aa11/revoke")
+            .downcast::<gtk::Button>()
+            .expect("a button");
+        assert_eq!(revoke.label().as_deref(), Some("Revoke this device"));
+        assert!(revoke.has_css_class("ob-destructive"));
+        assert!(gtk::test_accessible_has_role(
+            &revoke,
+            gtk::AccessibleRole::Button
+        ));
+        assert!(gtk::test_accessible_has_property(&revoke, P::Description));
+
+        let bulk = widget(&pages, "bulk")
+            .downcast::<gtk::Button>()
+            .expect("a button");
+        assert_eq!(bulk.label().as_deref(), Some("Remove all revoked devices"));
+        assert!(bulk.has_css_class("ob-destructive"));
+        assert!(gtk::test_accessible_has_property(&bulk, P::Description));
+
+        for key in ["bb22/remove", "cc33/remove"] {
+            let remove = pages.devices_surface.widget(key);
+            // Folded disclosures still hold their controls, out of the tree.
+            let remove = remove
+                .and_then(|w| w.downcast::<gtk::Button>().ok())
+                .expect("a Remove from list button");
+            assert!(remove.has_css_class("ob-destructive"));
+            assert!(gtk::test_accessible_has_property(&remove, P::Description));
+        }
+        window.destroy();
     }
 
     fn every_control_is_on_the_page_inside_its_expander() {
@@ -987,5 +1548,18 @@ pub(in crate::views) mod tests {
             .find_map(|w| w.downcast::<gtk::Expander>().ok())
             .expect("a disclosure after the redraw");
         assert!(again.is_expanded(), "a redraw must not fold it shut");
+
+        // And through a real rebuild, which a rename is.
+        *pages.state.borrow_mut() = DaemonState {
+            devices: Some(vec![trusted("Renamed", "aa11", &[])]),
+            ..DaemonState::default()
+        };
+        assert_eq!(render(&page, &pages.state.borrow(), &pages), Plan::Rebuild);
+        let rebuilt = descendants(page.upcast_ref())
+            .into_iter()
+            .find_map(|w| w.downcast::<gtk::Expander>().ok())
+            .expect("a disclosure after the rebuild");
+        assert_ne!(rebuilt, again, "a rename builds a new card");
+        assert!(rebuilt.is_expanded(), "a rebuild must not fold it shut");
     }
 }

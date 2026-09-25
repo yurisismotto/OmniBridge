@@ -18,11 +18,53 @@ use pliwee_control::{
     ClipboardFlag, ClipboardPeerReport, ClipboardStatusReport, Request, Response,
 };
 
+use super::live::{Binder, Plan};
 use super::Pages;
 use crate::widgets::{self, Status, SPACING_SM, SPACING_XS};
 use crate::{client, DaemonState};
 
-pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
+/// What decides which widgets this page has. See [`super::live`].
+///
+/// The report with what moves on its own taken out: a pending clip's age,
+/// which the daemon computes on every answer and this page updates in place,
+/// and the two cache sizes, which this page does not show.
+pub(crate) fn key(state: &DaemonState) -> Option<ClipboardStatusReport> {
+    state.clipboard.as_ref().map(|report| {
+        let mut report = report.clone();
+        report.event_cache_entries = 0;
+        report.suppression_cache_entries = 0;
+        for clip in &mut report.pending {
+            clip.age_secs = 0;
+        }
+        report
+    })
+}
+
+/// Size, hash prefix and age — never content. This is everything the control
+/// socket carries, and everything it should.
+fn pending_caption(clip: &pliwee_control::PendingClipReport) -> String {
+    format!(
+        "{} bytes · sha256:{} · {}s ago{}",
+        clip.bytes,
+        clip.hash_prefix,
+        clip.age_secs,
+        if clip.sensitive {
+            " · marked sensitive"
+        } else {
+            ""
+        }
+    )
+}
+
+pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) -> Plan {
+    pages
+        .clipboard_surface
+        .draw(container, key(state), state, |binder| {
+            build(container, state, pages, binder)
+        })
+}
+
+fn build(container: &gtk::Box, state: &DaemonState, pages: &Pages, binder: &mut Binder) {
     widgets::clear(container);
     container.append(&widgets::title("Clipboard"));
 
@@ -123,7 +165,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
     // --- clips waiting ----------------------------------------------------
     if !report.pending.is_empty() {
         container.append(&widgets::section_label("Waiting to be applied"));
-        for clip in &report.pending {
+        for (index, clip) in report.pending.iter().enumerate() {
             let card = widgets::card();
             let row = widgets::row(SPACING_SM);
             row.append(&widgets::icon_tile(
@@ -140,19 +182,19 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
             ));
             let text = widgets::column(2);
             text.append(&widgets::subtitle(&format!("From {}", clip.device_name)));
-            // Size, hash prefix and age — never content. This is everything
-            // the control socket carries, and everything it should.
-            text.append(&widgets::caption(&format!(
-                "{} bytes · sha256:{} · {}s ago{}",
-                clip.bytes,
-                clip.hash_prefix,
-                clip.age_secs,
-                if clip.sensitive {
-                    " · marked sensitive"
-                } else {
-                    ""
+            let caption = widgets::caption(&pending_caption(clip));
+            text.append(&caption);
+            // The key is equal only while the pending list is, clip for clip,
+            // so the same index is the same clip.
+            binder.live(move |state| {
+                let clip = state.clipboard.as_ref().and_then(|r| r.pending.get(index));
+                if let Some(clip) = clip {
+                    let text = pending_caption(clip);
+                    if caption.label() != text {
+                        caption.set_label(&text);
+                    }
                 }
-            )));
+            });
             text.set_hexpand(true);
             row.append(&text);
 

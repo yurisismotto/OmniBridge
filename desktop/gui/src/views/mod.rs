@@ -28,11 +28,21 @@
 //! without any special case for accessibility. It is not a notifications fix:
 //! every page gets it, and the pages that carry controls (Notifications,
 //! Devices, Clipboard) are the ones it matters most for.
+//!
+//! "Changed" turned out to need one more distinction. The daemon reports
+//! ages computed when it answers — how long a session has been silent, how
+//! old a battery reading or a pending clip is — so with a device connected the
+//! status slice differs on every poll, and the Devices page was rebuilt under
+//! a screen reader every `REFRESH_SECS` regardless (measured on the W2-GNOME
+//! Orca gate). Pages that show such values are drawn through [`live`]: a key
+//! that excludes them decides whether widgets are rebuilt, and the values
+//! themselves are written into the existing widgets in place.
 
 mod clipboard;
 mod dashboard;
 mod devices;
 mod files;
+mod live;
 mod notifications;
 mod pairing;
 mod settings;
@@ -74,7 +84,7 @@ mod display_gate {
 
 use adw::prelude::*;
 use pliwee_control::{
-    ClipboardStatusReport, NotificationsStatusReport, StatusReport, TransferReport,
+    ClipboardStatusReport, DeviceReport, NotificationsStatusReport, StatusReport, TransferReport,
 };
 use std::cell::RefCell;
 use std::collections::BTreeSet;
@@ -107,6 +117,14 @@ pub struct Pages {
     /// Redraws every surface after a change the daemon knows nothing about —
     /// which is exactly one thing: the chosen device.
     redraw: Refresh,
+    /// What each page that shows volatile values was last *built* from. See
+    /// [`live`].
+    pub(crate) devices_surface: Rc<live::Surface<Vec<devices::CardLayout>>>,
+    pub(crate) dashboard_surface: Rc<live::Surface<dashboard::Key>>,
+    pub(crate) clipboard_surface: Rc<live::Surface<Option<ClipboardStatusReport>>>,
+    settings_surface: Rc<live::Surface<Option<settings::Key>>>,
+    footer_surface: Rc<live::Surface<Option<Identity>>>,
+    statusbar_surface: Rc<live::Surface<Option<Identity>>>,
     dashboard: gtk::Box,
     files: gtk::Box,
     clipboard: gtk::Box,
@@ -132,7 +150,13 @@ struct Drawn {
     transfers: Option<Vec<TransferReport>>,
     clipboard: Option<ClipboardStatusReport>,
     notifications: Option<NotificationsStatusReport>,
+    devices: Option<Vec<DeviceReport>>,
     error: Option<String>,
+    /// Set by a control whose request the daemon has answered, so the next
+    /// draw re-applies the daemon's values even if the poll that follows is
+    /// identical to the last one — which is exactly what a refused change
+    /// looks like.
+    resync_devices: bool,
 }
 
 /// The poll a control triggers after the daemon has answered it.
@@ -147,13 +171,56 @@ struct Changed {
     transfers: bool,
     clipboard: bool,
     notifications: bool,
+    devices: bool,
     error: bool,
 }
 
 impl Changed {
     fn anything(&self) -> bool {
-        self.status || self.transfers || self.clipboard || self.notifications || self.error
+        self.status
+            || self.transfers
+            || self.clipboard
+            || self.notifications
+            || self.devices
+            || self.error
     }
+}
+
+/// What the sidebar footer and the status bar show, without the rest of the
+/// status report: they name this computer and its listener and nothing that
+/// moves between polls.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Identity {
+    reachable: bool,
+    device_name: String,
+    fingerprint_short: String,
+    listen_port: u16,
+    listen_families: String,
+}
+
+impl Identity {
+    fn of(state: &DaemonState) -> Option<Identity> {
+        state.status.as_ref().map(|s| Identity {
+            reachable: state.reachable(),
+            device_name: s.device_name.clone(),
+            fingerprint_short: s.fingerprint_short.clone(),
+            listen_port: s.listen_port,
+            listen_families: s.listen_families.clone(),
+        })
+    }
+}
+
+/// A device report with the ages the daemon computes per answer set to
+/// nothing, for use in a page key. What is left changes only when something
+/// happened.
+pub(crate) fn without_ages(device: &DeviceReport) -> DeviceReport {
+    let mut d = device.clone();
+    d.silent_secs = None;
+    d.last_seen_secs_ago = None;
+    if let Some(battery) = &mut d.battery {
+        battery.age_secs = 0;
+    }
+    d
 }
 
 /// A selection store the page tests can hold without touching the real one.
@@ -191,6 +258,12 @@ impl Pages {
             expanded: Rc::new(RefCell::new(BTreeSet::new())),
             refresh: Rc::new(RefCell::new(None)),
             redraw: Rc::new(RefCell::new(None)),
+            devices_surface: Rc::default(),
+            dashboard_surface: Rc::default(),
+            clipboard_surface: Rc::default(),
+            settings_surface: Rc::default(),
+            footer_surface: Rc::default(),
+            statusbar_surface: Rc::default(),
             dashboard: page_box(),
             files: page_box(),
             clipboard: page_box(),
@@ -275,6 +348,12 @@ impl Pages {
         self.render();
     }
 
+    /// Makes the next draw re-apply the Devices page's live values even if
+    /// the daemon's answer is unchanged. See [`Drawn::resync_devices`].
+    pub(crate) fn resync_devices(&self) {
+        self.drawn.borrow_mut().resync_devices = true;
+    }
+
     /// Asks the daemon again, now.
     ///
     /// What a control calls once the daemon has answered the change it
@@ -312,6 +391,7 @@ impl Pages {
                 transfers: first || drawn.transfers != state.transfers,
                 clipboard: first || drawn.clipboard != state.clipboard,
                 notifications: first || drawn.notifications != state.notifications,
+                devices: first || drawn.resync_devices || drawn.devices != state.devices,
                 error: first || drawn.error != state.error,
             }
         };
@@ -337,12 +417,20 @@ impl Pages {
             if changed.notifications {
                 drawn.notifications = state.notifications.clone();
             }
+            if changed.devices {
+                drawn.devices = state.devices.clone();
+                drawn.resync_devices = false;
+            }
             if changed.error {
                 drawn.error = state.error.clone();
             }
         }
 
-        if changed.status || changed.transfers || changed.error {
+        // The pages drawn through `live` are called whenever their slice
+        // moved and decide for themselves whether that means new widgets.
+        // Dashboard and Devices read `devices` as well as `status`: the
+        // dedicated reply is preferred when there is one.
+        if changed.status || changed.devices || changed.transfers || changed.error {
             dashboard::render(&self.dashboard, &state, self);
         }
         if changed.transfers {
@@ -354,13 +442,25 @@ impl Pages {
         if changed.notifications {
             notifications::render(&self.notifications, &state, self);
         }
-        if changed.status {
+        if changed.status || changed.devices {
             devices::render(&self.devices, &state, self);
-            settings::render(&self.settings, &state);
+        }
+        if changed.status {
+            self.settings_surface
+                .draw(&self.settings, settings::Key::of(&state), &state, |_| {
+                    settings::render(&self.settings, &state)
+                });
         }
         if changed.status || changed.error {
-            self.render_sidebar_footer(&state);
-            self.render_statusbar(&state);
+            let identity = Identity::of(&state);
+            self.footer_surface
+                .draw(&self.sidebar_footer, identity.clone(), &state, |_| {
+                    self.render_sidebar_footer(&state)
+                });
+            self.statusbar_surface
+                .draw(&self.statusbar, identity, &state, |_| {
+                    self.render_statusbar(&state)
+                });
         }
     }
 
@@ -462,5 +562,148 @@ impl Pages {
                 status.listen_port, status.listen_families
             )));
         }
+    }
+}
+
+/// The W2-GNOME invalidation review, for the pages other than Devices: an
+/// age-only poll must leave every page key equal, and a real change must not.
+#[cfg(test)]
+mod key_tests {
+    use super::devices::tests::{revoked, status_with, trusted};
+    use super::*;
+    use crate::panel::model::FILES;
+    use pliwee_control::{BatteryReport, PendingClipReport};
+
+    fn aged(mut state: DaemonState, by: u64) -> DaemonState {
+        let bump = |d: &mut DeviceReport| {
+            d.silent_secs = d.silent_secs.map(|s| s + by);
+            d.last_seen_secs_ago = Some(by);
+            if let Some(b) = &mut d.battery {
+                b.age_secs += by;
+            }
+        };
+        if let Some(status) = &mut state.status {
+            status.devices.iter_mut().for_each(bump);
+        }
+        if let Some(devices) = &mut state.devices {
+            devices.iter_mut().for_each(bump);
+        }
+        state
+    }
+
+    fn with_battery(stale: bool) -> DaemonState {
+        let mut phone = trusted("SM-X620", "aa11", &[FILES]);
+        phone.battery = Some(BatteryReport {
+            percentage: 80,
+            charging_state: "charging".into(),
+            age_secs: 130,
+            stale,
+        });
+        status_with(vec![phone, revoked("Old", "bb22")])
+    }
+
+    #[test]
+    fn an_age_only_poll_leaves_the_dashboard_key_equal() {
+        let before = with_battery(true);
+        let after = aged(before.clone(), 4);
+        assert!(before != after, "the polls do differ");
+        assert_eq!(
+            dashboard::Key::of(&before, Some("aa11")),
+            dashboard::Key::of(&after, Some("aa11"))
+        );
+    }
+
+    #[test]
+    fn a_real_change_changes_the_dashboard_key() {
+        let before = with_battery(false);
+        let key = |s: &DaemonState, chosen| dashboard::Key::of(s, chosen);
+
+        let mut drained = before.clone();
+        if let Some(b) = drained.devices.as_mut().and_then(|d| d[0].battery.as_mut()) {
+            b.percentage = 79;
+        }
+        assert_ne!(key(&before, None), key(&drained, None), "battery level");
+
+        let mut offline = before.clone();
+        offline.devices.as_mut().expect("devices")[0].state =
+            pliwee_control::DeviceState::Disconnected;
+        assert_ne!(key(&before, None), key(&offline, None), "connection");
+
+        assert_ne!(
+            key(&before, None),
+            key(&before, Some("aa11")),
+            "the chosen device"
+        );
+
+        let unreachable = DaemonState {
+            error: Some("gone".into()),
+            ..before.clone()
+        };
+        assert_ne!(key(&before, None), key(&unreachable, None), "reachability");
+    }
+
+    #[test]
+    fn an_age_only_poll_leaves_the_settings_and_identity_keys_equal() {
+        let before = with_battery(false);
+        let after = aged(before.clone(), 7);
+        assert!(before.status != after.status);
+        assert_eq!(settings::Key::of(&before), settings::Key::of(&after));
+        assert_eq!(Identity::of(&before), Identity::of(&after));
+
+        let mut renamed = before.clone();
+        if let Some(s) = &mut renamed.status {
+            s.device_name = "Other".into();
+        }
+        assert_ne!(settings::Key::of(&before), settings::Key::of(&renamed));
+        assert_ne!(Identity::of(&before), Identity::of(&renamed));
+    }
+
+    #[test]
+    fn a_pending_clips_age_does_not_change_the_clipboard_key() {
+        let clip = |age_secs| PendingClipReport {
+            device_name: "SM-X620".into(),
+            fingerprint_short: "AA11".into(),
+            bytes: 12,
+            hash_prefix: "abcd".into(),
+            sensitive: false,
+            origin_device_id: "id-aa11".into(),
+            age_secs,
+        };
+        let state = |age, cache| DaemonState {
+            clipboard: Some(ClipboardStatusReport {
+                enabled: true,
+                backend: "wl-clipboard".into(),
+                backend_detail: String::new(),
+                backend_available: true,
+                watch_available: true,
+                sensitive_available: true,
+                sensitive_detail: String::new(),
+                event_cache_entries: cache,
+                suppression_cache_entries: cache,
+                peers: Vec::new(),
+                pending: vec![clip(age)],
+            }),
+            ..DaemonState::default()
+        };
+        assert_eq!(clipboard::key(&state(3, 1)), clipboard::key(&state(5, 2)));
+
+        let mut another = state(3, 1);
+        if let Some(c) = &mut another.clipboard {
+            c.pending.push(clip(0));
+        }
+        assert_ne!(clipboard::key(&state(3, 1)), clipboard::key(&another));
+    }
+
+    /// The fix does not remove what the ages say: the value that stays out of
+    /// the key is still in the text drawn.
+    #[test]
+    fn without_ages_is_only_for_keys() {
+        let state = with_battery(false);
+        let phone = &state.devices.as_ref().expect("devices")[0];
+        let steady = without_ages(phone);
+        assert_eq!(steady.silent_secs, None);
+        assert_eq!(steady.battery.as_ref().map(|b| b.age_secs), Some(0));
+        assert_eq!(steady.battery.as_ref().map(|b| b.percentage), Some(80));
+        assert!(devices::card_values(phone).facts.contains("Silent for 1s"));
     }
 }
