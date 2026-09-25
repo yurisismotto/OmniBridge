@@ -3,8 +3,8 @@ package io.github.yurisismotto.omnibridge
 import io.github.yurisismotto.omnibridge.net.Discovery
 import io.github.yurisismotto.omnibridge.net.TlsFactory
 import io.github.yurisismotto.omnibridge.pairing.QrPayload
-import io.github.yurisismotto.omnibridge.proto.Envelope
-import io.github.yurisismotto.omnibridge.proto.capabilities.BatteryState
+import io.github.yurisismotto.pliwee.proto.Envelope
+import io.github.yurisismotto.pliwee.proto.capabilities.BatteryState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -76,19 +76,19 @@ class WireIdentityTest {
 
     /**
      * The protobuf namespace, observed from generated code rather than from
-     * the `.proto` text: `package omnibridge.v1` plus
-     * `java_package = "io.github.yurisismotto.omnibridge.proto"` is what puts
+     * the `.proto` text: `package pliwee.v1` plus
+     * `java_package = "io.github.yurisismotto.pliwee.proto"` is what puts
      * [Envelope] here. A namespace rename that missed either option would
      * land the class somewhere else and this would not compile.
      */
     @Test
-    fun `generated protobuf types live in the omnibridge namespace`() {
+    fun `generated protobuf types live in the pliwee namespace`() {
         assertEquals(
-            "io.github.yurisismotto.omnibridge.proto.Envelope",
+            "io.github.yurisismotto.pliwee.proto.Envelope",
             Envelope::class.java.name,
         )
         assertEquals(
-            "io.github.yurisismotto.omnibridge.proto.capabilities.BatteryState",
+            "io.github.yurisismotto.pliwee.proto.capabilities.BatteryState",
             BatteryState::class.java.name,
         )
     }

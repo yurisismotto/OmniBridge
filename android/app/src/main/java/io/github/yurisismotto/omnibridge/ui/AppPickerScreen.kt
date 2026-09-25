@@ -49,14 +49,14 @@ import io.github.yurisismotto.omnibridge.R
 import io.github.yurisismotto.omnibridge.capability.NotificationsCapability
 import io.github.yurisismotto.omnibridge.notifications.NotificationApp
 import io.github.yurisismotto.omnibridge.notifications.NotificationApps
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeCard
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecondaryButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecurityNotice
+import io.github.yurisismotto.omnibridge.ui.components.PliweeCard
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSecondaryButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSecurityNotice
 import io.github.yurisismotto.omnibridge.ui.components.NoticeTone
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeIconSize
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeIconSize
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 import io.github.yurisismotto.omnibridge.ui.theme.MinTouchTarget
 
 /**
@@ -96,16 +96,16 @@ fun AppPickerScreen(
     fingerprintHex: String,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val peer = state.peerByHex(fingerprintHex)
     if (peer == null || !peer.allows(NotificationsCapability.ID)) {
         // Either the computer was forgotten while this screen was open, or its
         // grant was withdrawn elsewhere. Both mean the same thing here: there
         // is nothing to choose applications for.
-        Column(modifier.fillMaxSize().padding(OmniBridgeSpacing.md)) {
+        Column(modifier.fillMaxSize().padding(PliweeSpacing.md)) {
             Text(
                 stringResource(R.string.notif_detail_sharing_off),
-                style = OmniBridgeType.body,
+                style = PliweeType.body,
                 color = colors.textSecondary,
             )
         }
@@ -143,13 +143,13 @@ fun AppPickerScreen(
     val chosen = policy.allowedApps.size
 
     Column(
-        modifier = modifier.fillMaxSize().padding(horizontal = OmniBridgeSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.sm),
+        modifier = modifier.fillMaxSize().padding(horizontal = PliweeSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(PliweeSpacing.sm),
     ) {
-        Spacer(Modifier.height(OmniBridgeSpacing.xs))
+        Spacer(Modifier.height(PliweeSpacing.xs))
         Text(
             stringResource(R.string.notif_picker_intro),
-            style = OmniBridgeType.caption,
+            style = PliweeType.caption,
             color = colors.textSecondary,
         )
 
@@ -163,7 +163,7 @@ fun AppPickerScreen(
                 Icon(
                     painter = painterResource(R.drawable.ic_search),
                     contentDescription = null,
-                    modifier = Modifier.size(OmniBridgeIconSize.medium),
+                    modifier = Modifier.size(PliweeIconSize.medium),
                 )
             },
             trailingIcon = {
@@ -173,7 +173,7 @@ fun AppPickerScreen(
                             painter = painterResource(R.drawable.ic_close),
                             contentDescription =
                                 stringResource(R.string.notif_picker_search_clear),
-                            modifier = Modifier.size(OmniBridgeIconSize.medium),
+                            modifier = Modifier.size(PliweeIconSize.medium),
                         )
                     }
                 }
@@ -182,7 +182,7 @@ fun AppPickerScreen(
         )
 
         Row(
-            horizontalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs),
+            horizontalArrangement = Arrangement.spacedBy(PliweeSpacing.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -191,17 +191,17 @@ fun AppPickerScreen(
                 } else {
                     stringResource(R.string.notif_apps_count, chosen, apps.size)
                 },
-                style = OmniBridgeType.label,
+                style = PliweeType.label,
                 color = colors.textSecondary,
                 modifier = Modifier.weight(1f),
             )
-            OmniBridgeSecondaryButton(
+            PliweeSecondaryButton(
                 text = stringResource(R.string.notif_picker_select_all),
                 // Deliberate, and never a side effect of anything else.
                 onClick = { confirmSelectAll = true },
                 enabled = apps.isNotEmpty() && chosen < apps.size,
             )
-            OmniBridgeSecondaryButton(
+            PliweeSecondaryButton(
                 text = stringResource(R.string.notif_picker_clear_all),
                 onClick = {
                     actions.onSetNotificationPolicy(peer, policy.copy(allowedApps = emptySet()))
@@ -214,9 +214,9 @@ fun AppPickerScreen(
             loading -> Box(
                 Modifier.fillMaxSize(),
                 contentAlignment = Alignment.TopCenter,
-            ) { CircularProgressIndicator(Modifier.padding(OmniBridgeSpacing.xl)) }
+            ) { CircularProgressIndicator(Modifier.padding(PliweeSpacing.xl)) }
 
-            apps.isEmpty() -> OmniBridgeSecurityNotice(
+            apps.isEmpty() -> PliweeSecurityNotice(
                 title = stringResource(R.string.notif_picker_empty),
                 tone = NoticeTone.Caution,
                 icon = R.drawable.ic_warning,
@@ -224,12 +224,12 @@ fun AppPickerScreen(
 
             visible.isEmpty() -> Text(
                 stringResource(R.string.notif_picker_no_results),
-                style = OmniBridgeType.body,
+                style = PliweeType.body,
                 color = colors.textSecondary,
             )
 
             else -> LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xxs),
+                verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xxs),
             ) {
                 items(visible, key = { it.packageName }) { app ->
                     AppRow(
@@ -245,7 +245,7 @@ fun AppPickerScreen(
                         },
                     )
                 }
-                item { Spacer(Modifier.height(OmniBridgeSpacing.xxl)) }
+                item { Spacer(Modifier.height(PliweeSpacing.xxl)) }
             }
         }
     }
@@ -278,10 +278,10 @@ private fun AppRow(
     loadIcon: suspend (String) -> android.graphics.drawable.Drawable?,
     onToggle: (Boolean) -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val shared = stringResource(R.string.notif_picker_shared)
     val notShared = stringResource(R.string.notif_picker_not_shared)
-    OmniBridgeCard(contentPadding = OmniBridgeSpacing.sm) {
+    PliweeCard(contentPadding = PliweeSpacing.sm) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -296,18 +296,18 @@ private fun AppRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AppIcon(app.packageName, loadIcon)
-            Spacer(Modifier.width(OmniBridgeSpacing.sm))
+            Spacer(Modifier.width(PliweeSpacing.sm))
             Column(Modifier.weight(1f)) {
-                Text(app.label, style = OmniBridgeType.body, color = colors.textPrimary)
+                Text(app.label, style = PliweeType.body, color = colors.textPrimary)
                 Text(
                     app.packageName,
-                    style = OmniBridgeType.caption,
+                    style = PliweeType.caption,
                     color = colors.textMuted,
                 )
                 if (app.notifying) {
                     Text(
                         stringResource(R.string.notif_picker_notifying),
-                        style = OmniBridgeType.caption,
+                        style = PliweeType.caption,
                         color = colors.accentBlue,
                     )
                 }
@@ -348,7 +348,7 @@ private fun AppIcon(
         Icon(
             painter = painterResource(R.drawable.ic_files),
             contentDescription = null,
-            tint = OmniBridgeTheme.colors.textMuted,
+            tint = PliweeTheme.colors.textMuted,
             modifier = Modifier.size(ICON_DP),
         )
     } else {

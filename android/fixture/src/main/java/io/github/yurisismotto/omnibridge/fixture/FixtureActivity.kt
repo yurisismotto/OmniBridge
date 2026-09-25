@@ -59,7 +59,7 @@ import android.widget.TextView
  * adb shell am start -n $FX --es op clear
  * ```
  *
- * Every operation answers on logcat under the tag `OmniBridgeFixture`, with the
+ * Every operation answers on logcat under the tag `PliweeFixture`, with the
  * op, the id and the tag — never the title or the body, because this fixture
  * is used in the same runs as the logging canaries and a fixture that logged
  * its own payload would poison them.
@@ -220,7 +220,7 @@ class FixtureActivity : Activity() {
     }
 
     companion object {
-        private const val TAG = "OmniBridgeFixture"
+        private const val TAG = "PliweeFixture"
         const val CHANNEL_ID = "omnibridge-fixture"
         private const val GROUP_KEY = "omnibridge-fixture-group"
         private const val DEFAULT_ID = 1

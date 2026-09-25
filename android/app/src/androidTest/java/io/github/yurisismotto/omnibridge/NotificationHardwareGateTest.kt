@@ -6,9 +6,9 @@ import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
 import io.github.yurisismotto.omnibridge.notifications.NotificationAccess
 import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRole
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRoles
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationControl
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRole
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRoles
 import io.github.yurisismotto.omnibridge.store.TrustStore
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
@@ -103,9 +103,9 @@ class NotificationHardwareGateTest {
      */
     private val testPeer = Fingerprint(ByteArray(Fingerprint.LENGTH) { 0x7e })
 
-    private val app: OmniBridgeApp
+    private val app: PliweeApp
         get() = InstrumentationRegistry.getInstrumentation()
-            .targetContext.applicationContext as OmniBridgeApp
+            .targetContext.applicationContext as PliweeApp
 
     private val captured = CopyOnWriteArrayList<NotificationControl>()
 
@@ -329,11 +329,11 @@ class NotificationHardwareGateTest {
 
         assertEquals(2, phases.size)
         assertEquals(
-            io.github.yurisismotto.omnibridge.proto.capabilities.SyncMarker.Phase.PHASE_BEGIN,
+            io.github.yurisismotto.pliwee.proto.capabilities.SyncMarker.Phase.PHASE_BEGIN,
             phases[0],
         )
         assertEquals(
-            io.github.yurisismotto.omnibridge.proto.capabilities.SyncMarker.Phase.PHASE_END,
+            io.github.yurisismotto.pliwee.proto.capabilities.SyncMarker.Phase.PHASE_END,
             phases[1],
         )
         val markers = captured.filter { it.bodyCase == NotificationControl.BodyCase.SYNC }

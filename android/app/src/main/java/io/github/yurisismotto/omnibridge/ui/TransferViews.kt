@@ -10,15 +10,15 @@ import androidx.compose.ui.Modifier
 import io.github.yurisismotto.omnibridge.R
 import io.github.yurisismotto.omnibridge.files.FileTransferManager
 import io.github.yurisismotto.omnibridge.files.TransferState
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeCard
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeIconTile
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgePrimaryButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecondaryButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeTransferCard
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.components.PliweeCard
+import io.github.yurisismotto.omnibridge.ui.components.PliweeIconTile
+import io.github.yurisismotto.omnibridge.ui.components.PliweePrimaryButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSecondaryButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeTransferCard
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 
 /**
  * File transfer, in the OmniBridge visual language.
@@ -42,32 +42,32 @@ fun IncomingOfferCard(
     modifier: Modifier = Modifier,
     peerLabel: String? = null,
 ) {
-    val colors = OmniBridgeTheme.colors
-    OmniBridgeCard(modifier) {
+    val colors = PliweeTheme.colors
+    PliweeCard(modifier) {
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-            OmniBridgeIconTile(icon = R.drawable.ic_download, accent = colors.accentViolet)
-            Spacer(Modifier.width(OmniBridgeSpacing.sm))
+            PliweeIconTile(icon = R.drawable.ic_download, accent = colors.accentViolet)
+            Spacer(Modifier.width(PliweeSpacing.sm))
             androidx.compose.foundation.layout.Column {
-                Text("Incoming file", style = OmniBridgeType.label, color = colors.accentViolet)
+                Text("Incoming file", style = PliweeType.label, color = colors.accentViolet)
                 // Already sanitized before it reaches here: a raw peer-supplied
                 // name could otherwise forge the rest of this card.
-                Text(offer.filename, style = OmniBridgeType.subtitle, color = colors.textPrimary)
+                Text(offer.filename, style = PliweeType.subtitle, color = colors.textPrimary)
                 Text(
                     "${humanBytes(offer.sizeBytes)} · from ${peerLabel ?: offer.peer.toDisplayShort()}",
-                    style = OmniBridgeType.caption,
+                    style = PliweeType.caption,
                     color = colors.textSecondary,
                 )
             }
         }
-        Spacer(Modifier.width(OmniBridgeSpacing.xs))
-        Row(horizontalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs)) {
-            OmniBridgePrimaryButton(
+        Spacer(Modifier.width(PliweeSpacing.xs))
+        Row(horizontalArrangement = Arrangement.spacedBy(PliweeSpacing.xs)) {
+            PliweePrimaryButton(
                 text = "Accept",
                 onClick = { onRespond(true) },
                 icon = R.drawable.ic_check,
                 modifier = Modifier.weight(1f),
             )
-            OmniBridgeSecondaryButton(
+            PliweeSecondaryButton(
                 text = "Reject",
                 onClick = { onRespond(false) },
                 modifier = Modifier.weight(1f),
@@ -83,16 +83,16 @@ fun TransferRow(
     modifier: Modifier = Modifier,
     onCancel: (() -> Unit)? = null,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val direction = if (transfer.sending) "To" else "From"
     val status = when (transfer.state) {
-        TransferState.TRANSFERRING -> OmniBridgeStatus.Transferring
-        TransferState.VERIFYING -> OmniBridgeStatus.Transferring
-        TransferState.COMPLETED -> OmniBridgeStatus.Success
+        TransferState.TRANSFERRING -> PliweeStatus.Transferring
+        TransferState.VERIFYING -> PliweeStatus.Transferring
+        TransferState.COMPLETED -> PliweeStatus.Success
         // A cancellation is not an error and is not displayed as one.
-        TransferState.CANCELLED -> OmniBridgeStatus.Disconnected
-        TransferState.FAILED -> OmniBridgeStatus.Error
-        TransferState.OFFERED, TransferState.WAITING_ACCEPT -> OmniBridgeStatus.Connecting
+        TransferState.CANCELLED -> PliweeStatus.Disconnected
+        TransferState.FAILED -> PliweeStatus.Error
+        TransferState.OFFERED, TransferState.WAITING_ACCEPT -> PliweeStatus.Connecting
     }
     val detail = when (transfer.state) {
         TransferState.TRANSFERRING -> transfer.percentage?.let {
@@ -108,7 +108,7 @@ fun TransferRow(
         TransferState.OFFERED, TransferState.WAITING_ACCEPT -> "Waiting…"
     }
 
-    OmniBridgeTransferCard(
+    PliweeTransferCard(
         modifier = modifier,
         filename = transfer.filename,
         subtitle = "$direction ${humanBytes(transfer.sizeBytes)}",

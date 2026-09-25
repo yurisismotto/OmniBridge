@@ -21,7 +21,7 @@
 //! rather than draw a switch that is either on or off.
 
 use gtk::prelude::*;
-use omnibridge_control::{
+use pliwee_control::{
     NotificationPeerReport, NotificationSetting, NotificationsStatusReport, Request, Response,
 };
 
@@ -683,7 +683,7 @@ pub(in crate::views) mod tests {
     use super::{render, DismissReadiness, Readiness, LOCK_POLICIES};
     use crate::{DaemonState, Page};
     use gtk::prelude::*;
-    use omnibridge_control::{NotificationPeerReport, NotificationsStatusReport};
+    use pliwee_control::{NotificationPeerReport, NotificationsStatusReport};
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -924,7 +924,7 @@ pub(in crate::views) mod tests {
     // reaches for exists, carries a label an assistive technology can read,
     // and shows the state the daemon actually holds.
     //
-    //   cargo test -p omnibridge-gui -- --ignored --test-threads=1
+    //   cargo test -p pliwee-gui -- --ignored --test-threads=1
 
     fn report(peers: Vec<NotificationPeerReport>, available: bool) -> NotificationsStatusReport {
         NotificationsStatusReport {
@@ -1452,13 +1452,13 @@ pub(in crate::views) mod tests {
         }
     }
 
-    fn transfer() -> omnibridge_control::TransferReport {
-        omnibridge_control::TransferReport {
+    fn transfer() -> pliwee_control::TransferReport {
+        pliwee_control::TransferReport {
             transfer_id: "t".into(),
             seq: 1,
             device_name: "Tablet".into(),
             fingerprint_short: "7E63 7B4E 937B 7732".into(),
-            direction: omnibridge_control::transfer_direction::RECEIVING.into(),
+            direction: pliwee_control::transfer_direction::RECEIVING.into(),
             filename: "a.txt".into(),
             mime_type: "text/plain".into(),
             size_bytes: 4,

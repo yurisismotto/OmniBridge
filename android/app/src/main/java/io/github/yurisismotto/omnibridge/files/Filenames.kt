@@ -3,7 +3,7 @@ package io.github.yurisismotto.omnibridge.files
 /**
  * Reduces a peer-supplied filename to something safe to create.
  *
- * Mirrors `omnibridge_capability_files::filename` on the desktop, rule for rule,
+ * Mirrors `pliwee_capability_files::filename` on the desktop, rule for rule,
  * and the two test suites assert the same cases. A divergence here would mean
  * one of the two devices accepting a name the other refuses, which is exactly
  * the kind of quiet asymmetry a path-traversal bug lives in.

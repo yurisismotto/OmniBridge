@@ -1,6 +1,6 @@
 package io.github.yurisismotto.omnibridge.net
 
-import io.github.yurisismotto.omnibridge.proto.Envelope
+import io.github.yurisismotto.pliwee.proto.Envelope
 import java.io.DataInputStream
 import java.io.EOFException
 import java.io.InputStream
@@ -11,11 +11,11 @@ import java.io.OutputStream
  * encoded [Envelope].
  *
  * The length is validated before any buffer is allocated, so a peer claiming
- * a 4 GiB frame costs us nothing. Mirrors `omnibridge_core::framing`.
+ * a 4 GiB frame costs us nothing. Mirrors `pliwee_core::framing`.
  */
 object Framing {
 
-    /** Must stay identical to `omnibridge_core::framing::MAX_FRAME_LEN`. */
+    /** Must stay identical to `pliwee_core::framing::MAX_FRAME_LEN`. */
     const val MAX_FRAME_LEN = 64 * 1024
 
     class FrameTooLarge(val length: Long) :

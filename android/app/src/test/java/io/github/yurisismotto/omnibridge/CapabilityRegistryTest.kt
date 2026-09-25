@@ -12,7 +12,7 @@ import org.junit.Test
 
 /**
  * Capability authorization is an allow-list intersection, never a claim the
- * peer makes about itself. Mirrors `omnibridge_core::capability`.
+ * peer makes about itself. Mirrors `pliwee_core::capability`.
  */
 class CapabilityRegistryTest {
 

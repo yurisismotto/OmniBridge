@@ -6,7 +6,7 @@
 //! the phone, and we have no reason to keep one.
 //!
 //! This crate is a worked example of the plugin contract. Note that it does
-//! not appear anywhere in `omnibridge-core`'s transport code: the daemon
+//! not appear anywhere in `pliwee-core`'s transport code: the daemon
 //! registers it, and the transport routes to it by id.
 
 mod upower;
@@ -19,10 +19,10 @@ use std::sync::{Arc, RwLock};
 /// and so that a test can age one without waiting.
 use tokio::time::Instant;
 
-use omnibridge_core::capability::{Capability, CapabilityContext, OutboundMessage};
-use omnibridge_core::error::{Error, Result};
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::capabilities as pb;
+use pliwee_core::capability::{Capability, CapabilityContext, OutboundMessage};
+use pliwee_core::error::{Error, Result};
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1::capabilities as pb;
 use prost::Message;
 
 pub use upower::{

@@ -13,7 +13,7 @@
 //!
 //! | Property | Enforced by |
 //! | --- | --- |
-//! | only a paired device can speak at all | TLS 1.3 + SPKI pinning (`omnibridge_core::tls`) |
+//! | only a paired device can speak at all | TLS 1.3 + SPKI pinning (`pliwee_core::tls`) |
 //! | only an explicitly *granted* device may use the clipboard | [`ClipboardAuthorizer`], re-asked per message |
 //! | direction and automation are separate from the grant | [`ClipboardPolicy`] |
 //! | a peer cannot widen its own policy | there is no protocol message that sets one |
@@ -43,11 +43,11 @@ use rand::TryRngCore;
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tokio::time::Instant;
 
-use omnibridge_core::capability::{Capability, CapabilityContext, OutboundMessage};
-use omnibridge_core::error::{Error, Result};
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::capabilities as pb;
-use omnibridge_proto::Message;
+use pliwee_core::capability::{Capability, CapabilityContext, OutboundMessage};
+use pliwee_core::error::{Error, Result};
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1::capabilities as pb;
+use pliwee_proto::Message;
 
 use backend::{BackendError, ClipboardBackend};
 use dedup::{EventCache, SuppressionCache};
@@ -414,7 +414,7 @@ impl ClipboardManager {
         let origin = if update.origin_device_id.is_empty() {
             peer_device_id.to_string()
         } else {
-            omnibridge_core::discovery::sanitize_device_name(&update.origin_device_id)
+            pliwee_core::discovery::sanitize_device_name(&update.origin_device_id)
         };
 
         if !policy.may_auto_receive() {

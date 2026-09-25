@@ -16,15 +16,15 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import io.github.yurisismotto.omnibridge.R
 import io.github.yurisismotto.omnibridge.files.OpenAction
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeEmptyState
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSectionLabel
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeTextButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeTransferCard
-import io.github.yurisismotto.omnibridge.ui.components.omniBridgeContentColumn
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.components.PliweeEmptyState
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSectionLabel
+import io.github.yurisismotto.omnibridge.ui.components.PliweeTextButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeTransferCard
+import io.github.yurisismotto.omnibridge.ui.components.pliweeContentColumn
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 
 /**
  * Files: what is moving between this device and a paired computer, and what
@@ -69,7 +69,7 @@ fun FilesScreen(
     actions: MainActions,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val files = FilesMapping.build(state.transfers, state.listedPeers)
 
     // Re-check what is still openable when the screen comes into view. Keyed
@@ -80,7 +80,7 @@ fun FilesScreen(
     }
 
     if (files.isEmpty && state.offers.isEmpty()) {
-        OmniBridgeEmptyState(
+        PliweeEmptyState(
             modifier = modifier.fillMaxSize(),
             title = stringResource(R.string.files_empty_title),
             subtitle = stringResource(R.string.files_empty_subtitle),
@@ -97,16 +97,16 @@ fun FilesScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .omniBridgeContentColumn()
-            .padding(horizontal = OmniBridgeSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.sm),
-        contentPadding = PaddingValues(bottom = OmniBridgeSpacing.xxl),
+            .pliweeContentColumn()
+            .padding(horizontal = PliweeSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(PliweeSpacing.sm),
+        contentPadding = PaddingValues(bottom = PliweeSpacing.xxl),
     ) {
         // An offer nobody has answered is the only thing here that needs a
         // person, so it stays at the top and keeps its own accept/reject card
         // rather than becoming a row with a status of "Waiting".
         if (state.offers.isNotEmpty()) {
-            item { OmniBridgeSectionLabel(stringResource(R.string.files_section_active)) }
+            item { PliweeSectionLabel(stringResource(R.string.files_section_active)) }
             items(state.offers, key = { UiMapping.offerKey(it.transferId) }) { offer ->
                 IncomingOfferCard(
                     offer = offer,
@@ -118,7 +118,7 @@ fun FilesScreen(
 
         if (files.active.isNotEmpty()) {
             if (state.offers.isEmpty()) {
-                item { OmniBridgeSectionLabel(stringResource(R.string.files_section_active)) }
+                item { PliweeSectionLabel(stringResource(R.string.files_section_active)) }
             }
             items(files.active, key = { it.key }) { row ->
                 FileTransferRow(
@@ -129,7 +129,7 @@ fun FilesScreen(
         }
 
         if (files.recent.isNotEmpty()) {
-            item { OmniBridgeSectionLabel(stringResource(R.string.files_section_recent)) }
+            item { PliweeSectionLabel(stringResource(R.string.files_section_recent)) }
             items(files.recent, key = { it.key }) { row ->
                 FileTransferRow(
                     row = row,
@@ -139,7 +139,7 @@ fun FilesScreen(
             item {
                 Text(
                     stringResource(R.string.files_recent_scope),
-                    style = OmniBridgeType.caption,
+                    style = PliweeType.caption,
                     color = colors.textMuted,
                 )
             }
@@ -161,7 +161,7 @@ private fun FileTransferRow(
     onCancel: (() -> Unit)? = null,
     onOpen: (() -> Unit)? = null,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val directionLine = stringResource(
         if (row.direction == FilesMapping.Direction.SENT) {
             R.string.files_to_device
@@ -185,7 +185,7 @@ private fun FileTransferRow(
         stringResource(R.string.files_row_description, row.displayName, "$statusLabel, $directionLine", size)
     }
 
-    OmniBridgeTransferCard(
+    PliweeTransferCard(
         modifier = modifier,
         filename = row.displayName,
         subtitle = subtitle,
@@ -217,7 +217,7 @@ private fun FileTransferRow(
         // they are actually discovered.
         action = if (onOpen != null && row.openAction == OpenAction.Available) {
             {
-                OmniBridgeTextButton(
+                PliweeTextButton(
                     text = stringResource(R.string.files_action_open),
                     onClick = onOpen,
                     // Every row's button says "Open". Which file it opens is
@@ -262,14 +262,14 @@ internal fun statusString(status: FilesMapping.FileStatus): Int = when (status) 
  * and "Failed". A decline and a cancellation are not errors and are not
  * painted as ones.
  */
-internal fun statusTone(status: FilesMapping.FileStatus): OmniBridgeStatus = when (status) {
-    FilesMapping.FileStatus.WAITING -> OmniBridgeStatus.Connecting
+internal fun statusTone(status: FilesMapping.FileStatus): PliweeStatus = when (status) {
+    FilesMapping.FileStatus.WAITING -> PliweeStatus.Connecting
     FilesMapping.FileStatus.SENDING, FilesMapping.FileStatus.RECEIVING ->
-        OmniBridgeStatus.Transferring
-    FilesMapping.FileStatus.SENT, FilesMapping.FileStatus.RECEIVED -> OmniBridgeStatus.Success
+        PliweeStatus.Transferring
+    FilesMapping.FileStatus.SENT, FilesMapping.FileStatus.RECEIVED -> PliweeStatus.Success
     FilesMapping.FileStatus.DECLINED, FilesMapping.FileStatus.CANCELLED ->
-        OmniBridgeStatus.Disconnected
+        PliweeStatus.Disconnected
     FilesMapping.FileStatus.TIMED_OUT, FilesMapping.FileStatus.DISCONNECTED ->
-        OmniBridgeStatus.Disconnected
-    FilesMapping.FileStatus.FAILED -> OmniBridgeStatus.Error
+        PliweeStatus.Disconnected
+    FilesMapping.FileStatus.FAILED -> PliweeStatus.Error
 }

@@ -3,7 +3,7 @@ package io.github.yurisismotto.omnibridge
 import io.github.yurisismotto.omnibridge.capability.ClipboardCapability
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardPolicy
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.Platform
+import io.github.yurisismotto.pliwee.proto.Platform
 import io.github.yurisismotto.omnibridge.store.TrustStore
 import io.github.yurisismotto.omnibridge.ui.UiMapping
 import java.io.File
@@ -50,7 +50,7 @@ class ExchangeFlowTest {
     private fun session(
         peer: TrustStore.TrustedPeer,
         platform: Platform = Platform.PLATFORM_LINUX,
-    ) = OmniBridgeApp.LiveSession(
+    ) = PliweeApp.LiveSession(
         peerHex = peer.fingerprint.toHex(),
         negotiated = setOf(ClipboardCapability.ID),
         platform = platform,
@@ -444,14 +444,14 @@ class ExchangeFlowTest {
         val cards = source("ui/components/Cards.kt")
         assertFalse(
             "the ribbon flourish is back in the device card",
-            cards.contains("OmniBridgeRibbonFlourish"),
+            cards.contains("PliweeRibbonFlourish"),
         )
         val sources = File("src/main/java").walkTopDown()
             .filter { it.isFile && it.extension == "kt" }
         for (file in sources) {
             assertFalse(
-                "${file.name} still draws OmniBridgeRibbonFlourish",
-                file.readText().contains("OmniBridgeRibbonFlourish"),
+                "${file.name} still draws PliweeRibbonFlourish",
+                file.readText().contains("PliweeRibbonFlourish"),
             )
         }
     }
@@ -465,7 +465,7 @@ class ExchangeFlowTest {
     @Test
     fun `the files empty state uses a files mark`() {
         val files = source("ui/FilesScreen.kt")
-        val empty = files.substringAfter("OmniBridgeEmptyState(")
+        val empty = files.substringAfter("PliweeEmptyState(")
             .substringBefore("fillsContentArea")
         assertTrue(
             "the Files empty state must name its own subject",
@@ -490,7 +490,7 @@ class ExchangeFlowTest {
         val empty = exchange.substringAfter("fun ExchangePayloadEmpty(").substringBefore("\n}\n")
         assertTrue(
             "the empty payload must draw the icon it was handed",
-            empty.contains("OmniBridgeEmptyArt(icon = icon"),
+            empty.contains("PliweeEmptyArt(icon = icon"),
         )
         assertFalse("no ribbon in an exchange empty state", empty.contains("ribbon"))
     }
@@ -661,7 +661,7 @@ class ExchangeFlowTest {
         for (name in listOf("ui/SendClipboardScreen.kt", "ui/SendActivity.kt")) {
             assertTrue(
                 "$name must cap and centre its column",
-                source(name).contains("omniBridgeContentColumn()"),
+                source(name).contains("pliweeContentColumn()"),
             )
         }
     }
@@ -676,11 +676,11 @@ class ExchangeFlowTest {
     @Test
     fun `the disabled primary action is neutral rather than branded`() {
         val buttons = source("ui/components/Buttons.kt")
-        val primary = buttons.substringAfter("fun OmniBridgePrimaryButton(")
+        val primary = buttons.substringAfter("fun PliweePrimaryButton(")
             .substringBefore("\n}\n")
         assertTrue(
             "the enabled button wears the CTA gradient",
-            primary.contains("OmniBridgeGradient.cta()"),
+            primary.contains("PliweeGradient.cta()"),
         )
         assertTrue(
             "the disabled button must be a flat neutral",

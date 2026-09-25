@@ -20,8 +20,8 @@
 //!
 //! The values themselves are recorded in ADR-0018.
 
-use omnibridge_core::qr::QR_SCHEME;
-use omnibridge_core::{ALPN_DATA_PROTOCOL, ALPN_PROTOCOL, SERVICE_TYPE};
+use pliwee_core::qr::QR_SCHEME;
+use pliwee_core::{ALPN_DATA_PROTOCOL, ALPN_PROTOCOL, SERVICE_TYPE};
 
 #[test]
 fn control_alpn_is_omnibridge_1() {

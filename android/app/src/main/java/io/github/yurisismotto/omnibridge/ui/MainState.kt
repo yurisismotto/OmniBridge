@@ -2,7 +2,7 @@ package io.github.yurisismotto.omnibridge.ui
 
 import android.graphics.drawable.Drawable
 import androidx.compose.runtime.Immutable
-import io.github.yurisismotto.omnibridge.OmniBridgeApp
+import io.github.yurisismotto.omnibridge.PliweeApp
 import io.github.yurisismotto.omnibridge.capability.NotificationsCapability
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardDelivery
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardPolicy
@@ -29,7 +29,7 @@ data class MainUiState(
     val ownDeviceName: String,
     val ownFingerprint: String,
     val keyBackingDescription: String,
-    val connection: OmniBridgeApp.ConnectionState,
+    val connection: PliweeApp.ConnectionState,
     /**
      * The computers this phone **trusts**.
      *
@@ -76,7 +76,7 @@ data class MainUiState(
      * connection that is up can carry. Both are needed before a Send button
      * is honest — see [UiMapping.clipboardSendGate].
      */
-    val liveSession: OmniBridgeApp.LiveSession?,
+    val liveSession: PliweeApp.LiveSession?,
     val remoteBatteryPercent: Int?,
     /**
      * Android's own notification access, as the platform reports it **now**.
@@ -99,7 +99,7 @@ data class MainUiState(
 ) {
     /** The fingerprint of the peer with a live session, if any. */
     val connectedFingerprintShort: String?
-        get() = (connection as? OmniBridgeApp.ConnectionState.Connected)?.fingerprintShort
+        get() = (connection as? PliweeApp.ConnectionState.Connected)?.fingerprintShort
 
     /**
      * Whether this computer may be sent the clipboard right now, and why not.

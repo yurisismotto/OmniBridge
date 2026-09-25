@@ -41,10 +41,10 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use omnibridge_linux::tray::activate::{ActivationError, ApplicationActivator};
-use omnibridge_linux::tray::item::{ITEM_OBJECT_PATH, MENU_OBJECT_PATH};
-use omnibridge_linux::tray::model::TrayAction;
-use omnibridge_linux::tray::{publish, PublishedItem};
+use pliwee_linux::tray::activate::{ActivationError, ApplicationActivator};
+use pliwee_linux::tray::item::{ITEM_OBJECT_PATH, MENU_OBJECT_PATH};
+use pliwee_linux::tray::model::TrayAction;
+use pliwee_linux::tray::{publish, PublishedItem};
 use zbus::zvariant::{OwnedValue, Value};
 
 mod common;
@@ -1191,7 +1191,7 @@ fn n17_no_tray_backend_dependency_was_added() {
     ] {
         assert!(
             !code.contains(forbidden),
-            "`{forbidden}` appears in omnibridge-linux's dependencies; the GNOME \
+            "`{forbidden}` appears in pliwee-linux's dependencies; the GNOME \
              extension needs none of them"
         );
     }

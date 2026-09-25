@@ -14,7 +14,7 @@ import androidx.compose.animation.core.Easing
  * returns zero when the person has asked the system to remove animation. A
  * value used raw is a bug.
  */
-object OmniBridgeMotion {
+object PliweeMotion {
     const val INSTANT_MS = 90
     const val FAST_MS = 160
     const val NORMAL_MS = 240

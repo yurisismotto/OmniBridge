@@ -27,7 +27,7 @@ import io.github.yurisismotto.omnibridge.NotificationUiFixtures as Fx
 import io.github.yurisismotto.omnibridge.notifications.NotificationApps
 import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
 import io.github.yurisismotto.omnibridge.ui.AppPickerScreen
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -82,7 +82,7 @@ class AppPickerUiTest {
         recorder.apps = apps.map { it.copy(allowed = it.packageName in policy.allowedApps) }
         val peer = Fx.peer(granted = granted, policy = policy)
         compose.setContent {
-            OmniBridgeTheme {
+            PliweeTheme {
                 AppPickerScreen(
                     state = Fx.state(peer),
                     actions = recorder.actions(),

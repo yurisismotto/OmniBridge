@@ -28,15 +28,15 @@ import io.github.yurisismotto.omnibridge.ui.components.ExchangePayloadEmpty
 import io.github.yurisismotto.omnibridge.ui.components.ExchangePeerStatus
 import io.github.yurisismotto.omnibridge.ui.components.ExchangeSecurityFooter
 import io.github.yurisismotto.omnibridge.ui.components.NoticeTone
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgePrimaryButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecurityNotice
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeTextButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweePrimaryButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSecurityNotice
+import io.github.yurisismotto.omnibridge.ui.components.PliweeTextButton
 import io.github.yurisismotto.omnibridge.ui.components.deviceKindIcon
-import io.github.yurisismotto.omnibridge.ui.components.omniBridgeContentColumn
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeRadius
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.components.pliweeContentColumn
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeRadius
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 
 /**
  * The deliberate act of sending the clipboard to one computer.
@@ -69,13 +69,13 @@ fun SendClipboardScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val peer = state.peerByHex(fingerprintHex)
     if (peer == null) {
-        Column(modifier.fillMaxSize().padding(OmniBridgeSpacing.md)) {
+        Column(modifier.fillMaxSize().padding(PliweeSpacing.md)) {
             Text(
                 "This device is no longer paired.",
-                style = OmniBridgeType.body,
+                style = PliweeType.body,
                 color = colors.textSecondary,
             )
         }
@@ -93,8 +93,8 @@ fun SendClipboardScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .omniBridgeContentColumn()
-            .padding(horizontal = OmniBridgeSpacing.md),
+            .pliweeContentColumn()
+            .padding(horizontal = PliweeSpacing.md),
     ) {
         // --- what is moving, and where to ---------------------------
         ExchangeHero(
@@ -120,15 +120,15 @@ fun SendClipboardScreen(
             )
         }
 
-        Spacer(Modifier.height(OmniBridgeSpacing.lg))
+        Spacer(Modifier.height(PliweeSpacing.lg))
 
         // --- what is going -----------------------------------------
         if (preview == null) ClipboardEmpty() else ClipboardContent(preview)
 
-        Spacer(Modifier.height(OmniBridgeSpacing.lg))
+        Spacer(Modifier.height(PliweeSpacing.lg))
 
         // --- do it --------------------------------------------------
-        OmniBridgePrimaryButton(
+        PliweePrimaryButton(
             text = "Send to ${peer.deviceName}",
             icon = R.drawable.ic_send,
             // The same gate as every other Send clipboard affordance. This
@@ -144,24 +144,24 @@ fun SendClipboardScreen(
         // Why the button is off, whichever reason applies. A disabled
         // button with no explanation is a dead control.
         ui.blockedReason?.let { reason ->
-            Spacer(Modifier.height(OmniBridgeSpacing.xxs))
+            Spacer(Modifier.height(PliweeSpacing.xxs))
             Text(
                 reason,
-                style = OmniBridgeType.caption,
+                style = PliweeType.caption,
                 color = colors.textMuted,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
 
-        Spacer(Modifier.height(OmniBridgeSpacing.xs))
+        Spacer(Modifier.height(PliweeSpacing.xs))
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            OmniBridgeTextButton("Cancel", onBack)
+            PliweeTextButton("Cancel", onBack)
         }
 
-        Spacer(Modifier.height(OmniBridgeSpacing.lg))
+        Spacer(Modifier.height(PliweeSpacing.lg))
         ExchangeSecurityFooter()
-        Spacer(Modifier.height(OmniBridgeSpacing.xxl))
+        Spacer(Modifier.height(PliweeSpacing.xxl))
     }
 }
 
@@ -184,7 +184,7 @@ private fun ClipboardEmpty() {
             icon = R.drawable.ic_clipboard,
             title = UiMapping.EMPTY_CLIPBOARD_REASON,
             subtitle = "Copy some text, then come back.",
-            accent = OmniBridgeTheme.colors.accentCyan,
+            accent = PliweeTheme.colors.accentCyan,
         )
     }
 }
@@ -192,18 +192,18 @@ private fun ClipboardEmpty() {
 /** The clip that is about to leave, shown as restrainedly as it can be. */
 @Composable
 private fun ClipboardContent(preview: ClipboardPreview) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     ExchangePayloadCard(title = "Clipboard", trailing = "${preview.bytes} bytes") {
         Box(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(OmniBridgeRadius.medium))
+                .clip(RoundedCornerShape(PliweeRadius.medium))
                 .background(colors.surfaceSunken)
-                .padding(OmniBridgeSpacing.md),
+                .padding(PliweeSpacing.md),
         ) {
             Text(
                 text = preview.text ?: "•".repeat(12),
-                style = OmniBridgeType.mono,
+                style = PliweeType.mono,
                 color = if (preview.text != null) colors.textPrimary else colors.textMuted,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
@@ -221,8 +221,8 @@ private fun ClipboardContent(preview: ClipboardPreview) {
     }
 
     if (preview.sensitive) {
-        Spacer(Modifier.height(OmniBridgeSpacing.sm))
-        OmniBridgeSecurityNotice(
+        Spacer(Modifier.height(PliweeSpacing.sm))
+        PliweeSecurityNotice(
             title = "This clipboard is marked sensitive",
             body = "The app you copied from marked this text as sensitive — " +
                 "a password, a recovery code, or similar. It is hidden here " +

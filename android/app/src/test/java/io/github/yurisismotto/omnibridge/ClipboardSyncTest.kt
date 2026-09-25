@@ -9,10 +9,10 @@ import io.github.yurisismotto.omnibridge.clipboard.ClipboardTarget
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardText
 import io.github.yurisismotto.omnibridge.clipboard.Clock
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardOutcome
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardResult
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardUpdate
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardControl
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardOutcome
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardResult
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardUpdate
 import java.security.SecureRandom
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

@@ -14,14 +14,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.yurisismotto.omnibridge.R
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardSync
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeCard
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeIconTile
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgePrimaryButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecondaryButton
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeRadius
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.components.PliweeCard
+import io.github.yurisismotto.omnibridge.ui.components.PliweeIconTile
+import io.github.yurisismotto.omnibridge.ui.components.PliweePrimaryButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSecondaryButton
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeRadius
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 
 /**
  * The extra confirmation for a clip the platform marked sensitive.
@@ -44,34 +44,34 @@ fun SensitiveClipDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = colors.surface,
         titleContentColor = colors.textPrimary,
         textContentColor = colors.textSecondary,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(OmniBridgeRadius.large),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(PliweeRadius.large),
         title = {
-            Text("This clipboard is marked sensitive", style = OmniBridgeType.subtitle)
+            Text("This clipboard is marked sensitive", style = PliweeType.subtitle)
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs)) {
+            Column(verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xs)) {
                 Text(
                     "The app you copied from marked this text as sensitive — " +
                         "a password, a recovery code, or similar.",
-                    style = OmniBridgeType.body,
+                    style = PliweeType.body,
                 )
-                Text("Send $bytes bytes to $computerName?", style = OmniBridgeType.body)
+                Text("Send $bytes bytes to $computerName?", style = PliweeType.body)
             }
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Send", style = OmniBridgeType.body, color = colors.accentRed)
+                Text("Send", style = PliweeType.body, color = colors.accentRed)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", style = OmniBridgeType.body, color = colors.textSecondary)
+                Text("Cancel", style = PliweeType.body, color = colors.textSecondary)
             }
         },
     )
@@ -85,18 +85,18 @@ fun PendingClipCard(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
-    OmniBridgeCard(modifier) {
+    val colors = PliweeTheme.colors
+    PliweeCard(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            OmniBridgeIconTile(
+            PliweeIconTile(
                 icon = if (clip.sensitive) R.drawable.ic_shield else R.drawable.ic_clipboard,
                 accent = if (clip.sensitive) colors.accentAmber else colors.accentCyan,
             )
-            Spacer(Modifier.width(OmniBridgeSpacing.sm))
+            Spacer(Modifier.width(PliweeSpacing.sm))
             Column {
                 Text(
                     "Clipboard from ${clip.peerName}",
-                    style = OmniBridgeType.subtitle,
+                    style = PliweeType.subtitle,
                     color = colors.textPrimary,
                 )
                 Text(
@@ -104,20 +104,20 @@ fun PendingClipCard(
                         append("${clip.bytes} bytes")
                         if (clip.sensitive) append(" · marked sensitive")
                     },
-                    style = OmniBridgeType.caption,
+                    style = PliweeType.caption,
                     color = colors.textSecondary,
                 )
             }
         }
-        Spacer(Modifier.width(OmniBridgeSpacing.xxs))
-        Row(horizontalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs)) {
-            OmniBridgePrimaryButton(
+        Spacer(Modifier.width(PliweeSpacing.xxs))
+        Row(horizontalArrangement = Arrangement.spacedBy(PliweeSpacing.xs)) {
+            PliweePrimaryButton(
                 text = "Copy",
                 onClick = onApply,
                 icon = R.drawable.ic_clipboard,
                 modifier = Modifier.weight(1f),
             )
-            OmniBridgeSecondaryButton(
+            PliweeSecondaryButton(
                 text = "Dismiss",
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),

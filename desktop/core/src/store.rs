@@ -263,7 +263,7 @@ pub struct StoreConfig {
     /// Supplied by the adapter, not decided by the storage layer. Before
     /// Wave 0 `Platform::Linux` was hardcoded in this file, which meant
     /// persistence decided the platform (audit finding C2).
-    pub platform: omnibridge_proto::v1::Platform,
+    pub platform: pliwee_proto::v1::Platform,
     /// This machine's name, for a first run.
     pub default_device_name: String,
 }
@@ -316,7 +316,7 @@ impl Store {
     /// Opens the store on this machine's default platform storage.
     ///
     /// Available only with the `unix-fs` feature, which is on by default.
-    /// With it off, `omnibridge-core` has no filesystem or environment
+    /// With it off, `pliwee-core` has no filesystem or environment
     /// assumption at all and [`Store::open_with`] is the only door.
     #[cfg(feature = "unix-fs")]
     pub fn open(dir: impl AsRef<std::path::Path>) -> Result<Self> {
@@ -324,7 +324,7 @@ impl Store {
         Self::open_with(StoreConfig {
             secrets: Arc::new(FileSecretStore::new(dir.as_ref())),
             backend: Arc::new(SoftwareBacking),
-            platform: omnibridge_proto::v1::Platform::Linux,
+            platform: pliwee_proto::v1::Platform::Linux,
             default_device_name: default_device_name(),
         })
     }
@@ -391,7 +391,7 @@ impl Store {
     fn initialize(
         secrets: Arc<dyn SecretStore>,
         backend: Arc<dyn IdentityBackend>,
-        platform: omnibridge_proto::v1::Platform,
+        platform: pliwee_proto::v1::Platform,
         device_name: String,
     ) -> Result<Self> {
         let settings = Settings {
@@ -420,7 +420,7 @@ impl Store {
     fn load(
         secrets: Arc<dyn SecretStore>,
         backend: Arc<dyn IdentityBackend>,
-        platform: omnibridge_proto::v1::Platform,
+        platform: pliwee_proto::v1::Platform,
         state_bytes: &[u8],
         secret: Vec<u8>,
     ) -> Result<Self> {

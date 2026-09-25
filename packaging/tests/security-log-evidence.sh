@@ -419,8 +419,8 @@ ok "L16: the journal capture holds $n_njnl line(s), $n_ntrace of them TRACE"
 
 # The product's own record of the mirroring, inside the window. This is the
 # non-vacuity anchor: the capability demonstrably acted.
-if grep -qE 'omnibridge_capability_notifications' <<<"$njnl"; then
-    ok "L16: the capture carries the notifications capability's own record of this mirroring: $(printf '%s' "$njnl" | grep -E 'omnibridge_capability_notifications' | head -1 | tr -s ' ' | head -c 150)"
+if grep -qE 'pliwee_capability_notifications' <<<"$njnl"; then
+    ok "L16: the capture carries the notifications capability's own record of this mirroring: $(printf '%s' "$njnl" | grep -E 'pliwee_capability_notifications' | head -1 | tr -s ' ' | head -c 150)"
 else
     abort "no notifications-capability line in the window; the capture does not cover the mirroring and any 'absent' result would be vacuous"
 fi
@@ -440,7 +440,7 @@ n_nlc="$(printf '%s\n' "$nlc" | grep -c . || true)"
 [ "${n_nlc:-0}" -ge 20 ] 2>/dev/null || abort "logcat returned ${n_nlc} line(s) for the notification window"
 ok "L16: logcat holds $n_nlc line(s) since it was cleared before the post"
 
-grep -qF 'OmniBridgeFixture: op=post id=92 tag=seclog' <<<"$nlc" \
+grep -qF 'PliweeFixture: op=post id=92 tag=seclog' <<<"$nlc" \
     && ok "L16: logcat carries the fixture's own record of this post — the window provably covers the operation" \
     || abort "logcat does not carry the fixture's post line; the window does not cover the operation"
 

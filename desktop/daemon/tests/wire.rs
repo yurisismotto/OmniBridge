@@ -12,10 +12,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use common::{TestClient, TestServer};
-use omnibridge_core::framing;
-use omnibridge_core::session::PROTOCOL_VERSION_MAX;
-use omnibridge_core::Error;
-use omnibridge_proto::v1;
+use pliwee_core::framing;
+use pliwee_core::session::PROTOCOL_VERSION_MAX;
+use pliwee_core::Error;
+use pliwee_proto::v1;
 use tokio::io::{AsyncRead, AsyncWrite};
 
 const TTL: Duration = Duration::from_secs(30);
@@ -364,7 +364,7 @@ async fn an_unknown_peer_cannot_send_anything_but_a_pair_request() {
 
     let ack = read_ack(&mut tls).await;
     assert_eq!(ack.status, v1::HelloStatus::PairingRequired as i32);
-    assert_eq!(ack.pairing_nonce.len(), omnibridge_core::pairing::NONCE_LEN);
+    assert_eq!(ack.pairing_nonce.len(), pliwee_core::pairing::NONCE_LEN);
 
     // A PING instead of the expected PAIR_REQUEST.
     framing::write_envelope(
@@ -449,7 +449,7 @@ async fn a_client_without_a_certificate_is_rejected_during_the_handshake() {
     let server = TestServer::start().await;
     common::init_crypto();
 
-    let verifier = omnibridge_core::tls::PinnedServerCertVerifier::new(server.fingerprint);
+    let verifier = pliwee_core::tls::PinnedServerCertVerifier::new(server.fingerprint);
     let config = rustls::ClientConfig::builder_with_provider(Arc::new(
         rustls::crypto::ring::default_provider(),
     ))

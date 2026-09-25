@@ -379,8 +379,8 @@ class ClipboardInstrumentedTest {
     }
 
     companion object {
-        /** `adb logcat -s OmniBridgeClipTest` collects every observation above. */
-        private const val TAG = "OmniBridgeClipTest"
+        /** `adb logcat -s PliweeClipTest` collects every observation above. */
+        private const val TAG = "PliweeClipTest"
 
         /**
          * How long to wait for OmniBridge to take window focus.

@@ -249,9 +249,9 @@ class ClipboardPersistenceTest {
     }
 
     private fun updatePayload(text: String) =
-        io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardControl.newBuilder()
+        io.github.yurisismotto.pliwee.proto.capabilities.ClipboardControl.newBuilder()
             .setUpdate(
-                io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardUpdate.newBuilder()
+                io.github.yurisismotto.pliwee.proto.capabilities.ClipboardUpdate.newBuilder()
                     .setEventId(
                         com.google.protobuf.ByteString.copyFrom(ByteArray(16) { 0x42 }),
                     )

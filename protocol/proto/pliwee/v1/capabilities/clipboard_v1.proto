@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package omnibridge.v1.capabilities;
+package pliwee.v1.capabilities;
 
 // Java options are for the Android build; prost ignores them. Both sides
 // compile these exact files, so the wire format cannot drift.
-option java_package = "io.github.yurisismotto.omnibridge.proto.capabilities";
+option java_package = "io.github.yurisismotto.pliwee.proto.capabilities";
 option java_outer_classname = "ClipboardV1Proto";
 option java_multiple_files = true;
 

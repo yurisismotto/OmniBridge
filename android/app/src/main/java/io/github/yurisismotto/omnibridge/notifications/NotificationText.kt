@@ -4,7 +4,7 @@ package io.github.yurisismotto.omnibridge.notifications
  * Every bound and every text rule `notifications.v1` enforces on this
  * platform.
  *
- * The limits are the ones `omnibridge_core::notifications` pins on the desktop.
+ * The limits are the ones `pliwee_core::notifications` pins on the desktop.
  * A limit that differed between the two ends would mean a notification one
  * side sends and the other refuses, which is the failure the shared `.proto`
  * and the shared constants exist to make impossible.
@@ -26,7 +26,7 @@ object NotificationLimits {
     /**
      * `origin_device_id`: exactly 32 lowercase hex characters.
      *
-     * The same value as `omnibridge_core::notifications::DEVICE_ID_HEX_LEN`, and
+     * The same value as `pliwee_core::notifications::DEVICE_ID_HEX_LEN`, and
      * for the same reason it is a constant there: it is a **width**, and a
      * receiver that accepted a different one would be accepting an identifier
      * the other end cannot have produced.

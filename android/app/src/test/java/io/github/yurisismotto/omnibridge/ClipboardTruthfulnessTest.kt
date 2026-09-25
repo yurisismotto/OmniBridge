@@ -13,10 +13,10 @@ import io.github.yurisismotto.omnibridge.clipboard.ClipboardTarget
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardText
 import io.github.yurisismotto.omnibridge.clipboard.Clock
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.ErrorCode
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardOutcome
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardResult
+import io.github.yurisismotto.pliwee.proto.ErrorCode
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardControl
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardOutcome
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardResult
 import io.github.yurisismotto.omnibridge.store.TrustStore
 import io.github.yurisismotto.omnibridge.ui.UiMapping
 import java.security.SecureRandom
@@ -159,7 +159,7 @@ class ClipboardTruthfulnessTest {
     )
 
     private fun live(fingerprintByte: Byte = 0, vararg negotiated: String) =
-        OmniBridgeApp.LiveSession(
+        PliweeApp.LiveSession(
             peerHex = fp(fingerprintByte).toHex(),
             negotiated = negotiated.toSet(),
         )

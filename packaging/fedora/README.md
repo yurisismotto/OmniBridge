@@ -214,7 +214,7 @@ mock -r fedora-44-x86_64 --rebuild ~/rpmbuild/SRPMS/omnibridge-1.0.0-1.fc44.src.
 if the package builds there it builds on `koji`.
 
 **Do not build this package as root.** `%check` will fail if you do, and the
-failure is real rather than an artefact: `omnibridge-core`'s store tests chmod
+failure is real rather than an artefact: `pliwee-core`'s store tests chmod
 a directory to `0000` and assert the read comes back `PermissionDenied` rather
 than "no key at all", which is the Wave 0 defect they exist to hold shut. Root
 has `CAP_DAC_OVERRIDE` and reads the file anyway. `mock` and `koji` both build

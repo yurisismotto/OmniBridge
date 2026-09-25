@@ -57,12 +57,12 @@ pub use pairing::present_pairing_dialog;
 /// public for no reason but the harness.
 ///
 /// ```console
-/// cargo test -p omnibridge-gui -- --ignored --test-threads=1
+/// cargo test -p pliwee-gui -- --ignored --test-threads=1
 /// ```
 #[cfg(test)]
 mod display_gate {
     #[test]
-    #[ignore = "needs a display: cargo test -p omnibridge-gui -- --ignored"]
+    #[ignore = "needs a display: cargo test -p pliwee-gui -- --ignored"]
     fn every_page_widget_tree() {
         super::notifications::tests::the_notifications_page_widget_tree();
         super::clipboard::tests::the_clipboard_page_widget_tree();
@@ -73,7 +73,7 @@ mod display_gate {
 }
 
 use adw::prelude::*;
-use omnibridge_control::{
+use pliwee_control::{
     ClipboardStatusReport, NotificationsStatusReport, StatusReport, TransferReport,
 };
 use std::cell::RefCell;
@@ -164,7 +164,7 @@ impl Changed {
 #[cfg(test)]
 pub(crate) fn test_selection() -> Rc<Selection> {
     Rc::new(Selection::at(std::env::temp_dir().join(format!(
-        "omnibridge-gui-test-{}/gui.json",
+        "pliwee-gui-test-{}/gui.json",
         std::process::id()
     ))))
 }

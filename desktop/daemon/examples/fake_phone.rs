@@ -10,13 +10,13 @@
 //! # terminal 2
 //! omnibridge pair                       # copy the payload it prints
 //! # terminal 3
-//! cargo run -p omnibridge-daemon --example fake_phone -- pair '<payload>'
-//! cargo run -p omnibridge-daemon --example fake_phone -- connect
+//! cargo run -p pliwee-daemon --example fake_phone -- pair '<payload>'
+//! cargo run -p pliwee-daemon --example fake_phone -- connect
 //!
 //! # files.v1: send a file to the desktop, or sit and receive one
 //! omnibridge grant <device> files.v1
-//! cargo run -p omnibridge-daemon --example fake_phone -- send ~/photo.jpg
-//! cargo run -p omnibridge-daemon --example fake_phone -- receive
+//! cargo run -p pliwee-daemon --example fake_phone -- send ~/photo.jpg
+//! cargo run -p pliwee-daemon --example fake_phone -- receive
 //! ```
 //!
 //! For `files.v1` it plays the **dialer**, exactly as a phone does: it opens
@@ -30,19 +30,19 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use omnibridge_capability_battery::{BatteryCapability, BatteryReading, BatteryState};
-use omnibridge_capability_files::{
+use pliwee_capability_battery::{BatteryCapability, BatteryReading, BatteryState};
+use pliwee_capability_files::{
     DataStreamDialer, DataStreamIo, Destination, FilesAuthorizer, FilesCapability, FilesConfig,
     IncomingOffer, StreamRole, TransferApproval, TransferManager,
 };
-use omnibridge_core::capability::CapabilityRegistry;
-use omnibridge_core::error::{PairingError, Result};
-use omnibridge_core::qr::QrPayload;
-use omnibridge_core::session::{self, ClientHandshake, PeerStatus, SessionHandle, SessionHost};
-use omnibridge_core::store::Store;
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1;
-use omnibridge_proto::v1::capabilities::ChargingState;
+use pliwee_core::capability::CapabilityRegistry;
+use pliwee_core::error::{PairingError, Result};
+use pliwee_core::qr::QrPayload;
+use pliwee_core::session::{self, ClientHandshake, PeerStatus, SessionHandle, SessionHost};
+use pliwee_core::store::Store;
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1;
+use pliwee_proto::v1::capabilities::ChargingState;
 use tokio::sync::Mutex;
 use tokio_rustls::TlsConnector;
 
@@ -63,7 +63,7 @@ impl PhoneHost {
         pinned: Fingerprint,
     ) -> anyhow::Result<Arc<rustls::ClientConfig>> {
         let store = self.store.lock().await;
-        Ok(omnibridge_core::tls::data_stream_client_config(
+        Ok(pliwee_core::tls::data_stream_client_config(
             store.identity(),
             pinned,
         )?)
@@ -83,14 +83,14 @@ impl DataStreamDialer for PhoneDialer {
         let connector = TlsConnector::from(Arc::clone(&self.identity));
         let tcp = tokio::net::TcpStream::connect(self.address)
             .await
-            .map_err(omnibridge_core::Error::Io)?;
+            .map_err(pliwee_core::Error::Io)?;
         let _ = tcp.set_nodelay(true);
         let name = rustls_pki_types::ServerName::try_from("omnibridge.invalid")
-            .map_err(|_| omnibridge_core::Error::Protocol("bad static server name"))?;
+            .map_err(|_| pliwee_core::Error::Protocol("bad static server name"))?;
         let tls = connector
             .connect(name, tcp)
             .await
-            .map_err(omnibridge_core::Error::Io)?;
+            .map_err(pliwee_core::Error::Io)?;
         let _ = self.pinned;
         Ok(Box::new(tls))
     }
@@ -133,7 +133,7 @@ async fn run_files(
 ) -> anyhow::Result<()> {
     let client_config = {
         let store = host.store.lock().await;
-        omnibridge_core::tls::client_config(store.identity(), pinned)?
+        pliwee_core::tls::client_config(store.identity(), pinned)?
     };
 
     let connector = TlsConnector::from(client_config);
@@ -290,7 +290,7 @@ impl SessionHost for PhoneHost {
         version: u32,
     ) -> Result<()> {
         let mut store = self.store.lock().await;
-        store.add_peer(omnibridge_core::store::TrustedPeer {
+        store.add_peer(pliwee_core::store::TrustedPeer {
             device_id: device.device_id.clone(),
             device_name: device.device_name.clone(),
             platform: device.platform,
@@ -446,11 +446,11 @@ async fn run(
     host: Arc<PhoneHost>,
     address: std::net::SocketAddr,
     pinned: Fingerprint,
-    token: Option<omnibridge_core::pairing::PairingToken>,
+    token: Option<pliwee_core::pairing::PairingToken>,
 ) -> anyhow::Result<()> {
     let identity_config = {
         let store = host.store.lock().await;
-        omnibridge_core::tls::client_config(store.identity(), pinned)?
+        pliwee_core::tls::client_config(store.identity(), pinned)?
     };
 
     let connector = TlsConnector::from(identity_config);
@@ -570,7 +570,7 @@ impl SessionHost for Notifier {
         }
         self.inner.on_established(peer, handle).await;
     }
-    async fn on_closed(&self, peer: &Fingerprint, session_id: omnibridge_core::session::SessionId) {
+    async fn on_closed(&self, peer: &Fingerprint, session_id: pliwee_core::session::SessionId) {
         self.inner.on_closed(peer, session_id).await;
     }
 }

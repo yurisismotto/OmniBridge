@@ -15,16 +15,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import io.github.yurisismotto.omnibridge.R
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeBrandMark
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeCard
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeFingerprint
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecondaryButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSectionLabel
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecurityNotice
-import io.github.yurisismotto.omnibridge.ui.components.omniBridgeContentColumn
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.components.PliweeBrandMark
+import io.github.yurisismotto.omnibridge.ui.components.PliweeCard
+import io.github.yurisismotto.omnibridge.ui.components.PliweeFingerprint
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSecondaryButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSectionLabel
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSecurityNotice
+import io.github.yurisismotto.omnibridge.ui.components.pliweeContentColumn
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 
 /**
  * This device's own identity, and what OmniBridge is.
@@ -39,51 +39,51 @@ fun SettingsScreen(
     actions: MainActions,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .omniBridgeContentColumn()
-            .padding(horizontal = OmniBridgeSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.sm),
+            .pliweeContentColumn()
+            .padding(horizontal = PliweeSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(PliweeSpacing.sm),
     ) {
-        OmniBridgeSectionLabel("This device")
-        OmniBridgeCard {
-            Text(state.ownDeviceName, style = OmniBridgeType.subtitle, color = colors.textPrimary)
-            Spacer(Modifier.height(OmniBridgeSpacing.xxs))
-            Text("Fingerprint", style = OmniBridgeType.label, color = colors.textSecondary)
-            OmniBridgeFingerprint(state.ownFingerprint)
-            Spacer(Modifier.height(OmniBridgeSpacing.xxs))
+        PliweeSectionLabel("This device")
+        PliweeCard {
+            Text(state.ownDeviceName, style = PliweeType.subtitle, color = colors.textPrimary)
+            Spacer(Modifier.height(PliweeSpacing.xxs))
+            Text("Fingerprint", style = PliweeType.label, color = colors.textSecondary)
+            PliweeFingerprint(state.ownFingerprint)
+            Spacer(Modifier.height(PliweeSpacing.xxs))
             Text(
                 state.keyBackingDescription,
-                style = OmniBridgeType.caption,
+                style = PliweeType.caption,
                 color = colors.textSecondary,
             )
         }
 
-        OmniBridgeSectionLabel("Paired computers")
-        OmniBridgeCard {
+        PliweeSectionLabel("Paired computers")
+        PliweeCard {
             if (state.peers.isEmpty()) {
                 Text(
                     "None yet.",
-                    style = OmniBridgeType.body,
+                    style = PliweeType.body,
                     color = colors.textSecondary,
                 )
             } else {
                 state.peers.forEach { peer ->
-                    Text(peer.deviceName, style = OmniBridgeType.body, color = colors.textPrimary)
-                    OmniBridgeFingerprint(
+                    Text(peer.deviceName, style = PliweeType.body, color = colors.textPrimary)
+                    PliweeFingerprint(
                         peer.fingerprint.toDisplayShort(),
                         color = colors.textSecondary,
                     )
-                    Spacer(Modifier.height(OmniBridgeSpacing.xs))
+                    Spacer(Modifier.height(PliweeSpacing.xs))
                 }
             }
         }
 
-        OmniBridgeSectionLabel("Privacy")
-        OmniBridgeSecurityNotice(
+        PliweeSectionLabel("Privacy")
+        PliweeSecurityNotice(
             title = "Nothing leaves your network",
             // Every clause is a property of the code, checked for the Play v1
             // privacy policy. The earlier "transfers are not logged" was not
@@ -96,27 +96,27 @@ fun SettingsScreen(
         )
         // The privacy policy, published with the source (Play v1 audit F4).
         // Google Play requires it to be reachable from inside the app.
-        OmniBridgeSecondaryButton(
+        PliweeSecondaryButton(
             text = "Privacy policy",
             icon = R.drawable.ic_shield,
             onClick = actions.onOpenPrivacyPolicy,
         )
 
-        Spacer(Modifier.height(OmniBridgeSpacing.lg))
+        Spacer(Modifier.height(PliweeSpacing.lg))
         Column(
             Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs),
+            verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xs),
         ) {
-            OmniBridgeBrandMark(contentDescription = "Pliwee")
-            Text("Pliwee", style = OmniBridgeType.subtitle, color = colors.textPrimary)
+            PliweeBrandMark(contentDescription = "Pliwee")
+            Text("Pliwee", style = PliweeType.subtitle, color = colors.textPrimary)
             Text(
                 "One flow. Any device.",
-                style = OmniBridgeType.caption,
+                style = PliweeType.caption,
                 color = colors.textSecondary,
                 textAlign = TextAlign.Center,
             )
         }
-        Spacer(Modifier.height(OmniBridgeSpacing.xxl))
+        Spacer(Modifier.height(PliweeSpacing.xxl))
     }
 }

@@ -8,17 +8,17 @@ import android.util.Log
 import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.identity.DeviceIdentity
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.capabilities.DataStreamAuth
-import io.github.yurisismotto.omnibridge.proto.capabilities.DataStreamReady
-import io.github.yurisismotto.omnibridge.proto.capabilities.DataStreamStatus
-import io.github.yurisismotto.omnibridge.proto.capabilities.FileAccept
-import io.github.yurisismotto.omnibridge.proto.capabilities.FileCancel
-import io.github.yurisismotto.omnibridge.proto.capabilities.FileComplete
-import io.github.yurisismotto.omnibridge.proto.capabilities.FileControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.FileFailed
-import io.github.yurisismotto.omnibridge.proto.capabilities.FileOffer
-import io.github.yurisismotto.omnibridge.proto.capabilities.FileReject
-import io.github.yurisismotto.omnibridge.proto.capabilities.TransferFailureReason
+import io.github.yurisismotto.pliwee.proto.capabilities.DataStreamAuth
+import io.github.yurisismotto.pliwee.proto.capabilities.DataStreamReady
+import io.github.yurisismotto.pliwee.proto.capabilities.DataStreamStatus
+import io.github.yurisismotto.pliwee.proto.capabilities.FileAccept
+import io.github.yurisismotto.pliwee.proto.capabilities.FileCancel
+import io.github.yurisismotto.pliwee.proto.capabilities.FileComplete
+import io.github.yurisismotto.pliwee.proto.capabilities.FileControl
+import io.github.yurisismotto.pliwee.proto.capabilities.FileFailed
+import io.github.yurisismotto.pliwee.proto.capabilities.FileOffer
+import io.github.yurisismotto.pliwee.proto.capabilities.FileReject
+import io.github.yurisismotto.pliwee.proto.capabilities.TransferFailureReason
 import java.net.InetSocketAddress
 import java.security.SecureRandom
 import java.util.concurrent.ConcurrentHashMap
@@ -37,7 +37,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 /**
  * Every `files.v1` transfer this phone is involved in.
  *
- * Mirrors `omnibridge_capability_files::TransferManager`, in the **dialer** role:
+ * Mirrors `pliwee_capability_files::TransferManager`, in the **dialer** role:
  * a phone is not a stable listener, so it opens the data stream in both
  * directions of transfer and proves the challenge the desktop issued. See
  * ADR-0013.
@@ -570,7 +570,7 @@ class FileTransferManager(
     /** The desktop is ready to be dialled for a file it is sending us. */
     private suspend fun onReady(
         peer: Fingerprint,
-        ready: io.github.yurisismotto.omnibridge.proto.capabilities.FileReady,
+        ready: io.github.yurisismotto.pliwee.proto.capabilities.FileReady,
     ) {
         val transfer = ownedActive(ready.transferId.toByteArray(), peer, sending = false) ?: return
         val challenge = ready.streamChallenge.toByteArray()

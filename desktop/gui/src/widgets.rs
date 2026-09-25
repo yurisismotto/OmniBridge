@@ -108,8 +108,8 @@ impl Status {
     /// a session that has gone quiet is exactly the case where anything the
     /// device last told us is history, and showing it as live is the bug
     /// `DeviceState` was introduced to prevent.
-    pub fn from_device_state(state: omnibridge_control::DeviceState) -> Self {
-        use omnibridge_control::DeviceState as D;
+    pub fn from_device_state(state: pliwee_control::DeviceState) -> Self {
+        use pliwee_control::DeviceState as D;
         match state {
             D::Connected => Status::Connected,
             D::Stale => Status::Stale,

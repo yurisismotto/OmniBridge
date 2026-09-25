@@ -13,7 +13,7 @@
 //! holds none.**
 //!
 //! [`NonExportableIdentity`] below is a *double*, not hardware. What it
-//! proves is the shape of the seam: that `omnibridge-core` asks only for
+//! proves is the shape of the seam: that `pliwee-core` asks only for
 //! `Arc<dyn SigningKey>`, that rustls only ever calls `choose_scheme` and
 //! `sign`, and that nothing on the path from `server_config` to a completed
 //! handshake reaches for PKCS#8. What it cannot prove is that a real TPM
@@ -22,9 +22,9 @@
 
 use std::sync::Arc;
 
-use omnibridge_core::identity::{IdentityProvider, KeyBacking, LocalIdentity};
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::Platform;
+use pliwee_core::identity::{IdentityProvider, KeyBacking, LocalIdentity};
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1::Platform;
 use rustls::sign::{Signer, SigningKey};
 use rustls::SignatureScheme;
 use rustls_pki_types::CertificateDer;
@@ -156,7 +156,7 @@ impl IdentityProvider for NonExportableIdentity {
     fn backing(&self) -> KeyBacking {
         KeyBacking::SecureEnclave
     }
-    fn verify_protection(&self) -> Result<(), omnibridge_core::Error> {
+    fn verify_protection(&self) -> Result<(), pliwee_core::Error> {
         // Hardware: the guarantee is structural, so there is nothing to
         // check. This is the *only* honest reason for this method to be
         // trivially `Ok`, and it is why it may never be made trivially `Ok`
@@ -175,13 +175,13 @@ async fn handshake<S, C>(
     server_identity: &S,
     client_identity: &C,
     client_pins: Fingerprint,
-) -> Result<(Fingerprint, Fingerprint), omnibridge_core::Error>
+) -> Result<(Fingerprint, Fingerprint), pliwee_core::Error>
 where
     S: IdentityProvider + ?Sized,
     C: IdentityProvider + ?Sized,
 {
-    let server_config = omnibridge_core::tls::server_config(server_identity)?;
-    let client_config = omnibridge_core::tls::client_config(client_identity, client_pins)?;
+    let server_config = pliwee_core::tls::server_config(server_identity)?;
+    let client_config = pliwee_core::tls::client_config(client_identity, client_pins)?;
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -193,7 +193,7 @@ where
         let acceptor = tokio_rustls::TlsAcceptor::from(server_config);
         let tls = acceptor.accept(stream).await?;
         let (_, conn) = tls.get_ref();
-        omnibridge_core::tls::peer_fingerprint(conn)
+        pliwee_core::tls::peer_fingerprint(conn)
     });
 
     let stream = tokio::net::TcpStream::connect(addr).await.expect("connect");
@@ -203,7 +203,7 @@ where
     let name = rustls_pki_types::ServerName::try_from("omnibridge.invalid").expect("name");
     let tls = connector.connect(name, stream).await?;
     let (_, conn) = tls.get_ref();
-    let seen_by_client = omnibridge_core::tls::peer_fingerprint(conn)?;
+    let seen_by_client = pliwee_core::tls::peer_fingerprint(conn)?;
 
     let seen_by_server = server.await.expect("join")?;
     Ok((seen_by_server, seen_by_client))
@@ -278,8 +278,8 @@ async fn pinning_still_rejects_a_different_identity_through_the_resolver_path() 
         .expect_err("pinning must reject a different identity");
 
     let cause = match &err {
-        omnibridge_core::Error::Tls(e) => Some(e.clone()),
-        omnibridge_core::Error::Io(io) => io
+        pliwee_core::Error::Tls(e) => Some(e.clone()),
+        pliwee_core::Error::Io(io) => io
             .get_ref()
             .and_then(|inner| inner.downcast_ref::<rustls::Error>())
             .cloned(),
@@ -363,7 +363,7 @@ async fn a_signer_that_fails_fails_the_handshake_rather_than_falling_back() {
         fn backing(&self) -> KeyBacking {
             KeyBacking::Tpm
         }
-        fn verify_protection(&self) -> Result<(), omnibridge_core::Error> {
+        fn verify_protection(&self) -> Result<(), pliwee_core::Error> {
             Ok(())
         }
     }
@@ -392,14 +392,14 @@ async fn the_seam_accepts_every_shape_a_caller_already_holds() {
     let software = Arc::new(LocalIdentity::generate("Shapes", Platform::Linux).expect("generate"));
     let fingerprint = software.fingerprint();
 
-    omnibridge_core::tls::server_config(software.as_ref()).expect("&LocalIdentity");
-    omnibridge_core::tls::server_config(&software).expect("&Arc<LocalIdentity>");
-    omnibridge_core::tls::client_config(&software, fingerprint).expect("&Arc<LocalIdentity>");
+    pliwee_core::tls::server_config(software.as_ref()).expect("&LocalIdentity");
+    pliwee_core::tls::server_config(&software).expect("&Arc<LocalIdentity>");
+    pliwee_core::tls::client_config(&software, fingerprint).expect("&Arc<LocalIdentity>");
 
     let boxed: Arc<dyn IdentityProvider> = software;
-    let identity = omnibridge_core::identity::Identity::new(boxed);
-    omnibridge_core::tls::server_config(&identity).expect("&Identity");
-    omnibridge_core::tls::client_config(&identity, fingerprint).expect("&Identity");
+    let identity = pliwee_core::identity::Identity::new(boxed);
+    pliwee_core::tls::server_config(&identity).expect("&Identity");
+    pliwee_core::tls::client_config(&identity, fingerprint).expect("&Identity");
     assert_eq!(identity.backing(), KeyBacking::Software);
 }
 

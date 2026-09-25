@@ -38,7 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.lifecycleScope
-import io.github.yurisismotto.omnibridge.OmniBridgeApp
+import io.github.yurisismotto.omnibridge.PliweeApp
 import io.github.yurisismotto.omnibridge.R
 import io.github.yurisismotto.omnibridge.capability.ClipboardCapability
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardLimits
@@ -52,17 +52,17 @@ import io.github.yurisismotto.omnibridge.ui.components.ExchangePayloadCard
 import io.github.yurisismotto.omnibridge.ui.components.ExchangePayloadEmpty
 import io.github.yurisismotto.omnibridge.ui.components.ExchangePeerStatus
 import io.github.yurisismotto.omnibridge.ui.components.ExchangeSecurityFooter
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeIconTile
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgePrimaryButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeTextButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeIconTile
+import io.github.yurisismotto.omnibridge.ui.components.PliweePrimaryButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeTextButton
 import io.github.yurisismotto.omnibridge.ui.components.deviceKindIcon
 import io.github.yurisismotto.omnibridge.ui.components.exchangeAmbient
-import io.github.yurisismotto.omnibridge.ui.components.omniBridgeContentColumn
+import io.github.yurisismotto.omnibridge.ui.components.pliweeContentColumn
 import io.github.yurisismotto.omnibridge.ui.theme.MinTouchTarget
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 import kotlinx.coroutines.launch
 
 /**
@@ -118,7 +118,7 @@ import kotlinx.coroutines.launch
  */
 class SendActivity : ComponentActivity() {
 
-    private val app: OmniBridgeApp get() = application as OmniBridgeApp
+    private val app: PliweeApp get() = application as PliweeApp
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,8 +133,8 @@ class SendActivity : ComponentActivity() {
             // tokens the rest of OmniBridge is built from. It is an exchange
             // flow — the same act as Send clipboard with a different payload —
             // so it wears the same visual language and the same dark theme.
-            OmniBridgeTheme {
-                Surface(color = OmniBridgeTheme.colors.background) {
+            PliweeTheme {
+                Surface(color = PliweeTheme.colors.background) {
                     // Observed, not read once in `onCreate`. Choosing a
                     // destination below writes through the trust store, so a
                     // snapshot taken before the choice would leave this screen
@@ -332,7 +332,7 @@ class SendActivity : ComponentActivity() {
  */
 private data class Destination(
     val peer: TrustStore.TrustedPeer,
-    val status: OmniBridgeStatus,
+    val status: PliweeStatus,
     val identity: String,
     val kind: UiMapping.DeviceKind,
 )
@@ -349,8 +349,8 @@ private data class Destination(
 @Composable
 private fun rememberDestination(
     peer: TrustStore.TrustedPeer?,
-    session: OmniBridgeApp.LiveSession?,
-    connection: OmniBridgeApp.ConnectionState,
+    session: PliweeApp.LiveSession?,
+    connection: PliweeApp.ConnectionState,
 ): Destination? {
     if (peer == null) return null
     val connected = session?.peerHex == peer.fingerprint.toHex()
@@ -383,7 +383,7 @@ private fun SendExchangeScreen(
     onClose: () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     // The wash goes on the window-width node and the column inside it, so the
     // ambient fades out by distance rather than being clipped to the column.
     Box(Modifier.fillMaxSize().exchangeAmbient()) {
@@ -391,10 +391,10 @@ private fun SendExchangeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .omniBridgeContentColumn()
-                .padding(horizontal = OmniBridgeSpacing.md, vertical = OmniBridgeSpacing.lg),
+                .pliweeContentColumn()
+                .padding(horizontal = PliweeSpacing.md, vertical = PliweeSpacing.lg),
         ) {
-            Text(title, style = OmniBridgeType.heading, color = colors.textPrimary)
+            Text(title, style = PliweeType.heading, color = colors.textPrimary)
 
             ExchangeHero(
                 sourceIcon = sourceIcon,
@@ -406,7 +406,7 @@ private fun SendExchangeScreen(
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     ExchangePeerStatus(
                         status = destination.status,
-                        label = if (destination.status == OmniBridgeStatus.Connected) {
+                        label = if (destination.status == PliweeStatus.Connected) {
                             "Connected to ${destination.peer.deviceName}"
                         } else {
                             destination.peer.deviceName
@@ -414,23 +414,23 @@ private fun SendExchangeScreen(
                         identity = destination.identity,
                     )
                 }
-                Spacer(Modifier.height(OmniBridgeSpacing.lg))
+                Spacer(Modifier.height(PliweeSpacing.lg))
             }
 
             content()
 
-            Spacer(Modifier.height(OmniBridgeSpacing.xs))
+            Spacer(Modifier.height(PliweeSpacing.xs))
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 // "Close", not "Cancel". This screen can be left while an offer is
                 // already travelling, and closing it cancels nothing — a button
                 // that said otherwise would be claiming to stop a transfer it has
                 // no way to stop.
-                OmniBridgeTextButton("Close", onClose)
+                PliweeTextButton("Close", onClose)
             }
 
-            Spacer(Modifier.height(OmniBridgeSpacing.lg))
+            Spacer(Modifier.height(PliweeSpacing.lg))
             ExchangeSecurityFooter()
-            Spacer(Modifier.height(OmniBridgeSpacing.xxl))
+            Spacer(Modifier.height(PliweeSpacing.xxl))
         }
     }
 }
@@ -451,7 +451,7 @@ private fun EmptyPayload(
 
 @Composable
 private fun SendScreen(
-    app: OmniBridgeApp,
+    app: PliweeApp,
     uri: Uri?,
     peers: List<TrustStore.TrustedPeer>,
     selectedHex: String?,
@@ -459,7 +459,7 @@ private fun SendScreen(
     onSend: (TrustStore.TrustedPeer, Uri, (UiMapping.SendAttempt) -> Unit) -> Unit,
     onClose: () -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val transfers by app.files.visible.collectAsState()
     val session by app.liveSession.collectAsState()
     val connection by app.connectionState.collectAsState()
@@ -534,10 +534,10 @@ private fun SendScreen(
                 // button until the person names a destination.
                 ExchangePayloadCard(title = "Files") {
                     FileLine(name)
-                    Spacer(Modifier.height(OmniBridgeSpacing.xs))
+                    Spacer(Modifier.height(PliweeSpacing.xs))
                     Text(
                         "Which computer should receive $name?",
-                        style = OmniBridgeType.body,
+                        style = PliweeType.body,
                         color = colors.textPrimary,
                     )
                     DestinationPicker(eligible, selectedHex, onChoose)
@@ -553,17 +553,17 @@ private fun SendScreen(
                     // convenience, and it must stay visibly changeable rather than
                     // become the same silent routing under a nicer name.
                     if (eligible.size > 1) {
-                        Spacer(Modifier.height(OmniBridgeSpacing.xs))
+                        Spacer(Modifier.height(PliweeSpacing.xs))
                         Text(
                             "Send to",
-                            style = OmniBridgeType.label,
+                            style = PliweeType.label,
                             color = colors.textSecondary,
                         )
                         DestinationPicker(eligible, peer.fingerprint.toHex(), onChoose)
                     }
                 }
 
-                Spacer(Modifier.height(OmniBridgeSpacing.lg))
+                Spacer(Modifier.height(PliweeSpacing.lg))
 
                 // UX-DEBT-01: this screen follows the transfer *it* started,
                 // by the id `offer` returned, and never a transfer that
@@ -590,12 +590,12 @@ private fun SendScreen(
                         (attempt as? UiMapping.SendAttempt.Failed)?.let {
                             Text(
                                 it.message,
-                                style = OmniBridgeType.caption,
+                                style = PliweeType.caption,
                                 color = colors.accentRed,
-                                modifier = Modifier.padding(bottom = OmniBridgeSpacing.xs),
+                                modifier = Modifier.padding(bottom = PliweeSpacing.xs),
                             )
                         }
-                        OmniBridgePrimaryButton(
+                        PliweePrimaryButton(
                             text = UiMapping.sendButtonLabel(
                                 attempt,
                                 idleLabel = "Send file to ${peer.deviceName}",
@@ -614,13 +614,13 @@ private fun SendScreen(
 
                     is UiMapping.SendSurface.Ended -> {
                         TransferRow(surface.transfer)
-                        Spacer(Modifier.height(OmniBridgeSpacing.sm))
+                        Spacer(Modifier.height(PliweeSpacing.sm))
                         // The whole of UX-DEBT-01. A declined, failed,
                         // cancelled or completed attempt is history; this
                         // starts a *new* one, with a new transfer id, through
                         // the same path the first attempt took. Never
                         // automatic, and never in the background.
-                        OmniBridgePrimaryButton(
+                        PliweePrimaryButton(
                             text = UiMapping.retryButtonLabel(surface.transfer.state),
                             icon = R.drawable.ic_send,
                             onClick = start,
@@ -635,15 +635,15 @@ private fun SendScreen(
 /** The one file this share carries, as a tile and a name. */
 @Composable
 private fun FileLine(name: String) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     Row(verticalAlignment = Alignment.CenterVertically) {
-        OmniBridgeIconTile(icon = R.drawable.ic_file, accent = colors.accentBlue)
-        Spacer(Modifier.width(OmniBridgeSpacing.sm))
+        PliweeIconTile(icon = R.drawable.ic_file, accent = colors.accentBlue)
+        Spacer(Modifier.width(PliweeSpacing.sm))
         // Already through the sanitizer: a display name from another app is
         // attacker-influenced and is treated exactly like a name off the wire.
         Text(
             name,
-            style = OmniBridgeType.subtitle,
+            style = PliweeType.subtitle,
             color = colors.textPrimary,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -670,8 +670,8 @@ private fun DestinationPicker(
     chosenHex: String?,
     onChoose: (TrustStore.TrustedPeer) -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
-    Column(verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xxs)) {
+    val colors = PliweeTheme.colors
+    Column(verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xxs)) {
         for (candidate in candidates) {
             val chosen = candidate.fingerprint.toHex() == chosenHex
             Row(
@@ -686,9 +686,9 @@ private fun DestinationPicker(
                         role = Role.RadioButton,
                         onClick = { onChoose(candidate) },
                     )
-                    .padding(vertical = OmniBridgeSpacing.xxs),
+                    .padding(vertical = PliweeSpacing.xxs),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs),
+                horizontalArrangement = Arrangement.spacedBy(PliweeSpacing.xs),
             ) {
                 RadioButton(
                     selected = chosen,
@@ -698,12 +698,12 @@ private fun DestinationPicker(
                 Column {
                     Text(
                         candidate.deviceName,
-                        style = OmniBridgeType.body,
+                        style = PliweeType.body,
                         color = colors.textPrimary,
                     )
                     Text(
                         candidate.fingerprint.toDisplayShort(),
-                        style = OmniBridgeType.mono,
+                        style = PliweeType.mono,
                         color = colors.textMuted,
                     )
                 }
@@ -723,7 +723,7 @@ private fun DestinationPicker(
  */
 @Composable
 private fun SendTextScreen(
-    app: OmniBridgeApp,
+    app: PliweeApp,
     text: ClipboardText,
     peers: List<TrustStore.TrustedPeer>,
     selectedHex: String?,
@@ -731,7 +731,7 @@ private fun SendTextScreen(
     onSend: (TrustStore.TrustedPeer, ClipboardText, (UiMapping.SendAttempt) -> Unit) -> Unit,
     onClose: () -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val session by app.liveSession.collectAsState()
     val connection by app.connectionState.collectAsState()
     var attempt by remember { mutableStateOf<UiMapping.SendAttempt>(UiMapping.SendAttempt.Idle) }
@@ -774,7 +774,7 @@ private fun SendTextScreen(
                 ExchangePayloadCard(title = "Text", trailing = "${text.byteLength} bytes") {
                     Text(
                         "Which computer should receive this text?",
-                        style = OmniBridgeType.body,
+                        style = PliweeType.body,
                         color = colors.textPrimary,
                     )
                     DestinationPicker(eligible, selectedHex, onChoose)
@@ -787,31 +787,31 @@ private fun SendTextScreen(
                         "The text is not shown here: you just selected it, and " +
                             "a preview on this screen would be readable over " +
                             "your shoulder.",
-                        style = OmniBridgeType.caption,
+                        style = PliweeType.caption,
                         color = colors.textSecondary,
                     )
                     if (eligible.size > 1) {
-                        Spacer(Modifier.height(OmniBridgeSpacing.xs))
+                        Spacer(Modifier.height(PliweeSpacing.xs))
                         Text(
                             "Send to",
-                            style = OmniBridgeType.label,
+                            style = PliweeType.label,
                             color = colors.textSecondary,
                         )
                         DestinationPicker(eligible, peer.fingerprint.toHex(), onChoose)
                     }
                 }
 
-                Spacer(Modifier.height(OmniBridgeSpacing.lg))
+                Spacer(Modifier.height(PliweeSpacing.lg))
 
                 (attempt as? UiMapping.SendAttempt.Failed)?.let {
                     Text(
                         it.message,
-                        style = OmniBridgeType.caption,
+                        style = PliweeType.caption,
                         color = colors.accentRed,
-                        modifier = Modifier.padding(bottom = OmniBridgeSpacing.xs),
+                        modifier = Modifier.padding(bottom = PliweeSpacing.xs),
                     )
                 }
-                OmniBridgePrimaryButton(
+                PliweePrimaryButton(
                     text = UiMapping.sendButtonLabel(
                         attempt,
                         idleLabel = "Send text to ${peer.deviceName}",

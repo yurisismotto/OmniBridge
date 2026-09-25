@@ -33,7 +33,7 @@ import org.junit.Test
  * ## The defect, as reproduced
  *
  * Two paths on this phone dial a desktop, and only one carries a token.
- * `OmniBridgeApp.connect` — the reconnection, driven by `ConnectionService` —
+ * `PliweeApp.connect` — the reconnection, driven by `ConnectionService` —
  * deliberately carries none. With the desktop having revoked this phone *and*
  * a fresh pairing window open, that tokenless dial reaches a desktop waiting
  * for a proof and stops at
@@ -63,7 +63,7 @@ import org.junit.Test
  * untouched: a revoked fingerprint with no pairing window open is still
  * refused outright, one with a window open still has to prove the new
  * single-use token and still has to be confirmed by a human at the keyboard,
- * and `omnibridge_core::pairing::PairingSession` still enforces expiry, single
+ * and `pliwee_core::pairing::PairingSession` still enforces expiry, single
  * use and a failed-attempt cap. No protobuf and no wire change.
  *
  * ## What is done
@@ -108,7 +108,7 @@ class PairingRecoveryTest {
     private fun merge(existing: TrustStore.TrustedPeer?, paired: TrustStore.TrustedPeer) =
         TrustStore.TrustedPeer.mergePairing(existing, paired, maxAddresses = 4)
 
-    /** What `OmniBridgeApp.pair` builds from a session that has just come up. */
+    /** What `PliweeApp.pair` builds from a session that has just come up. */
     private fun freshlyPaired(
         f: Fingerprint = fedora,
         name: String = "Fedora",
@@ -417,7 +417,7 @@ class PairingRecoveryTest {
     //
     // A union is also how a grant could be *invented*, and that is the
     // boundary. Until `SensitiveCapabilities` existed, the only thing stopping
-    // it was a subtraction written inline in `OmniBridgeApp` when the fresh
+    // it was a subtraction written inline in `PliweeApp` when the fresh
     // record was built — so the property held for the wrong reason, in a
     // different file, and any change to that line would have let a re-pair
     // hand a computer the notification stream because the *negotiation*
@@ -662,7 +662,7 @@ class PairingRecoveryTest {
     @Test
     fun `pairing writes trust on exactly one line and only when established`() {
         val source = File(
-            "src/main/java/io/github/yurisismotto/omnibridge/OmniBridgeApp.kt",
+            "src/main/java/io/github/yurisismotto/omnibridge/PliweeApp.kt",
         ).readText()
         val body = source
             .substringAfter("private suspend fun pairWithToken(")

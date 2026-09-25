@@ -28,8 +28,8 @@
 mod common;
 
 use common::TestBus;
-use omnibridge_linux::activation::{self, Activation, SessionBus};
-use omnibridge_linux::tray::model::DESKTOP_APP_ID;
+use pliwee_linux::activation::{self, Activation, SessionBus};
+use pliwee_linux::tray::model::DESKTOP_APP_ID;
 
 /// The premise the self-heal rests on, measured rather than assumed.
 ///
@@ -370,7 +370,7 @@ fn this_crate_never_opens_the_system_bus() {
 /// Run it deliberately:
 ///
 /// ```console
-/// cargo test -p omnibridge-linux --test dbus_activation -- --ignored --nocapture
+/// cargo test -p pliwee-linux --test dbus_activation -- --ignored --nocapture
 /// ```
 ///
 /// # What it touches, and what it puts back

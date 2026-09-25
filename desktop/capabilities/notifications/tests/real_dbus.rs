@@ -9,7 +9,7 @@
 //! `#[ignore]`d and must be asked for by name:
 //!
 //! ```console
-//! cargo test -p omnibridge-capability-notifications --test real_dbus -- --ignored --test-threads=1
+//! cargo test -p pliwee-capability-notifications --test real_dbus -- --ignored --test-threads=1
 //! ```
 //!
 //! `--test-threads=1` is required rather than advisory: there is one
@@ -37,7 +37,7 @@
 
 use std::time::Duration;
 
-use omnibridge_capability_notifications::backend::{
+use pliwee_capability_notifications::backend::{
     dbus::DbusSink, CloseReason, Mirror, NotificationSink, Urgency,
 };
 
@@ -277,7 +277,7 @@ async fn a_body_reaches_the_server_escaped_and_nothing_is_left_behind() {
 
     // What the capability would have handed the backend for a body containing
     // markup: already escaped, because GNOME advertises `body-markup`.
-    let escaped = omnibridge_capability_notifications::text::body(
+    let escaped = pliwee_capability_notifications::text::body(
         "<b>OMNIBRIDGE-N2-MARKUP</b> & <a href='x'>link</a>",
         sink.capabilities().body_markup,
     );
@@ -331,7 +331,7 @@ async fn the_real_session_can_report_human_dismissals() {
 /// exercised end to end.
 ///
 /// ```console
-/// OMNIBRIDGE_HUMAN_DISMISS=1 cargo test -p omnibridge-capability-notifications \
+/// OMNIBRIDGE_HUMAN_DISMISS=1 cargo test -p pliwee-capability-notifications \
 ///     --test real_dbus -- --ignored --test-threads=1 human
 /// ```
 ///
@@ -397,19 +397,19 @@ async fn a_human_dismissal_on_this_desktop_is_reported_as_reason_two() {
 /// identity and origin the source sent, and that nothing else goes out.
 ///
 /// ```console
-/// OMNIBRIDGE_HUMAN_DISMISS=1 cargo test -p omnibridge-capability-notifications \
+/// OMNIBRIDGE_HUMAN_DISMISS=1 cargo test -p pliwee-capability-notifications \
 ///     --test real_dbus -- --ignored --test-threads=1 end_to_end
 /// ```
 #[tokio::test]
 #[ignore = "needs a person to dismiss a notification; set OMNIBRIDGE_HUMAN_DISMISS=1"]
 async fn a_human_dismissal_end_to_end_produces_exactly_one_dismiss_request() {
-    use omnibridge_capability_notifications::backend::{LockSource, UnknownLock};
-    use omnibridge_capability_notifications::{
+    use pliwee_capability_notifications::backend::{LockSource, UnknownLock};
+    use pliwee_capability_notifications::{
         NotificationAuthorizer, NotificationManager, NotificationPolicy,
     };
-    use omnibridge_core::Fingerprint;
-    use omnibridge_proto::v1::capabilities as pb;
-    use omnibridge_proto::Message as _;
+    use pliwee_core::Fingerprint;
+    use pliwee_proto::v1::capabilities as pb;
+    use pliwee_proto::Message as _;
     use std::sync::Arc;
 
     if std::env::var_os("OMNIBRIDGE_HUMAN_DISMISS").is_none() {
@@ -425,7 +425,7 @@ async fn a_human_dismissal_end_to_end_produces_exactly_one_dismiss_request() {
                 allow_dismiss_sync: true,
                 // `Full`, and the lock source below reports locked — so this
                 // gate exercises the display path rather than the reduction.
-                when_sink_locked: omnibridge_capability_notifications::LockPolicy::Full,
+                when_sink_locked: pliwee_capability_notifications::LockPolicy::Full,
                 ..NotificationPolicy::default()
             }
         }
@@ -589,7 +589,7 @@ async fn a_human_dismissal_end_to_end_produces_exactly_one_dismiss_request() {
 /// report rather than simulated and claimed.
 ///
 /// ```console
-/// OMNIBRIDGE_SOAK=1 cargo test -p omnibridge-capability-notifications \
+/// OMNIBRIDGE_SOAK=1 cargo test -p pliwee-capability-notifications \
 ///     --test real_dbus -- --ignored --test-threads=1 soak
 ///
 /// # a shorter or longer run
@@ -601,15 +601,13 @@ async fn a_human_dismissal_end_to_end_produces_exactly_one_dismiss_request() {
 #[tokio::test]
 #[ignore = "runs for 30 minutes against the real notification server; set OMNIBRIDGE_SOAK=1"]
 async fn a_thirty_minute_soak_stays_bounded_and_converges() {
-    use omnibridge_capability_notifications::backend::{
-        logind::LogindLock, LockSource, UnknownLock,
-    };
-    use omnibridge_capability_notifications::{
+    use pliwee_capability_notifications::backend::{logind::LogindLock, LockSource, UnknownLock};
+    use pliwee_capability_notifications::{
         NotificationAuthorizer, NotificationManager, NotificationPolicy,
     };
-    use omnibridge_core::Fingerprint;
-    use omnibridge_proto::v1::capabilities as pb;
-    use omnibridge_proto::Message as _;
+    use pliwee_core::Fingerprint;
+    use pliwee_proto::v1::capabilities as pb;
+    use pliwee_proto::Message as _;
     use std::sync::Arc;
     use tokio::sync::RwLock;
 
@@ -639,7 +637,7 @@ async fn a_thirty_minute_soak_stays_bounded_and_converges() {
 
     let switches = Arc::new(Switches(RwLock::new(NotificationPolicy {
         allow_dismiss_sync: true,
-        when_sink_locked: omnibridge_capability_notifications::LockPolicy::AppOnly,
+        when_sink_locked: pliwee_capability_notifications::LockPolicy::AppOnly,
         ..NotificationPolicy::default()
     })));
 
@@ -805,10 +803,10 @@ async fn a_thirty_minute_soak_stays_bounded_and_converges() {
         if cycle.is_multiple_of(11) {
             let mut policy = switches.0.write().await;
             policy.when_sink_locked = match policy.when_sink_locked {
-                omnibridge_capability_notifications::LockPolicy::Full => {
-                    omnibridge_capability_notifications::LockPolicy::AppOnly
+                pliwee_capability_notifications::LockPolicy::Full => {
+                    pliwee_capability_notifications::LockPolicy::AppOnly
                 }
-                _ => omnibridge_capability_notifications::LockPolicy::Full,
+                _ => pliwee_capability_notifications::LockPolicy::Full,
             };
         }
 

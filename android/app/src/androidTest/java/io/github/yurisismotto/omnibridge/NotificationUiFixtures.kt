@@ -1,6 +1,6 @@
 package io.github.yurisismotto.omnibridge
 
-import io.github.yurisismotto.omnibridge.OmniBridgeApp
+import io.github.yurisismotto.omnibridge.PliweeApp
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
 import io.github.yurisismotto.omnibridge.notifications.NotificationApp
 import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
@@ -112,7 +112,7 @@ object NotificationUiFixtures {
         ownDeviceName = "Tablet",
         ownFingerprint = "0000 0000 0000 0000",
         keyBackingDescription = "Key stored in the hardware-backed keystore",
-        connection = OmniBridgeApp.ConnectionState.Connected("fedora", "7E63 7B4E 937B 7732"),
+        connection = PliweeApp.ConnectionState.Connected("fedora", "7E63 7B4E 937B 7732"),
         peers = listOf(peer),
         listedPeers = listedPeers,
         selectedPeerHex = selectedPeerHex,

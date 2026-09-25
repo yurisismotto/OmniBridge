@@ -1,8 +1,8 @@
 package io.github.yurisismotto.omnibridge
 
 import io.github.yurisismotto.omnibridge.capability.BatteryCapability
-import io.github.yurisismotto.omnibridge.proto.capabilities.BatteryState
-import io.github.yurisismotto.omnibridge.proto.capabilities.ChargingState
+import io.github.yurisismotto.pliwee.proto.capabilities.BatteryState
+import io.github.yurisismotto.pliwee.proto.capabilities.ChargingState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test

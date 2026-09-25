@@ -74,7 +74,7 @@ is a container for the same three reasons:
   the build instead of being covered by the host;
 * `cargo` runs `--locked --offline` against a vendored tree with `CARGO_HOME`
   inside the build directory, so a network fetch is impossible;
-* it builds as a **normal user**. `omnibridge-core`'s store tests chmod a
+* it builds as a **normal user**. `pliwee-core`'s store tests chmod a
   directory to `0000` and assert the read comes back `PermissionDenied`; root
   has `CAP_DAC_OVERRIDE` and reads it anyway, so a root build would pass a
   test that proves nothing.

@@ -8,7 +8,7 @@ Electron app and not an embedded web view.
 A **client of the daemon**, and nothing more. It speaks the same
 newline-delimited JSON control protocol the `omnibridge` CLI speaks, over the
 same Unix socket in `$XDG_RUNTIME_DIR/omnibridge/control.sock`, using the very
-same `Request`/`Response` types from `omnibridge-daemon`. Sharing those types is
+same `Request`/`Response` types from `pliwee-daemon`. Sharing those types is
 the point: if the socket contract changes, this crate stops compiling.
 
 It adds no protocol, no capability and no privilege. Everything on screen is
@@ -42,7 +42,7 @@ Needs the GTK4 and libadwaita development packages, and
 
 ```bash
 sudo dnf install gtk4-devel libadwaita-devel glib2-devel
-cargo build -p omnibridge-gui
+cargo build -p pliwee-gui
 ```
 
 If you cannot install system-wide, the devel packages can be unpacked into a
@@ -54,7 +54,7 @@ any GNOME system.
 
 ```bash
 omnibridged &            # the daemon must be running
-cargo run -p omnibridge-gui
+cargo run -p pliwee-gui
 ```
 
 `--page <dashboard|files|clipboard|devices|peers|settings>` opens straight to
@@ -64,7 +64,7 @@ screenshot pass, or simply to land where you meant to.
 ## Tests
 
 ```bash
-cargo test -p omnibridge-gui
+cargo test -p pliwee-gui
 ```
 
 The token tests read `docs/design/tokens.json` — the same file the Android

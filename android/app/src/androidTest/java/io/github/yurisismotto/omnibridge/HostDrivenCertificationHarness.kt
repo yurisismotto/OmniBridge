@@ -36,7 +36,7 @@ import org.junit.runner.RunWith
  *
  * # What is real here, and what is not
  *
- * Everything below drives the **live** [OmniBridgeApp] singleton — the real trust
+ * Everything below drives the **live** [PliweeApp] singleton — the real trust
  * store on the real device, the real `PeerConnection.connect`, the real TLS
  * 1.3 handshake with the real SPKI pin, the real pairing proof, and the real
  * `policyChanged()` propagation that re-announces roles on a session that is
@@ -91,8 +91,8 @@ class HostDrivenCertificationHarness {
     private val context: Context
         get() = InstrumentationRegistry.getInstrumentation().targetContext
 
-    private val app: OmniBridgeApp
-        get() = context.applicationContext as OmniBridgeApp
+    private val app: PliweeApp
+        get() = context.applicationContext as PliweeApp
 
     private fun arg(name: String): String? =
         InstrumentationRegistry.getArguments().getString(name)?.takeIf { it.isNotBlank() }
@@ -326,7 +326,7 @@ class HostDrivenCertificationHarness {
 
     private companion object {
         /** Distinctive, so a host script can filter logcat down to this class. */
-        const val TAG = "OmniBridgeHarness"
+        const val TAG = "PliweeHarness"
         const val ARG_PAYLOAD = "omnibridge.pairing.payload"
         const val ARG_PEER = "omnibridge.peer"
         const val ARG_GRANTED = "omnibridge.granted"

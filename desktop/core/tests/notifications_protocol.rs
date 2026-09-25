@@ -8,13 +8,13 @@
 
 use std::collections::BTreeSet;
 
-use omnibridge_core::capability::CapabilityRegistry;
-use omnibridge_core::notifications::{
+use pliwee_core::capability::CapabilityRegistry;
+use pliwee_core::notifications::{
     self as notif, PeerRoles, Rejection, Role, RolesRejection, Snapshot, SnapshotRejection,
     SnapshotStep,
 };
-use omnibridge_proto::v1::capabilities as pb;
-use omnibridge_proto::Message;
+use pliwee_proto::v1::capabilities as pb;
+use pliwee_proto::Message;
 
 const SYNTHETIC_DEVICE: &str = "0123456789abcdef0123456789abcdef";
 
@@ -563,9 +563,7 @@ fn optional_digests_are_absent_or_exact() {
 /// the ceiling is refused for being past the ceiling.
 #[test]
 fn the_message_ceiling_is_enforced_and_sits_below_the_frame_limit() {
-    assert!(
-        (notif::MAX_NOTIFICATION_BYTES as u64) < omnibridge_core::framing::MAX_FRAME_LEN as u64
-    );
+    assert!((notif::MAX_NOTIFICATION_BYTES as u64) < pliwee_core::framing::MAX_FRAME_LEN as u64);
 
     let control = pb::NotificationControl {
         body: Some(pb::notification_control::Body::Upsert(upsert(0x16))),
@@ -888,7 +886,7 @@ fn a_dismiss_for_a_third_devices_notification_is_representable_and_refusable() {
 ///
 /// If this changes, the wire format changed. That is a protocol decision, not
 /// a test to update — see ADR-0016 and the field-number pins in
-/// `omnibridge-proto`'s `notifications_schema` test.
+/// `pliwee-proto`'s `notifications_schema` test.
 pub const CANONICAL_UPSERT_HEX: &str = "\
 12bd010a10000102030405060708090a0b0c0d0e0f1220303132333435363738396162636465663031323334353637383961626364656\
 61a136578616d706c652e666978747572652e617070220b46697874757265204170702a0d46495854555245205449544c45320c464958\
@@ -953,7 +951,7 @@ fn the_shared_vector_decodes_and_validates() {
 //
 // ADR-0016 §12 puts the derivation in the **source platform adapter**, because
 // it needs that device's secret, and N1 implements it in Kotlin. Nothing here
-// implements Android source behaviour in portable code: `omnibridge_core::
+// implements Android source behaviour in portable code: `pliwee_core::
 // notifications` still defines only the type, the width and the validation,
 // and `NotificationId` is deliberately opaque.
 //

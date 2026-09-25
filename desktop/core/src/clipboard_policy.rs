@@ -1,11 +1,11 @@
 //! Per-peer clipboard policy, as it is stored.
 //!
-//! This type lives in `omnibridge-core` rather than in the clipboard capability
+//! This type lives in `pliwee-core` rather than in the clipboard capability
 //! for one reason: it is *persisted*, and the trust store is core's. A
 //! capability crate cannot own a field of `TrustedPeer` without core
 //! depending on it, and core depending on a capability would invert the whole
 //! plugin model. The capability re-exports it, so callers still say
-//! `omnibridge_capability_clipboard::ClipboardPolicy`.
+//! `pliwee_capability_clipboard::ClipboardPolicy`.
 //!
 //! # Two different questions
 //!

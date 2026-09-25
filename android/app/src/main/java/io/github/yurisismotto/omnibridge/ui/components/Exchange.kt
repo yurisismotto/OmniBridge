@@ -39,13 +39,13 @@ import androidx.compose.ui.unit.dp
 import io.github.yurisismotto.omnibridge.R
 import io.github.yurisismotto.omnibridge.ui.UiMapping
 import io.github.yurisismotto.omnibridge.ui.theme.Brand
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeGradient
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeIconSize
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeRadius
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeGradient
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeIconSize
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeRadius
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 
 /**
  * The exchange-flow family: the screens whose whole purpose is moving one
@@ -133,11 +133,11 @@ fun ExchangeHero(
     @DrawableRes destinationIcon: Int,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = OmniBridgeSpacing.lg)
+            .padding(vertical = PliweeSpacing.lg)
             .decorative(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -145,7 +145,7 @@ fun ExchangeHero(
         ExchangeTile(sourceIcon, colors.accentCyan)
         ExchangeFlow(
             Modifier
-                .padding(horizontal = OmniBridgeSpacing.xxs)
+                .padding(horizontal = PliweeSpacing.xxs)
                 .width(FlowWidth)
                 .height(FlowHeight),
         )
@@ -166,11 +166,11 @@ fun ExchangeHero(
  */
 @Composable
 private fun ExchangeTile(@DrawableRes icon: Int, accent: Color) {
-    val tint = accent.copy(alpha = if (OmniBridgeTheme.colors.isDark) 0.22f else 0.10f)
+    val tint = accent.copy(alpha = if (PliweeTheme.colors.isDark) 0.22f else 0.10f)
     Box(
         Modifier
             .size(TileSize)
-            .clip(RoundedCornerShape(OmniBridgeRadius.xlarge))
+            .clip(RoundedCornerShape(PliweeRadius.xlarge))
             .background(tint),
         contentAlignment = Alignment.Center,
     ) {
@@ -178,7 +178,7 @@ private fun ExchangeTile(@DrawableRes icon: Int, accent: Color) {
             painter = painterResource(icon),
             contentDescription = null,
             tint = accent,
-            modifier = Modifier.size(OmniBridgeIconSize.xlarge),
+            modifier = Modifier.size(PliweeIconSize.xlarge),
         )
     }
 }
@@ -207,14 +207,14 @@ private fun ExchangeTile(@DrawableRes icon: Int, accent: Color) {
  * from the reference is the *opacity ramp* along each ribbon, which is what
  * makes the picture read as light and airy rather than as two painted
  * cables. Nothing is ever drawn on top of this, so the vivid identity
- * gradient is the right one — see [OmniBridgeGradient].
+ * gradient is the right one — see [PliweeGradient].
  *
  * Drawn, not rasterised: it costs two strokes and four circles a frame and
  * scales to any density.
  */
 @Composable
 fun ExchangeFlow(modifier: Modifier = Modifier) {
-    val dark = OmniBridgeTheme.colors.isDark
+    val dark = PliweeTheme.colors.isDark
     // On a dark surface the same low opacities all but vanish. They are
     // lifted a little rather than the hues being brightened, so the ribbons
     // stay a soft background presence instead of glowing.
@@ -320,19 +320,19 @@ fun ExchangeFlow(modifier: Modifier = Modifier) {
  */
 @Composable
 fun ExchangePeerStatus(
-    status: OmniBridgeStatus,
+    status: PliweeStatus,
     label: String,
     identity: String,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val accent = status.color()
     val tint = accent.copy(alpha = if (colors.isDark) 0.16f else 0.08f)
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(OmniBridgeRadius.large))
+            .clip(RoundedCornerShape(PliweeRadius.large))
             .background(tint)
-            .padding(horizontal = OmniBridgeSpacing.md, vertical = OmniBridgeSpacing.sm)
+            .padding(horizontal = PliweeSpacing.md, vertical = PliweeSpacing.sm)
             .semantics(mergeDescendants = true) {
                 contentDescription = "$label. $identity"
             },
@@ -346,10 +346,10 @@ fun ExchangePeerStatus(
                 .clip(CircleShape)
                 .background(status.dot()),
         )
-        Spacer(Modifier.width(OmniBridgeSpacing.sm))
+        Spacer(Modifier.width(PliweeSpacing.sm))
         Column {
-            Text(label, style = OmniBridgeType.subtitle, color = colors.textPrimary)
-            Text(identity, style = OmniBridgeType.mono, color = colors.textSecondary)
+            Text(label, style = PliweeType.subtitle, color = colors.textPrimary)
+            Text(identity, style = PliweeType.mono, color = colors.textSecondary)
         }
     }
 }
@@ -370,16 +370,16 @@ fun ExchangePayloadCard(
     trailing: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
-    OmniBridgeCard(modifier = modifier, contentPadding = OmniBridgeSpacing.lg) {
+    val colors = PliweeTheme.colors
+    PliweeCard(modifier = modifier, contentPadding = PliweeSpacing.lg) {
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(title, style = OmniBridgeType.label, color = colors.textSecondary)
+            Text(title, style = PliweeType.label, color = colors.textSecondary)
             if (trailing != null) {
-                Text(trailing, style = OmniBridgeType.caption, color = colors.textMuted)
+                Text(trailing, style = PliweeType.caption, color = colors.textMuted)
             }
         }
         content()
@@ -402,28 +402,28 @@ fun ExchangePayloadEmpty(
     modifier: Modifier = Modifier,
     accent: Color? = null,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val hue = accent ?: colors.accentBlue
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = OmniBridgeSpacing.xl),
+            .padding(vertical = PliweeSpacing.xl),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs),
+        verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xs),
     ) {
         // The same mark the Files list's own empty state uses. One way of
         // saying "there is nothing here", not one per screen.
-        OmniBridgeEmptyArt(icon = icon, accent = hue)
-        Spacer(Modifier.height(OmniBridgeSpacing.xxs))
+        PliweeEmptyArt(icon = icon, accent = hue)
+        Spacer(Modifier.height(PliweeSpacing.xxs))
         Text(
             title,
-            style = OmniBridgeType.subtitle,
+            style = PliweeType.subtitle,
             color = colors.textPrimary,
             textAlign = TextAlign.Center,
         )
         Text(
             subtitle,
-            style = OmniBridgeType.body,
+            style = PliweeType.body,
             color = colors.textSecondary,
             textAlign = TextAlign.Center,
         )
@@ -446,7 +446,7 @@ fun ExchangePayloadEmpty(
  */
 @Composable
 fun ExchangeSecurityFooter(modifier: Modifier = Modifier) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     Column(
         modifier
             .fillMaxWidth()
@@ -455,25 +455,25 @@ fun ExchangeSecurityFooter(modifier: Modifier = Modifier) {
                     "Secure connection: direct connection, TLS 1.3, pinned identity, local network."
             },
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xxs),
+        verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xxs),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 painter = painterResource(R.drawable.ic_shield_check),
                 contentDescription = null,
                 tint = colors.accentCyan,
-                modifier = Modifier.size(OmniBridgeIconSize.small),
+                modifier = Modifier.size(PliweeIconSize.small),
             )
-            Spacer(Modifier.width(OmniBridgeSpacing.xxs))
+            Spacer(Modifier.width(PliweeSpacing.xxs))
             Text(
                 "Secure connection",
-                style = OmniBridgeType.label,
+                style = PliweeType.label,
                 color = colors.textSecondary,
             )
         }
         Text(
             SECURITY_FACTS.joinToString("  ·  "),
-            style = OmniBridgeType.caption,
+            style = PliweeType.caption,
             color = colors.textMuted,
             textAlign = TextAlign.Center,
         )
@@ -515,7 +515,7 @@ val SECURITY_FACTS: List<String> =
  */
 @Composable
 fun Modifier.exchangeAmbient(): Modifier {
-    val dark = OmniBridgeTheme.colors.isDark
+    val dark = PliweeTheme.colors.isDark
     // Deliberately tiny. The reference's ambient shapes are barely visible on
     // a calibrated screen, and a saturated blob would both cheapen the page
     // and start eating into text contrast.

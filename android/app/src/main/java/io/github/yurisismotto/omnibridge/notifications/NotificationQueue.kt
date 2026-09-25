@@ -85,7 +85,7 @@ sealed interface NotificationEvent {
      */
     class Inbound(
         val peer: Fingerprint,
-        val control: io.github.yurisismotto.omnibridge.proto.capabilities.NotificationControl,
+        val control: io.github.yurisismotto.pliwee.proto.capabilities.NotificationControl,
     ) : NotificationEvent
 
     /** True for events that must never be dropped to make room. */

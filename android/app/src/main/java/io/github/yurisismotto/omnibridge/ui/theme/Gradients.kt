@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Brush
  *
  * Both keep all three brand hues, so the deepened one still reads as OmniBridge.
  */
-object OmniBridgeGradient {
+object PliweeGradient {
     val decorativeStops = listOf(Brand.Cyan, Brand.Blue, Brand.Violet)
 
     /**

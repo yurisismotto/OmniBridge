@@ -2,13 +2,13 @@ package io.github.yurisismotto.omnibridge
 
 import io.github.yurisismotto.omnibridge.ui.theme.AccentOnDark
 import io.github.yurisismotto.omnibridge.ui.theme.AccentOnLight
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeGradient
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeRadius
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeGradient
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeRadius
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
 import io.github.yurisismotto.omnibridge.ui.theme.Brand
 import io.github.yurisismotto.omnibridge.ui.theme.Neutral
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeLayout
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeLayout
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
 import io.github.yurisismotto.omnibridge.ui.theme.DarkColors
 import io.github.yurisismotto.omnibridge.ui.theme.LightColors
 import androidx.compose.ui.graphics.Color
@@ -94,12 +94,12 @@ class DesignTokensTest {
     @Test
     fun `the gradients match the canonical tokens`() {
         val cta = tokens.getJSONObject("gradient").getJSONObject("cta").getJSONArray("stops")
-        assertEquals(cta.length(), OmniBridgeGradient.ctaStops.size)
-        OmniBridgeGradient.ctaStops.forEachIndexed { i, colour ->
+        assertEquals(cta.length(), PliweeGradient.ctaStops.size)
+        PliweeGradient.ctaStops.forEachIndexed { i, colour ->
             assertEquals(cta.getString(i).uppercase(), colour.hex())
         }
         val brand = tokens.getJSONObject("gradient").getJSONObject("brand").getJSONArray("stops")
-        OmniBridgeGradient.decorativeStops.forEachIndexed { i, colour ->
+        PliweeGradient.decorativeStops.forEachIndexed { i, colour ->
             assertEquals(brand.getString(i).uppercase(), colour.hex())
         }
     }
@@ -107,18 +107,18 @@ class DesignTokensTest {
     @Test
     fun `the scales match the canonical tokens`() {
         val spacing = tokens.getJSONObject("spacing")
-        assertEquals(spacing.getInt("xxs").toFloat(), OmniBridgeSpacing.xxs.value, 0f)
-        assertEquals(spacing.getInt("xs").toFloat(), OmniBridgeSpacing.xs.value, 0f)
-        assertEquals(spacing.getInt("sm").toFloat(), OmniBridgeSpacing.sm.value, 0f)
-        assertEquals(spacing.getInt("md").toFloat(), OmniBridgeSpacing.md.value, 0f)
-        assertEquals(spacing.getInt("lg").toFloat(), OmniBridgeSpacing.lg.value, 0f)
-        assertEquals(spacing.getInt("xl").toFloat(), OmniBridgeSpacing.xl.value, 0f)
-        assertEquals(spacing.getInt("xxl").toFloat(), OmniBridgeSpacing.xxl.value, 0f)
+        assertEquals(spacing.getInt("xxs").toFloat(), PliweeSpacing.xxs.value, 0f)
+        assertEquals(spacing.getInt("xs").toFloat(), PliweeSpacing.xs.value, 0f)
+        assertEquals(spacing.getInt("sm").toFloat(), PliweeSpacing.sm.value, 0f)
+        assertEquals(spacing.getInt("md").toFloat(), PliweeSpacing.md.value, 0f)
+        assertEquals(spacing.getInt("lg").toFloat(), PliweeSpacing.lg.value, 0f)
+        assertEquals(spacing.getInt("xl").toFloat(), PliweeSpacing.xl.value, 0f)
+        assertEquals(spacing.getInt("xxl").toFloat(), PliweeSpacing.xxl.value, 0f)
 
         val radius = tokens.getJSONObject("radius")
-        assertEquals(radius.getInt("small").toFloat(), OmniBridgeRadius.small.value, 0f)
-        assertEquals(radius.getInt("medium").toFloat(), OmniBridgeRadius.medium.value, 0f)
-        assertEquals(radius.getInt("large").toFloat(), OmniBridgeRadius.large.value, 0f)
+        assertEquals(radius.getInt("small").toFloat(), PliweeRadius.small.value, 0f)
+        assertEquals(radius.getInt("medium").toFloat(), PliweeRadius.medium.value, 0f)
+        assertEquals(radius.getInt("large").toFloat(), PliweeRadius.large.value, 0f)
     }
 
     // ---- the part that makes the accessibility claim executable ----------
@@ -226,7 +226,7 @@ class DesignTokensTest {
         val floor = tokens.getJSONObject("contrast_floor").getDouble("white_on_cta_gradient")
         var worst = Double.MAX_VALUE
         var worstAt = ""
-        OmniBridgeGradient.ctaStops.zipWithNext { a, b ->
+        PliweeGradient.ctaStops.zipWithNext { a, b ->
             for (step in 0..20) {
                 val t = step / 20f
                 val mixed = Color(
@@ -272,15 +272,15 @@ class DesignTokensTest {
 
         // dot() is theme-independent, so it can be checked without composing.
         listOf(
-            "connected" to OmniBridgeStatus.Connected,
-            "success" to OmniBridgeStatus.Success,
-            "available" to OmniBridgeStatus.Available,
-            "transferring" to OmniBridgeStatus.Transferring,
-            "warning" to OmniBridgeStatus.Warning,
-            "stale" to OmniBridgeStatus.Stale,
-            "error" to OmniBridgeStatus.Error,
-            "revoked" to OmniBridgeStatus.Revoked,
-            "disconnected" to OmniBridgeStatus.Disconnected,
+            "connected" to PliweeStatus.Connected,
+            "success" to PliweeStatus.Success,
+            "available" to PliweeStatus.Available,
+            "transferring" to PliweeStatus.Transferring,
+            "warning" to PliweeStatus.Warning,
+            "stale" to PliweeStatus.Stale,
+            "error" to PliweeStatus.Error,
+            "revoked" to PliweeStatus.Revoked,
+            "disconnected" to PliweeStatus.Disconnected,
         ).forEach { (name, value) ->
             assertEquals("status.$name.dot", expect(name, "dot"), value.dot().hex())
         }
@@ -294,13 +294,13 @@ class DesignTokensTest {
      */
     @Test
     fun `every status carries a word and an icon`() {
-        OmniBridgeStatus.entries.forEach { status ->
+        PliweeStatus.entries.forEach { status ->
             assertTrue("${status.name} has no label", status.label.isNotBlank())
             assertTrue("${status.name} has no icon", status.icon != 0)
         }
         // And the words are distinct: two statuses that read the same are not
         // distinguishable by a screen reader either.
-        val labels = OmniBridgeStatus.entries.map { it.label }
+        val labels = PliweeStatus.entries.map { it.label }
         assertEquals(labels.size, labels.toSet().size)
     }
 
@@ -361,14 +361,14 @@ class DesignTokensTest {
     fun `the CTA gradient is exactly the corrected accent triple`() {
         assertEquals(
             listOf(AccentOnLight.Cyan, AccentOnLight.Blue, AccentOnLight.Violet),
-            OmniBridgeGradient.ctaStops,
+            PliweeGradient.ctaStops,
         )
     }
 
     @Test
     fun `the layout tokens match the canonical tokens`() {
         val layout = tokens.getJSONObject("layout")
-        assertEquals(layout.getInt("content_max").toFloat(), OmniBridgeLayout.contentMax.value, 0f)
-        assertEquals(layout.getInt("compact_max").toFloat(), OmniBridgeLayout.compactMax.value, 0f)
+        assertEquals(layout.getInt("content_max").toFloat(), PliweeLayout.contentMax.value, 0f)
+        assertEquals(layout.getInt("compact_max").toFloat(), PliweeLayout.compactMax.value, 0f)
     }
 }

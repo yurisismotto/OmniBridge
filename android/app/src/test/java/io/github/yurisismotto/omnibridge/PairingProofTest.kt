@@ -77,7 +77,7 @@ class PairingProofTest {
     // Cross-language known-answer vector
     // -----------------------------------------------------------------------
     //
-    // The contract with `omnibridge_core::pairing`. The identical vector lives in
+    // The contract with `pliwee_core::pairing`. The identical vector lives in
     // `desktop/core/tests/pairing.rs`. If either side changes the domain
     // separator, the field order or the length prefixing, one of the two tests
     // fails instead of pairing mysteriously breaking on a real phone.

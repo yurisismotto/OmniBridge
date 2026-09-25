@@ -20,7 +20,7 @@ import androidx.compose.ui.platform.LocalContext
  * Static rather than dynamic: the scheme changes only when the theme does,
  * and a static local avoids re-composing every reader on unrelated changes.
  */
-val LocalOmniBridgeColors: ProvidableCompositionLocal<OmniBridgeColorScheme> =
+val LocalOmniBridgeColors: ProvidableCompositionLocal<PliweeColorScheme> =
     staticCompositionLocalOf { LightColors }
 
 /** True when the person has asked the system to remove animation. */
@@ -116,7 +116,7 @@ private fun materialDark() = darkColorScheme(
 )
 
 @Composable
-fun OmniBridgeTheme(
+fun PliweeTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
@@ -127,14 +127,14 @@ fun OmniBridgeTheme(
     ) {
         MaterialTheme(
             colorScheme = if (darkTheme) materialDark() else materialLight(),
-            typography = OmniBridgeTypography,
+            typography = PliweeTypography,
             content = content,
         )
     }
 }
 
-/** Shorthand for the OmniBridge tokens at a call site: `OmniBridgeTheme.colors`. */
-object OmniBridgeTheme {
-    val colors: OmniBridgeColorScheme
+/** Shorthand for the OmniBridge tokens at a call site: `PliweeTheme.colors`. */
+object PliweeTheme {
+    val colors: PliweeColorScheme
         @Composable @ReadOnlyComposable get() = LocalOmniBridgeColors.current
 }

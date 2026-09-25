@@ -1,7 +1,7 @@
 //! Transfers: what is moving, and what finished during this daemon run.
 
 use gtk::prelude::*;
-use omnibridge_control::{Request, Response, TransferReport};
+use pliwee_control::{Request, Response, TransferReport};
 
 use crate::widgets::{self, Status, SPACING_SM, SPACING_XS};
 use crate::{client, DaemonState};

@@ -5,7 +5,7 @@ import io.github.yurisismotto.omnibridge.R
 import io.github.yurisismotto.omnibridge.notifications.LockPolicy
 import io.github.yurisismotto.omnibridge.notifications.NotificationDismissReadiness
 import io.github.yurisismotto.omnibridge.notifications.NotificationReadiness
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
 
 /**
  * How a [NotificationReadiness] is presented, and nothing else.
@@ -15,7 +15,7 @@ import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
  * reason [UiMapping] exists for transfer failures.
  *
  * Every state resolves to a **word**, never to a colour alone: the badge takes
- * an [OmniBridgeStatus] for its dot and icon and a string resource for its label,
+ * an [PliweeStatus] for its dot and icon and a string resource for its label,
  * and there is no path here that produces one without the other.
  */
 object NotificationUiMapping {
@@ -55,16 +55,16 @@ object NotificationUiMapping {
      * who believes their notifications are being shared when they are not is
      * the failure this screen exists to prevent, and so is its opposite.
      */
-    fun status(readiness: NotificationReadiness): OmniBridgeStatus = when (readiness) {
-        NotificationReadiness.READY -> OmniBridgeStatus.Connected
-        NotificationReadiness.SHARING_OFF -> OmniBridgeStatus.Disconnected
-        NotificationReadiness.NOT_CONNECTED -> OmniBridgeStatus.Available
-        NotificationReadiness.PAUSED -> OmniBridgeStatus.Disconnected
+    fun status(readiness: NotificationReadiness): PliweeStatus = when (readiness) {
+        NotificationReadiness.READY -> PliweeStatus.Connected
+        NotificationReadiness.SHARING_OFF -> PliweeStatus.Disconnected
+        NotificationReadiness.NOT_CONNECTED -> PliweeStatus.Available
+        NotificationReadiness.PAUSED -> PliweeStatus.Disconnected
         NotificationReadiness.NEEDS_ANDROID_ACCESS,
         NotificationReadiness.NO_APPS,
         NotificationReadiness.PEER_NOT_RECEIVING,
         NotificationReadiness.UNAVAILABLE,
-        -> OmniBridgeStatus.Warning
+        -> PliweeStatus.Warning
     }
 
     /**

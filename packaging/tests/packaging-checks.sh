@@ -162,7 +162,7 @@ for bin in omnibridged omnibridge omnibridge-gui; do
         fail "$bin is built but never appears in %files"
     fi
 done
-for pkg in omnibridge-daemon omnibridge-cli omnibridge-gui; do
+for pkg in pliwee-daemon pliwee-cli pliwee-gui; do
     if grep -q -- "-p $pkg" "$SPEC"; then
         pass "%build names $pkg explicitly"
     else

@@ -22,9 +22,9 @@ import org.junit.Test
  */
 class DevicesPresentationTest {
 
-    private val connected = OmniBridgeApp.ConnectionState.Connected("fedora", "149F 6B66")
-    private val idle = OmniBridgeApp.ConnectionState.Idle
-    private val connecting = OmniBridgeApp.ConnectionState.Connecting
+    private val connected = PliweeApp.ConnectionState.Connected("fedora", "149F 6B66")
+    private val idle = PliweeApp.ConnectionState.Idle
+    private val connecting = PliweeApp.ConnectionState.Connecting
 
     // ---- the duplication that had to go ----------------------------------
 
@@ -68,7 +68,7 @@ class DevicesPresentationTest {
      */
     @Test
     fun `a retry keeps its countdown and its reason`() {
-        val retrying = OmniBridgeApp.ConnectionState.Retrying("Wi-Fi dropped", 8)
+        val retrying = PliweeApp.ConnectionState.Retrying("Wi-Fi dropped", 8)
         val notice = UiMapping.connectionNotice(retrying, mustChoose = false)
 
         assertNotNull(notice)
@@ -84,14 +84,14 @@ class DevicesPresentationTest {
      */
     @Test
     fun `a scheduled retry is not presented as a problem`() {
-        val retrying = OmniBridgeApp.ConnectionState.Retrying("Wi-Fi dropped", 8)
+        val retrying = PliweeApp.ConnectionState.Retrying("Wi-Fi dropped", 8)
         assertFalse(UiMapping.connectionNotice(retrying, mustChoose = false)!!.isProblem)
     }
 
     /** A terminal error keeps its message, and does read as a problem. */
     @Test
     fun `a terminal error keeps its message and reads as a problem`() {
-        val error = OmniBridgeApp.ConnectionState.Error("could not find the computer")
+        val error = PliweeApp.ConnectionState.Error("could not find the computer")
         val notice = UiMapping.connectionNotice(error, mustChoose = false)
 
         assertNotNull(notice)
@@ -122,7 +122,7 @@ class DevicesPresentationTest {
      */
     @Test
     fun `a failure outranks the choose-a-device hint`() {
-        val error = OmniBridgeApp.ConnectionState.Error("handshake refused")
+        val error = PliweeApp.ConnectionState.Error("handshake refused")
         val notice = UiMapping.connectionNotice(error, mustChoose = true)!!
 
         assertEquals("handshake refused", notice.body)
@@ -136,8 +136,8 @@ class DevicesPresentationTest {
             idle,
             connecting,
             connected,
-            OmniBridgeApp.ConnectionState.Retrying("r", 3),
-            OmniBridgeApp.ConnectionState.Error("e"),
+            PliweeApp.ConnectionState.Retrying("r", 3),
+            PliweeApp.ConnectionState.Error("e"),
         )
         for (state in states) {
             for (mustChoose in listOf(true, false)) {

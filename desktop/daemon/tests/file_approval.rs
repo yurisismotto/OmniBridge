@@ -1,6 +1,6 @@
 //! Asking a human about an incoming file, over the real control socket.
 //!
-//! The unit tests in `omnibridge_runtime::approval` pin the seam's own rules.
+//! The unit tests in `pliwee_runtime::approval` pin the seam's own rules.
 //! These pin the *product*: a phone offers a file, the question reaches a
 //! desktop client over the same Unix socket the GUI uses, and the answer that
 //! travels back decides what happens to a real TLS data stream and a real
@@ -19,11 +19,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use common::*;
-use omnibridge_capability_files::transfer::{TransferId, TransferState};
-use omnibridge_daemon::control::{Event, Request, Response};
-use omnibridge_daemon::server;
-use omnibridge_daemon::state::DaemonState;
-use omnibridge_proto::v1::capabilities as pb;
+use pliwee_capability_files::transfer::{TransferId, TransferState};
+use pliwee_daemon::control::{Event, Request, Response};
+use pliwee_daemon::server;
+use pliwee_daemon::state::DaemonState;
+use pliwee_proto::v1::capabilities as pb;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::UnixStream;
 
@@ -121,7 +121,7 @@ impl Provider {
     }
 }
 
-fn offer_request(event: Event) -> omnibridge_daemon::control::FileOfferRequest {
+fn offer_request(event: Event) -> pliwee_daemon::control::FileOfferRequest {
     match event {
         Event::FileOfferRequest(request) => request,
         other => panic!("expected a file offer prompt, got {other:?}"),

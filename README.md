@@ -604,7 +604,7 @@ cd desktop && cargo test --workspace              # 981 tests
 cd android && ./gradlew :app:testDebugUnitTest    # 771 tests
 
 # Touches the real system clipboard, so it is opt-in:
-cd desktop && cargo test -p omnibridge-capability-clipboard --test real_backend \
+cd desktop && cargo test -p pliwee-capability-clipboard --test real_backend \
     -- --ignored --test-threads=1                 # 9 tests
 
 # On a connected Android device:

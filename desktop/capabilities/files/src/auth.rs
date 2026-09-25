@@ -25,7 +25,7 @@
 //! ```
 //!
 //! This is deliberately the same shape as the pairing proof in
-//! `omnibridge_core::pairing`: a standard MAC, a domain separator, and every
+//! `pliwee_core::pairing`: a standard MAC, a domain separator, and every
 //! field length-prefixed so two different field splits cannot produce the
 //! same message. No new cryptography was invented here; a reader who has
 //! understood the pairing proof has already understood this.
@@ -49,8 +49,8 @@ use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use subtle::ConstantTimeEq;
 
-use omnibridge_core::error::{Error, Result};
-use omnibridge_core::Fingerprint;
+use pliwee_core::error::{Error, Result};
+use pliwee_core::Fingerprint;
 use rand::TryRngCore;
 
 use crate::limits::{STREAM_CHALLENGE_LEN, TRANSFER_ID_LEN};
@@ -68,7 +68,7 @@ const DATA_STREAM_DOMAIN: &[u8] = b"omnibridge/files.v1/data-stream/v1";
 /// [`PairingToken`]. It is a key, and keys do not belong in logs, in `Debug`
 /// output or in memory after use.
 ///
-/// [`PairingToken`]: omnibridge_core::pairing::PairingToken
+/// [`PairingToken`]: pliwee_core::pairing::PairingToken
 pub struct StreamChallenge([u8; STREAM_CHALLENGE_LEN]);
 
 impl StreamChallenge {

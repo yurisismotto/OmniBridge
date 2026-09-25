@@ -9,7 +9,7 @@ import javax.crypto.spec.SecretKeySpec
 /**
  * Authenticates a `files.v1` data stream.
  *
- * Byte-for-byte identical to `omnibridge_capability_files::auth`, and the same
+ * Byte-for-byte identical to `pliwee_capability_files::auth`, and the same
  * shape as [io.github.yurisismotto.omnibridge.pairing.PairingProof]: a standard
  * MAC, a versioned domain separator, and every field length-prefixed so two
  * different field splits cannot produce the same message.

@@ -35,27 +35,27 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.yurisismotto.omnibridge.R
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeIconSize
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeRadius
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeIconSize
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeRadius
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 import io.github.yurisismotto.omnibridge.ui.theme.MinTouchTarget
 
 /** An icon on a soft tint of its own accent. Used for files, capabilities, actions. */
 @Composable
-fun OmniBridgeIconTile(
+fun PliweeIconTile(
     icon: Int,
     accent: Color,
     modifier: Modifier = Modifier,
     size: Dp = 40.dp,
 ) {
-    val tint = accent.copy(alpha = if (OmniBridgeTheme.colors.isDark) 0.22f else 0.10f)
+    val tint = accent.copy(alpha = if (PliweeTheme.colors.isDark) 0.22f else 0.10f)
     Box(
         modifier
             .size(size)
-            .clip(RoundedCornerShape(OmniBridgeRadius.medium))
+            .clip(RoundedCornerShape(PliweeRadius.medium))
             .background(tint),
         contentAlignment = Alignment.Center,
     ) {
@@ -63,7 +63,7 @@ fun OmniBridgeIconTile(
             painter = painterResource(icon),
             contentDescription = null,
             tint = accent,
-            modifier = Modifier.size(OmniBridgeIconSize.large),
+            modifier = Modifier.size(PliweeIconSize.large),
         )
     }
 }
@@ -77,7 +77,7 @@ fun OmniBridgeIconTile(
  * separate the hues, and invisible to a screen reader entirely.
  */
 @Composable
-fun OmniBridgeDeviceCard(
+fun PliweeDeviceCard(
     name: String,
     /**
      * The line under the name: the peer's platform while a session is up,
@@ -87,7 +87,7 @@ fun OmniBridgeDeviceCard(
      * site — including for a phone. See [UiMapping.peerIdentityLine].
      */
     subtitle: String,
-    status: OmniBridgeStatus,
+    status: PliweeStatus,
     modifier: Modifier = Modifier,
     deviceIcon: Int = R.drawable.ic_device_desktop,
     batteryPercent: Int? = null,
@@ -106,8 +106,8 @@ fun OmniBridgeDeviceCard(
     stateDescription: String? = null,
     footer: (@Composable () -> Unit)? = null,
 ) {
-    val colors = OmniBridgeTheme.colors
-    OmniBridgeCard(
+    val colors = PliweeTheme.colors
+    PliweeCard(
         modifier = modifier
             .then(
                 if (stateDescription != null) {
@@ -119,7 +119,7 @@ fun OmniBridgeDeviceCard(
             .then(
             if (onClick != null) {
                 Modifier
-                    .clip(RoundedCornerShape(OmniBridgeRadius.large))
+                    .clip(RoundedCornerShape(PliweeRadius.large))
                     .clickable(role = Role.Button, onClick = onClick)
             } else {
                 Modifier
@@ -136,22 +136,22 @@ fun OmniBridgeDeviceCard(
         // A card does not need artwork to fill space it is not short of.
         Box {
             Column(
-                Modifier.padding(OmniBridgeSpacing.md),
-                verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs),
+                Modifier.padding(PliweeSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xs),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    OmniBridgeStatusBadge(status)
+                    PliweeStatusBadge(status)
                     Spacer(Modifier.weight(1f))
                     Icon(
                         painter = painterResource(deviceIcon),
                         contentDescription = null,
                         tint = colors.textMuted,
-                        modifier = Modifier.size(OmniBridgeIconSize.large),
+                        modifier = Modifier.size(PliweeIconSize.large),
                     )
                 }
                 Text(
                     name,
-                    style = OmniBridgeType.title,
+                    style = PliweeType.title,
                     color = colors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -160,20 +160,20 @@ fun OmniBridgeDeviceCard(
                 // compared character by character against another screen.
                 Text(
                     subtitle,
-                    style = OmniBridgeType.mono,
+                    style = PliweeType.mono,
                     color = colors.textMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (batteryPercent != null) {
-                    OmniBridgeBatteryPill(
+                    PliweeBatteryPill(
                         percentage = batteryPercent,
                         charging = batteryCharging,
                         stale = batteryStale,
                     )
                 }
                 if (footer != null) {
-                    Spacer(Modifier.height(OmniBridgeSpacing.xxs))
+                    Spacer(Modifier.height(PliweeSpacing.xxs))
                     footer()
                 }
             }
@@ -189,7 +189,7 @@ fun OmniBridgeDeviceCard(
  * whether turning it on means sending, receiving or both.
  */
 @Composable
-fun OmniBridgeCapabilityRow(
+fun PliweeCapabilityRow(
     title: String,
     description: String,
     icon: Int,
@@ -199,34 +199,34 @@ fun OmniBridgeCapabilityRow(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     Row(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = MinTouchTarget)
-            .padding(vertical = OmniBridgeSpacing.xs),
+            .padding(vertical = PliweeSpacing.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
             tint = if (enabled) accent else colors.disabled,
-            modifier = Modifier.size(OmniBridgeIconSize.large),
+            modifier = Modifier.size(PliweeIconSize.large),
         )
-        Spacer(Modifier.width(OmniBridgeSpacing.sm))
+        Spacer(Modifier.width(PliweeSpacing.sm))
         Column(Modifier.weight(1f)) {
             Text(
                 title,
-                style = OmniBridgeType.body,
+                style = PliweeType.body,
                 color = if (enabled) colors.textPrimary else colors.disabled,
             )
             Text(
                 description,
-                style = OmniBridgeType.caption,
+                style = PliweeType.caption,
                 color = if (enabled) colors.textSecondary else colors.disabled,
             )
         }
-        Spacer(Modifier.width(OmniBridgeSpacing.xs))
+        Spacer(Modifier.width(PliweeSpacing.xs))
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
@@ -251,7 +251,7 @@ fun OmniBridgeCapabilityRow(
  * transfer that failed keeps saying so until it is cleared.
  *
  * @param statusLabel the word for the state, when the caller owns a more
- *   specific vocabulary than [OmniBridgeStatus] does. The Files screen does:
+ *   specific vocabulary than [PliweeStatus] does. The Files screen does:
  *   "Declined", "Timed out" and "Disconnected" are three different endings
  *   that all wear the same muted colour, and each is a separate localised
  *   string. The colour still comes from [status], so the two cannot disagree.
@@ -263,10 +263,10 @@ fun OmniBridgeCapabilityRow(
  *   about whether the action is offerable at all.
  */
 @Composable
-fun OmniBridgeTransferCard(
+fun PliweeTransferCard(
     filename: String,
     subtitle: String,
-    status: OmniBridgeStatus,
+    status: PliweeStatus,
     modifier: Modifier = Modifier,
     fraction: Float? = null,
     detail: String? = null,
@@ -281,12 +281,12 @@ fun OmniBridgeTransferCard(
     onCancel: (() -> Unit)? = null,
     action: (@Composable () -> Unit)? = null,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val tileAccent = accent ?: colors.accentBlue
-    OmniBridgeCard(modifier) {
+    PliweeCard(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            OmniBridgeIconTile(icon = icon, accent = tileAccent)
-            Spacer(Modifier.width(OmniBridgeSpacing.sm))
+            PliweeIconTile(icon = icon, accent = tileAccent)
+            Spacer(Modifier.width(PliweeSpacing.sm))
             Column(
                 Modifier
                     .weight(1f)
@@ -305,45 +305,45 @@ fun OmniBridgeTransferCard(
             ) {
                 Text(
                     filename,
-                    style = OmniBridgeType.subtitle,
+                    style = PliweeType.subtitle,
                     color = colors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(subtitle, style = OmniBridgeType.caption, color = colors.textSecondary)
+                Text(subtitle, style = PliweeType.caption, color = colors.textSecondary)
             }
             if (percentLabel != null) {
-                Spacer(Modifier.width(OmniBridgeSpacing.xs))
-                Text(percentLabel, style = OmniBridgeType.label, color = colors.accentBlue)
-            } else if (status == OmniBridgeStatus.Success) {
+                Spacer(Modifier.width(PliweeSpacing.xs))
+                Text(percentLabel, style = PliweeType.label, color = colors.accentBlue)
+            } else if (status == PliweeStatus.Success) {
                 Icon(
                     painter = painterResource(R.drawable.ic_check),
                     contentDescription = status.label,
                     tint = colors.accentCyan,
-                    modifier = Modifier.size(OmniBridgeIconSize.large),
+                    modifier = Modifier.size(PliweeIconSize.large),
                 )
             }
         }
-        if (fraction != null || status == OmniBridgeStatus.Transferring) {
-            Spacer(Modifier.height(OmniBridgeSpacing.xxs))
-            OmniBridgeProgressBar(fraction)
+        if (fraction != null || status == PliweeStatus.Transferring) {
+            Spacer(Modifier.height(PliweeSpacing.xxs))
+            PliweeProgressBar(fraction)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (statusLabel != null) {
-                OmniBridgeStatusBadge(status, label = statusLabel, showIcon = false)
+                PliweeStatusBadge(status, label = statusLabel, showIcon = false)
             } else if (detail != null) {
-                Text(detail, style = OmniBridgeType.caption, color = colors.textSecondary)
-            } else if (status != OmniBridgeStatus.Success) {
-                OmniBridgeStatusBadge(status, showIcon = false)
+                Text(detail, style = PliweeType.caption, color = colors.textSecondary)
+            } else if (status != PliweeStatus.Success) {
+                PliweeStatusBadge(status, showIcon = false)
             }
             if (statusLabel != null && detail != null) {
-                Spacer(Modifier.width(OmniBridgeSpacing.xs))
-                Text(detail, style = OmniBridgeType.caption, color = colors.textSecondary)
+                Spacer(Modifier.width(PliweeSpacing.xs))
+                Text(detail, style = PliweeType.caption, color = colors.textSecondary)
             }
             Spacer(Modifier.weight(1f))
             action?.invoke()
             if (onCancel != null) {
-                OmniBridgeTextButton(
+                PliweeTextButton(
                     cancelLabel,
                     onCancel,
                     modifier = if (cancelDescription == null) {
@@ -367,13 +367,13 @@ fun OmniBridgeTransferCard(
  * app's empty states they are looking at.
  */
 @Composable
-fun OmniBridgeEmptyArt(
+fun PliweeEmptyArt(
     icon: Int,
     accent: Color,
     modifier: Modifier = Modifier,
     size: Dp = 88.dp,
 ) {
-    val tint = accent.copy(alpha = if (OmniBridgeTheme.colors.isDark) 0.16f else 0.08f)
+    val tint = accent.copy(alpha = if (PliweeTheme.colors.isDark) 0.16f else 0.08f)
     Box(
         modifier
             .size(size)
@@ -386,7 +386,7 @@ fun OmniBridgeEmptyArt(
             painter = painterResource(icon),
             contentDescription = null,
             tint = accent,
-            modifier = Modifier.size(OmniBridgeIconSize.hero),
+            modifier = Modifier.size(PliweeIconSize.hero),
         )
     }
 }
@@ -395,7 +395,7 @@ fun OmniBridgeEmptyArt(
  * Nothing here yet.
  *
  * @param icon the semantic mark for what is missing, drawn by
- *   [OmniBridgeEmptyArt]. The Files list passes one: its empty state used to
+ *   [PliweeEmptyArt]. The Files list passes one: its empty state used to
  *   be the connection ribbon, a thin tricolour stroke that read as a stray
  *   underline above the text and said nothing about files.
  *
@@ -404,7 +404,7 @@ fun OmniBridgeEmptyArt(
  *   but literally the thing the person is being invited to create.
  */
 @Composable
-fun OmniBridgeEmptyState(
+fun PliweeEmptyState(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
@@ -426,13 +426,13 @@ fun OmniBridgeEmptyState(
      */
     fillsContentArea: Boolean = false,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = OmniBridgeSpacing.xxl, horizontal = OmniBridgeSpacing.lg),
+            .padding(vertical = PliweeSpacing.xxl, horizontal = PliweeSpacing.lg),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.sm),
+        verticalArrangement = Arrangement.spacedBy(PliweeSpacing.sm),
     ) {
         // Optical placement, not arithmetic centring: the leading space is
         // the smaller of the two, so the block settles a little above the
@@ -440,8 +440,8 @@ fun OmniBridgeEmptyState(
         // reads as sitting low.
         if (fillsContentArea) Spacer(Modifier.weight(0.62f))
         if (icon != null) {
-            OmniBridgeEmptyArt(icon = icon, accent = accent ?: colors.accentBlue)
-            Spacer(Modifier.height(OmniBridgeSpacing.xxs))
+            PliweeEmptyArt(icon = icon, accent = accent ?: colors.accentBlue)
+            Spacer(Modifier.height(PliweeSpacing.xxs))
         } else {
             Icon(
                 painter = painterResource(R.drawable.ribbon_connection),
@@ -454,19 +454,19 @@ fun OmniBridgeEmptyState(
         }
         Text(
             title,
-            style = OmniBridgeType.heading,
+            style = PliweeType.heading,
             color = colors.textPrimary,
             textAlign = TextAlign.Center,
         )
         Text(
             subtitle,
-            style = OmniBridgeType.body,
+            style = PliweeType.body,
             color = colors.textSecondary,
             textAlign = TextAlign.Center,
         )
         if (actionLabel != null && onAction != null) {
-            Spacer(Modifier.height(OmniBridgeSpacing.xs))
-            OmniBridgePrimaryButton(
+            Spacer(Modifier.height(PliweeSpacing.xs))
+            PliweePrimaryButton(
                 text = actionLabel,
                 onClick = onAction,
                 icon = R.drawable.ic_qr,

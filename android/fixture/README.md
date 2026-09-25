@@ -95,7 +95,7 @@ the intent still launches, but with the extra silently mangled.
 `op` accepts: `post` · `update` (a synonym for `post`) · `remove` / `cancel` ·
 `ongoing` / `nonclearable` · `group` · `progress` · `timeout` · `clear`.
 
-Every operation writes one line to logcat under the tag `OmniBridgeFixture`,
+Every operation writes one line to logcat under the tag `PliweeFixture`,
 carrying the op, the id and the tag — **never** the title or the body. The
 fixture is used in the same runs as the NOTIF-SEC-25 logging canaries, and a
 fixture that logged its own payload would fail them itself.

@@ -1,15 +1,15 @@
 package io.github.yurisismotto.omnibridge.ui
 
-import io.github.yurisismotto.omnibridge.OmniBridgeApp
+import io.github.yurisismotto.omnibridge.PliweeApp
 import io.github.yurisismotto.omnibridge.capability.ClipboardCapability
 import io.github.yurisismotto.omnibridge.capability.FilesCapability
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardCapabilities
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardPolicy
 import io.github.yurisismotto.omnibridge.files.FileTransferManager
 import io.github.yurisismotto.omnibridge.files.TransferState
-import io.github.yurisismotto.omnibridge.proto.Platform
+import io.github.yurisismotto.pliwee.proto.Platform
 import io.github.yurisismotto.omnibridge.store.TrustStore
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
 
 /**
  * The decisions the UI makes about what to show and what to allow.
@@ -38,20 +38,20 @@ object UiMapping {
      * for a failure that belongs to a different machine.
      */
     fun statusFor(
-        connection: OmniBridgeApp.ConnectionState,
+        connection: PliweeApp.ConnectionState,
         connected: Boolean,
         targeted: Boolean = true,
-    ): OmniBridgeStatus = when {
-        connected -> OmniBridgeStatus.Connected
+    ): PliweeStatus = when {
+        connected -> PliweeStatus.Connected
         // Checked before the link state, because the link state is about
         // whichever computer *is* the target.
-        !targeted -> OmniBridgeStatus.Available
-        connection is OmniBridgeApp.ConnectionState.Connecting -> OmniBridgeStatus.Connecting
-        connection is OmniBridgeApp.ConnectionState.Retrying -> OmniBridgeStatus.Connecting
-        connection is OmniBridgeApp.ConnectionState.Error -> OmniBridgeStatus.Error
+        !targeted -> PliweeStatus.Available
+        connection is PliweeApp.ConnectionState.Connecting -> PliweeStatus.Connecting
+        connection is PliweeApp.ConnectionState.Retrying -> PliweeStatus.Connecting
+        connection is PliweeApp.ConnectionState.Error -> PliweeStatus.Error
         // Paired and reachable, just not talking right now. Deliberately not
         // "Disconnected", which reads as a fault rather than a resting state.
-        else -> OmniBridgeStatus.Available
+        else -> PliweeStatus.Available
     }
 
     /**
@@ -95,7 +95,7 @@ object UiMapping {
      */
     fun clipboardSendGate(
         peer: TrustStore.TrustedPeer,
-        session: OmniBridgeApp.LiveSession?,
+        session: PliweeApp.LiveSession?,
     ): ClipboardSendGate {
         if (!peer.allows(ClipboardCapability.ID)) {
             return ClipboardSendGate.Blocked(
@@ -129,7 +129,7 @@ object UiMapping {
     /** May "Send clipboard" be tapped? */
     fun canSendClipboard(
         peer: TrustStore.TrustedPeer,
-        session: OmniBridgeApp.LiveSession?,
+        session: PliweeApp.LiveSession?,
     ): Boolean = clipboardSendGate(peer, session).ready
 
     /** May a file be offered to this peer right now? */
@@ -160,13 +160,13 @@ object UiMapping {
     }
 
     /** How a transfer's state reads. */
-    fun transferStatus(state: TransferState): OmniBridgeStatus = when (state) {
-        TransferState.TRANSFERRING, TransferState.VERIFYING -> OmniBridgeStatus.Transferring
-        TransferState.COMPLETED -> OmniBridgeStatus.Success
+    fun transferStatus(state: TransferState): PliweeStatus = when (state) {
+        TransferState.TRANSFERRING, TransferState.VERIFYING -> PliweeStatus.Transferring
+        TransferState.COMPLETED -> PliweeStatus.Success
         // A cancellation is not an error and is not displayed as one.
-        TransferState.CANCELLED -> OmniBridgeStatus.Disconnected
-        TransferState.FAILED -> OmniBridgeStatus.Error
-        TransferState.OFFERED, TransferState.WAITING_ACCEPT -> OmniBridgeStatus.Connecting
+        TransferState.CANCELLED -> PliweeStatus.Disconnected
+        TransferState.FAILED -> PliweeStatus.Error
+        TransferState.OFFERED, TransferState.WAITING_ACCEPT -> PliweeStatus.Connecting
     }
 
     /**
@@ -591,23 +591,23 @@ object UiMapping {
      *   because the answer is "pick one", not a property of any single row.
      */
     fun connectionNotice(
-        connection: OmniBridgeApp.ConnectionState,
+        connection: PliweeApp.ConnectionState,
         mustChoose: Boolean,
     ): ConnectionNotice? = when (connection) {
-        is OmniBridgeApp.ConnectionState.Retrying -> ConnectionNotice(
+        is PliweeApp.ConnectionState.Retrying -> ConnectionNotice(
             title = "Reconnecting in ${connection.inSeconds}s",
             body = connection.reason,
             isProblem = false,
         )
-        is OmniBridgeApp.ConnectionState.Error -> ConnectionNotice(
+        is PliweeApp.ConnectionState.Error -> ConnectionNotice(
             title = "Could not connect",
             body = connection.message,
             isProblem = true,
         )
         // Nothing to add: the device card carries the whole story.
-        is OmniBridgeApp.ConnectionState.Connected,
-        is OmniBridgeApp.ConnectionState.Connecting,
-        is OmniBridgeApp.ConnectionState.Idle,
+        is PliweeApp.ConnectionState.Connected,
+        is PliweeApp.ConnectionState.Connecting,
+        is PliweeApp.ConnectionState.Idle,
         -> if (mustChoose) {
             ConnectionNotice(
                 title = "Choose a device",
@@ -648,7 +648,7 @@ object UiMapping {
      */
     fun peerDeviceKind(
         peer: TrustStore.TrustedPeer,
-        session: OmniBridgeApp.LiveSession?,
+        session: PliweeApp.LiveSession?,
     ): DeviceKind =
         deviceKind(session?.takeIf { it.peerHex == peer.fingerprint.toHex() }?.platform)
 
@@ -686,7 +686,7 @@ object UiMapping {
      */
     fun peerIdentityLine(
         peer: TrustStore.TrustedPeer,
-        session: OmniBridgeApp.LiveSession? = null,
+        session: PliweeApp.LiveSession? = null,
     ): String {
         // Identity, not a flag: a session with another computer says nothing
         // about this one. The same comparison the send gate makes.

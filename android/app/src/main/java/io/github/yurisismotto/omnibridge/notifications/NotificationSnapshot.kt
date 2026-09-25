@@ -1,8 +1,8 @@
 package io.github.yurisismotto.omnibridge.notifications
 
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationCategory
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationImportance
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationPrivacy
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationCategory
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationImportance
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationPrivacy
 
 /**
  * Everything the listener reads off one `StatusBarNotification`, and nothing

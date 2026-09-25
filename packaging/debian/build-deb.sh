@@ -18,7 +18,7 @@
 #     inside the build directory, so a network fetch is impossible rather than
 #     merely unnecessary;
 #   * it builds as a normal user, never root, which is what `%check`'s
-#     permission tests require — `omnibridge-core`'s store tests chmod a
+#     permission tests require — `pliwee-core`'s store tests chmod a
 #     directory to 0000 and assert the read comes back PermissionDenied, and
 #     root has CAP_DAC_OVERRIDE and reads it anyway.
 #

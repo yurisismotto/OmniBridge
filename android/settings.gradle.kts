@@ -20,7 +20,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "OmniBridge"
+rootProject.name = "Pliwee"
 include(":app")
 
 // The notifications.v1 hardware fixture. **Test only, and structurally so:**

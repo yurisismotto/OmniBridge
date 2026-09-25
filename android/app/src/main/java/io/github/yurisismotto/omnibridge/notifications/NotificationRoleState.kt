@@ -1,7 +1,7 @@
 package io.github.yurisismotto.omnibridge.notifications
 
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRole
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRoles
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRole
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRoles
 
 /**
  * What this phone claims it can do for `notifications.v1`, on one connection.
@@ -138,7 +138,7 @@ class SourceRoleState {
  * What a *peer* told us it can do, reduced under the epoch rule.
  *
  * The mirror image of [SourceRoleState], and the Kotlin twin of
- * `omnibridge_core::notifications::PeerRoles`. It is recorded and used for
+ * `pliwee_core::notifications::PeerRoles`. It is recorded and used for
  * exactly two decisions — do not send upserts to a peer that never claimed
  * `SINK`, and report to the UI whether a computer has claimed
  * `DISMISS_REPORTER` so the dismiss-sync row can be honest about it — and for

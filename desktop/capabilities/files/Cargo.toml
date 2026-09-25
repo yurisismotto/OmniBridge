@@ -1,5 +1,5 @@
 [package]
-name = "omnibridge-capability-files"
+name = "pliwee-capability-files"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -30,11 +30,11 @@ unwrap_used = "warn"
 
 [dependencies]
 # `default-features = false`: a capability crate needs the protocol half of
-# `omnibridge-core`, never its Unix filesystem adapter. Leaving the default on
+# `pliwee-core`, never its Unix filesystem adapter. Leaving the default on
 # would drag `unix-fs` into every build through feature unification, and the
 # portability gate would then pass for the wrong reason.
-omnibridge-core = { version = "1.0.0", path = "../../core", default-features = false }
-omnibridge-proto = { version = "1.0.0", path = "../../proto" }
+pliwee-core = { version = "1.0.0", path = "../../core", default-features = false }
+pliwee-proto = { version = "1.0.0", path = "../../proto" }
 prost = "0.14"
 tokio = { version = "1", features = ["fs", "io-util", "sync", "time", "macros", "rt"] }
 tracing = "0.1"

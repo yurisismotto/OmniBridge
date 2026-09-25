@@ -45,7 +45,7 @@ use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
 use adw::prelude::*;
-use omnibridge_control::FileOfferRequest;
+use pliwee_control::FileOfferRequest;
 
 use crate::client::{self, ApprovalUpdate};
 use crate::widgets::{self, SPACING_SM, SPACING_XS};

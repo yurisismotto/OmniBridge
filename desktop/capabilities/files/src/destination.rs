@@ -83,7 +83,7 @@ impl FileSink for UnixDownloadSink {
     /// lives beside its destination so the final rename is atomic.
     fn open_temp(&self, id: TransferId) -> io::Result<(std::fs::File, PathBuf)> {
         self.prepare()?;
-        let path = self.dir.join(format!(".omnibridge-{}.part", id.to_hex()));
+        let path = self.dir.join(format!(".pliwee-{}.part", id.to_hex()));
         let file = OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -391,7 +391,7 @@ mod tests {
         let (_file, temp) = dest.open_temp(id).expect("temp");
 
         let name = temp.file_name().and_then(|s| s.to_str()).expect("name");
-        assert!(name.starts_with(".omnibridge-"), "{name}");
+        assert!(name.starts_with(".pliwee-"), "{name}");
         assert!(name.ends_with(".part"), "{name}");
         assert_eq!(temp.parent(), Some(dest.dir()));
 

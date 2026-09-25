@@ -7,11 +7,11 @@
 use std::time::Duration;
 
 use clap::{Parser, Subcommand, ValueEnum};
-use omnibridge_control::{
+use pliwee_control::{
     BatteryReport, ClipboardFlag, ClipboardStatusReport, DeviceReport, Event, NotificationSetting,
     NotificationsStatusReport, Request, Response, TransferReport,
 };
-use omnibridge_linux::control_socket_path;
+use pliwee_linux::control_socket_path;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::UnixStream;
 

@@ -2,14 +2,14 @@
 
 use std::os::unix::fs::PermissionsExt;
 
-use omnibridge_core::clipboard_policy::ClipboardPolicy;
-use omnibridge_core::identity::LocalIdentity;
-use omnibridge_core::notification_policy::NotificationPolicy;
-use omnibridge_core::pairing::PairingToken;
-use omnibridge_core::qr::QrPayload;
-use omnibridge_core::store::{Settings, Store, TrustedPeer};
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::Platform;
+use pliwee_core::clipboard_policy::ClipboardPolicy;
+use pliwee_core::identity::LocalIdentity;
+use pliwee_core::notification_policy::NotificationPolicy;
+use pliwee_core::pairing::PairingToken;
+use pliwee_core::qr::QrPayload;
+use pliwee_core::store::{Settings, Store, TrustedPeer};
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1::Platform;
 
 fn identity() -> LocalIdentity {
     LocalIdentity::generate("Test Device", Platform::Linux).expect("generate identity")
@@ -384,10 +384,7 @@ fn a_newer_schema_version_is_refused_rather_than_misread() {
     // literal `1`, so that a future schema bump does not silently turn this
     // test into a no-op that passes because the replacement never happened.
     let bumped = raw.replace(
-        &format!(
-            "\"schema_version\": {}",
-            omnibridge_core::store::SCHEMA_VERSION
-        ),
+        &format!("\"schema_version\": {}", pliwee_core::store::SCHEMA_VERSION),
         "\"schema_version\": 99",
     );
     assert_ne!(raw, bumped, "schema_version must be present in state.json");
@@ -442,7 +439,7 @@ fn store_never_persists_message_or_clipboard_content() {
 // ---------------------------------------------------------------------------
 //
 // `protocol/testdata/identity-{a,b}.der` are real certificates emitted by
-// `cargo run -p omnibridge-core --example gen_test_vectors`. The Kotlin suite
+// `cargo run -p pliwee-core --example gen_test_vectors`. The Kotlin suite
 // reads the same two files and must derive the same fingerprints, which makes
 // "the identity is SHA-256 over the DER SubjectPublicKeyInfo" a checked
 // contract between the two implementations rather than a shared convention.

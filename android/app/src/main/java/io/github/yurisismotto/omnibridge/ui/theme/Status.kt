@@ -26,7 +26,7 @@ import io.github.yurisismotto.omnibridge.R
  * that its colour is decoration. [color] is the corrected hue that clears
  * WCAG AA, used for the label and the icon beside it. See [Brand].
  */
-enum class OmniBridgeStatus(
+enum class PliweeStatus(
     val label: String,
     @DrawableRes val icon: Int,
 ) {

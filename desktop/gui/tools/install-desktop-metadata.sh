@@ -53,7 +53,7 @@ set -euo pipefail
 # Must match APP_ID in ../src/lib.rs, the Wayland app_id, the D-Bus name, the
 # desktop file's basename, its Icon= key, the D-Bus service file's basename
 # and its Name= key, and the tray item's IconName. One string, and tests in
-# both `omnibridge-gui` and `omnibridge-linux` assert every copy of it agrees.
+# both `pliwee-gui` and `pliwee-linux` assert every copy of it agrees.
 APP_ID="io.github.yurisismotto.omnibridge"
 
 here() { cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd; }

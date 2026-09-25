@@ -15,8 +15,8 @@ access contract [ADR-0015](../adr/ADR-0015-notification-access.md), for naming
 
 | Thing | State | Wave |
 | --- | --- | --- |
-| `protocol/proto/omnibridge/v1/capabilities/notifications_v1.proto` | **Exists.** Compiled by both toolchains, and **unchanged since N0** | N0 |
-| `omnibridge_core::notifications` — limits, validation, roles, snapshot framing | **Exists.** Portable, pure functions of decoded messages | N0 |
+| `protocol/proto/pliwee/v1/capabilities/notifications_v1.proto` | **Exists.** Compiled by both toolchains, and **unchanged since N0** | N0 |
+| `pliwee_core::notifications` — limits, validation, roles, snapshot framing | **Exists.** Portable, pure functions of decoded messages | N0 |
 | Capability id `notifications.v1` | **Registered unconditionally** on both ends | N1, N2 |
 | Android `NotificationListenerService` | **Exists.** Bound only while a granted peer is connected | N1 |
 | Linux notification sink, D-Bus code, `NotificationSink` trait | **Exists** | N2 |
@@ -51,8 +51,8 @@ access contract [ADR-0015](../adr/ADR-0015-notification-access.md), for naming
             │  one ordered stream per peer
             ▼
    ┌─────────────────────────────── Linux desktop ───────────────────────────────┐
-   │  omnibridge-capability-notifications — decode, validate       (N2)             │
-   │        │      uses omnibridge_core::notifications             (N0)             │
+   │  pliwee-capability-notifications — decode, validate           (N2)             │
+   │        │      uses pliwee_core::notifications                 (N0)             │
    │        ▼                                                                    │
    │  grant check · policy · dedup · MirrorTable                (N2, N3)         │
    │        │                                                                    │
@@ -254,7 +254,7 @@ Not a file, not a table, not a ring buffer, not a "recent" screen. Not in
 notification state that exists is what is currently active on the source and
 currently displayed on the sink, both in memory.
 
-That is structural rather than promised: `omnibridge_core::notifications::Snapshot`
+That is structural rather than promised: `pliwee_core::notifications::Snapshot`
 holds identities and has no field that could hold text, and its `Debug` is
 asserted content-free by test.
 
@@ -365,7 +365,7 @@ carries no action index, no intent, no payload, no free text and no reply.
 There is nothing in it that could be widened into remote action execution
 *because there is no field to widen* — the guarantee is the shape of the
 message, not a check that a later change could invert. A descriptor-level
-regression test (`omnibridge-proto`, `notifications_schema`) fails if a field is
+regression test (`pliwee-proto`, `notifications_schema`) fails if a field is
 added to it, if any field name hints at an action or a reply, or if any `bytes`
 field appears in the schema that is not one of the four fixed-width identifiers.
 
@@ -412,12 +412,12 @@ the Windows MSVC gate; `real_dbus.rs` and `real_lock.rs` are whole-file
 
 ### The portable half that N0 *did* create
 
-`omnibridge_core::notifications` holds the wire contract: field limits, identifier
+`pliwee_core::notifications` holds the wire contract: field limits, identifier
 widths, the role/epoch reduction, the snapshot bracketing machine, and
 conservative enum resolution. It is a pure function of decoded protobuf
 messages — no I/O, no timers, no policy, no platform.
 
-It lives in `omnibridge-core` beside `clipboard_policy.rs`, which is the existing
+It lives in `pliwee-core` beside `clipboard_policy.rs`, which is the existing
 precedent for a portable capability-adjacent type in that crate, and which the
 plan follows again for `notification_policy.rs`. N2's capability crate
 re-exports it rather than reimplementing it, so the two ends of the protocol

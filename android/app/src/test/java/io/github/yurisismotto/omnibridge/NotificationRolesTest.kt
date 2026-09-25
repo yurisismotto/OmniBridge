@@ -2,8 +2,8 @@ package io.github.yurisismotto.omnibridge
 
 import io.github.yurisismotto.omnibridge.notifications.PeerRoleState
 import io.github.yurisismotto.omnibridge.notifications.SourceRoleState
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRole
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRoles
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRole
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRoles
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull

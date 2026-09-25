@@ -1,10 +1,10 @@
 package io.github.yurisismotto.omnibridge.net
 
 import com.google.protobuf.ByteString
-import io.github.yurisismotto.omnibridge.proto.Envelope
+import io.github.yurisismotto.pliwee.proto.Envelope
 import java.security.SecureRandom
 
-/** Protocol constants. Must match `omnibridge_core::session`. */
+/** Protocol constants. Must match `pliwee_core::session`. */
 object Protocol {
     const val VERSION_MIN = 1
     const val VERSION_MAX = 1
@@ -18,7 +18,7 @@ object Protocol {
     /**
      * How long an established session tolerates hearing nothing at all.
      *
-     * Must match `LIVENESS_DEAD_AFTER` in `omnibridge_core::session`, and must
+     * Must match `LIVENESS_DEAD_AFTER` in `pliwee_core::session`, and must
      * stay comfortably above the desktop's 60-second probe interval so that a
      * single lost packet never drops a healthy session. Its purpose is to
      * notice a half-open socket: a phone leaving Wi-Fi range sends no FIN, so

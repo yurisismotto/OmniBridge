@@ -2,8 +2,8 @@ package io.github.yurisismotto.omnibridge
 
 import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.net.Framing
-import io.github.yurisismotto.omnibridge.proto.Envelope
-import io.github.yurisismotto.omnibridge.proto.Ping
+import io.github.yurisismotto.pliwee.proto.Envelope
+import io.github.yurisismotto.pliwee.proto.Ping
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
@@ -12,7 +12,7 @@ import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Must stay in lockstep with `omnibridge_core::framing`. */
+/** Must stay in lockstep with `pliwee_core::framing`. */
 class FramingTest {
 
     private fun header(length: Long) = byteArrayOf(

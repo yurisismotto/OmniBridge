@@ -29,9 +29,9 @@ mod common;
 use std::time::Duration;
 
 use common::*;
-use omnibridge_capability_notifications::backend::{CloseReason, MemorySink, SinkError};
-use omnibridge_capability_notifications::{LockPolicy, NotificationPolicy};
-use omnibridge_proto::v1::capabilities as pb;
+use pliwee_capability_notifications::backend::{CloseReason, MemorySink, SinkError};
+use pliwee_capability_notifications::{LockPolicy, NotificationPolicy};
+use pliwee_proto::v1::capabilities as pb;
 
 /// Short enough to cross inside a test, long enough that the worker is not
 /// racing it.

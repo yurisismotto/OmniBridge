@@ -11,7 +11,7 @@ package io.github.yurisismotto.omnibridge.capability
  * Grants are unioned, which is what preserves a grant the person turned on.
  *
  * A union is also how a grant could be *invented*. Until this set existed, the
- * only thing stopping that was a subtraction written inline in `OmniBridgeApp`
+ * only thing stopping that was a subtraction written inline in `PliweeApp`
  * when the fresh record was built:
  *
  * ```kotlin

@@ -64,8 +64,8 @@ use gtk::glib;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use omnibridge_control::{Request, Response};
 use panel::QuickPanel;
+use pliwee_control::{Request, Response};
 use selection::Selection;
 
 const APP_ID: &str = "io.github.yurisismotto.omnibridge";
@@ -332,19 +332,19 @@ impl Page {
 /// `PartialEq` is what lets [`views::Pages::render`] and
 /// [`panel::QuickPanel::render`] tell an unchanged poll from a real change,
 /// and it is a property of the control types rather than of this struct: every
-/// field is a report `omnibridge-control` defines, so two states are equal
+/// field is a report `pliwee-control` defines, so two states are equal
 /// exactly when the daemon said the same thing twice.
 #[derive(Default, Clone, PartialEq, Eq)]
 pub struct DaemonState {
-    pub status: Option<omnibridge_control::StatusReport>,
-    pub devices: Option<Vec<omnibridge_control::DeviceReport>>,
-    pub transfers: Option<Vec<omnibridge_control::TransferReport>>,
-    pub clipboard: Option<omnibridge_control::ClipboardStatusReport>,
+    pub status: Option<pliwee_control::StatusReport>,
+    pub devices: Option<Vec<pliwee_control::DeviceReport>>,
+    pub transfers: Option<Vec<pliwee_control::TransferReport>>,
+    pub clipboard: Option<pliwee_control::ClipboardStatusReport>,
     /// Counts, states and platform identifiers. **No field on this report can
     /// hold a notification's title, body or application name**, which is what
     /// makes the notifications page — and the Quick Panel's notifications row
     /// — structurally incapable of becoming the history the design forbids.
-    pub notifications: Option<omnibridge_control::NotificationsStatusReport>,
+    pub notifications: Option<pliwee_control::NotificationsStatusReport>,
     /// Set when the daemon could not be reached at all.
     pub error: Option<String>,
 }

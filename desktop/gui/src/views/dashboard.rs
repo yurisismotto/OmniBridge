@@ -1,7 +1,7 @@
 //! The dashboard: what is here, and what can be done with it now.
 
 use adw::prelude::*;
-use omnibridge_control::{DeviceReport, Response};
+use pliwee_control::{DeviceReport, Response};
 
 use super::Pages;
 use crate::panel::model::{self, Action, PanelModel};

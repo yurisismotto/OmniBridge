@@ -1,7 +1,7 @@
 package io.github.yurisismotto.omnibridge.notifications
 
-import io.github.yurisismotto.omnibridge.proto.capabilities.DismissRequest
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationOutcome
+import io.github.yurisismotto.pliwee.proto.capabilities.DismissRequest
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationOutcome
 
 /**
  * Whether one inbound `DismissRequest` may cause a `cancelNotification`, and
@@ -210,7 +210,7 @@ object NotificationDismissRules {
 
     /**
      * Exactly 32 lowercase hex characters, the same rule
-     * `omnibridge_core::notifications::check_device_id` applies on the other end.
+     * `pliwee_core::notifications::check_device_id` applies on the other end.
      *
      * Uppercase is refused rather than folded: the two implementations must
      * agree on what is valid, and a receiver that repairs input is a receiver

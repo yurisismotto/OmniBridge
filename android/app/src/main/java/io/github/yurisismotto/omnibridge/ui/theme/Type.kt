@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
  * fingerprint is compared character by character against another screen, and
  * a proportional face makes `1` / `l` and `0` / `O` a coin toss.
  */
-object OmniBridgeType {
+object PliweeType {
     val Ui: FontFamily = FontFamily.SansSerif
     val Mono: FontFamily = FontFamily.Monospace
 
@@ -73,20 +73,20 @@ object OmniBridgeType {
  * Material components are kept, not replaced, so anything drawn by Material3
  * inherits the brand scale without every call site having to pass a style.
  */
-val OmniBridgeTypography = Typography(
-    displayLarge = OmniBridgeType.display.copy(fontSize = 40.sp, lineHeight = 48.sp),
-    displayMedium = OmniBridgeType.display.copy(fontSize = 36.sp, lineHeight = 44.sp),
-    displaySmall = OmniBridgeType.display,
-    headlineLarge = OmniBridgeType.title.copy(fontSize = 28.sp, lineHeight = 36.sp),
-    headlineMedium = OmniBridgeType.title,
-    headlineSmall = OmniBridgeType.heading,
-    titleLarge = OmniBridgeType.heading,
-    titleMedium = OmniBridgeType.subtitle,
-    titleSmall = OmniBridgeType.body.copy(fontWeight = FontWeight.SemiBold),
-    bodyLarge = OmniBridgeType.body.copy(fontSize = 16.sp, lineHeight = 24.sp),
-    bodyMedium = OmniBridgeType.body,
-    bodySmall = OmniBridgeType.caption,
-    labelLarge = OmniBridgeType.body.copy(fontWeight = FontWeight.Medium),
-    labelMedium = OmniBridgeType.label,
-    labelSmall = OmniBridgeType.caption.copy(fontWeight = FontWeight.Medium, fontSize = 11.sp),
+val PliweeTypography = Typography(
+    displayLarge = PliweeType.display.copy(fontSize = 40.sp, lineHeight = 48.sp),
+    displayMedium = PliweeType.display.copy(fontSize = 36.sp, lineHeight = 44.sp),
+    displaySmall = PliweeType.display,
+    headlineLarge = PliweeType.title.copy(fontSize = 28.sp, lineHeight = 36.sp),
+    headlineMedium = PliweeType.title,
+    headlineSmall = PliweeType.heading,
+    titleLarge = PliweeType.heading,
+    titleMedium = PliweeType.subtitle,
+    titleSmall = PliweeType.body.copy(fontWeight = FontWeight.SemiBold),
+    bodyLarge = PliweeType.body.copy(fontSize = 16.sp, lineHeight = 24.sp),
+    bodyMedium = PliweeType.body,
+    bodySmall = PliweeType.caption,
+    labelLarge = PliweeType.body.copy(fontWeight = FontWeight.Medium),
+    labelMedium = PliweeType.label,
+    labelSmall = PliweeType.caption.copy(fontWeight = FontWeight.Medium, fontSize = 11.sp),
 )

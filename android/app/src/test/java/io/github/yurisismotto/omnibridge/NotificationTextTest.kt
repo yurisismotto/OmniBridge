@@ -7,9 +7,9 @@ import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
 import io.github.yurisismotto.omnibridge.notifications.NotificationReduction
 import io.github.yurisismotto.omnibridge.notifications.NotificationText
 import io.github.yurisismotto.omnibridge.notifications.PlatformNotification
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationCategory
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationImportance
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationPrivacy
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationCategory
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationImportance
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationPrivacy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals

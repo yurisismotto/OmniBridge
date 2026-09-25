@@ -4,11 +4,11 @@ import android.os.SystemClock
 import android.util.Log
 import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardOutcome
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardResult
-import io.github.yurisismotto.omnibridge.proto.capabilities.ClipboardUpdate
-import io.github.yurisismotto.omnibridge.proto.ErrorCode
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardControl
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardOutcome
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardResult
+import io.github.yurisismotto.pliwee.proto.capabilities.ClipboardUpdate
+import io.github.yurisismotto.pliwee.proto.ErrorCode
 import java.security.SecureRandom
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow

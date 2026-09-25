@@ -14,7 +14,7 @@
 //! plainly that nothing is kept.
 
 use gtk::prelude::*;
-use omnibridge_control::{
+use pliwee_control::{
     ClipboardFlag, ClipboardPeerReport, ClipboardStatusReport, Request, Response,
 };
 
@@ -518,7 +518,7 @@ pub(in crate::views) mod tests {
     use super::{render, SensitiveState};
     use crate::{DaemonState, Page};
     use gtk::prelude::*;
-    use omnibridge_control::ClipboardStatusReport;
+    use pliwee_control::ClipboardStatusReport;
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -761,8 +761,8 @@ pub(in crate::views) mod tests {
 
     // ---- the send button's reason ----------------------------------------
 
-    fn peer(connected: bool, allow_send: bool) -> omnibridge_control::ClipboardPeerReport {
-        omnibridge_control::ClipboardPeerReport {
+    fn peer(connected: bool, allow_send: bool) -> pliwee_control::ClipboardPeerReport {
+        pliwee_control::ClipboardPeerReport {
             device_id: "d0".into(),
             device_name: "Pixel".into(),
             fingerprint_short: "A1B2 C3D4".into(),
@@ -838,7 +838,7 @@ pub(in crate::views) mod tests {
     // Needs a display, so it is `#[ignore]`d and asked for by name — the same
     // convention `views::notifications` uses:
     //
-    //   cargo test -p omnibridge-gui -- --ignored --test-threads=1
+    //   cargo test -p pliwee-gui -- --ignored --test-threads=1
 
     fn page(report: ClipboardStatusReport) -> gtk::Box {
         if !gtk::is_initialized() {

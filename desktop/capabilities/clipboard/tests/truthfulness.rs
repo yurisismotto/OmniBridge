@@ -28,7 +28,7 @@
 //! what it could do and wrong about what it *said*, and the only place that can
 //! regress is the wording. So the wording is what is pinned.
 
-use omnibridge_capability_clipboard::backend::BackendError;
+use pliwee_capability_clipboard::backend::BackendError;
 
 /// The timeout message must not assert a locked session as *the* cause.
 ///

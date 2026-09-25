@@ -7,8 +7,8 @@ import android.os.BatteryManager
 import android.util.Log
 import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.capabilities.BatteryState
-import io.github.yurisismotto.omnibridge.proto.capabilities.ChargingState
+import io.github.yurisismotto.pliwee.proto.capabilities.BatteryState
+import io.github.yurisismotto.pliwee.proto.capabilities.ChargingState
 import java.util.concurrent.atomic.AtomicReference
 
 /**

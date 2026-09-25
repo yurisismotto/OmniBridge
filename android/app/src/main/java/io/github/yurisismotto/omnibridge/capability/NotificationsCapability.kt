@@ -4,7 +4,7 @@ import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
 import io.github.yurisismotto.omnibridge.notifications.NotificationLimits
 import io.github.yurisismotto.omnibridge.notifications.NotificationSource
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationControl
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationControl
 
 /**
  * `notifications.v1` — mirroring this phone's notifications to a paired

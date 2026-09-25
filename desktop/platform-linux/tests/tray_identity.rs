@@ -5,7 +5,7 @@
 //!
 //! The tray names four things that live somewhere else: the GtkApplication's
 //! id, the desktop entry, the D-Bus service file and the icon in the hicolor
-//! theme. `omnibridge-linux` cannot depend on `omnibridge-gui` — the dependency runs
+//! theme. `pliwee-linux` cannot depend on `pliwee-gui` — the dependency runs
 //! the other way, and it must, because the daemon would otherwise link GTK —
 //! so the agreement cannot be checked by the compiler. It is checked here, by
 //! reading the other crate's files.
@@ -19,7 +19,7 @@
 
 use std::path::{Path, PathBuf};
 
-use omnibridge_linux::tray::model::{TrayAction, DESKTOP_APP_ID, ICON_NAME, ITEM_ID};
+use pliwee_linux::tray::model::{TrayAction, DESKTOP_APP_ID, ICON_NAME, ITEM_ID};
 
 fn gui() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../gui")
@@ -35,7 +35,7 @@ fn app_id_from_gui_source() -> String {
     read("src/lib.rs")
         .lines()
         .find(|l| l.trim_start().starts_with("const APP_ID:"))
-        .expect("omnibridge-gui declares APP_ID")
+        .expect("pliwee-gui declares APP_ID")
         .split('"')
         .nth(1)
         .expect("APP_ID is a string literal")
@@ -114,7 +114,7 @@ fn every_tray_action_is_an_action_the_gui_exports() {
     let constant = |name: &str| {
         lib.lines()
             .find(|l| l.trim_start().starts_with(&format!("pub const {name}:")))
-            .unwrap_or_else(|| panic!("omnibridge-gui declares {name}"))
+            .unwrap_or_else(|| panic!("pliwee-gui declares {name}"))
             .split('"')
             .nth(1)
             .expect("a string literal")
@@ -161,7 +161,7 @@ fn the_daemon_starts_the_tray_and_does_not_race_it_against_anything() {
     .expect("the daemon's main is readable");
 
     assert!(
-        main.contains("omnibridge_linux::tray::spawn("),
+        main.contains("pliwee_linux::tray::spawn("),
         "the daemon no longer starts the tray"
     );
 

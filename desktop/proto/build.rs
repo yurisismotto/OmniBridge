@@ -14,12 +14,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .canonicalize()?;
 
     let files = [
-        "omnibridge/v1/envelope.proto",
-        "omnibridge/v1/core.proto",
-        "omnibridge/v1/capabilities/battery_v1.proto",
-        "omnibridge/v1/capabilities/files_v1.proto",
-        "omnibridge/v1/capabilities/clipboard_v1.proto",
-        "omnibridge/v1/capabilities/notifications_v1.proto",
+        "pliwee/v1/envelope.proto",
+        "pliwee/v1/core.proto",
+        "pliwee/v1/capabilities/battery_v1.proto",
+        "pliwee/v1/capabilities/files_v1.proto",
+        "pliwee/v1/capabilities/clipboard_v1.proto",
+        "pliwee/v1/capabilities/notifications_v1.proto",
     ];
 
     for f in &files {

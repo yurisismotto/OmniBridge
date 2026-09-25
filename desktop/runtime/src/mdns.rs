@@ -9,7 +9,7 @@
 use std::collections::HashMap;
 
 use mdns_sd::{IfKind, ServiceDaemon, ServiceInfo};
-use omnibridge_core::discovery;
+use pliwee_core::discovery;
 
 use crate::listener::Families;
 
@@ -56,7 +56,7 @@ impl Advertisement {
         let hostname = format!("{device_id}.local.");
 
         let service = ServiceInfo::new(
-            omnibridge_core::SERVICE_TYPE,
+            pliwee_core::SERVICE_TYPE,
             instance,
             &hostname,
             "",
@@ -74,7 +74,7 @@ impl Advertisement {
             port,
             families = %families,
             "advertising {}",
-            omnibridge_core::SERVICE_TYPE
+            pliwee_core::SERVICE_TYPE
         );
         Ok(Self { daemon, fullname })
     }

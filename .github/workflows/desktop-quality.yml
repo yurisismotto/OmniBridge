@@ -43,12 +43,12 @@
 # Measured from the workspace rather than assumed. Every feature declared in
 # `desktop/` is additive and Linux-enabling, and none excludes another:
 #
-#   omnibridge-core                 default = ["unix-fs"]
-#   omnibridge-capability-files     default = ["unix-fs"]
-#   omnibridge-capability-clipboard default = ["linux-backends"]
-#   omnibridge-capability-notif.    default = ["linux-dbus"]
-#   omnibridge-runtime / -daemon    default = ["upower"]
-#   omnibridge-capability-battery   default = []        upower = ["dep:zbus"]
+#   pliwee-core                 default = ["unix-fs"]
+#   pliwee-capability-files     default = ["unix-fs"]
+#   pliwee-capability-clipboard default = ["linux-backends"]
+#   pliwee-capability-notif.    default = ["linux-dbus"]
+#   pliwee-runtime / -daemon    default = ["upower"]
+#   pliwee-capability-battery   default = []        upower = ["dep:zbus"]
 #
 # So `--all-features` is precisely the default set plus `battery/upower`, which
 # the daemon turns on anyway — i.e. the shipped Linux desktop configuration,
@@ -113,8 +113,8 @@ jobs:
       # same reasons, and nothing else:
       #   gcc, libc6-dev    ring compiles C and assembly
       #   pkg-config        how system-deps finds the GTK stack
-      #   libgtk-4-dev      omnibridge-gui only
-      #   libadwaita-1-dev  omnibridge-gui only
+      #   libgtk-4-dev      pliwee-gui only
+      #   libadwaita-1-dev  pliwee-gui only
       # In particular no libssl-dev (transport is rustls/ring), no
       # libdbus-1-dev (zbus 5 is pure Rust), no libx11-dev (x11rb brings its
       # own connection) and no protobuf-compiler (protox compiles in-process).

@@ -50,13 +50,13 @@ repository = "https://github.com/yurisismotto/omnibridge"
 # `unsafe_code` used to live here as `forbid`, workspace-wide. `forbid` cannot
 # be relaxed by an inner `#[allow]`, which made it impossible for a future
 # platform adapter (Win32, CNG, Security.framework, IOKit all need FFI) to
-# exist without first weakening the guarantee for `omnibridge-core` too.
+# exist without first weakening the guarantee for `pliwee-core` too.
 #
 # The lint is now declared per crate, in each crate's own `[lints]` table:
 #
-#   forbid  omnibridge-proto, omnibridge-core, omnibridge-control, omnibridge-runtime,
-#           omnibridge-capability-{battery,clipboard,files}
-#   deny    omnibridge-linux, omnibridge-daemon, omnibridge-cli, omnibridge-gui
+#   forbid  pliwee-proto, pliwee-core, pliwee-control, pliwee-runtime,
+#           pliwee-capability-{battery,clipboard,files}
+#   deny    pliwee-linux, pliwee-daemon, pliwee-cli, pliwee-gui
 #
 # Relaxing the *workspace default* to `deny` was considered and rejected: it
 # would silently drop the guarantee from the crates where it matters most.

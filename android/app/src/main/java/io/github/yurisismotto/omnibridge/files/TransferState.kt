@@ -3,7 +3,7 @@ package io.github.yurisismotto.omnibridge.files
 /**
  * Where a transfer is.
  *
- * Mirrors `omnibridge_capability_files::transfer::TransferState`, including the
+ * Mirrors `pliwee_capability_files::transfer::TransferState`, including the
  * transition table. State is never inferred from a socket, a file on disk or
  * a log line: [canTransitionTo] is the whole state machine, and there is
  * exactly one place that calls it.

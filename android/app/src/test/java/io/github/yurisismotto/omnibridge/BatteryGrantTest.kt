@@ -4,7 +4,7 @@ import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.capability.BatteryCapability
 import io.github.yurisismotto.omnibridge.capability.CapabilityContext
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.capabilities.ChargingState
+import io.github.yurisismotto.pliwee.proto.capabilities.ChargingState
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

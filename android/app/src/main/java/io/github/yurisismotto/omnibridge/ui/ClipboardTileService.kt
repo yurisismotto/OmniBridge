@@ -5,7 +5,7 @@ import android.content.Intent
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
-import io.github.yurisismotto.omnibridge.OmniBridgeApp
+import io.github.yurisismotto.omnibridge.PliweeApp
 import io.github.yurisismotto.omnibridge.capability.ClipboardCapability
 import java.security.SecureRandom
 
@@ -62,7 +62,7 @@ class ClipboardTileService : TileService() {
 
     private fun updateTile() {
         val tile = qsTile ?: return
-        val app = application as? OmniBridgeApp
+        val app = application as? PliweeApp
         // A tile that is active-looking with nothing paired would be a lie.
         val usable = runCatching {
             app?.trustStore?.peers()?.any {

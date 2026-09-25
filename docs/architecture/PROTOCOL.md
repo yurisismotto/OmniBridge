@@ -332,7 +332,7 @@ There is **no** field for an action, a reply, a `PendingIntent`, a
 `RemoteViews`, a serialized platform notification, an image or an arbitrary
 blob — and the only `bytes` fields in the schema are the four fixed-width
 identifiers. That is asserted against the compiled descriptors by
-`omnibridge-proto`'s `notifications_schema` test, so a field cannot be added
+`pliwee-proto`'s `notifications_schema` test, so a field cannot be added
 without someone arguing for it.
 
 Additive: it adds one file, imports nothing, and changes no other schema. An old

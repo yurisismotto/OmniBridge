@@ -9,9 +9,9 @@ package io.github.yurisismotto.omnibridge.pairing
  * Two paths on this phone can open a socket to the same computer, and only
  * one of them carries a pairing token:
  *
- *  * `OmniBridgeApp.pair` — a scan. Dials with the QR's token and will answer a
+ *  * `PliweeApp.pair` — a scan. Dials with the QR's token and will answer a
  *    `PAIR_REQUEST` challenge;
- *  * `OmniBridgeApp.connect`, driven by `ConnectionService`'s coordinator — a
+ *  * `PliweeApp.connect`, driven by `ConnectionService`'s coordinator — a
  *    reconnection. Dials with **no** token, by design: a reconnection is not
  *    a pairing and must never carry pairing authority.
  *

@@ -94,7 +94,7 @@ class RevokedDeviceCleanupTest {
     private fun merge(existing: TrustStore.TrustedPeer?, paired: TrustStore.TrustedPeer) =
         TrustStore.TrustedPeer.mergePairing(existing, paired, maxAddresses = 4)
 
-    /** What `OmniBridgeApp.pair` builds from a session that has just come up. */
+    /** What `PliweeApp.pair` builds from a session that has just come up. */
     private fun freshlyPaired(f: Fingerprint = fedora, name: String = "Fedora") = peer(
         f = f,
         name = name,

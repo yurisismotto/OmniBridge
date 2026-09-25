@@ -7,18 +7,18 @@
 use std::sync::Arc;
 
 use clap::Parser;
-use omnibridge_capability_battery::{BatteryCapability, BatteryState, LocalBattery, UPowerReader};
-use omnibridge_capability_clipboard::{ClipboardCapability, ClipboardManager};
-use omnibridge_capability_files::{
+use pliwee_capability_battery::{BatteryCapability, BatteryState, LocalBattery, UPowerReader};
+use pliwee_capability_clipboard::{ClipboardCapability, ClipboardManager};
+use pliwee_capability_files::{
     Destination, FilesCapability, FilesConfig, StreamRole, TransferApproval, TransferManager,
 };
-use omnibridge_capability_notifications::backend::{
+use pliwee_capability_notifications::backend::{
     dbus::DbusSink, logind::LogindLock, LockSource, NoSink, NotificationSink, UnknownLock,
 };
-use omnibridge_capability_notifications::{NotificationManager, NotificationsCapability};
-use omnibridge_control::transport::ControlTransport;
-use omnibridge_core::capability::CapabilityRegistry;
-use omnibridge_daemon::{approval::FileApproval, listener, mdns, server, state::DaemonState};
+use pliwee_capability_notifications::{NotificationManager, NotificationsCapability};
+use pliwee_control::transport::ControlTransport;
+use pliwee_core::capability::CapabilityRegistry;
+use pliwee_daemon::{approval::FileApproval, listener, mdns, server, state::DaemonState};
 use tokio_rustls::TlsAcceptor;
 
 #[derive(Parser, Debug)]
@@ -37,7 +37,7 @@ struct Args {
     #[arg(long)]
     no_mdns: bool,
 
-    /// Log filter, e.g. `info`, `omnibridge_core=debug`.
+    /// Log filter, e.g. `info`, `pliwee_core=debug`.
     #[arg(long, default_value = "info")]
     log: String,
 
@@ -84,13 +84,11 @@ async fn main() -> anyhow::Result<()> {
         .install_default()
         .map_err(|_| anyhow::anyhow!("a rustls crypto provider was already installed"))?;
 
-    let data_dir = args
-        .data_dir
-        .unwrap_or_else(omnibridge_linux::default_data_dir);
+    let data_dir = args.data_dir.unwrap_or_else(pliwee_linux::default_data_dir);
     // The Linux adapter composes the store: XDG paths, 0600/0700 modes,
-    // `Platform::Linux`, `/etc/hostname`. `omnibridge-core` decides the policy,
+    // `Platform::Linux`, `/etc/hostname`. `pliwee-core` decides the policy,
     // this decides where and how.
-    let store = omnibridge_linux::open_store(&data_dir)?;
+    let store = pliwee_linux::open_store(&data_dir)?;
 
     // A `--port` override applies to this run only. Silently rewriting the
     // user's stored configuration from a command-line flag is a surprise
@@ -146,7 +144,7 @@ async fn main() -> anyhow::Result<()> {
         max_file_bytes: args
             .max_file_mib
             .map(|mib| mib.saturating_mul(1024 * 1024))
-            .unwrap_or(omnibridge_capability_files::limits::DEFAULT_MAX_FILE_BYTES),
+            .unwrap_or(pliwee_capability_files::limits::DEFAULT_MAX_FILE_BYTES),
         ..FilesConfig::default()
     };
     if let Err(e) = destination.prepare() {
@@ -188,7 +186,7 @@ async fn main() -> anyhow::Result<()> {
     // report what this session can actually do — including, on GNOME, that it
     // cannot report clipboard changes at all — instead of each command
     // discovering it separately.
-    let clipboard_backend = omnibridge_capability_clipboard::backend::detect();
+    let clipboard_backend = pliwee_capability_clipboard::backend::detect();
     if let Err(why) = clipboard_backend.watch_availability() {
         tracing::info!(
             reason = %why,
@@ -260,7 +258,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!(capabilities = ?registry.advertised(), "capabilities registered");
 
     // ---- TLS --------------------------------------------------------------
-    let tls_config = omnibridge_core::tls::server_config(store.identity())?;
+    let tls_config = pliwee_core::tls::server_config(store.identity())?;
     let acceptor = TlsAcceptor::from(tls_config);
 
     let state = Arc::new(
@@ -274,7 +272,7 @@ async fn main() -> anyhow::Result<()> {
     // The state is the authorizer: every grant question is answered from the
     // trust store, freshly, rather than from a set captured at handshake time.
     transfers
-        .set_authorizer(Arc::clone(&state) as Arc<dyn omnibridge_capability_files::FilesAuthorizer>)
+        .set_authorizer(Arc::clone(&state) as Arc<dyn pliwee_capability_files::FilesAuthorizer>)
         .await;
     let _reaper = transfers.spawn_reaper();
 
@@ -283,7 +281,7 @@ async fn main() -> anyhow::Result<()> {
     // captured at handshake time.
     clipboard
         .set_authorizer(
-            Arc::clone(&state) as Arc<dyn omnibridge_capability_clipboard::ClipboardAuthorizer>
+            Arc::clone(&state) as Arc<dyn pliwee_capability_clipboard::ClipboardAuthorizer>
         )
         .await;
     // Supervised, and idle until some peer actually asks for auto-send: with
@@ -297,8 +295,9 @@ async fn main() -> anyhow::Result<()> {
     // so after that point this is the only thing between a revoked device and
     // the screen.
     notifications
-        .set_authorizer(Arc::clone(&state)
-            as Arc<dyn omnibridge_capability_notifications::NotificationAuthorizer>)
+        .set_authorizer(
+            Arc::clone(&state) as Arc<dyn pliwee_capability_notifications::NotificationAuthorizer>
+        )
         .await;
     // The three platform signals: the desktop closing a notification, the
     // notification server appearing or going away, and the session locking.
@@ -318,11 +317,11 @@ async fn main() -> anyhow::Result<()> {
     // The control endpoint comes from the adapter, through the
     // `ControlTransport` seam. A failure to bind because another agent
     // already owns the endpoint is fatal and is *not* worked around by
-    // choosing a different name — see `omnibridge_control::transport`.
-    let transport = omnibridge_linux::UnixControlTransport::default_endpoint();
+    // choosing a different name — see `pliwee_control::transport`.
+    let transport = pliwee_linux::UnixControlTransport::default_endpoint();
     let control_listener = match ControlTransport::bind(&transport) {
         Ok(l) => l,
-        Err(e @ omnibridge_control::transport::BindError::AlreadyOwned { .. }) => {
+        Err(e @ pliwee_control::transport::BindError::AlreadyOwned { .. }) => {
             anyhow::bail!("{e}");
         }
         Err(e) => return Err(e.into()),
@@ -369,7 +368,7 @@ async fn main() -> anyhow::Result<()> {
     // session, which is most of them — this publishes the item, finds no host,
     // says so once, and then waits event-driven for one to appear. It never
     // polls.
-    let _tray = omnibridge_linux::tray::spawn(omnibridge_linux::tray::ActivatorChoice::SessionBus);
+    let _tray = pliwee_linux::tray::spawn(pliwee_linux::tray::ActivatorChoice::SessionBus);
 
     // ---- D-Bus activation self-heal ---------------------------------------
     //
@@ -385,8 +384,8 @@ async fn main() -> anyhow::Result<()> {
     // is slow to answer is not a reason for the listener below to start late,
     // and because there is nothing downstream that depends on the answer.
     tokio::spawn(async {
-        let outcome = omnibridge_linux::activation::self_heal_desktop_activation().await;
-        omnibridge_linux::activation::log(&outcome);
+        let outcome = pliwee_linux::activation::self_heal_desktop_activation().await;
+        pliwee_linux::activation::log(&outcome);
     });
 
     let net = tokio::spawn(listener::run(bound.listeners, acceptor, Arc::clone(&state)));

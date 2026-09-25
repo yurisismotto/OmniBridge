@@ -180,9 +180,9 @@ cd desktop
 # compiling members the package does not install. They already pull in every
 # workspace library between them, so nothing is lost.
 cargo build --release --locked --offline \
-    -p omnibridge-daemon \
-    -p omnibridge-cli \
-    -p omnibridge-gui
+    -p pliwee-daemon \
+    -p pliwee-cli \
+    -p pliwee-gui
 
 %install
 install -Dpm0755 desktop/target/release/omnibridged   %{buildroot}%{_bindir}/omnibridged

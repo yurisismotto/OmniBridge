@@ -49,7 +49,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use adw::prelude::*;
-use omnibridge_control::Response;
+use pliwee_control::Response;
 
 use crate::selection::Selection;
 use crate::widgets::{self, Status, SPACING_MD, SPACING_SM, SPACING_XS};
@@ -772,7 +772,7 @@ fn status_row(label: &str, icon_name: &str, line: &model::StatusLine) -> gtk::Bo
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use omnibridge_control::{
+    use pliwee_control::{
         BatteryReport, ClipboardPeerReport, ClipboardStatusReport, ConnectionReport, DeviceReport,
         DeviceState, StatusReport, TransferReport,
     };
@@ -898,7 +898,7 @@ pub(crate) mod tests {
 
         let panel = QuickPanel::new(&app);
         let selection = Rc::new(Selection::at(std::env::temp_dir().join(format!(
-            "omnibridge-panel-test-{}-{nth}/gui.json",
+            "pliwee-panel-test-{}-{nth}/gui.json",
             std::process::id()
         ))));
         if let Some(chosen) = chosen {
@@ -993,7 +993,7 @@ pub(crate) mod tests {
             size_bytes: 1024,
             bytes_transferred: 1024,
             percentage: Some(100),
-            state: omnibridge_control::transfer_state::COMPLETED.into(),
+            state: pliwee_control::transfer_state::COMPLETED.into(),
             failure: None,
             failure_code: None,
             stored_at: None,
@@ -1034,13 +1034,13 @@ pub(crate) mod tests {
                     2,
                     "document.pdf",
                     "SM-X620",
-                    omnibridge_control::transfer_direction::SENDING,
+                    pliwee_control::transfer_direction::SENDING,
                 ),
                 finished(
                     1,
                     "photo.jpg",
                     "SM-X620",
-                    omnibridge_control::transfer_direction::RECEIVING,
+                    pliwee_control::transfer_direction::RECEIVING,
                 ),
             ],
         );
@@ -1071,7 +1071,7 @@ pub(crate) mod tests {
                         [3, 1, 5, 2, 6, 4][(n - 1) as usize],
                         &format!("file-{}.txt", [3, 1, 5, 2, 6, 4][(n - 1) as usize]),
                         "SM-X620",
-                        omnibridge_control::transfer_direction::SENDING,
+                        pliwee_control::transfer_direction::SENDING,
                     )
                 })
                 .collect(),
@@ -1100,7 +1100,7 @@ pub(crate) mod tests {
                 1,
                 "document.pdf",
                 "SM-X620",
-                omnibridge_control::transfer_direction::SENDING,
+                pliwee_control::transfer_direction::SENDING,
             )],
         );
         let (_p, content, _s) = panel(&st, Some("aa11"));
@@ -1133,7 +1133,7 @@ pub(crate) mod tests {
                 1,
                 "document.pdf",
                 "SM-X620",
-                omnibridge_control::transfer_direction::SENDING,
+                pliwee_control::transfer_direction::SENDING,
             )],
         );
         let (_p, content, _s) = panel(&st, Some("aa11"));

@@ -18,7 +18,7 @@ is true right now.
 
 Every status is **a dot, an icon and a word**, and the word carries the
 meaning. Both platforms declare the vocabulary in one place —
-`OmniBridgeStatus` (Kotlin) and `widgets::Status` (Rust) — with all three
+`PliweeStatus` (Kotlin) and `widgets::Status` (Rust) — with all three
 required by the type, so a status cannot be added as a colour and nothing
 else.
 
@@ -105,21 +105,21 @@ renames them; they are identifiers, not copy.
 
 | Concept | Android (`ui/components`) | Desktop (`gui/src/widgets.rs`) |
 |---|---|---|
-| Card | `OmniBridgeCard` | `card()` |
-| Section heading | `OmniBridgeSectionLabel` | `section_label()` |
-| Status | `OmniBridgeStatusBadge` | `status_badge()` |
-| Primary action | `OmniBridgePrimaryButton` | `cta_button()` |
-| Secondary action | `OmniBridgeSecondaryButton` | `secondary_button()` |
-| Destructive action | `OmniBridgeDestructiveButton` | `destructive_button()` |
-| Permission row | `OmniBridgeCapabilityRow` | `policy_switch()` |
-| Device | `OmniBridgeDeviceCard` | `device_card()` |
-| Transfer | `OmniBridgeTransferCard` | `transfer_card()` |
-| Security notice | `OmniBridgeSecurityNotice` | `security_notice()` |
-| Empty state | `OmniBridgeEmptyState` | `empty_state()` |
-| Tinted icon | `OmniBridgeIconTile` | `icon_tile()` |
-| Fingerprint | `OmniBridgeFingerprint` | `fingerprint()` |
-| Brand mark | `OmniBridgeGradientMark` / `OmniBridgeBrandMark` | `brand_mark()` / `brand_logo()` |
-| Progress | `OmniBridgeProgressBar` | `progress()` |
+| Card | `PliweeCard` | `card()` |
+| Section heading | `PliweeSectionLabel` | `section_label()` |
+| Status | `PliweeStatusBadge` | `status_badge()` |
+| Primary action | `PliweePrimaryButton` | `cta_button()` |
+| Secondary action | `PliweeSecondaryButton` | `secondary_button()` |
+| Destructive action | `PliweeDestructiveButton` | `destructive_button()` |
+| Permission row | `PliweeCapabilityRow` | `policy_switch()` |
+| Device | `PliweeDeviceCard` | `device_card()` |
+| Transfer | `PliweeTransferCard` | `transfer_card()` |
+| Security notice | `PliweeSecurityNotice` | `security_notice()` |
+| Empty state | `PliweeEmptyState` | `empty_state()` |
+| Tinted icon | `PliweeIconTile` | `icon_tile()` |
+| Fingerprint | `PliweeFingerprint` | `fingerprint()` |
+| Brand mark | `PliweeGradientMark` / `PliweeBrandMark` | `brand_mark()` / `brand_logo()` |
+| Progress | `PliweeProgressBar` | `progress()` |
 
 ### Connection state has one home per screen
 

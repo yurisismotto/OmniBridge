@@ -3,12 +3,12 @@ package io.github.yurisismotto.omnibridge.notifications
 import android.util.Log
 import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationOutcome
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationResult
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRole
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationControl
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationOutcome
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationResult
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRole
 import io.github.yurisismotto.omnibridge.notifications.NotificationDismissRules.DismissRefusal
-import io.github.yurisismotto.omnibridge.proto.capabilities.SyncMarker
+import io.github.yurisismotto.pliwee.proto.capabilities.SyncMarker
 import java.security.SecureRandom
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

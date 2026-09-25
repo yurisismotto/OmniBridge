@@ -32,27 +32,27 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.yurisismotto.omnibridge.R
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeGradient
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeIconSize
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeMotion
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeRadius
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeGradient
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeIconSize
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeMotion
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeRadius
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 import io.github.yurisismotto.omnibridge.ui.theme.LocalReducedMotion
 import io.github.yurisismotto.omnibridge.ui.theme.motionDuration
 
 /**
  * A device or transfer state: dot, icon, word.
  *
- * All three, always. See [OmniBridgeStatus] for why the word is not optional.
+ * All three, always. See [PliweeStatus] for why the word is not optional.
  * The dot and the icon are marked decorative so a screen reader announces the
  * state once, not three times.
  */
 @Composable
-fun OmniBridgeStatusBadge(
-    status: OmniBridgeStatus,
+fun PliweeStatusBadge(
+    status: PliweeStatus,
     modifier: Modifier = Modifier,
     label: String = status.label,
     showIcon: Boolean = true,
@@ -61,12 +61,12 @@ fun OmniBridgeStatusBadge(
     Row(
         modifier = modifier.semantics(mergeDescendants = true) { contentDescription = label },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xxs),
+        horizontalArrangement = Arrangement.spacedBy(PliweeSpacing.xxs),
     ) {
         Box(
             Modifier
                 .size(8.dp)
-                .clip(RoundedCornerShape(OmniBridgeRadius.full))
+                .clip(RoundedCornerShape(PliweeRadius.full))
                 .background(status.dot()),
         )
         if (showIcon) {
@@ -74,23 +74,23 @@ fun OmniBridgeStatusBadge(
                 painter = painterResource(status.icon),
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier.size(OmniBridgeIconSize.small),
+                modifier = Modifier.size(PliweeIconSize.small),
             )
         }
-        Text(label, style = OmniBridgeType.label, color = color)
+        Text(label, style = PliweeType.label, color = color)
     }
 }
 
 /**
  * The OmniBridge mark, at whatever size the caller needs.
  *
- * Product placements: app bar, transfer motifs, empty states. [OmniBridgeBrandMark]
+ * Product placements: app bar, transfer motifs, empty states. [PliweeBrandMark]
  * is the same artwork at the institutional size — there is one mark now, not two.
  */
 @Composable
-fun OmniBridgeGradientMark(
+fun PliweeGradientMark(
     modifier: Modifier = Modifier,
-    size: Dp = OmniBridgeIconSize.large,
+    size: Dp = PliweeIconSize.large,
     contentDescription: String? = null,
 ) {
     Icon(
@@ -110,9 +110,9 @@ fun OmniBridgeGradientMark(
  * asserts the equality, so the three platforms cannot drift apart.
  */
 @Composable
-fun OmniBridgeBrandMark(
+fun PliweeBrandMark(
     modifier: Modifier = Modifier,
-    size: Dp = OmniBridgeIconSize.hero,
+    size: Dp = PliweeIconSize.hero,
     contentDescription: String? = null,
 ) {
     Icon(
@@ -132,12 +132,12 @@ fun OmniBridgeBrandMark(
  * still announce itself as a progress bar.
  */
 @Composable
-fun OmniBridgeProgressBar(
+fun PliweeProgressBar(
     fraction: Float?,
     modifier: Modifier = Modifier,
     height: Dp = 6.dp,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val reduced = LocalReducedMotion.current
 
     // Indeterminate work still has to look alive; under reduced motion it
@@ -147,7 +147,7 @@ fun OmniBridgeProgressBar(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(OmniBridgeMotion.RIBBON_PULSE_MS, easing = OmniBridgeMotion.Flow),
+            animation = tween(PliweeMotion.RIBBON_PULSE_MS, easing = PliweeMotion.Flow),
             repeatMode = RepeatMode.Restart,
         ),
         label = "sweep",
@@ -155,7 +155,7 @@ fun OmniBridgeProgressBar(
     val target = fraction?.coerceIn(0f, 1f)
     val animated by animateFloatAsState(
         targetValue = target ?: 0f,
-        animationSpec = tween(motionDuration(OmniBridgeMotion.NORMAL_MS), easing = OmniBridgeMotion.Flow),
+        animationSpec = tween(motionDuration(PliweeMotion.NORMAL_MS), easing = PliweeMotion.Flow),
         label = "progress",
     )
 
@@ -163,7 +163,7 @@ fun OmniBridgeProgressBar(
         modifier
             .fillMaxWidth()
             .height(height)
-            .clip(RoundedCornerShape(OmniBridgeRadius.full))
+            .clip(RoundedCornerShape(PliweeRadius.full))
             .background(colors.surfaceSunken)
             .semantics {
                 progressBarRangeInfo = if (target != null) {
@@ -178,8 +178,8 @@ fun OmniBridgeProgressBar(
                 Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(animated)
-                    .clip(RoundedCornerShape(OmniBridgeRadius.full))
-                    .background(OmniBridgeGradient.progress()),
+                    .clip(RoundedCornerShape(PliweeRadius.full))
+                    .background(PliweeGradient.progress()),
             )
         } else {
             // Indeterminate: a short segment travelling the track. Under
@@ -191,8 +191,8 @@ fun OmniBridgeProgressBar(
                     .align(androidx.compose.ui.BiasAlignment(bias, 0f))
                     .fillMaxHeight()
                     .fillMaxWidth(SEGMENT)
-                    .clip(RoundedCornerShape(OmniBridgeRadius.full))
-                    .background(OmniBridgeGradient.progress()),
+                    .clip(RoundedCornerShape(PliweeRadius.full))
+                    .background(PliweeGradient.progress()),
             )
         }
     }
@@ -209,13 +209,13 @@ private const val SEGMENT = 0.3f
  * exact bug the daemon's `DeviceState` type was introduced to stop.
  */
 @Composable
-fun OmniBridgeBatteryPill(
+fun PliweeBatteryPill(
     percentage: Int,
     modifier: Modifier = Modifier,
     charging: Boolean = false,
     stale: Boolean = false,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val tint = when {
         stale -> colors.textMuted
         percentage <= 15 -> colors.accentRed
@@ -231,20 +231,20 @@ fun OmniBridgeBatteryPill(
             contentDescription = "Battery $percentage percent$suffix"
         },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xxs),
+        horizontalArrangement = Arrangement.spacedBy(PliweeSpacing.xxs),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_battery),
             contentDescription = null,
             tint = tint,
-            modifier = Modifier.size(OmniBridgeIconSize.small),
+            modifier = Modifier.size(PliweeIconSize.small),
         )
-        Text("$percentage%", style = OmniBridgeType.label, color = tint)
+        Text("$percentage%", style = PliweeType.label, color = tint)
         if (charging && !stale) {
-            Text("charging", style = OmniBridgeType.caption, color = colors.textMuted)
+            Text("charging", style = PliweeType.caption, color = colors.textMuted)
         }
         if (stale) {
-            Text("last known", style = OmniBridgeType.caption, color = colors.textMuted)
+            Text("last known", style = PliweeType.caption, color = colors.textMuted)
         }
     }
 }

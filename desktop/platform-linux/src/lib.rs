@@ -4,11 +4,11 @@
 //! session, and nothing else:
 //!
 //! * the control endpoint — a Unix domain socket under `$XDG_RUNTIME_DIR`,
-//!   implementing [`omnibridge_control::transport::ControlTransport`];
+//!   implementing [`pliwee_control::transport::ControlTransport`];
 //! * the client half of that endpoint, so the CLI and the GUI can reach the
 //!   agent without depending on the agent;
 //! * the store adapter — `$XDG_DATA_HOME/omnibridge`, 0600 keys in a 0700
-//!   directory — assembled from the pieces in `omnibridge-core`.
+//!   directory — assembled from the pieces in `pliwee-core`.
 //!
 //! # What is *not* here
 //!
@@ -49,12 +49,10 @@
 
 use std::path::{Path, PathBuf};
 
-use omnibridge_control::transport::{BindError, ControlListener, ControlTransport};
+use pliwee_control::transport::{BindError, ControlListener, ControlTransport};
 use tokio::net::{UnixListener, UnixStream};
 
-pub use omnibridge_core::platform::unix_fs::{
-    default_data_dir, default_device_name, FileSecretStore,
-};
+pub use pliwee_core::platform::unix_fs::{default_data_dir, default_device_name, FileSecretStore};
 
 #[cfg(feature = "tray")]
 pub mod tray;
@@ -69,14 +67,14 @@ pub mod activation;
 /// backing.
 ///
 /// The one place that says "this machine is a Linux machine". Before Wave 0
-/// the value was hardcoded inside `omnibridge-core`'s persistence layer, which
+/// the value was hardcoded inside `pliwee-core`'s persistence layer, which
 /// meant the storage code decided what kind of device this was.
-pub fn open_store(dir: impl AsRef<Path>) -> omnibridge_core::Result<omnibridge_core::store::Store> {
+pub fn open_store(dir: impl AsRef<Path>) -> pliwee_core::Result<pliwee_core::store::Store> {
     use std::sync::Arc;
-    omnibridge_core::store::Store::open_with(omnibridge_core::store::StoreConfig {
+    pliwee_core::store::Store::open_with(pliwee_core::store::StoreConfig {
         secrets: Arc::new(FileSecretStore::new(dir.as_ref())),
-        backend: Arc::new(omnibridge_core::identity::SoftwareBacking),
-        platform: omnibridge_proto::v1::Platform::Linux,
+        backend: Arc::new(pliwee_core::identity::SoftwareBacking),
+        platform: pliwee_proto::v1::Platform::Linux,
         default_device_name: default_device_name(),
     })
 }
@@ -248,7 +246,7 @@ fn harden(path: &Path, mode: u32) -> std::io::Result<()> {
 
 /// Connects to the agent's control endpoint.
 ///
-/// The client half, so that `omnibridge-cli` and `omnibridge-gui` reach the agent
+/// The client half, so that `pliwee-cli` and `pliwee-gui` reach the agent
 /// through this crate rather than through the agent's own crate.
 pub async fn connect(path: &Path) -> std::io::Result<UnixStream> {
     UnixStream::connect(path).await
@@ -326,11 +324,11 @@ mod tests {
         let store = open_store(dir.path()).expect("open");
         assert_eq!(
             store.identity().platform(),
-            omnibridge_proto::v1::Platform::Linux
+            pliwee_proto::v1::Platform::Linux
         );
         assert_eq!(
             store.key_backing(),
-            omnibridge_core::identity::KeyBacking::Software
+            pliwee_core::identity::KeyBacking::Software
         );
     }
 }

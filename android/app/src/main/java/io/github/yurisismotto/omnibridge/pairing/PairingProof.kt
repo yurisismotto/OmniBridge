@@ -7,7 +7,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * The pairing proof, byte-for-byte identical to `omnibridge_core::pairing`.
+ * The pairing proof, byte-for-byte identical to `pliwee_core::pairing`.
  *
  * ```text
  * proof = HMAC-SHA256(

@@ -150,7 +150,7 @@ pub fn watch_clipboard() -> BackendResult<ClipboardWatch> {
     // A private atom so the stop message cannot be confused with anything a
     // real application sends.
     let stop_atom = conn
-        .intern_atom(false, b"_OMNIBRIDGE_CLIPBOARD_WATCH_STOP")
+        .intern_atom(false, b"_PLIWEE_CLIPBOARD_WATCH_STOP")
         .map_err(|e| BackendError::Failed(format!("InternAtom failed: {e}")))?
         .reply()
         .map_err(|e| BackendError::Failed(format!("InternAtom failed: {e}")))?
@@ -158,7 +158,7 @@ pub fn watch_clipboard() -> BackendResult<ClipboardWatch> {
 
     let thread_conn = Arc::clone(&conn);
     let handle = std::thread::Builder::new()
-        .name("omnibridge-clipboard-x11".to_string())
+        .name("pliwee-clipboard-x11".to_string())
         .spawn(move || {
             loop {
                 let event = match thread_conn.wait_for_event() {

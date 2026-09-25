@@ -2,11 +2,11 @@
 
 use std::time::Duration;
 
-use omnibridge_core::error::PairingError;
-use omnibridge_core::pairing::{
+use pliwee_core::error::PairingError;
+use pliwee_core::pairing::{
     self, PairingSession, PairingToken, MAX_FAILED_ATTEMPTS, NONCE_LEN, TOKEN_LEN,
 };
-use omnibridge_core::Fingerprint;
+use pliwee_core::Fingerprint;
 
 fn fp(byte: u8) -> Fingerprint {
     Fingerprint::from_hex(&format!("{byte:02x}").repeat(32)).expect("valid fingerprint")
@@ -257,7 +257,7 @@ fn nonces_are_unique() {
 // Cross-language known-answer vector
 // ---------------------------------------------------------------------------
 //
-// This is the contract between `omnibridge_core::pairing` and Kotlin's
+// This is the contract between `pliwee_core::pairing` and Kotlin's
 // `io.github.yurisismotto.omnibridge.pairing.PairingProof`. The identical vector
 // lives in `android/app/src/test/.../PairingProofTest.kt`. If either side
 // changes the domain separator, the field order or the length prefixing, one

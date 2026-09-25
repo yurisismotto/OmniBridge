@@ -23,7 +23,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.journeyapps.barcodescanner.ScanContract
-import io.github.yurisismotto.omnibridge.OmniBridgeApp
+import io.github.yurisismotto.omnibridge.PliweeApp
 import io.github.yurisismotto.omnibridge.R
 import io.github.yurisismotto.omnibridge.capability.BatteryCapability
 import io.github.yurisismotto.omnibridge.capability.ClipboardCapability
@@ -42,7 +42,7 @@ import io.github.yurisismotto.omnibridge.notifications.InstalledApps
 import io.github.yurisismotto.omnibridge.notifications.NotificationAccess
 import io.github.yurisismotto.omnibridge.service.ConnectionService
 import io.github.yurisismotto.omnibridge.store.TrustStore
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -60,7 +60,7 @@ import kotlinx.coroutines.withContext
  */
 class MainActivity : ComponentActivity() {
 
-    private val app: OmniBridgeApp get() = application as OmniBridgeApp
+    private val app: PliweeApp get() = application as PliweeApp
 
     private val scanLauncher = registerForActivityResult(ScanContract()) { result ->
         // Rotating the scanner recreates its Activity, but this launcher
@@ -216,12 +216,12 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            OmniBridgeTheme {
+            PliweeTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = OmniBridgeTheme.colors.background,
+                    color = PliweeTheme.colors.background,
                 ) {
-                    OmniBridgeShell(state = rememberMainUiState(), actions = rememberMainActions())
+                    PliweeShell(state = rememberMainUiState(), actions = rememberMainActions())
 
                     sensitivePrompt?.let { prompt ->
                         SensitiveClipDialog(

@@ -2,7 +2,7 @@
 //!
 //! The GUI speaks the *same* newline-delimited JSON control protocol the CLI
 //! does, over the same Unix socket in `$XDG_RUNTIME_DIR/omnibridge/`, using the
-//! very same [`Request`]/[`Response`] types from `omnibridge-daemon`. Nothing
+//! very same [`Request`]/[`Response`] types from `pliwee-daemon`. Nothing
 //! here is a second, parallel interface: if the socket contract changes, this
 //! file stops compiling, which is the point.
 //!
@@ -22,8 +22,8 @@
 //! through an `async_channel`. No GTK object is ever touched off the main
 //! thread.
 
-use omnibridge_control::{Event, FileOfferRequest, Request, Response};
-use omnibridge_linux::control_socket_path;
+use pliwee_control::{Event, FileOfferRequest, Request, Response};
+use pliwee_linux::control_socket_path;
 use std::sync::OnceLock;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::UnixStream;

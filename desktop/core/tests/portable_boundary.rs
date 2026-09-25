@@ -1,7 +1,7 @@
 //! The boundary regression test.
 //!
 //! Wave 0's completion test is a negative one: *adding a platform means
-//! writing an adapter crate; it never means editing `omnibridge-core`,
+//! writing an adapter crate; it never means editing `pliwee-core`,
 //! `tls.rs`, `session.rs` or a capability crate's protocol half.* This file
 //! is what makes that checkable rather than aspirational.
 //!
@@ -26,7 +26,7 @@ use std::path::{Path, PathBuf};
 
 /// Crates that must contain no platform-specific code.
 ///
-/// `omnibridge-runtime` is deliberately absent: it depends on `mdns-sd`, whose
+/// `pliwee-runtime` is deliberately absent: it depends on `mdns-sd`, whose
 /// Windows behaviour is an open question (V-12 / POC-WIN-02) and outside
 /// Wave 0. It contains no `std::os` today, and the last test below checks
 /// that, but it is not in the portable *contract*.
@@ -49,13 +49,13 @@ const PORTABLE_CRATES: &[&str] = &[
 /// review, not added to make a test pass.
 const FEATURE_GATED_PLATFORM_MODULES: &[&str] = &[
     // `SecretStore` on a Unix filesystem, `Store::open(dir)`, XDG paths.
-    // Behind `omnibridge-core/unix-fs`.
+    // Behind `pliwee-core/unix-fs`.
     "core/src/platform/unix_fs.rs",
     // The Unix download destination. Behind
-    // `omnibridge-capability-files/unix-fs`.
+    // `pliwee-capability-files/unix-fs`.
     "capabilities/files/src/destination.rs",
     // The wl-clipboard and XFIXES backends. Behind
-    // `omnibridge-capability-clipboard/linux-backends`.
+    // `pliwee-capability-clipboard/linux-backends`.
     "capabilities/clipboard/src/backend/wayland.rs",
     "capabilities/clipboard/src/backend/x11.rs",
 ];
@@ -87,7 +87,7 @@ const DESKTOP_MARKERS: &[&str] = &[
 
 /// The two files allowed to name a desktop, and why.
 ///
-/// Each is behind `omnibridge-capability-notifications/linux-dbus`; turning the
+/// Each is behind `pliwee-capability-notifications/linux-dbus`; turning the
 /// feature off removes both from the build entirely, which is what the portable
 /// compile gate checks.
 const DESKTOP_PLATFORM_MODULES: &[&str] = &[
@@ -413,5 +413,106 @@ fn no_crate_actually_uses_unsafe_today() {
         found.is_empty(),
         "unsafe appeared in the workspace:\n  {}",
         found.join("\n  ")
+    );
+}
+
+// ---------------------------------------------------------------------------
+// The Windows MSVC job builds exactly this set (Pliwee Wave 3)
+// ---------------------------------------------------------------------------
+//
+// `.github/workflows/portable-windows-msvc.yml` names the portable crates by
+// *package* name, in three places a rename can miss independently: the
+// presence list, the `-p` arguments of the compile gates, and a PowerShell
+// `-like '<prefix>-*'` filter that selects the lines whose features it checks.
+// A filter that matches no line checks nothing and passes, so this test
+// derives the expected names from the crates' own manifests and requires the
+// workflow to agree with them exactly. The job carries the matching runtime
+// assertion (the filter must select every portable package).
+
+fn workflow() -> String {
+    let path = desktop_root()
+        .parent()
+        .expect("desktop/ has a parent")
+        .join(".github/workflows/portable-windows-msvc.yml");
+    std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+}
+
+/// The `name = "…"` of each portable crate's `[package]`, in PORTABLE_CRATES order.
+fn portable_package_names() -> Vec<String> {
+    PORTABLE_CRATES
+        .iter()
+        .map(|krate| {
+            let manifest = std::fs::read_to_string(desktop_root().join(krate).join("Cargo.toml"))
+                .expect("read manifest");
+            let line = manifest
+                .lines()
+                .skip_while(|l| l.trim() != "[package]")
+                .find(|l| l.trim_start().starts_with("name = "))
+                .unwrap_or_else(|| panic!("{krate} has no package name"));
+            line.split('"').nth(1).expect("quoted name").to_owned()
+        })
+        .collect()
+}
+
+/// The `-p <name>` arguments of the step whose `- name:` line starts with `step`.
+fn step_packages(workflow: &str, step: &str) -> Vec<String> {
+    let body: Vec<&str> = workflow
+        .lines()
+        .skip_while(|l| !l.trim_start().starts_with(&format!("- name: {step}")))
+        .skip(1)
+        .take_while(|l| !l.trim_start().starts_with("- name:"))
+        .collect();
+    assert!(!body.is_empty(), "no workflow step named {step:?}");
+    body.iter()
+        .filter_map(|l| l.trim().strip_prefix("-p "))
+        .map(|rest| rest.trim_end_matches('`').trim().to_owned())
+        .collect()
+}
+
+#[test]
+fn the_windows_job_builds_exactly_the_portable_crates() {
+    let workflow = workflow();
+    let mut expected = portable_package_names();
+    assert_eq!(expected.len(), 7, "the portable contract is seven crates");
+    expected.sort();
+
+    for step in ["POC-CORE-04", "Full codegen", "Dependency boundary"] {
+        let mut named = step_packages(&workflow, step);
+        named.sort();
+        assert_eq!(named, expected, "the {step:?} step builds a different set");
+    }
+
+    // The presence list: every expected name, quoted, and no stale one.
+    for name in &expected {
+        assert!(
+            workflow.contains(&format!("'{name}'")),
+            "the presence list does not name {name}"
+        );
+    }
+}
+
+#[test]
+fn the_windows_feature_filter_selects_every_portable_crate() {
+    let workflow = workflow();
+    let filters: Vec<&str> = workflow
+        .split("-like '")
+        .skip(1)
+        .map(|rest| rest.split('\'').next().expect("closing quote"))
+        .collect();
+    assert_eq!(
+        filters.len(),
+        1,
+        "expected exactly one -like filter: {filters:?}"
+    );
+    let prefix = filters[0]
+        .strip_suffix('*')
+        .unwrap_or_else(|| panic!("the filter {:?} is not a prefix pattern", filters[0]));
+    let names = portable_package_names();
+    let selected = names.iter().filter(|n| n.starts_with(prefix)).count();
+    assert_eq!(
+        selected,
+        names.len(),
+        "the -like '{prefix}*' filter selects {selected} of {} portable packages: {names:?}",
+        names.len()
     );
 }

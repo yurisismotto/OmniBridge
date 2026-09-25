@@ -10,14 +10,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use common::{wait_until, TestClient, TestServer};
-use omnibridge_capability_battery::{BatteryCapability, BatteryReading};
-use omnibridge_core::error::PairingError;
-use omnibridge_core::identity::LocalIdentity;
-use omnibridge_core::pairing::PairingToken;
-use omnibridge_core::session::{PeerStatus, SessionHost};
-use omnibridge_core::Error;
-use omnibridge_proto::v1;
-use omnibridge_proto::v1::capabilities::ChargingState;
+use pliwee_capability_battery::{BatteryCapability, BatteryReading};
+use pliwee_core::error::PairingError;
+use pliwee_core::identity::LocalIdentity;
+use pliwee_core::pairing::PairingToken;
+use pliwee_core::session::{PeerStatus, SessionHost};
+use pliwee_core::Error;
+use pliwee_proto::v1;
+use pliwee_proto::v1::capabilities::ChargingState;
 
 const TTL: Duration = Duration::from_secs(30);
 
@@ -613,7 +613,7 @@ async fn an_unknown_capability_id_is_refused_without_closing_the_session() {
     assert!(
         session
             .handle
-            .send_capability(omnibridge_core::capability::OutboundMessage {
+            .send_capability(pliwee_core::capability::OutboundMessage {
                 capability_id: "clipboard.v1".into(),
                 payload: b"secret".to_vec(),
             })
@@ -642,7 +642,7 @@ async fn a_malformed_capability_payload_does_not_kill_the_session() {
     assert!(
         session
             .handle
-            .send_capability(omnibridge_core::capability::OutboundMessage {
+            .send_capability(pliwee_core::capability::OutboundMessage {
                 capability_id: "battery.v1".into(),
                 payload: vec![0xff; 32],
             })

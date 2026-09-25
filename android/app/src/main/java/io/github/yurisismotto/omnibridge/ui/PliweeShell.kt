@@ -37,13 +37,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import io.github.yurisismotto.omnibridge.R
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeGradientMark
+import io.github.yurisismotto.omnibridge.ui.components.PliweeGradientMark
 import io.github.yurisismotto.omnibridge.ui.components.exchangeAmbient
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeIconSize
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeMotion
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeIconSize
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeMotion
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 import io.github.yurisismotto.omnibridge.ui.theme.motionDuration
 
 /**
@@ -53,7 +53,7 @@ import io.github.yurisismotto.omnibridge.ui.theme.motionDuration
  * back on the same screen rather than bouncing to the home tab.
  */
 @Composable
-fun OmniBridgeShell(
+fun PliweeShell(
     state: MainUiState,
     actions: MainActions,
     modifier: Modifier = Modifier,
@@ -66,10 +66,10 @@ fun OmniBridgeShell(
     val parent = screen.parent
     BackHandler(enabled = parent != null) { parent?.let { screen = it } }
 
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     // Read here rather than inside transitionSpec: that lambda is not a
     // composable scope, so the token has to be resolved before it.
-    val crossfadeMs = motionDuration(OmniBridgeMotion.FAST_MS)
+    val crossfadeMs = motionDuration(PliweeMotion.FAST_MS)
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = colors.background,
@@ -167,7 +167,7 @@ private val ContentMaxWidth = 640.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ShellTopBar(screen: Screen, onBack: () -> Unit) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val title = when (screen) {
         Screen.Devices -> "Pliwee"
         Screen.Files -> stringResource(R.string.files_title)
@@ -186,10 +186,10 @@ private fun ShellTopBar(screen: Screen, onBack: () -> Unit) {
                 // elsewhere the title names the screen, which is more useful
                 // than repeating the brand on every view.
                 if (screen is Screen.Devices) {
-                    OmniBridgeGradientMark(size = OmniBridgeIconSize.large)
-                    Spacer(Modifier.width(OmniBridgeSpacing.xs))
+                    PliweeGradientMark(size = PliweeIconSize.large)
+                    Spacer(Modifier.width(PliweeSpacing.xs))
                 }
-                Text(title, style = OmniBridgeType.heading, color = colors.textPrimary)
+                Text(title, style = PliweeType.heading, color = colors.textPrimary)
             }
         },
         navigationIcon = {
@@ -199,7 +199,7 @@ private fun ShellTopBar(screen: Screen, onBack: () -> Unit) {
                         painter = painterResource(R.drawable.ic_arrow_back),
                         contentDescription = "Back",
                         tint = colors.textPrimary,
-                        modifier = Modifier.size(OmniBridgeIconSize.large),
+                        modifier = Modifier.size(PliweeIconSize.large),
                     )
                 }
             }
@@ -213,7 +213,7 @@ private fun ShellTopBar(screen: Screen, onBack: () -> Unit) {
 
 @Composable
 private fun ShellBottomBar(current: Tab, onSelect: (Tab) -> Unit) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     NavigationBar(containerColor = colors.surface, tonalElevation = 0.dp) {
         Tab.entries.forEach { tab ->
             val selected = tab == current
@@ -227,10 +227,10 @@ private fun ShellBottomBar(current: Tab, onSelect: (Tab) -> Unit) {
                         // The label below is always shown, so the icon would
                         // otherwise be announced twice.
                         contentDescription = null,
-                        modifier = Modifier.size(OmniBridgeIconSize.large),
+                        modifier = Modifier.size(PliweeIconSize.large),
                     )
                 },
-                label = { Text(stringResource(tab.label), style = OmniBridgeType.caption) },
+                label = { Text(stringResource(tab.label), style = PliweeType.caption) },
                 alwaysShowLabel = true,
                 modifier = Modifier.semantics { contentDescription = label },
                 colors = NavigationBarItemDefaults.colors(

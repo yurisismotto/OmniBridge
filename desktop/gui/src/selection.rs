@@ -213,7 +213,7 @@ mod tests {
     fn temp(name: &str) -> PathBuf {
         let mut p = std::env::temp_dir();
         p.push(format!(
-            "omnibridge-selection-{}-{}-{name}",
+            "pliwee-selection-{}-{}-{name}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

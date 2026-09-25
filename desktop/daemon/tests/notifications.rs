@@ -11,7 +11,7 @@
 //!
 //! The notification server is in-memory. That is not a weakening: the real
 //! `org.freedesktop.Notifications` server is exercised in
-//! `omnibridge-capability-notifications`'s own `real_dbus` gate, and a suite that
+//! `pliwee-capability-notifications`'s own `real_dbus` gate, and a suite that
 //! posted notifications onto the developer's desktop on every `cargo test`
 //! would not survive contact with anybody's patience.
 
@@ -20,8 +20,8 @@ mod common;
 use std::time::Duration;
 
 use common::*;
-use omnibridge_capability_notifications::backend::CloseReason;
-use omnibridge_capability_notifications::{LockPolicy, NotificationPolicy, CAPABILITY_ID};
+use pliwee_capability_notifications::backend::CloseReason;
+use pliwee_capability_notifications::{LockPolicy, NotificationPolicy, CAPABILITY_ID};
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -820,7 +820,7 @@ async fn a_suppress_policy_refuses_over_the_transport() {
 
 #[tokio::test]
 async fn a_broken_notification_sink_does_not_break_battery_or_the_clipboard() {
-    use omnibridge_capability_notifications::backend::SinkError;
+    use pliwee_capability_notifications::backend::SinkError;
 
     let (server, client, captured, session) = paired(NotificationPolicy::default()).await;
 
@@ -846,7 +846,7 @@ async fn a_broken_notification_sink_does_not_break_battery_or_the_clipboard() {
     assert!(
         session
             .handle
-            .send_capability(omnibridge_core::capability::OutboundMessage {
+            .send_capability(pliwee_core::capability::OutboundMessage {
                 capability_id: "battery.v1".to_string(),
                 payload: <clip_pb::BatteryState as prost::Message>::encode_to_vec(
                     &clip_pb::BatteryState {
@@ -887,7 +887,7 @@ async fn a_malformed_notification_payload_does_not_close_the_session() {
     assert!(
         session
             .handle
-            .send_capability(omnibridge_core::capability::OutboundMessage {
+            .send_capability(pliwee_core::capability::OutboundMessage {
                 capability_id: CAPABILITY_ID.to_string(),
                 payload: vec![0xff, 0xff, 0xff, 0xff],
             })
@@ -1007,7 +1007,7 @@ async fn the_desktop_receive_switch_closes_the_mirrors_it_had_displayed() {
     );
     assert_eq!(server.notification_sink.live_count(), 1);
 
-    let response = omnibridge_runtime::server::do_grant(
+    let response = pliwee_runtime::server::do_grant(
         &server.state,
         &client.fingerprint.to_hex(),
         CAPABILITY_ID,
@@ -1015,7 +1015,7 @@ async fn the_desktop_receive_switch_closes_the_mirrors_it_had_displayed() {
     )
     .await;
     assert!(
-        matches!(response, omnibridge_runtime::control::Response::Ok { .. }),
+        matches!(response, pliwee_runtime::control::Response::Ok { .. }),
         "the daemon accepted the switch: {response:?}"
     );
 
@@ -1046,7 +1046,7 @@ async fn the_desktop_receive_switch_leaves_every_other_grant_alone() {
     let before = server.granted_capabilities(client.fingerprint).await;
     assert!(before.contains(&CAPABILITY_ID.to_string()));
 
-    omnibridge_runtime::server::do_grant(
+    pliwee_runtime::server::do_grant(
         &server.state,
         &client.fingerprint.to_hex(),
         CAPABILITY_ID,
@@ -1073,7 +1073,7 @@ async fn the_desktop_receive_switch_leaves_every_other_grant_alone() {
 /// nothing about them should be able to reach another capability's grant.
 #[tokio::test]
 async fn changing_a_notification_setting_never_touches_another_capability() {
-    use omnibridge_runtime::control::NotificationSetting;
+    use pliwee_runtime::control::NotificationSetting;
 
     let (server, client, _captured, _session) = paired(NotificationPolicy::default()).await;
     for capability in ["battery.v1", "files.v1", "clipboard.v1"] {
@@ -1096,14 +1096,14 @@ async fn changing_a_notification_setting_never_touches_another_capability() {
         NotificationSetting::DismissSync { enabled: true },
         NotificationSetting::DismissSync { enabled: false },
     ] {
-        let response = omnibridge_runtime::server::do_notifications_policy(
+        let response = pliwee_runtime::server::do_notifications_policy(
             &server.state,
             &client.fingerprint.to_hex(),
             setting,
         )
         .await;
         assert!(
-            matches!(response, omnibridge_runtime::control::Response::Ok { .. }),
+            matches!(response, pliwee_runtime::control::Response::Ok { .. }),
             "{response:?}"
         );
     }
@@ -1116,7 +1116,7 @@ async fn changing_a_notification_setting_never_touches_another_capability() {
     // The clipboard's own policy is likewise untouched.
     assert_eq!(
         server.clipboard_policy(client.fingerprint).await,
-        omnibridge_capability_clipboard::policy::ClipboardPolicy::default(),
+        pliwee_capability_clipboard::policy::ClipboardPolicy::default(),
     );
     // And the notification policy is back where it started: the last setting
     // in the loop turned dismiss sync off again, and nothing else moved.
@@ -1133,17 +1133,17 @@ async fn changing_a_notification_setting_never_touches_another_capability() {
 /// and the control socket reach the same function.
 #[tokio::test]
 async fn the_dismiss_sync_setting_changes_only_itself() {
-    use omnibridge_runtime::control::NotificationSetting;
+    use pliwee_runtime::control::NotificationSetting;
 
     let (server, client, _captured, _session) = paired(NotificationPolicy {
-        when_sink_locked: omnibridge_core::notification_policy::LockPolicy::Full,
+        when_sink_locked: pliwee_core::notification_policy::LockPolicy::Full,
         ..NotificationPolicy::default()
     })
     .await;
     let before = server.notification_policy(client.fingerprint).await;
     assert!(!before.allow_dismiss_sync, "the stored default is off");
 
-    let response = omnibridge_runtime::server::do_notifications_policy(
+    let response = pliwee_runtime::server::do_notifications_policy(
         &server.state,
         &client.fingerprint.to_hex(),
         NotificationSetting::DismissSync { enabled: true },
@@ -1151,7 +1151,7 @@ async fn the_dismiss_sync_setting_changes_only_itself() {
     .await;
     assert!(matches!(
         response,
-        omnibridge_runtime::control::Response::Ok { .. }
+        pliwee_runtime::control::Response::Ok { .. }
     ));
 
     let after = server.notification_policy(client.fingerprint).await;
@@ -1175,7 +1175,7 @@ async fn the_dismiss_sync_setting_changes_only_itself() {
 /// forbids. The phone re-sends on its next update or its next snapshot.
 #[tokio::test]
 async fn pausing_from_the_desktop_closes_mirrors_and_resuming_restores_nothing() {
-    use omnibridge_runtime::control::NotificationSetting;
+    use pliwee_runtime::control::NotificationSetting;
 
     let (server, client, captured, session) = paired(NotificationPolicy::default()).await;
     assert!(
@@ -1190,7 +1190,7 @@ async fn pausing_from_the_desktop_closes_mirrors_and_resuming_restores_nothing()
         clip_pb::NotificationOutcome::Displayed as i32
     );
 
-    omnibridge_runtime::server::do_notifications_policy(
+    pliwee_runtime::server::do_notifications_policy(
         &server.state,
         &client.fingerprint.to_hex(),
         NotificationSetting::Mirror { enabled: false },
@@ -1206,7 +1206,7 @@ async fn pausing_from_the_desktop_closes_mirrors_and_resuming_restores_nothing()
         tokio::time::sleep(Duration::from_millis(10)).await;
     }
 
-    omnibridge_runtime::server::do_notifications_policy(
+    pliwee_runtime::server::do_notifications_policy(
         &server.state,
         &client.fingerprint.to_hex(),
         NotificationSetting::Mirror { enabled: true },
@@ -1303,8 +1303,8 @@ async fn the_status_the_desktop_ui_reads_carries_no_notification_content() {
 /// are different objects with different ids, minted from the same counter.
 async fn desktop_session_id(
     server: &TestServer,
-    peer: omnibridge_core::Fingerprint,
-) -> omnibridge_core::session::SessionId {
+    peer: pliwee_core::Fingerprint,
+) -> pliwee_core::session::SessionId {
     server
         .state
         .session_for(&peer)
@@ -1355,7 +1355,7 @@ async fn granting_mid_session_ends_the_session_that_cannot_use_the_grant() {
     let (server, client, session) = connected_but_not_granted().await;
     let session_id = desktop_session_id(&server, client.fingerprint).await;
 
-    let response = omnibridge_runtime::server::do_grant(
+    let response = pliwee_runtime::server::do_grant(
         &server.state,
         &client.fingerprint.to_hex(),
         CAPABILITY_ID,
@@ -1364,7 +1364,7 @@ async fn granting_mid_session_ends_the_session_that_cannot_use_the_grant() {
     .await;
 
     match response {
-        omnibridge_runtime::control::Response::Ok { message } => assert!(
+        pliwee_runtime::control::Response::Ok { message } => assert!(
             message.contains("reconnecting"),
             "the operator is told the device is being reconnected: {message}"
         ),
@@ -1421,7 +1421,7 @@ async fn the_session_the_reconnect_builds_can_actually_mirror() {
         "a session that never negotiated the capability must announce nothing"
     );
 
-    omnibridge_runtime::server::do_grant(
+    pliwee_runtime::server::do_grant(
         &server.state,
         &client.fingerprint.to_hex(),
         CAPABILITY_ID,
@@ -1476,12 +1476,12 @@ async fn the_session_the_reconnect_builds_can_actually_mirror() {
 /// first is a permission, and only the first may cost a session.
 #[tokio::test]
 async fn a_burst_of_settings_after_the_grant_causes_no_further_reconnect() {
-    use omnibridge_runtime::control::NotificationSetting;
+    use pliwee_runtime::control::NotificationSetting;
 
     let (server, client, session) = connected_but_not_granted().await;
     let device = client.fingerprint.to_hex();
 
-    omnibridge_runtime::server::do_grant(&server.state, &device, CAPABILITY_ID, true).await;
+    pliwee_runtime::server::do_grant(&server.state, &device, CAPABILITY_ID, true).await;
     assert_session_ends(session, "the grant widened").await;
 
     let session = client
@@ -1498,10 +1498,10 @@ async fn a_burst_of_settings_after_the_grant_causes_no_further_reconnect() {
         },
         NotificationSetting::DismissSync { enabled: true },
     ] {
-        omnibridge_runtime::server::do_notifications_policy(&server.state, &device, setting).await;
+        pliwee_runtime::server::do_notifications_policy(&server.state, &device, setting).await;
     }
     // And the grant written again, as a GUI that echoes its own switch would.
-    omnibridge_runtime::server::do_grant(&server.state, &device, CAPABILITY_ID, true).await;
+    pliwee_runtime::server::do_grant(&server.state, &device, CAPABILITY_ID, true).await;
 
     tokio::time::sleep(Duration::from_millis(200)).await;
     let live = server
@@ -1526,7 +1526,7 @@ async fn withdrawing_a_grant_never_rebuilds_the_session() {
     let (server, client, session) = connected_but_not_granted().await;
     let device = client.fingerprint.to_hex();
 
-    omnibridge_runtime::server::do_grant(&server.state, &device, CAPABILITY_ID, true).await;
+    pliwee_runtime::server::do_grant(&server.state, &device, CAPABILITY_ID, true).await;
     assert_session_ends(session, "the grant widened").await;
 
     let session = client
@@ -1536,9 +1536,9 @@ async fn withdrawing_a_grant_never_rebuilds_the_session() {
     let id = desktop_session_id(&server, client.fingerprint).await;
 
     let response =
-        omnibridge_runtime::server::do_grant(&server.state, &device, CAPABILITY_ID, false).await;
+        pliwee_runtime::server::do_grant(&server.state, &device, CAPABILITY_ID, false).await;
     match response {
-        omnibridge_runtime::control::Response::Ok { message } => assert!(
+        pliwee_runtime::control::Response::Ok { message } => assert!(
             !message.contains("reconnecting"),
             "a withdrawal must not announce a reconnect: {message}"
         ),
@@ -1575,7 +1575,7 @@ async fn regranting_a_capability_the_session_already_has_is_inert() {
         "battery.v1 is auto-granted at pairing, so this session already has it"
     );
 
-    let response = omnibridge_runtime::server::do_grant(
+    let response = pliwee_runtime::server::do_grant(
         &server.state,
         &client.fingerprint.to_hex(),
         "battery.v1",
@@ -1583,7 +1583,7 @@ async fn regranting_a_capability_the_session_already_has_is_inert() {
     )
     .await;
     match response {
-        omnibridge_runtime::control::Response::Ok { message } => assert!(
+        pliwee_runtime::control::Response::Ok { message } => assert!(
             !message.contains("reconnecting"),
             "nothing needed rebuilding: {message}"
         ),
@@ -1620,7 +1620,7 @@ async fn the_convergence_is_not_specific_to_notifications() {
             "{capability} should not be granted by pairing alone"
         );
 
-        omnibridge_runtime::server::do_grant(
+        pliwee_runtime::server::do_grant(
             &server.state,
             &client.fingerprint.to_hex(),
             capability,
@@ -1661,7 +1661,7 @@ async fn granting_while_the_peer_is_away_converges_on_its_own() {
     })
     .await;
 
-    let response = omnibridge_runtime::server::do_grant(
+    let response = pliwee_runtime::server::do_grant(
         &server.state,
         &client.fingerprint.to_hex(),
         CAPABILITY_ID,
@@ -1669,7 +1669,7 @@ async fn granting_while_the_peer_is_away_converges_on_its_own() {
     )
     .await;
     match response {
-        omnibridge_runtime::control::Response::Ok { message } => assert!(
+        pliwee_runtime::control::Response::Ok { message } => assert!(
             !message.contains("reconnecting"),
             "there was nothing to reconnect: {message}"
         ),
@@ -1704,7 +1704,7 @@ async fn the_reconnect_keeps_the_pairing_and_every_other_capability() {
     let (server, client, session) = connected_but_not_granted().await;
     let before = server.granted_capabilities(client.fingerprint).await;
 
-    omnibridge_runtime::server::do_grant(
+    pliwee_runtime::server::do_grant(
         &server.state,
         &client.fingerprint.to_hex(),
         CAPABILITY_ID,

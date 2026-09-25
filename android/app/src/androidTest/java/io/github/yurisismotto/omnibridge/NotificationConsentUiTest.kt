@@ -25,7 +25,7 @@ import io.github.yurisismotto.omnibridge.NotificationUiFixtures as Fx
 import io.github.yurisismotto.omnibridge.notifications.LockPolicy
 import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
 import io.github.yurisismotto.omnibridge.ui.NotificationSettingsScreen
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -66,7 +66,7 @@ class NotificationConsentUiTest {
         onOpenAppPicker: (String) -> Unit = {},
     ) {
         compose.setContent {
-            OmniBridgeTheme {
+            PliweeTheme {
                 NotificationSettingsScreen(
                     state = state,
                     actions = recorder.actions(),
@@ -351,7 +351,7 @@ class NotificationConsentUiTest {
         )
         var state by mutableStateOf(Fx.state(granted))
         compose.setContent {
-            OmniBridgeTheme {
+            PliweeTheme {
                 NotificationSettingsScreen(
                     state = state,
                     actions = recorder.actions(),

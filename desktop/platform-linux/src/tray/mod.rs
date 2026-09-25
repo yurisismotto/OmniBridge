@@ -36,7 +36,7 @@
 //!
 //! # No GTK, no KDE, no new dependency
 //!
-//! The daemon does not depend on `omnibridge-gui`, on GTK, on Qt, on KDE
+//! The daemon does not depend on `pliwee-gui`, on GTK, on Qt, on KDE
 //! Frameworks, on `libappindicator` or on a tray crate. It speaks the two
 //! D-Bus interfaces directly, with the `zbus` that Pliwee's D-Bus-using
 //! capabilities already resolve. `KDE-STATUSNOTIFIER-V1.md` §16 records the

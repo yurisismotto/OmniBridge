@@ -17,13 +17,13 @@
 
 use std::sync::Arc;
 
-use omnibridge_capability_battery::{
+use pliwee_capability_battery::{
     presence, reading_of, BatteryCapability, BatteryPresence, BatteryReading, BatteryState,
     DisplayDevice, LocalBatterySource, CAPABILITY_ID,
 };
-use omnibridge_core::capability::{Capability, CapabilityContext, OutboundMessage};
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::capabilities::ChargingState;
+use pliwee_core::capability::{Capability, CapabilityContext, OutboundMessage};
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1::capabilities::ChargingState;
 
 /// UPower `UP_DEVICE_KIND_*`.
 const KIND_UNKNOWN: u32 = 0;

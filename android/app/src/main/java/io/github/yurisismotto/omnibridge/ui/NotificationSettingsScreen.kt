@@ -48,19 +48,19 @@ import io.github.yurisismotto.omnibridge.notifications.LockPolicy
 import io.github.yurisismotto.omnibridge.notifications.NotificationApp
 import io.github.yurisismotto.omnibridge.notifications.NotificationApps
 import io.github.yurisismotto.omnibridge.notifications.NotificationReadiness
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeCapabilityRow
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeCard
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecondaryButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSectionLabel
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecurityNotice
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeStatusBadge
+import io.github.yurisismotto.omnibridge.ui.components.PliweeCapabilityRow
+import io.github.yurisismotto.omnibridge.ui.components.PliweeCard
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSecondaryButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSectionLabel
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSecurityNotice
+import io.github.yurisismotto.omnibridge.ui.components.PliweeStatusBadge
 import io.github.yurisismotto.omnibridge.ui.components.NoticeTone
-import io.github.yurisismotto.omnibridge.ui.components.omniBridgeContentColumn
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeIconSize
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeRadius
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.components.pliweeContentColumn
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeIconSize
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeRadius
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 import io.github.yurisismotto.omnibridge.ui.theme.MinTouchTarget
 
 /**
@@ -107,13 +107,13 @@ fun NotificationSettingsScreen(
     onOpenAppPicker: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val peer = state.peerByHex(fingerprintHex)
     if (peer == null) {
-        Column(modifier.fillMaxSize().padding(OmniBridgeSpacing.md)) {
+        Column(modifier.fillMaxSize().padding(PliweeSpacing.md)) {
             Text(
                 "This device is no longer paired.",
-                style = OmniBridgeType.body,
+                style = PliweeType.body,
                 color = colors.textSecondary,
             )
         }
@@ -139,45 +139,45 @@ fun NotificationSettingsScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .omniBridgeContentColumn()
-            .padding(horizontal = OmniBridgeSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.sm),
+            .pliweeContentColumn()
+            .padding(horizontal = PliweeSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(PliweeSpacing.sm),
     ) {
-        Spacer(Modifier.height(OmniBridgeSpacing.xs))
+        Spacer(Modifier.height(PliweeSpacing.xs))
 
         // --- what is actually happening, right now ------------------------
-        OmniBridgeCard {
+        PliweeCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     painter = painterResource(R.drawable.ic_notifications),
                     contentDescription = null,
                     tint = colors.accentViolet,
-                    modifier = Modifier.size(OmniBridgeIconSize.large),
+                    modifier = Modifier.size(PliweeIconSize.large),
                 )
-                Spacer(Modifier.width(OmniBridgeSpacing.sm))
+                Spacer(Modifier.width(PliweeSpacing.sm))
                 Text(
                     peer.deviceName,
-                    style = OmniBridgeType.subtitle,
+                    style = PliweeType.subtitle,
                     color = colors.textPrimary,
                     modifier = Modifier.weight(1f),
                 )
-                OmniBridgeStatusBadge(
+                PliweeStatusBadge(
                     status = NotificationUiMapping.status(readiness),
                     label = stringResource(NotificationUiMapping.statusLabel(readiness)),
                 )
             }
             Text(
                 stringResource(NotificationUiMapping.statusDetail(readiness)),
-                style = OmniBridgeType.caption,
+                style = PliweeType.caption,
                 color = colors.textSecondary,
             )
         }
 
         // --- gate 2: this computer ----------------------------------------
         var disclosureOpen by remember(fingerprintHex) { mutableStateOf(false) }
-        OmniBridgeSectionLabel(stringResource(R.string.notif_screen_title))
-        OmniBridgeCard {
-            OmniBridgeCapabilityRow(
+        PliweeSectionLabel(stringResource(R.string.notif_screen_title))
+        PliweeCard {
+            PliweeCapabilityRow(
                 title = stringResource(R.string.notif_share_title),
                 description = stringResource(R.string.notif_share_description),
                 icon = R.drawable.ic_notifications,
@@ -203,15 +203,15 @@ fun NotificationSettingsScreen(
 
         if (granted) {
             // --- gate 1: Android ------------------------------------------
-            OmniBridgeCard {
+            PliweeCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         stringResource(R.string.notif_access_title),
-                        style = OmniBridgeType.body,
+                        style = PliweeType.body,
                         color = colors.textPrimary,
                         modifier = Modifier.weight(1f).semantics { heading() },
                     )
-                    OmniBridgeStatusBadge(
+                    PliweeStatusBadge(
                         status = if (gates.osAccessGranted) {
                             NotificationUiMapping.status(NotificationReadiness.READY)
                         } else {
@@ -230,13 +230,13 @@ fun NotificationSettingsScreen(
                 }
                 Text(
                     stringResource(R.string.notif_access_explainer),
-                    style = OmniBridgeType.caption,
+                    style = PliweeType.caption,
                     color = colors.textSecondary,
                 )
-                Spacer(Modifier.height(OmniBridgeSpacing.xxs))
+                Spacer(Modifier.height(PliweeSpacing.xxs))
                 // Offered whether or not it is granted: this is also the way
                 // back to Android's own screen to take it away.
-                OmniBridgeSecondaryButton(
+                PliweeSecondaryButton(
                     text = stringResource(R.string.notif_access_open_settings),
                     icon = R.drawable.ic_settings,
                     onClick = actions.onOpenNotificationAccess,
@@ -244,7 +244,7 @@ fun NotificationSettingsScreen(
                 if (gates.osAccessGranted) {
                     Text(
                         stringResource(R.string.notif_access_revoke_hint),
-                        style = OmniBridgeType.caption,
+                        style = PliweeType.caption,
                         color = colors.textMuted,
                     )
                 }
@@ -261,8 +261,8 @@ fun NotificationSettingsScreen(
             )
 
             // --- everything else the source decides -----------------------
-            OmniBridgeCard {
-                OmniBridgeCapabilityRow(
+            PliweeCard {
+                PliweeCapabilityRow(
                     title = stringResource(R.string.notif_mirror_title),
                     description = stringResource(R.string.notif_mirror_description),
                     icon = R.drawable.ic_send,
@@ -272,7 +272,7 @@ fun NotificationSettingsScreen(
                         actions.onSetNotificationPolicy(peer, policy.copy(allowMirror = it))
                     },
                 )
-                OmniBridgeCapabilityRow(
+                PliweeCapabilityRow(
                     title = stringResource(R.string.notif_ongoing_title),
                     description = stringResource(R.string.notif_ongoing_description),
                     icon = R.drawable.ic_activity,
@@ -283,7 +283,7 @@ fun NotificationSettingsScreen(
                     },
                 )
                 if (state.hasWorkProfile) {
-                    OmniBridgeCapabilityRow(
+                    PliweeCapabilityRow(
                         title = stringResource(R.string.notif_work_title),
                         description = stringResource(R.string.notif_work_description),
                         icon = R.drawable.ic_shield,
@@ -300,15 +300,15 @@ fun NotificationSettingsScreen(
                     Text(
                         stringResource(R.string.notif_work_title) + " — " +
                             stringResource(R.string.notif_work_absent),
-                        style = OmniBridgeType.caption,
+                        style = PliweeType.caption,
                         color = colors.textMuted,
                     )
                 }
             }
 
             // --- the lock policy ------------------------------------------
-            OmniBridgeSectionLabel(stringResource(R.string.notif_locked_title))
-            OmniBridgeCard {
+            PliweeSectionLabel(stringResource(R.string.notif_locked_title))
+            PliweeCard {
                 Column(Modifier.selectableGroup()) {
                     for (option in LockPolicy.entries) {
                         LockPolicyOption(
@@ -325,7 +325,7 @@ fun NotificationSettingsScreen(
                 }
                 Text(
                     stringResource(R.string.notif_locked_not_retroactive),
-                    style = OmniBridgeType.caption,
+                    style = PliweeType.caption,
                     color = colors.textMuted,
                 )
             }
@@ -336,8 +336,8 @@ fun NotificationSettingsScreen(
             // about what leaves this phone; this is the only setting that lets
             // a computer change something here, and it reads as the different
             // kind of decision it is.
-            OmniBridgeCard {
-                OmniBridgeCapabilityRow(
+            PliweeCard {
+                PliweeCapabilityRow(
                     title = stringResource(R.string.notif_dismiss_title),
                     description = stringResource(R.string.notif_dismiss_description),
                     icon = R.drawable.ic_close,
@@ -361,7 +361,7 @@ fun NotificationSettingsScreen(
                 val dismissState = gates.dismissReadiness()
                 Text(
                     stringResource(NotificationUiMapping.dismissDetail(dismissState)),
-                    style = OmniBridgeType.caption,
+                    style = PliweeType.caption,
                     color = if (dismissState.needsAttention) {
                         colors.accentAmber
                     } else {
@@ -379,14 +379,14 @@ fun NotificationSettingsScreen(
                             peerStatus.dismissRequests,
                             peerStatus.dismissesPerformed,
                         ),
-                        style = OmniBridgeType.caption,
+                        style = PliweeType.caption,
                         color = colors.textMuted,
                     )
                 }
             }
         }
 
-        OmniBridgeSecurityNotice(
+        PliweeSecurityNotice(
             title = stringResource(R.string.notif_privacy_title),
             body = stringResource(R.string.notif_privacy_body),
             tone = NoticeTone.Info,
@@ -394,7 +394,7 @@ fun NotificationSettingsScreen(
         )
 
         NotificationDiagnostics(state = state, fingerprintHex = fingerprintHex)
-        Spacer(Modifier.height(OmniBridgeSpacing.xxl))
+        Spacer(Modifier.height(PliweeSpacing.xxl))
     }
 }
 
@@ -412,11 +412,11 @@ private fun AppsRow(
     newCount: Int,
     onClick: () -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val label = stringResource(R.string.notif_apps_title)
-    OmniBridgeCard(
+    PliweeCard(
         modifier = Modifier
-            .clip(RoundedCornerShape(OmniBridgeRadius.large))
+            .clip(RoundedCornerShape(PliweeRadius.large))
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
     ) {
@@ -428,24 +428,24 @@ private fun AppsRow(
                 painter = painterResource(R.drawable.ic_peers),
                 contentDescription = null,
                 tint = colors.accentBlue,
-                modifier = Modifier.size(OmniBridgeIconSize.large),
+                modifier = Modifier.size(PliweeIconSize.large),
             )
-            Spacer(Modifier.width(OmniBridgeSpacing.sm))
+            Spacer(Modifier.width(PliweeSpacing.sm))
             Column(Modifier.weight(1f)) {
-                Text(label, style = OmniBridgeType.body, color = colors.textPrimary)
+                Text(label, style = PliweeType.body, color = colors.textPrimary)
                 Text(
                     if (allowedCount == 0 || totalCount == 0) {
                         stringResource(R.string.notif_apps_none)
                     } else {
                         stringResource(R.string.notif_apps_count, allowedCount, totalCount)
                     },
-                    style = OmniBridgeType.caption,
+                    style = PliweeType.caption,
                     color = colors.textSecondary,
                 )
                 if (newCount > 0) {
                     Text(
                         pluralStringResource(R.plurals.notif_apps_new, newCount, newCount),
-                        style = OmniBridgeType.caption,
+                        style = PliweeType.caption,
                         color = colors.accentAmber,
                     )
                 }
@@ -454,7 +454,7 @@ private fun AppsRow(
                 painter = painterResource(R.drawable.ic_chevron_right),
                 contentDescription = null,
                 tint = colors.textMuted,
-                modifier = Modifier.size(OmniBridgeIconSize.large),
+                modifier = Modifier.size(PliweeIconSize.large),
             )
         }
     }
@@ -467,7 +467,7 @@ private fun LockPolicyOption(
     selected: Boolean,
     onSelect: () -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -476,7 +476,7 @@ private fun LockPolicyOption(
             // target, and the radio itself is marked as decoration so a screen
             // reader announces one control rather than two.
             .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
-            .padding(vertical = OmniBridgeSpacing.xs),
+            .padding(vertical = PliweeSpacing.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // The row above carries the role, the label and the selected state, so
@@ -487,16 +487,16 @@ private fun LockPolicyOption(
             onClick = null,
             modifier = Modifier.clearAndSetSemantics {},
         )
-        Spacer(Modifier.width(OmniBridgeSpacing.sm))
+        Spacer(Modifier.width(PliweeSpacing.sm))
         Column(Modifier.weight(1f)) {
             Text(
                 stringResource(NotificationUiMapping.lockPolicyLabel(option)),
-                style = OmniBridgeType.body,
+                style = PliweeType.body,
                 color = colors.textPrimary,
             )
             Text(
                 stringResource(NotificationUiMapping.lockPolicyDetail(option)),
-                style = OmniBridgeType.caption,
+                style = PliweeType.caption,
                 color = colors.textSecondary,
             )
         }
@@ -512,13 +512,13 @@ private fun LockPolicyOption(
  */
 @Composable
 private fun NotificationDiagnostics(state: MainUiState, fingerprintHex: String) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val status = state.notifications
     val peerStatus = status.peers[fingerprintHex]
     val peer = state.peerByHex(fingerprintHex)
 
-    OmniBridgeSectionLabel(stringResource(R.string.notif_diagnostics_title))
-    OmniBridgeCard {
+    PliweeSectionLabel(stringResource(R.string.notif_diagnostics_title))
+    PliweeCard {
         DiagnosticRow(
             stringResource(R.string.notif_diag_access),
             stringResource(
@@ -576,7 +576,7 @@ private fun NotificationDiagnostics(state: MainUiState, fingerprintHex: String) 
             // that could hold a notification, so there is nothing else to show.
             "tracked=${status.trackedNotifications} sent=${status.emitted} " +
                 "not mirrored=${status.dropped}",
-            style = OmniBridgeType.caption,
+            style = PliweeType.caption,
             color = colors.textMuted,
         )
     }
@@ -602,15 +602,15 @@ private fun roles(vararg claims: Pair<Boolean, Int>): String {
 
 @Composable
 private fun DiagnosticRow(label: String, value: String) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             label,
-            style = OmniBridgeType.caption,
+            style = PliweeType.caption,
             color = colors.textSecondary,
             modifier = Modifier.weight(1f),
         )
-        Text(value, style = OmniBridgeType.label, color = colors.textPrimary)
+        Text(value, style = PliweeType.label, color = colors.textPrimary)
     }
 }
 
@@ -640,7 +640,7 @@ private fun NotificationDisclosureDialog(
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.sm),
+                verticalArrangement = Arrangement.spacedBy(PliweeSpacing.sm),
             ) {
                 Text(stringResource(R.string.notif_disclosure_what))
                 Text(stringResource(R.string.notif_disclosure_where, computer))

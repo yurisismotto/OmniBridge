@@ -139,7 +139,7 @@ jobs:
         working-directory: desktop
         run: |
           rustup run "${OMNIBRIDGE_MSRV}" cargo check --locked \
-            -p omnibridge-daemon -p omnibridge-cli -p omnibridge-gui
+            -p pliwee-daemon -p pliwee-cli -p pliwee-gui
 
       - name: cargo check · the whole desktop workspace, tests included
         working-directory: desktop
@@ -285,20 +285,20 @@ jobs:
         working-directory: desktop
         run: cargo metadata --locked --format-version 1 > /dev/null
 
-      - name: cargo check · omnibridge-daemon
+      - name: cargo check · pliwee-daemon
         working-directory: desktop
-        run: cargo check --locked -p omnibridge-daemon
+        run: cargo check --locked -p pliwee-daemon
 
-      - name: cargo check · omnibridge-cli
+      - name: cargo check · pliwee-cli
         working-directory: desktop
-        run: cargo check --locked -p omnibridge-cli
+        run: cargo check --locked -p pliwee-cli
 
       # Mandatory on every row. The GUI is the only thing here that touches
       # the distribution's GTK stack, so a matrix that skipped it would prove
       # nothing this workflow claims.
-      - name: cargo check · omnibridge-gui, against THIS distribution's GTK and libadwaita
+      - name: cargo check · pliwee-gui, against THIS distribution's GTK and libadwaita
         working-directory: desktop
-        run: cargo check --locked -p omnibridge-gui
+        run: cargo check --locked -p pliwee-gui
 
       - name: cargo check · the whole desktop workspace
         working-directory: desktop
@@ -312,7 +312,7 @@ jobs:
       # actually change, above all the clipboard capability probe, which is
       # the one place these three distributions differ from the certified host.
       # A container job runs as **root**, and root has CAP_DAC_OVERRIDE: a
-      # directory chmod'd to 0000 is still readable. Four `omnibridge-core` tests
+      # directory chmod'd to 0000 is still readable. Four `pliwee-core` tests
       # are built on exactly that being impossible — they assert that an
       # unreachable key reads back as `PermissionDenied` rather than as
       # "absent", which is the Wave 0 defect they exist to prevent. As root
@@ -342,12 +342,12 @@ jobs:
         working-directory: desktop
         run: |
           cargo test --locked \
-            -p omnibridge-capability-clipboard \
-            -p omnibridge-capability-files \
-            -p omnibridge-capability-battery \
-            -p omnibridge-core \
-            -p omnibridge-control \
-            -p omnibridge-proto \
+            -p pliwee-capability-clipboard \
+            -p pliwee-capability-files \
+            -p pliwee-capability-battery \
+            -p pliwee-core \
+            -p pliwee-control \
+            -p pliwee-proto \
             -- \
             --skip an_unreadable_secret_is_permission_denied_and_never_absence \
             --skip an_unreadable_state_file_is_permission_denied_and_never_absence \

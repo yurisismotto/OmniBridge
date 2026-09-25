@@ -95,7 +95,7 @@ object AccentOnDark {
  * already corrected for the current theme so a call site never has to ask
  * which one it is in.
  */
-data class OmniBridgeColorScheme(
+data class PliweeColorScheme(
     val background: Color,
     val surface: Color,
     val surfaceElevated: Color,
@@ -114,7 +114,7 @@ data class OmniBridgeColorScheme(
     val isDark: Boolean,
 )
 
-val LightColors = OmniBridgeColorScheme(
+val LightColors = PliweeColorScheme(
     background = Brand.Surface,
     surface = Color.White,
     surfaceElevated = Color.White,
@@ -141,7 +141,7 @@ val LightColors = OmniBridgeColorScheme(
  * light. Inverting the light ramp instead would have put the lightest neutral
  * behind the darkest text and lost that relationship entirely.
  */
-val DarkColors = OmniBridgeColorScheme(
+val DarkColors = PliweeColorScheme(
     background = Color(0xFF080C18),
     surface = Brand.Dark,
     surfaceElevated = Color(0xFF141B30),

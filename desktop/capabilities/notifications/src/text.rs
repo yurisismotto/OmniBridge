@@ -7,7 +7,7 @@
 //! *content* it forwards is not, and cannot be — the whole point of the
 //! capability is to carry text an unrelated third party wrote.
 //!
-//! `omnibridge_core::notifications` has already refused anything past a field
+//! `pliwee_core::notifications` has already refused anything past a field
 //! limit, anything containing U+0000, and — structurally, because protobuf
 //! will not decode an invalid `string` — anything that is not UTF-8. What is
 //! left is this module's job: characters that are individually legal UTF-8 and
@@ -45,7 +45,7 @@ use crate::limits::{MAX_APP_NAME_CHARS, MAX_BODY_CHARS, MAX_SUMMARY_CHARS};
 
 /// Unicode `Cf` format characters and the invisible tag block.
 ///
-/// Copied from `omnibridge_capability_files::filename` rather than shared through
+/// Copied from `pliwee_capability_files::filename` rather than shared through
 /// a dependency, because a capability crate depending on another capability
 /// crate to sanitize its own display text would make the two features'
 /// lifetimes one. Ranges are Unicode 16.0; a character added to `Cf` later is

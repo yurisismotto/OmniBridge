@@ -11,12 +11,12 @@ import io.github.yurisismotto.omnibridge.notifications.NotificationOutboundQueue
 import io.github.yurisismotto.omnibridge.notifications.NotificationSecret
 import io.github.yurisismotto.omnibridge.notifications.NotificationSource
 import io.github.yurisismotto.omnibridge.notifications.PlatformNotification
-import io.github.yurisismotto.omnibridge.proto.capabilities.DismissRequest
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationOutcome
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRole
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRoles
-import io.github.yurisismotto.omnibridge.proto.capabilities.SyncMarker
+import io.github.yurisismotto.pliwee.proto.capabilities.DismissRequest
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationControl
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationOutcome
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRole
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRoles
+import io.github.yurisismotto.pliwee.proto.capabilities.SyncMarker
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 import kotlinx.coroutines.CoroutineScope
@@ -1519,7 +1519,7 @@ class NotificationSourceTest {
             peer,
             NotificationControl.newBuilder()
                 .setDismiss(
-                    io.github.yurisismotto.omnibridge.proto.capabilities.DismissRequest.newBuilder()
+                    io.github.yurisismotto.pliwee.proto.capabilities.DismissRequest.newBuilder()
                         .setNotificationId(ByteString.copyFrom(ByteArray(4)))
                         .setOriginDeviceId(localDeviceId),
                 )
@@ -1545,7 +1545,7 @@ class NotificationSourceTest {
             peer,
             NotificationControl.newBuilder()
                 .setDismiss(
-                    io.github.yurisismotto.omnibridge.proto.capabilities.DismissRequest.newBuilder()
+                    io.github.yurisismotto.pliwee.proto.capabilities.DismissRequest.newBuilder()
                         .setNotificationId(ByteString.copyFrom(ByteArray(16)))
                         .setOriginDeviceId(localDeviceId),
                 )
@@ -1583,7 +1583,7 @@ class NotificationSourceTest {
 
         val inbound = NotificationControl.newBuilder()
             .setUpsert(
-                io.github.yurisismotto.omnibridge.proto.capabilities.NotificationUpsert.newBuilder()
+                io.github.yurisismotto.pliwee.proto.capabilities.NotificationUpsert.newBuilder()
                     .setNotificationId(ByteString.copyFrom(ByteArray(16) { 0x5a }))
                     .setOriginDeviceId(localDeviceId)
                     .setAppId("example.relay.attempt")
@@ -1880,7 +1880,7 @@ class NotificationSourceTest {
         assertFalse("the group key must never be transmitted", bytes.contains("g:fixture"))
         // The profile is a boolean, and that is all: there is no field in
         // the schema that could carry the number, so this asserts the value
-        // rather than the absence, which the `omnibridge-proto` descriptor test
+        // rather than the absence, which the `pliwee-proto` descriptor test
         // asserts structurally on the other side.
         assertTrue(upsert.upsert.secondaryProfile)
     }

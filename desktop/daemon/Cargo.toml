@@ -1,5 +1,5 @@
 [package]
-name = "omnibridge-daemon"
+name = "pliwee-daemon"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -27,18 +27,18 @@ path = "src/main.rs"
 
 [features]
 default = ["upower"]
-upower = ["omnibridge-runtime/upower"]
+upower = ["pliwee-runtime/upower"]
 
 [dependencies]
-omnibridge-core = { version = "1.0.0", path = "../core" }
-omnibridge-proto = { version = "1.0.0", path = "../proto" }
-omnibridge-control = { version = "1.0.0", path = "../control" }
-omnibridge-runtime = { version = "1.0.0", path = "../runtime", default-features = false }
-omnibridge-linux = { version = "1.0.0", path = "../platform-linux" }
-omnibridge-capability-battery = { version = "1.0.0", path = "../capabilities/battery" }
-omnibridge-capability-clipboard = { version = "1.0.0", path = "../capabilities/clipboard" }
-omnibridge-capability-files = { version = "1.0.0", path = "../capabilities/files" }
-omnibridge-capability-notifications = { version = "1.0.0", path = "../capabilities/notifications" }
+pliwee-core = { version = "1.0.0", path = "../core" }
+pliwee-proto = { version = "1.0.0", path = "../proto" }
+pliwee-control = { version = "1.0.0", path = "../control" }
+pliwee-runtime = { version = "1.0.0", path = "../runtime", default-features = false }
+pliwee-linux = { version = "1.0.0", path = "../platform-linux" }
+pliwee-capability-battery = { version = "1.0.0", path = "../capabilities/battery" }
+pliwee-capability-clipboard = { version = "1.0.0", path = "../capabilities/clipboard" }
+pliwee-capability-files = { version = "1.0.0", path = "../capabilities/files" }
+pliwee-capability-notifications = { version = "1.0.0", path = "../capabilities/notifications" }
 tokio = { version = "1", features = ["full"] }
 tokio-rustls = { version = "0.26", default-features = false, features = ["ring"] }
 rustls = { version = "0.23", default-features = false, features = ["std", "ring"] }

@@ -27,7 +27,7 @@ import org.json.JSONObject
  * ## Defaults
  *
  * The two `allow_*` flags default on and the two `auto_*` flags default off,
- * matching the desktop exactly (`omnibridge_core::clipboard_policy`). Reaching
+ * matching the desktop exactly (`pliwee_core::clipboard_policy`). Reaching
  * these defaults already required an explicit grant, so the `allow_*` pair is
  * what the person just asked for; the `auto_*` pair is the one that must
  * never turn itself on.

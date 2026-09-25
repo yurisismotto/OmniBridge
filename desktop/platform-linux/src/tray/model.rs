@@ -19,7 +19,7 @@
 
 /// The desktop application's identity on the session bus.
 ///
-/// The same string as `APP_ID` in `omnibridge-gui`, the desktop entry's
+/// The same string as `APP_ID` in `pliwee-gui`, the desktop entry's
 /// basename, its `Icon=` key, the D-Bus service file's `Name=` and this
 /// crate's [`ICON_NAME`]. `tray_identity.rs` reads the repository's own files
 /// and asserts every one of those copies agrees, so the tray cannot be the
@@ -141,7 +141,7 @@ impl TrayAction {
 
     /// The `GAction` name on `org.gtk.Actions` / `org.freedesktop.Application`.
     ///
-    /// These three names are asserted against `omnibridge-gui`'s own public
+    /// These three names are asserted against `pliwee-gui`'s own public
     /// constants by `tray_identity.rs`; the GUI cannot rename one without
     /// this crate's tests going red.
     pub const fn gapplication_action(self) -> &'static str {

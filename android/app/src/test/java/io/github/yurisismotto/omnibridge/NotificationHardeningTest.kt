@@ -10,11 +10,11 @@ import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
 import io.github.yurisismotto.omnibridge.notifications.NotificationSecret
 import io.github.yurisismotto.omnibridge.notifications.NotificationSource
 import io.github.yurisismotto.omnibridge.notifications.PlatformNotification
-import io.github.yurisismotto.omnibridge.proto.capabilities.DismissRequest
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationOutcome
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRole
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRoles
+import io.github.yurisismotto.pliwee.proto.capabilities.DismissRequest
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationControl
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationOutcome
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRole
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRoles
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 import kotlinx.coroutines.CoroutineScope

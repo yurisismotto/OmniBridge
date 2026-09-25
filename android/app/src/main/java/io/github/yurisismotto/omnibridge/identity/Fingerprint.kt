@@ -8,7 +8,7 @@ import java.security.cert.Certificate
  *
  * We fingerprint the public key, not the certificate, so a certificate can be
  * reissued from the same key without invalidating an existing pairing. This
- * mirrors [`omnibridge_core::fingerprint`] on the desktop byte for byte.
+ * mirrors [`pliwee_core::fingerprint`] on the desktop byte for byte.
  */
 @JvmInline
 value class Fingerprint(val bytes: ByteArray) {

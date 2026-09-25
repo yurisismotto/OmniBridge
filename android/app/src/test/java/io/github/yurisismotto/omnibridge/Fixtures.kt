@@ -8,7 +8,7 @@ import java.security.cert.X509Certificate
  * The shared cross-language fixtures in `protocol/testdata`.
  *
  * These are real certificates emitted by the real desktop identity code
- * (`cargo run -p omnibridge-core --example gen_test_vectors`), not something
+ * (`cargo run -p pliwee-core --example gen_test_vectors`), not something
  * hand-built for the test. `identity-a` plays the paired computer;
  * `identity-b` plays a different machine whose certificate is perfectly valid
  * and simply is not the pinned one.

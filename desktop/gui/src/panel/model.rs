@@ -29,7 +29,7 @@
 //! capability revoked between the draw and the click is refused *there*,
 //! which is why this layer is allowed to work from a two-second-old poll.
 
-use omnibridge_control::{
+use pliwee_control::{
     transfer_direction, transfer_failure, transfer_state, ClipboardPeerReport,
     ClipboardStatusReport, DeviceReport, DeviceState, NotificationPeerReport,
     NotificationsStatusReport, Request, StatusReport, TransferReport,
@@ -934,7 +934,7 @@ fn health_of(state: &DaemonState) -> Health {
 fn connection_for<'a>(
     status: Option<&'a StatusReport>,
     device: &DeviceReport,
-) -> Option<&'a omnibridge_control::ConnectionReport> {
+) -> Option<&'a pliwee_control::ConnectionReport> {
     let status = status?;
     let mut hits = status.connections.iter().filter(|c| {
         c.device_id == device.device_id && c.fingerprint_short == device.fingerprint_short

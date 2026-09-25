@@ -121,7 +121,7 @@ class ClipboardText private constructor(
         /**
          * SHA-256 over the UTF-8 bytes.
          *
-         * The cross-language contract: `omnibridge_capability_clipboard::text::
+         * The cross-language contract: `pliwee_capability_clipboard::text::
          * content_hash` computes the same bytes, and both suites pin the same
          * vectors.
          */

@@ -3,7 +3,7 @@ package io.github.yurisismotto.omnibridge
 import io.github.yurisismotto.omnibridge.capability.ClipboardCapability
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardPolicy
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.Platform
+import io.github.yurisismotto.pliwee.proto.Platform
 import io.github.yurisismotto.omnibridge.store.TrustStore
 import io.github.yurisismotto.omnibridge.ui.ClipboardPreview
 import io.github.yurisismotto.omnibridge.ui.UiMapping
@@ -45,7 +45,7 @@ class SendClipboardUiTest {
     )
 
     private fun session(peer: TrustStore.TrustedPeer, negotiated: Boolean = true) =
-        OmniBridgeApp.LiveSession(
+        PliweeApp.LiveSession(
             peerHex = peer.fingerprint.toHex(),
             negotiated = if (negotiated) setOf(ClipboardCapability.ID) else emptySet(),
         )
@@ -158,7 +158,7 @@ class SendClipboardUiTest {
     @Test
     fun `a session with another computer does not enable this peer's send`() {
         val peer = peer()
-        val other = OmniBridgeApp.LiveSession(
+        val other = PliweeApp.LiveSession(
             peerHex = "cd".repeat(32),
             negotiated = setOf(ClipboardCapability.ID),
         )
@@ -230,7 +230,7 @@ class SendClipboardUiTest {
     @Test
     fun `a live session shows the platform the peer actually reported`() {
         val peer = peer()
-        val linux = OmniBridgeApp.LiveSession(
+        val linux = PliweeApp.LiveSession(
             peerHex = peer.fingerprint.toHex(),
             negotiated = setOf(ClipboardCapability.ID),
             platform = Platform.PLATFORM_LINUX,
@@ -254,7 +254,7 @@ class SendClipboardUiTest {
     @Test
     fun `an unspecified platform falls back to the fingerprint`() {
         val peer = peer()
-        val quiet = OmniBridgeApp.LiveSession(
+        val quiet = PliweeApp.LiveSession(
             peerHex = peer.fingerprint.toHex(),
             negotiated = emptySet(),
             platform = Platform.PLATFORM_UNSPECIFIED,
@@ -272,7 +272,7 @@ class SendClipboardUiTest {
     @Test
     fun `another computer's session does not label this peer`() {
         val peer = peer()
-        val other = OmniBridgeApp.LiveSession(
+        val other = PliweeApp.LiveSession(
             peerHex = "cd".repeat(32),
             negotiated = setOf(ClipboardCapability.ID),
             platform = Platform.PLATFORM_LINUX,

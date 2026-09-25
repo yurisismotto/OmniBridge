@@ -16,7 +16,7 @@ import android.os.IBinder
 import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import io.github.yurisismotto.omnibridge.OmniBridgeApp
+import io.github.yurisismotto.omnibridge.PliweeApp
 import io.github.yurisismotto.omnibridge.R
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
 import io.github.yurisismotto.omnibridge.net.ConnectResult
@@ -250,9 +250,9 @@ class ConnectionService : LifecycleService() {
                 // What this session can actually carry, published for the UI.
                 // Not a grant and never persisted: it is fixed by the HELLO
                 // that just ran and dies with the session, which is exactly
-                // why a screen can trust it. See OmniBridgeApp.LiveSession.
+                // why a screen can trust it. See PliweeApp.LiveSession.
                 app.publishLiveSession(
-                    OmniBridgeApp.LiveSession(
+                    PliweeApp.LiveSession(
                         peerHex = peer.fingerprint.toHex(),
                         negotiated = connection.negotiatedCapabilities.toSet(),
                         // Straight off the HELLO this session ran, never a
@@ -303,7 +303,7 @@ class ConnectionService : LifecycleService() {
         val app = app
         when (state) {
             is LinkState.Connecting -> {
-                app.publishConnectionState(OmniBridgeApp.ConnectionState.Connecting)
+                app.publishConnectionState(PliweeApp.ConnectionState.Connecting)
                 updateNotification(getString(R.string.notif_connecting))
             }
 
@@ -311,9 +311,9 @@ class ConnectionService : LifecycleService() {
                 val peer = targetPeer()
                 app.publishConnectionState(
                     if (peer == null) {
-                        OmniBridgeApp.ConnectionState.Connecting
+                        PliweeApp.ConnectionState.Connecting
                     } else {
-                        OmniBridgeApp.ConnectionState.Connected(
+                        PliweeApp.ConnectionState.Connected(
                             peer.deviceName,
                             peer.fingerprint.toDisplayShort(),
                         )
@@ -325,24 +325,24 @@ class ConnectionService : LifecycleService() {
                 // The UI says "trying again", not "connected": a session that
                 // ended must never keep looking live.
                 app.publishConnectionState(
-                    OmniBridgeApp.ConnectionState.Retrying(state.reason, state.delayMs / 1000),
+                    PliweeApp.ConnectionState.Retrying(state.reason, state.delayMs / 1000),
                 )
                 updateNotification(getString(R.string.notif_connecting))
             }
 
             is LinkState.GaveUp -> {
-                app.publishConnectionState(OmniBridgeApp.ConnectionState.Error(state.reason))
+                app.publishConnectionState(PliweeApp.ConnectionState.Error(state.reason))
                 // Nothing left to try, so holding a foreground service — and
                 // its notification — would be claiming work we are not doing.
                 lifecycleScope.launch { stopSelf() }
             }
 
             is LinkState.Stopped ->
-                app.publishConnectionState(OmniBridgeApp.ConnectionState.Idle)
+                app.publishConnectionState(PliweeApp.ConnectionState.Idle)
         }
     }
 
-    private val app: OmniBridgeApp get() = application as OmniBridgeApp
+    private val app: PliweeApp get() = application as PliweeApp
 
     /**
      * The computer to connect to, or null when there is no unambiguous one.

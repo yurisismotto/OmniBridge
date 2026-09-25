@@ -680,7 +680,7 @@ mod tests {
         // `sh` exists on every system this daemon runs on. (We never execute
         // it — this only exercises PATH resolution.)
         assert!(which("sh"));
-        assert!(!which("omnibridge-definitely-not-a-real-binary"));
+        assert!(!which("pliwee-definitely-not-a-real-binary"));
     }
 
     #[tokio::test]

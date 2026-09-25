@@ -21,7 +21,7 @@
 //!
 //! | Property | Enforced by |
 //! | --- | --- |
-//! | only a paired device can speak at all | TLS 1.3 + SPKI pinning (`omnibridge_core::tls`) |
+//! | only a paired device can speak at all | TLS 1.3 + SPKI pinning (`pliwee_core::tls`) |
 //! | only a *granted* device may transfer | [`FilesAuthorizer`], re-checked per offer, per stream, and periodically |
 //! | a stream belongs to one transfer and one peer | [`auth`] — HMAC over a single-use challenge |
 //! | a filename cannot escape the download directory | [`filename::sanitize`] + [`destination`] |
@@ -48,11 +48,11 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::sync::{broadcast, mpsc, watch, Mutex, RwLock};
 use tokio::time::{Duration, Instant};
 
-use omnibridge_core::capability::{Capability, CapabilityContext, OutboundMessage};
-use omnibridge_core::error::{Error, Result};
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::capabilities as pb;
-use omnibridge_proto::Message;
+use pliwee_core::capability::{Capability, CapabilityContext, OutboundMessage};
+use pliwee_core::error::{Error, Result};
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1::capabilities as pb;
+use pliwee_proto::Message;
 
 use auth::StreamChallenge;
 use limits::*;
@@ -1434,7 +1434,7 @@ impl TransferManager {
         };
 
         let auth_frame = pb::DataStreamAuth {
-            protocol_version: omnibridge_core::session::PROTOCOL_VERSION_MAX,
+            protocol_version: pliwee_core::session::PROTOCOL_VERSION_MAX,
             transfer_id: id.to_vec(),
             mac: challenge_mac.to_vec(),
         };

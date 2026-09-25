@@ -45,9 +45,9 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard, OnceLock};
 
-use omnibridge_capability_clipboard::backend::wayland::WaylandBackend;
-use omnibridge_capability_clipboard::backend::{BackendError, ClipboardBackend};
-use omnibridge_capability_clipboard::text::ClipboardText;
+use pliwee_capability_clipboard::backend::wayland::WaylandBackend;
+use pliwee_capability_clipboard::backend::{BackendError, ClipboardBackend};
+use pliwee_capability_clipboard::text::ClipboardText;
 
 /// The content no unsafe path may ever pass to a child process.
 const CANARY: &str = "canary-correct-horse-battery-staple-9f3a1c";
@@ -88,7 +88,7 @@ impl Fakes {
         let guard = path_lock();
 
         let dir = std::env::temp_dir().join(format!(
-            "omnibridge-fake-wl-{}-{:?}",
+            "pliwee-fake-wl-{}-{:?}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

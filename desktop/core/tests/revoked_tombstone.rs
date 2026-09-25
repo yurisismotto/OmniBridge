@@ -14,12 +14,12 @@
 
 use std::collections::BTreeMap;
 
-use omnibridge_core::clipboard_policy::ClipboardPolicy;
-use omnibridge_core::identity::LocalIdentity;
-use omnibridge_core::notification_policy::{LockPolicy, NotificationPolicy};
-use omnibridge_core::store::{HideOutcome, Store, TrustedPeer, SCHEMA_VERSION};
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::Platform;
+use pliwee_core::clipboard_policy::ClipboardPolicy;
+use pliwee_core::identity::LocalIdentity;
+use pliwee_core::notification_policy::{LockPolicy, NotificationPolicy};
+use pliwee_core::store::{HideOutcome, Store, TrustedPeer, SCHEMA_VERSION};
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1::Platform;
 
 /// A fingerprint that is stable within a test and different between them.
 fn fingerprint(seed: &str) -> Fingerprint {

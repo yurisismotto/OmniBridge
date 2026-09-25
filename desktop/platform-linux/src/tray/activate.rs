@@ -8,7 +8,7 @@
 //!                                              -> the GAction the GUI already exports
 //! ```
 //!
-//! The daemon does not link against `omnibridge-gui`, does not depend on GTK,
+//! The daemon does not link against `pliwee-gui`, does not depend on GTK,
 //! and does not know how a Quick Panel is built. It knows three action names.
 //! Everything else is the session bus's problem, which is the point: the GUI
 //! exported `app.quick-panel`, `app.settings` and `app.transfers` for exactly
@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn an_obviously_wrong_activation_token_is_not_forwarded() {
-        assert!(usable_token("gnome-shell-1234-omnibridge-TOKEN_abc"));
+        assert!(usable_token("gnome-shell-1234-pliwee-TOKEN_abc"));
         assert!(!usable_token(""));
         assert!(!usable_token(&"x".repeat(513)));
         assert!(!usable_token("has\nnewline"));

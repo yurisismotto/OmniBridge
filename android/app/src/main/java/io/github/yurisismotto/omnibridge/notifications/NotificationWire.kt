@@ -1,12 +1,12 @@
 package io.github.yurisismotto.omnibridge.notifications
 
 import com.google.protobuf.ByteString
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRemove
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRoles
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationUpsert
-import io.github.yurisismotto.omnibridge.proto.capabilities.Progress
-import io.github.yurisismotto.omnibridge.proto.capabilities.SyncMarker
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationControl
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRemove
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRoles
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationUpsert
+import io.github.yurisismotto.pliwee.proto.capabilities.Progress
+import io.github.yurisismotto.pliwee.proto.capabilities.SyncMarker
 
 /**
  * Turning an already-filtered, already-reduced notification into the wire

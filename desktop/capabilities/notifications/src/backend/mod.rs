@@ -5,7 +5,7 @@
 //! [`SinkError`] and a close signal, and would work unchanged against a
 //! Windows toast adapter or a `UNUserNotificationCenter` one.
 //!
-//! # Why the seam is here and not in `omnibridge-core`
+//! # Why the seam is here and not in `pliwee-core`
 //!
 //! Wave 0 declined to create a `NotificationSink` before anything implemented
 //! one, on the grounds that an abstraction with nothing on either side of it
@@ -112,7 +112,7 @@ impl Urgency {
 ///
 /// Coarse on purpose. These reach the local operator through the daemon log
 /// and `omnibridge notifications status`, and a reduced form of the *class* — not
-/// the message — reaches a peer as a [`omnibridge_proto::v1::capabilities::NotificationOutcome`].
+/// the message — reaches a peer as a [`pliwee_proto::v1::capabilities::NotificationOutcome`].
 /// They never carry notification content, and the `Failed` variant carries a
 /// platform error *name* rather than a formatted message for the same reason.
 #[derive(Debug, Clone, PartialEq, Eq)]

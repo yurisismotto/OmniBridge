@@ -1,17 +1,17 @@
 //! Host-specific implementations of the core's seams.
 //!
-//! # Why these live in `omnibridge-core` at all
+//! # Why these live in `pliwee-core` at all
 //!
 //! They do not, in the sense that matters: every module here is behind a
-//! Cargo feature, and with `--no-default-features` `omnibridge-core` contains no
+//! Cargo feature, and with `--no-default-features` `pliwee-core` contains no
 //! `std::os` anything and no environment or filesystem assumption. That is
 //! the boundary the Wave 0 compile gate checks:
 //!
 //! ```text
-//! cargo check -p omnibridge-core --no-default-features --target x86_64-pc-windows-msvc
+//! cargo check -p pliwee-core --no-default-features --target x86_64-pc-windows-msvc
 //! ```
 //!
-//! What keeps them in this crate rather than in `omnibridge-linux` is
+//! What keeps them in this crate rather than in `pliwee-linux` is
 //! compatibility constraint **CC-5**: `Store::open(dir)` is called by the
 //! existing test suite, which no refactor is permitted to edit. Moving the
 //! constructor to an adapter crate would mean editing tests to make the

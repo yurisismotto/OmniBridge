@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package omnibridge.v1;
+package pliwee.v1;
 
 // Java options are for the Android build; prost ignores them. Both sides
 // compile these exact files, so the wire format cannot drift.
-option java_package = "io.github.yurisismotto.omnibridge.proto";
+option java_package = "io.github.yurisismotto.pliwee.proto";
 option java_outer_classname = "CoreProto";
 option java_multiple_files = true;
 

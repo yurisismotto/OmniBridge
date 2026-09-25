@@ -23,7 +23,7 @@
 #     build rather than being covered by whatever the image happens to carry;
 #   * the build runs with **`--network=none`**, so a Cargo fetch is impossible
 #     rather than merely unnecessary. That is what the vendored bundle is for;
-#   * it builds as a **normal user**, never root. `omnibridge-core`'s store
+#   * it builds as a **normal user**, never root. `pliwee-core`'s store
 #     tests chmod a directory to 0000 and assert the read comes back
 #     PermissionDenied; root has CAP_DAC_OVERRIDE and reads it anyway, so a
 #     root build would pass a test that proves nothing. `%check` runs the full

@@ -31,7 +31,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use common::*;
-use omnibridge_core::Fingerprint;
+use pliwee_core::Fingerprint;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 

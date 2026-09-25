@@ -8,8 +8,8 @@ import io.github.yurisismotto.omnibridge.notifications.NotificationDismissRules.
 import io.github.yurisismotto.omnibridge.notifications.NotificationMapping
 import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
 import io.github.yurisismotto.omnibridge.notifications.PlatformNotification
-import io.github.yurisismotto.omnibridge.proto.capabilities.DismissRequest
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationOutcome
+import io.github.yurisismotto.pliwee.proto.capabilities.DismissRequest
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationOutcome
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

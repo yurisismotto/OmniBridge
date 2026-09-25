@@ -11,7 +11,7 @@ import org.junit.Test
 
 /**
  * The identity is `SHA-256(DER SubjectPublicKeyInfo)`. If this diverges from
- * `omnibridge_core::fingerprint`, every pairing breaks, so the fixtures below are
+ * `pliwee_core::fingerprint`, every pairing breaks, so the fixtures below are
  * the same ones the Rust suite asserts against.
  */
 class FingerprintTest {

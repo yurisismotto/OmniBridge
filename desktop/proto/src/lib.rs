@@ -4,13 +4,13 @@
 //! that are pure functions of the generated types. Nothing here knows about
 //! sockets, TLS, or capabilities.
 
-/// Types from `package omnibridge.v1`.
+/// Types from `package pliwee.v1`.
 pub mod v1 {
-    include!(concat!(env!("OUT_DIR"), "/omnibridge.v1.rs"));
+    include!(concat!(env!("OUT_DIR"), "/pliwee.v1.rs"));
 
-    /// Types from `package omnibridge.v1.capabilities`.
+    /// Types from `package pliwee.v1.capabilities`.
     pub mod capabilities {
-        include!(concat!(env!("OUT_DIR"), "/omnibridge.v1.capabilities.rs"));
+        include!(concat!(env!("OUT_DIR"), "/pliwee.v1.capabilities.rs"));
     }
 }
 

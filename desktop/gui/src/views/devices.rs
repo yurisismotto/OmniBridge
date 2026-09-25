@@ -15,7 +15,7 @@
 //! the list the parity test reads.
 
 use adw::prelude::*;
-use omnibridge_control::{DeviceReport, Request, Response};
+use pliwee_control::{DeviceReport, Request, Response};
 
 use super::Pages;
 use crate::panel::model::{BATTERY, CLIPBOARD, FILES, NOTIFICATIONS};
@@ -606,7 +606,7 @@ fn remove_all_dialog(control: Control, pages: Pages) -> adw::AlertDialog {
 pub(in crate::views) mod tests {
     use super::*;
     use crate::DaemonState;
-    use omnibridge_control::DeviceState;
+    use pliwee_control::DeviceState;
     use std::cell::RefCell;
     use std::rc::Rc;
 

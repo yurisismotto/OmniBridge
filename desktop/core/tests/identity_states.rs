@@ -19,10 +19,10 @@
 use std::os::unix::fs::PermissionsExt;
 use std::sync::Arc;
 
-use omnibridge_core::identity::{IdentityBackend, IdentityState, KeyBacking, SoftwareBacking};
-use omnibridge_core::secret_store::{SecretStore, StoreAccessError, StoreResult, IDENTITY_SECRET};
-use omnibridge_core::store::{Store, StoreConfig};
-use omnibridge_core::Fingerprint;
+use pliwee_core::identity::{IdentityBackend, IdentityState, KeyBacking, SoftwareBacking};
+use pliwee_core::secret_store::{SecretStore, StoreAccessError, StoreResult, IDENTITY_SECRET};
+use pliwee_core::store::{Store, StoreConfig};
+use pliwee_core::Fingerprint;
 
 /// A store with an identity in it, plus a snapshot of what is on disk.
 struct Fixture {
@@ -354,7 +354,7 @@ fn a_schema_1_state_file_loads_and_reads_back_as_software() {
 /// than of one implementation.
 #[derive(Debug)]
 struct FaultyStore {
-    inner: omnibridge_core::platform::unix_fs::FileSecretStore,
+    inner: pliwee_core::platform::unix_fs::FileSecretStore,
     fault: Option<StoreAccessError>,
     on_state: bool,
     writes: std::sync::Mutex<Vec<&'static str>>,
@@ -363,7 +363,7 @@ struct FaultyStore {
 impl FaultyStore {
     fn new(dir: &std::path::Path, fault: Option<StoreAccessError>, on_state: bool) -> Arc<Self> {
         Arc::new(Self {
-            inner: omnibridge_core::platform::unix_fs::FileSecretStore::new(dir),
+            inner: pliwee_core::platform::unix_fs::FileSecretStore::new(dir),
             fault,
             on_state,
             writes: std::sync::Mutex::new(Vec::new()),
@@ -415,7 +415,7 @@ fn config(secrets: Arc<FaultyStore>) -> StoreConfig {
     StoreConfig {
         secrets,
         backend: Arc::new(SoftwareBacking),
-        platform: omnibridge_proto::v1::Platform::Linux,
+        platform: pliwee_proto::v1::Platform::Linux,
         default_device_name: "Test Device".into(),
     }
 }

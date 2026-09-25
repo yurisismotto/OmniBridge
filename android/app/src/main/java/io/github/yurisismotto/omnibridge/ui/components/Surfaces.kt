@@ -28,14 +28,14 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import io.github.yurisismotto.omnibridge.R
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeBorder
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeElevation
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeIconSize
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeLayout
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeRadius
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeBorder
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeElevation
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeIconSize
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeLayout
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeRadius
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 
 /**
  * The base card.
@@ -46,23 +46,23 @@ import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
  * every card would make the whole screen hover.
  */
 @Composable
-fun OmniBridgeCard(
+fun PliweeCard(
     modifier: Modifier = Modifier,
-    contentPadding: androidx.compose.ui.unit.Dp = OmniBridgeSpacing.md,
+    contentPadding: androidx.compose.ui.unit.Dp = PliweeSpacing.md,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(OmniBridgeRadius.large),
+        shape = RoundedCornerShape(PliweeRadius.large),
         color = colors.surface,
-        border = BorderStroke(OmniBridgeBorder.hairline, colors.border),
-        tonalElevation = OmniBridgeElevation.none,
-        shadowElevation = OmniBridgeElevation.card,
+        border = BorderStroke(PliweeBorder.hairline, colors.border),
+        tonalElevation = PliweeElevation.none,
+        shadowElevation = PliweeElevation.card,
     ) {
         Column(
             Modifier.padding(contentPadding),
-            verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs),
+            verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xs),
             content = content,
         )
     }
@@ -76,11 +76,11 @@ fun OmniBridgeCard(
  * between them.
  */
 @Composable
-fun OmniBridgeSectionLabel(text: String, modifier: Modifier = Modifier) {
+fun PliweeSectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
-        style = OmniBridgeType.label,
-        color = OmniBridgeTheme.colors.textSecondary,
+        style = PliweeType.label,
+        color = PliweeTheme.colors.textSecondary,
         modifier = modifier.semantics { heading() },
     )
 }
@@ -97,14 +97,14 @@ fun OmniBridgeSectionLabel(text: String, modifier: Modifier = Modifier) {
 enum class NoticeTone { Info, Caution }
 
 @Composable
-fun OmniBridgeSecurityNotice(
+fun PliweeSecurityNotice(
     title: String,
     body: String? = null,
     tone: NoticeTone = NoticeTone.Info,
     icon: Int = R.drawable.ic_shield_check,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val accent = when (tone) {
         NoticeTone.Info -> colors.accentBlue
         NoticeTone.Caution -> colors.accentAmber
@@ -113,9 +113,9 @@ fun OmniBridgeSecurityNotice(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(OmniBridgeRadius.medium))
+            .clip(RoundedCornerShape(PliweeRadius.medium))
             .background(tint)
-            .padding(OmniBridgeSpacing.sm),
+            .padding(PliweeSpacing.sm),
         verticalAlignment = Alignment.Top,
     ) {
         Icon(
@@ -124,13 +124,13 @@ fun OmniBridgeSecurityNotice(
             // separately would just make the reader say it twice.
             contentDescription = null,
             tint = accent,
-            modifier = Modifier.size(OmniBridgeIconSize.medium),
+            modifier = Modifier.size(PliweeIconSize.medium),
         )
-        Spacer(Modifier.width(OmniBridgeSpacing.sm))
-        Column(verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xxs)) {
-            Text(title, style = OmniBridgeType.label, color = colors.textPrimary)
+        Spacer(Modifier.width(PliweeSpacing.sm))
+        Column(verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xxs)) {
+            Text(title, style = PliweeType.label, color = colors.textPrimary)
             if (body != null) {
-                Text(body, style = OmniBridgeType.caption, color = colors.textSecondary)
+                Text(body, style = PliweeType.caption, color = colors.textSecondary)
             }
         }
     }
@@ -145,15 +145,15 @@ fun OmniBridgeSecurityNotice(
  * pairing safe. The reference shows it in mono for the same reason.
  */
 @Composable
-fun OmniBridgeFingerprint(
+fun PliweeFingerprint(
     value: String,
     modifier: Modifier = Modifier,
     color: Color? = null,
 ) {
     Text(
         text = value,
-        style = OmniBridgeType.mono,
-        color = color ?: OmniBridgeTheme.colors.textPrimary,
+        style = PliweeType.mono,
+        color = color ?: PliweeTheme.colors.textPrimary,
         modifier = modifier.semantics {
             // Read out in groups rather than as one unpronounceable run.
             contentDescription = "Fingerprint ${value.chunked(4).joinToString(", ")}"
@@ -174,7 +174,7 @@ fun Modifier.decorative(): Modifier = this.clearAndSetSemantics { }
  * right with a metre of nothing between them, and the eye has to travel the
  * whole width to connect two things that belong together.
  *
- * So past [OmniBridgeLayout.contentMax] the column stops growing and centres,
+ * So past [PliweeLayout.contentMax] the column stops growing and centres,
  * and the extra width becomes margin. Below it nothing changes at all, which
  * is why this is safe to apply to an existing phone layout.
  *
@@ -184,8 +184,8 @@ fun Modifier.decorative(): Modifier = this.clearAndSetSemantics { }
  * no branch, no alternate composition, nothing that could make the tablet
  * show different *content* from the phone.
  */
-fun Modifier.omniBridgeContentColumn(): Modifier =
+fun Modifier.pliweeContentColumn(): Modifier =
     this
         .fillMaxWidth()
         .wrapContentWidth(Alignment.CenterHorizontally)
-        .widthIn(max = OmniBridgeLayout.contentMax)
+        .widthIn(max = PliweeLayout.contentMax)

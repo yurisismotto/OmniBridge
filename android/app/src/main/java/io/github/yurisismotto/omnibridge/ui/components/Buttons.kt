@@ -30,13 +30,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeBorder
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeGradient
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeIconSize
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeRadius
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeBorder
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeGradient
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeIconSize
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeRadius
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 import io.github.yurisismotto.omnibridge.ui.theme.MinTouchTarget
 
 /**
@@ -45,23 +45,23 @@ import io.github.yurisismotto.omnibridge.ui.theme.MinTouchTarget
  * Wears the CTA gradient — the one whose teal start is deepened until white
  * clears AA at every point along the sweep. It is *not* the decorative brand
  * gradient: white on that one's teal end is 2.49:1, and this button always
- * has a label on it. See [OmniBridgeGradient].
+ * has a label on it. See [PliweeGradient].
  *
  * Disabled state is a flat neutral rather than a faded gradient, because a
  * translucent gradient reads as "still tappable, just pretty".
  */
 @Composable
-fun OmniBridgePrimaryButton(
+fun PliweePrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     icon: Int? = null,
 ) {
-    val colors = OmniBridgeTheme.colors
-    val shape = RoundedCornerShape(OmniBridgeRadius.full)
+    val colors = PliweeTheme.colors
+    val shape = RoundedCornerShape(PliweeRadius.full)
     val background: Brush = if (enabled) {
-        OmniBridgeGradient.cta()
+        PliweeGradient.cta()
     } else {
         Brush.linearGradient(listOf(colors.surfaceSunken, colors.surfaceSunken))
     }
@@ -88,31 +88,31 @@ fun OmniBridgePrimaryButton(
                     painter = painterResource(icon),
                     contentDescription = null,
                     tint = content,
-                    modifier = Modifier.size(OmniBridgeIconSize.medium),
+                    modifier = Modifier.size(PliweeIconSize.medium),
                 )
-                Spacer(Modifier.width(OmniBridgeSpacing.xs))
+                Spacer(Modifier.width(PliweeSpacing.xs))
             }
-            Text(text, style = OmniBridgeType.body.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = content)
+            Text(text, style = PliweeType.body.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = content)
         }
     }
 }
 
 /** The quieter action beside a primary one. */
 @Composable
-fun OmniBridgeSecondaryButton(
+fun PliweeSecondaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     icon: Int? = null,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.heightIn(min = MinTouchTarget),
-        shape = RoundedCornerShape(OmniBridgeRadius.full),
-        border = BorderStroke(OmniBridgeBorder.hairline, colors.borderStrong),
+        shape = RoundedCornerShape(PliweeRadius.full),
+        border = BorderStroke(PliweeBorder.hairline, colors.borderStrong),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = colors.textPrimary,
             disabledContentColor = colors.disabled,
@@ -122,11 +122,11 @@ fun OmniBridgeSecondaryButton(
             Icon(
                 painter = painterResource(icon),
                 contentDescription = null,
-                modifier = Modifier.size(OmniBridgeIconSize.medium),
+                modifier = Modifier.size(PliweeIconSize.medium),
             )
-            Spacer(Modifier.width(OmniBridgeSpacing.xs))
+            Spacer(Modifier.width(PliweeSpacing.xs))
         }
-        Text(text, style = OmniBridgeType.body)
+        Text(text, style = PliweeType.body)
     }
 }
 
@@ -139,22 +139,22 @@ fun OmniBridgeSecondaryButton(
  * and sitting it next to "Send" is how a mis-tap becomes a lost pairing.
  */
 @Composable
-fun OmniBridgeDestructiveButton(
+fun PliweeDestructiveButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     icon: Int? = null,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = MinTouchTarget),
-        shape = RoundedCornerShape(OmniBridgeRadius.full),
-        border = BorderStroke(OmniBridgeBorder.hairline, colors.accentRed.copy(alpha = 0.5f)),
+        shape = RoundedCornerShape(PliweeRadius.full),
+        border = BorderStroke(PliweeBorder.hairline, colors.accentRed.copy(alpha = 0.5f)),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = colors.accentRed,
             disabledContentColor = colors.disabled,
@@ -164,17 +164,17 @@ fun OmniBridgeDestructiveButton(
             Icon(
                 painter = painterResource(icon),
                 contentDescription = null,
-                modifier = Modifier.size(OmniBridgeIconSize.medium),
+                modifier = Modifier.size(PliweeIconSize.medium),
             )
-            Spacer(Modifier.width(OmniBridgeSpacing.xs))
+            Spacer(Modifier.width(PliweeSpacing.xs))
         }
-        Text(text, style = OmniBridgeType.body)
+        Text(text, style = PliweeType.body)
     }
 }
 
 /** A low-emphasis inline action: "Cancel", "Dismiss", "View all". */
 @Composable
-fun OmniBridgeTextButton(
+fun PliweeTextButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -187,8 +187,8 @@ fun OmniBridgeTextButton(
     ) {
         Text(
             text,
-            style = OmniBridgeType.body,
-            color = if (enabled) OmniBridgeTheme.colors.accentBlue else OmniBridgeTheme.colors.disabled,
+            style = PliweeType.body,
+            color = if (enabled) PliweeTheme.colors.accentBlue else PliweeTheme.colors.disabled,
         )
     }
 }
@@ -201,7 +201,7 @@ fun OmniBridgeTextButton(
  * disappearing, so the row does not reflow every time a device drops.
  */
 @Composable
-fun OmniBridgeQuickAction(
+fun PliweeQuickAction(
     label: String,
     icon: Int,
     accent: Color,
@@ -209,28 +209,28 @@ fun OmniBridgeQuickAction(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     Column(
         modifier = modifier
             .defaultMinSize(minWidth = 76.dp)
-            .clip(RoundedCornerShape(OmniBridgeRadius.large))
+            .clip(RoundedCornerShape(PliweeRadius.large))
             .background(colors.surface)
             .then(
                 if (enabled) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier,
             )
-            .padding(vertical = OmniBridgeSpacing.sm, horizontal = OmniBridgeSpacing.xs),
+            .padding(vertical = PliweeSpacing.sm, horizontal = PliweeSpacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs),
+        verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xs),
     ) {
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
             tint = if (enabled) accent else colors.disabled,
-            modifier = Modifier.size(OmniBridgeIconSize.large),
+            modifier = Modifier.size(PliweeIconSize.large),
         )
         Text(
             label,
-            style = OmniBridgeType.caption,
+            style = PliweeType.caption,
             color = if (enabled) colors.textSecondary else colors.disabled,
             textAlign = TextAlign.Center,
         )

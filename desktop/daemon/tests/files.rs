@@ -12,9 +12,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use common::*;
-use omnibridge_capability_files::auth::{compute_stream_mac, StreamChallenge};
-use omnibridge_capability_files::transfer::{FailureReason, TransferId, TransferState};
-use omnibridge_capability_files::{limits, stream};
+use pliwee_capability_files::auth::{compute_stream_mac, StreamChallenge};
+use pliwee_capability_files::transfer::{FailureReason, TransferId, TransferState};
+use pliwee_capability_files::{limits, stream};
 
 const GRACE: Duration = Duration::from_secs(20);
 
@@ -1566,7 +1566,7 @@ async fn start_stalled_transfer(
 
 /// Waits until a transfer has taken at least `want` bytes.
 async fn wait_for_bytes(
-    manager: &Arc<omnibridge_capability_files::TransferManager>,
+    manager: &Arc<pliwee_capability_files::TransferManager>,
     id: TransferId,
     want: u64,
     timeout: Duration,
@@ -1791,7 +1791,7 @@ async fn f15_revoking_a_peer_mid_transfer_stops_it_immediately() {
         .transfers
         .cancel_peer(
             &phone.fingerprint,
-            omnibridge_capability_files::transfer::FailureReason::Revoked,
+            pliwee_capability_files::transfer::FailureReason::Revoked,
         )
         .await;
 
@@ -2043,17 +2043,13 @@ async fn a_peer_that_floods_and_never_reads_cannot_wedge_the_daemon() {
         .tls_connect(server.addr, server.fingerprint)
         .await
         .expect("TLS");
-    let handshake = omnibridge_core::session::connect_handshake(
-        &mut tls,
-        &phone.host,
-        server.fingerprint,
-        None,
-    )
-    .await
-    .expect("handshake");
+    let handshake =
+        pliwee_core::session::connect_handshake(&mut tls, &phone.host, server.fingerprint, None)
+            .await
+            .expect("handshake");
     assert!(matches!(
         handshake,
-        omnibridge_core::session::ClientHandshake::Established(_, _)
+        pliwee_core::session::ClientHandshake::Established(_, _)
     ));
 
     // Envelopes built by hand, continuing the sequence the handshake used.
@@ -2077,14 +2073,14 @@ async fn a_peer_that_floods_and_never_reads_cannot_wedge_the_daemon() {
         message_id[..4].copy_from_slice(&index.to_be_bytes());
         message_id[15] = 0xaa;
 
-        let envelope = omnibridge_proto::v1::Envelope {
+        let envelope = pliwee_proto::v1::Envelope {
             protocol_version: 1,
             message_id,
             sequence,
             timestamp_unix_ms: 0,
             correlation_id: Vec::new(),
-            body: Some(omnibridge_proto::v1::envelope::Body::CapabilityMessage(
-                omnibridge_proto::v1::CapabilityMessage {
+            body: Some(pliwee_proto::v1::envelope::Body::CapabilityMessage(
+                pliwee_proto::v1::CapabilityMessage {
                     capability_id: "files.v1".to_string(),
                     payload,
                 },
@@ -2095,7 +2091,7 @@ async fn a_peer_that_floods_and_never_reads_cannot_wedge_the_daemon() {
         // given up rather than be stuck waiting for us.
         if tokio::time::timeout(
             Duration::from_secs(5),
-            omnibridge_core::framing::write_envelope(&mut tls, &envelope),
+            pliwee_core::framing::write_envelope(&mut tls, &envelope),
         )
         .await
         .is_err()

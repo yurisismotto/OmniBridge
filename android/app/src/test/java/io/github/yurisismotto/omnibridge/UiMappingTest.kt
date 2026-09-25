@@ -8,7 +8,7 @@ import io.github.yurisismotto.omnibridge.files.TransferState
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
 import io.github.yurisismotto.omnibridge.store.TrustStore
 import io.github.yurisismotto.omnibridge.ui.UiMapping
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -43,8 +43,8 @@ class UiMappingTest {
     @Test
     fun `a live session reads as connected`() {
         assertEquals(
-            OmniBridgeStatus.Connected,
-            UiMapping.statusFor(OmniBridgeApp.ConnectionState.Idle, connected = true),
+            PliweeStatus.Connected,
+            UiMapping.statusFor(PliweeApp.ConnectionState.Idle, connected = true),
         )
     }
 
@@ -53,17 +53,17 @@ class UiMappingTest {
         // "Disconnected" reads as a fault. A paired device with no session is
         // simply resting, and the card should not imply something is wrong.
         assertEquals(
-            OmniBridgeStatus.Available,
-            UiMapping.statusFor(OmniBridgeApp.ConnectionState.Idle, connected = false),
+            PliweeStatus.Available,
+            UiMapping.statusFor(PliweeApp.ConnectionState.Idle, connected = false),
         )
     }
 
     @Test
     fun `retrying reads as connecting rather than failed`() {
         assertEquals(
-            OmniBridgeStatus.Connecting,
+            PliweeStatus.Connecting,
             UiMapping.statusFor(
-                OmniBridgeApp.ConnectionState.Retrying("network", 3),
+                PliweeApp.ConnectionState.Retrying("network", 3),
                 connected = false,
             ),
         )
@@ -72,8 +72,8 @@ class UiMappingTest {
     @Test
     fun `an error state is surfaced as an error`() {
         assertEquals(
-            OmniBridgeStatus.Error,
-            UiMapping.statusFor(OmniBridgeApp.ConnectionState.Error("boom"), connected = false),
+            PliweeStatus.Error,
+            UiMapping.statusFor(PliweeApp.ConnectionState.Error("boom"), connected = false),
         )
     }
 
@@ -84,13 +84,13 @@ class UiMappingTest {
         // was, which is how a defect in routing became invisible. A computer
         // that is not the target is resting, whatever the link is doing.
         for (state in listOf(
-            OmniBridgeApp.ConnectionState.Connecting,
-            OmniBridgeApp.ConnectionState.Retrying("network", 3),
-            OmniBridgeApp.ConnectionState.Error("boom"),
+            PliweeApp.ConnectionState.Connecting,
+            PliweeApp.ConnectionState.Retrying("network", 3),
+            PliweeApp.ConnectionState.Error("boom"),
         )) {
             assertEquals(
                 "untargeted peer under $state",
-                OmniBridgeStatus.Available,
+                PliweeStatus.Available,
                 UiMapping.statusFor(state, connected = false, targeted = false),
             )
         }
@@ -101,17 +101,17 @@ class UiMappingTest {
         // The mirror: silencing the untargeted card must not silence the one
         // the person is actually waiting on.
         assertEquals(
-            OmniBridgeStatus.Connecting,
+            PliweeStatus.Connecting,
             UiMapping.statusFor(
-                OmniBridgeApp.ConnectionState.Retrying("network", 3),
+                PliweeApp.ConnectionState.Retrying("network", 3),
                 connected = false,
                 targeted = true,
             ),
         )
         assertEquals(
-            OmniBridgeStatus.Error,
+            PliweeStatus.Error,
             UiMapping.statusFor(
-                OmniBridgeApp.ConnectionState.Error("boom"),
+                PliweeApp.ConnectionState.Error("boom"),
                 connected = false,
                 targeted = true,
             ),
@@ -123,9 +123,9 @@ class UiMappingTest {
         // Defensive: a session that exists is a fact, and must never be
         // hidden by a targeting flag that has drifted.
         assertEquals(
-            OmniBridgeStatus.Connected,
+            PliweeStatus.Connected,
             UiMapping.statusFor(
-                OmniBridgeApp.ConnectionState.Idle,
+                PliweeApp.ConnectionState.Idle,
                 connected = true,
                 targeted = false,
             ),
@@ -135,7 +135,7 @@ class UiMappingTest {
     // ---- capability and policy gating ------------------------------------
 
     /** A live session with this peer, negotiating [capabilities]. */
-    private fun session(vararg capabilities: String) = OmniBridgeApp.LiveSession(
+    private fun session(vararg capabilities: String) = PliweeApp.LiveSession(
         peerHex = "00".repeat(32),
         negotiated = capabilities.toSet(),
     )
@@ -223,10 +223,10 @@ class UiMappingTest {
     @Test
     fun `a cancelled transfer is not shown as a failure`() {
         assertNotEquals(
-            OmniBridgeStatus.Error,
+            PliweeStatus.Error,
             UiMapping.transferStatus(TransferState.CANCELLED),
         )
-        assertEquals(OmniBridgeStatus.Error, UiMapping.transferStatus(TransferState.FAILED))
+        assertEquals(PliweeStatus.Error, UiMapping.transferStatus(TransferState.FAILED))
     }
 
     @Test
@@ -242,7 +242,7 @@ class UiMappingTest {
 
     @Test
     fun `no status is carried by colour alone`() {
-        OmniBridgeStatus.entries.forEach { status ->
+        PliweeStatus.entries.forEach { status ->
             assertTrue(
                 "${status.name} has no label",
                 status.label.isNotBlank(),

@@ -21,10 +21,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use omnibridge_linux::tray::activate::{ActivationError, ApplicationActivator};
-use omnibridge_linux::tray::item::{ITEM_OBJECT_PATH, MENU_OBJECT_PATH};
-use omnibridge_linux::tray::model::TrayAction;
-use omnibridge_linux::tray::{publish, PublishedItem};
+use pliwee_linux::tray::activate::{ActivationError, ApplicationActivator};
+use pliwee_linux::tray::item::{ITEM_OBJECT_PATH, MENU_OBJECT_PATH};
+use pliwee_linux::tray::model::TrayAction;
+use pliwee_linux::tray::{publish, PublishedItem};
 use zbus::zvariant::{OwnedObjectPath, OwnedValue, Value};
 
 // ===========================================================================

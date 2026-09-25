@@ -52,7 +52,7 @@ const CERT_VALIDITY_DAYS: i64 = 3650;
 pub struct LocalIdentity {
     device_id: String,
     device_name: String,
-    platform: omnibridge_proto::v1::Platform,
+    platform: pliwee_proto::v1::Platform,
     cert_der: CertificateDer<'static>,
     key_pkcs8_der: Vec<u8>,
     fingerprint: Fingerprint,
@@ -65,7 +65,7 @@ pub struct LocalIdentity {
 
 impl LocalIdentity {
     /// Generates a brand-new identity. Called once, on first run.
-    pub fn generate(device_name: &str, platform: omnibridge_proto::v1::Platform) -> Result<Self> {
+    pub fn generate(device_name: &str, platform: pliwee_proto::v1::Platform) -> Result<Self> {
         let key_pair = rcgen::KeyPair::generate_for(&rcgen::PKCS_ECDSA_P256_SHA256)
             .map_err(|_| Error::Certificate("failed to generate P-256 keypair"))?;
         let device_id = random_device_id()?;
@@ -83,7 +83,7 @@ impl LocalIdentity {
     pub fn from_parts(
         device_id: String,
         device_name: String,
-        platform: omnibridge_proto::v1::Platform,
+        platform: pliwee_proto::v1::Platform,
         cert_der: Vec<u8>,
         key_pkcs8_der: Vec<u8>,
     ) -> Result<Self> {
@@ -178,7 +178,7 @@ impl LocalIdentity {
         self.device_name = name;
     }
 
-    pub fn platform(&self) -> omnibridge_proto::v1::Platform {
+    pub fn platform(&self) -> pliwee_proto::v1::Platform {
         self.platform
     }
 
@@ -204,8 +204,8 @@ impl LocalIdentity {
     }
 
     /// The public `DeviceInfo` this device puts on the wire.
-    pub fn device_info(&self) -> omnibridge_proto::v1::DeviceInfo {
-        omnibridge_proto::v1::DeviceInfo {
+    pub fn device_info(&self) -> pliwee_proto::v1::DeviceInfo {
+        pliwee_proto::v1::DeviceInfo {
             device_id: self.device_id.clone(),
             device_name: self.device_name.clone(),
             platform: self.platform as i32,
@@ -409,7 +409,7 @@ pub trait IdentityProvider: Send + Sync + std::fmt::Debug {
     /// On the provider rather than on the storage layer: before Wave 0 the
     /// value was hardcoded in `store.rs`, which meant the persistence layer
     /// decided what kind of machine this was (audit finding C2).
-    fn platform(&self) -> omnibridge_proto::v1::Platform;
+    fn platform(&self) -> pliwee_proto::v1::Platform;
 
     fn certificate_der(&self) -> &CertificateDer<'static>;
     fn fingerprint(&self) -> Fingerprint;
@@ -437,8 +437,8 @@ pub trait IdentityProvider: Send + Sync + std::fmt::Debug {
     /// The public `DeviceInfo` this device puts on the wire.
     ///
     /// Note what is absent: [`KeyBacking`]. See PLAT-DEC-012.
-    fn device_info(&self) -> omnibridge_proto::v1::DeviceInfo {
-        omnibridge_proto::v1::DeviceInfo {
+    fn device_info(&self) -> pliwee_proto::v1::DeviceInfo {
+        pliwee_proto::v1::DeviceInfo {
             device_id: self.device_id().to_string(),
             device_name: self.device_name().to_string(),
             platform: self.platform() as i32,
@@ -468,7 +468,7 @@ impl<T: IdentityProvider + ?Sized> IdentityProvider for Arc<T> {
     fn device_name(&self) -> &str {
         (**self).device_name()
     }
-    fn platform(&self) -> omnibridge_proto::v1::Platform {
+    fn platform(&self) -> pliwee_proto::v1::Platform {
         (**self).platform()
     }
     fn certificate_der(&self) -> &CertificateDer<'static> {
@@ -497,7 +497,7 @@ impl IdentityProvider for LocalIdentity {
         self.device_name()
     }
 
-    fn platform(&self) -> omnibridge_proto::v1::Platform {
+    fn platform(&self) -> pliwee_proto::v1::Platform {
         self.platform()
     }
 
@@ -551,7 +551,7 @@ impl Identity {
     pub fn device_name(&self) -> &str {
         self.0.device_name()
     }
-    pub fn platform(&self) -> omnibridge_proto::v1::Platform {
+    pub fn platform(&self) -> pliwee_proto::v1::Platform {
         self.0.platform()
     }
     pub fn certificate_der(&self) -> &CertificateDer<'static> {
@@ -569,7 +569,7 @@ impl Identity {
     pub fn verify_protection(&self) -> Result<()> {
         self.0.verify_protection()
     }
-    pub fn device_info(&self) -> omnibridge_proto::v1::DeviceInfo {
+    pub fn device_info(&self) -> pliwee_proto::v1::DeviceInfo {
         self.0.device_info()
     }
     pub fn certified_key(&self) -> Arc<CertifiedKey> {
@@ -584,7 +584,7 @@ impl IdentityProvider for Identity {
     fn device_name(&self) -> &str {
         self.0.device_name()
     }
-    fn platform(&self) -> omnibridge_proto::v1::Platform {
+    fn platform(&self) -> pliwee_proto::v1::Platform {
         self.0.platform()
     }
     fn certificate_der(&self) -> &CertificateDer<'static> {
@@ -630,7 +630,7 @@ pub trait IdentityBackend: Send + Sync + std::fmt::Debug {
     fn create(
         &self,
         device_name: &str,
-        platform: omnibridge_proto::v1::Platform,
+        platform: pliwee_proto::v1::Platform,
     ) -> Result<(Arc<dyn IdentityProvider>, Vec<u8>)>;
 
     /// Rebuilds an identity from what was persisted.
@@ -638,7 +638,7 @@ pub trait IdentityBackend: Send + Sync + std::fmt::Debug {
         &self,
         device_id: String,
         device_name: String,
-        platform: omnibridge_proto::v1::Platform,
+        platform: pliwee_proto::v1::Platform,
         certificate_der: Vec<u8>,
         secret: Vec<u8>,
     ) -> Result<Arc<dyn IdentityProvider>>;
@@ -663,7 +663,7 @@ impl IdentityBackend for SoftwareBacking {
     fn create(
         &self,
         device_name: &str,
-        platform: omnibridge_proto::v1::Platform,
+        platform: pliwee_proto::v1::Platform,
     ) -> Result<(Arc<dyn IdentityProvider>, Vec<u8>)> {
         let identity = LocalIdentity::generate(device_name, platform)?;
         let secret = identity.private_key_pkcs8_der().to_vec();
@@ -674,7 +674,7 @@ impl IdentityBackend for SoftwareBacking {
         &self,
         device_id: String,
         device_name: String,
-        platform: omnibridge_proto::v1::Platform,
+        platform: pliwee_proto::v1::Platform,
         certificate_der: Vec<u8>,
         secret: Vec<u8>,
     ) -> Result<Arc<dyn IdentityProvider>> {

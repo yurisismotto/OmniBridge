@@ -1,14 +1,14 @@
 syntax = "proto3";
 
-package omnibridge.v1;
+package pliwee.v1;
 
 // Java options are for the Android build; prost ignores them. Both sides
 // compile these exact files, so the wire format cannot drift.
-option java_package = "io.github.yurisismotto.omnibridge.proto";
+option java_package = "io.github.yurisismotto.pliwee.proto";
 option java_outer_classname = "EnvelopeProto";
 option java_multiple_files = true;
 
-import "omnibridge/v1/core.proto";
+import "pliwee/v1/core.proto";
 
 // Every frame on the wire is exactly one Envelope, length-prefixed by a
 // 4-byte big-endian unsigned integer (see docs/architecture/PROTOCOL.md).

@@ -11,7 +11,7 @@
 //! entire reason pairing has no man-in-the-middle window.
 
 use adw::prelude::*;
-use omnibridge_control::Event;
+use pliwee_control::Event;
 use std::cell::RefCell;
 use std::rc::Rc;
 

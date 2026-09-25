@@ -117,7 +117,7 @@ android {
             // the very certificates the Rust suite reads, so the two
             // implementations cannot quietly disagree about what an identity
             // fingerprint is. Regenerate with:
-            //   cargo run -p omnibridge-core --example gen_test_vectors
+            //   cargo run -p pliwee-core --example gen_test_vectors
             resources.srcDir("../../protocol/testdata")
             // Same idea for the design tokens: DesignTokensTest reads the very
             // file the desktop's own token test reads, so the two front ends

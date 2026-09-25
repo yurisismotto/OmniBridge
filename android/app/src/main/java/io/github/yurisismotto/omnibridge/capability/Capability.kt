@@ -2,7 +2,7 @@ package io.github.yurisismotto.omnibridge.capability
 
 import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.ErrorCode
+import io.github.yurisismotto.pliwee.proto.ErrorCode
 
 /**
  * A feature of the protocol.
@@ -10,7 +10,7 @@ import io.github.yurisismotto.omnibridge.proto.ErrorCode
  * The transport never mentions a capability by name: it routes on
  * [id] to whatever is in the [CapabilityRegistry]. Adding clipboard or file
  * transfer later means adding a class here, not touching the connection code.
- * Mirrors `omnibridge_core::capability`.
+ * Mirrors `pliwee_core::capability`.
  */
 interface Capability {
     /** Versioned identifier, e.g. `"battery.v1"`. */

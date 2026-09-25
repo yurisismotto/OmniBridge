@@ -11,7 +11,7 @@ import org.junit.Test
 /**
  * The policy model, and the guarantee that an upgrade cannot widen it.
  *
- * Mirrors `omnibridge_core::clipboard_policy`'s suite: the two must agree on the
+ * Mirrors `pliwee_core::clipboard_policy`'s suite: the two must agree on the
  * defaults, or a phone and a desktop that were both "just granted" would
  * disagree about whether anything is automatic.
  */

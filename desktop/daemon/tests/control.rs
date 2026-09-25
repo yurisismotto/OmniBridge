@@ -11,9 +11,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use common::{wait_until, TestClient, TestServer};
-use omnibridge_daemon::control::{DeviceState, Request, Response};
-use omnibridge_daemon::server;
-use omnibridge_daemon::state::DaemonState;
+use pliwee_daemon::control::{DeviceState, Request, Response};
+use pliwee_daemon::server;
+use pliwee_daemon::state::DaemonState;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::UnixStream;
 
@@ -53,14 +53,14 @@ impl Control {
     }
 }
 
-fn devices(response: Response) -> Vec<omnibridge_daemon::control::DeviceReport> {
+fn devices(response: Response) -> Vec<pliwee_daemon::control::DeviceReport> {
     match response {
         Response::Devices(d) => d,
         other => panic!("expected Devices, got {other:?}"),
     }
 }
 
-fn status(response: Response) -> omnibridge_daemon::control::StatusReport {
+fn status(response: Response) -> pliwee_daemon::control::StatusReport {
     match response {
         Response::Status(s) => s,
         other => panic!("expected Status, got {other:?}"),
@@ -124,10 +124,10 @@ async fn a_device_whose_session_ended_is_paired_but_not_connected() {
 
     session
         .handle
-        .send_capability(omnibridge_capability_battery::BatteryCapability::encode(
-            &omnibridge_capability_battery::BatteryReading {
+        .send_capability(pliwee_capability_battery::BatteryCapability::encode(
+            &pliwee_capability_battery::BatteryReading {
                 percentage: 57,
-                charging_state: omnibridge_proto::v1::capabilities::ChargingState::Charging,
+                charging_state: pliwee_proto::v1::capabilities::ChargingState::Charging,
                 peer_timestamp_unix_ms: 1,
             },
         ))
@@ -237,10 +237,10 @@ async fn a_quiet_but_answering_session_stays_connected() {
 
     session
         .handle
-        .send_capability(omnibridge_capability_battery::BatteryCapability::encode(
-            &omnibridge_capability_battery::BatteryReading {
+        .send_capability(pliwee_capability_battery::BatteryCapability::encode(
+            &pliwee_capability_battery::BatteryReading {
                 percentage: 80,
-                charging_state: omnibridge_proto::v1::capabilities::ChargingState::NotCharging,
+                charging_state: pliwee_proto::v1::capabilities::ChargingState::NotCharging,
                 peer_timestamp_unix_ms: 1,
             },
         ))
@@ -255,7 +255,7 @@ async fn a_quiet_but_answering_session_stays_connected() {
     // session keeps answering. Virtual time, so this costs milliseconds.
     tokio::time::pause();
     tokio::time::advance(Duration::from_secs(
-        omnibridge_daemon::control::BATTERY_STALE_AFTER_SECS + 30,
+        pliwee_daemon::control::BATTERY_STALE_AFTER_SECS + 30,
     ))
     .await;
     tokio::time::resume();

@@ -44,9 +44,9 @@ override_dh_clean:
 
 override_dh_auto_build:
 	cd desktop && cargo build --release --locked --offline \
-	    -p omnibridge-daemon \
-	    -p omnibridge-cli \
-	    -p omnibridge-gui
+	    -p pliwee-daemon \
+	    -p pliwee-cli \
+	    -p pliwee-gui
 
 override_dh_auto_test:
 	cd desktop && cargo test --release --locked --offline

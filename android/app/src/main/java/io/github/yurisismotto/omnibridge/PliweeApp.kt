@@ -10,7 +10,7 @@ import io.github.yurisismotto.omnibridge.capability.NotificationsCapability
 import io.github.yurisismotto.omnibridge.capability.SensitiveCapabilities
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardNotifications
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardSync
-import io.github.yurisismotto.omnibridge.proto.Platform
+import io.github.yurisismotto.pliwee.proto.Platform
 import io.github.yurisismotto.omnibridge.clipboard.SystemClipboard
 import io.github.yurisismotto.omnibridge.files.FileTransferManager
 import io.github.yurisismotto.omnibridge.identity.DeviceIdentity
@@ -41,7 +41,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  *
  * Deliberately plain: no dependency-injection framework for six objects.
  */
-class OmniBridgeApp : Application() {
+class PliweeApp : Application() {
 
     lateinit var trustStore: TrustStore
         private set
@@ -574,7 +574,7 @@ class OmniBridgeApp : Application() {
     }
 
     companion object {
-        private const val TAG = "OmniBridgeApp"
+        private const val TAG = "PliweeApp"
         private const val DISCOVERY_TIMEOUT_MS = 5_000L
 
         /**

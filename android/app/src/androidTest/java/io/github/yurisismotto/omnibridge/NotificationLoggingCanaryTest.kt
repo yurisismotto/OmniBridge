@@ -11,10 +11,10 @@ import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
 import io.github.yurisismotto.omnibridge.notifications.NotificationSecret
 import io.github.yurisismotto.omnibridge.notifications.NotificationSource
 import io.github.yurisismotto.omnibridge.notifications.PlatformNotification
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRole
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRoles
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationUpsert
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationControl
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRole
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRoles
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationUpsert
 import java.io.FileInputStream
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
@@ -79,8 +79,8 @@ class NotificationLoggingCanaryTest {
         /** Every OmniBridge tag that can write a line during these flows. */
         val TAGS = listOf(
             "NotificationSource",
-            "OmniBridgeListener",
-            "OmniBridgeApp",
+            "PliweeListener",
+            "PliweeApp",
             "NotificationQueue",
             "ClipboardSync",
         )
@@ -433,7 +433,7 @@ class NotificationLoggingCanaryTest {
     ): NotificationControl =
         NotificationControl.newBuilder()
             .setDismiss(
-                io.github.yurisismotto.omnibridge.proto.capabilities.DismissRequest.newBuilder()
+                io.github.yurisismotto.pliwee.proto.capabilities.DismissRequest.newBuilder()
                     .setNotificationId(id)
                     .setOriginDeviceId(origin),
             )
@@ -453,6 +453,18 @@ class NotificationLoggingCanaryTest {
         assertTrue(
             "OmniBridge wrote nothing at all, so this test proves nothing",
             captured.isNotBlank(),
+        )
+        // `logcat -d` prints a "--------- beginning of main" banner even when
+        // no tag in the filter wrote a line, so "not blank" alone cannot tell
+        // a clean log from a filter that matches nothing — which is exactly
+        // what a renamed tag would produce (Pliwee Wave 3). At least one line
+        // must be attributed to one of TAGS before an absence means anything.
+        assertTrue(
+            "no line in the capture is attributed to any of $TAGS, so the " +
+                "filter did not cover the flow and this test proves nothing:\n$captured",
+            captured.lines().any { line ->
+                TAGS.any { tag -> line.contains(" $tag: ") || line.contains("/$tag(") }
+            },
         )
         for (canary in listOf(TITLE, BODY, TAG, KEY, LABEL, PACKAGE)) {
             assertFalse(

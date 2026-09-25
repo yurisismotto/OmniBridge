@@ -11,7 +11,7 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use omnibridge_linux::tray::model::{
+use pliwee_linux::tray::model::{
     self, TrayAction, DESKTOP_APP_ID, DESKTOP_APP_OBJECT_PATH, ICON_NAME, ITEM_CATEGORY, ITEM_ID,
     ITEM_STATUS, ITEM_TITLE, MENU, MENU_ROOT_ID, TOOLTIP_BODY, TOOLTIP_TITLE,
 };

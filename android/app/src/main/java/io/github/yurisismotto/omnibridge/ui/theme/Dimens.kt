@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
  * in a layout is how a design system erodes: the first arbitrary `13.dp` is
  * never the last.
  */
-object OmniBridgeSpacing {
+object PliweeSpacing {
     val xxs: Dp = 4.dp
     val xs: Dp = 8.dp
     val sm: Dp = 12.dp
@@ -24,7 +24,7 @@ object OmniBridgeSpacing {
 }
 
 /** Corner radii. Moderately rounded — the reference is soft, not bubbly. */
-object OmniBridgeRadius {
+object PliweeRadius {
     val small: Dp = 8.dp
     val medium: Dp = 12.dp
     val large: Dp = 16.dp
@@ -34,7 +34,7 @@ object OmniBridgeRadius {
     val full: Dp = 999.dp
 }
 
-object OmniBridgeBorder {
+object PliweeBorder {
     val hairline: Dp = 1.dp
     val strong: Dp = 2.dp
     val focus: Dp = 2.dp
@@ -48,14 +48,14 @@ object OmniBridgeBorder {
  * a sheet of paper; the same card at 6dp reads as a floating dialog and
  * competes with the things that genuinely are floating.
  */
-object OmniBridgeElevation {
+object PliweeElevation {
     val none: Dp = 0.dp
     val card: Dp = 1.dp
     val raised: Dp = 3.dp
     val dialog: Dp = 8.dp
 }
 
-object OmniBridgeIconSize {
+object PliweeIconSize {
     val small: Dp = 16.dp
     val medium: Dp = 20.dp
     val large: Dp = 24.dp
@@ -85,7 +85,7 @@ val MinTouchTarget: Dp = 48.dp
  * cards keep the proportions they were designed at and the extra width
  * becomes margin, which is what every well-behaved tablet layout does.
  */
-object OmniBridgeLayout {
+object PliweeLayout {
     /** The widest the content column ever gets, however wide the window is. */
     val contentMax: Dp = 640.dp
 

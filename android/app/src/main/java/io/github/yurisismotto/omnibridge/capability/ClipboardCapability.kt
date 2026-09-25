@@ -3,7 +3,7 @@ package io.github.yurisismotto.omnibridge.capability
 import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardSync
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
-import io.github.yurisismotto.omnibridge.proto.ErrorCode
+import io.github.yurisismotto.pliwee.proto.ErrorCode
 
 /**
  * `clipboard.v1` — text clipboard sharing with the paired computer.

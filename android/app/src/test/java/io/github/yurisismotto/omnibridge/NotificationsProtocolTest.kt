@@ -6,19 +6,19 @@ import io.github.yurisismotto.omnibridge.capability.NotificationsCapability
 import io.github.yurisismotto.omnibridge.notifications.LockState
 import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
 import io.github.yurisismotto.omnibridge.notifications.NotificationSource
-import io.github.yurisismotto.omnibridge.proto.capabilities.DismissRequest
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationCategory
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationControl
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationImportance
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationOutcome
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationPrivacy
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRemove
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationResult
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRole
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationRoles
-import io.github.yurisismotto.omnibridge.proto.capabilities.NotificationUpsert
-import io.github.yurisismotto.omnibridge.proto.capabilities.Progress
-import io.github.yurisismotto.omnibridge.proto.capabilities.SyncMarker
+import io.github.yurisismotto.pliwee.proto.capabilities.DismissRequest
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationCategory
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationControl
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationImportance
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationOutcome
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationPrivacy
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRemove
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationResult
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRole
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationRoles
+import io.github.yurisismotto.pliwee.proto.capabilities.NotificationUpsert
+import io.github.yurisismotto.pliwee.proto.capabilities.Progress
+import io.github.yurisismotto.pliwee.proto.capabilities.SyncMarker
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -40,7 +40,7 @@ import org.junit.Test
  * including in tests: nothing here is logged and nothing reads like a real
  * notification.
  *
- * Must stay in lockstep with `omnibridge_core::notifications` and
+ * Must stay in lockstep with `pliwee_core::notifications` and
  * `desktop/core/tests/notifications_protocol.rs`.
  */
 class NotificationsProtocolTest {
@@ -320,7 +320,7 @@ class NotificationsProtocolTest {
      * and whose. There is no action index, no intent, no payload and no reply
      * text — and no field that could be widened into one.
      *
-     * The structural version of this check lives in `omnibridge-proto`'s
+     * The structural version of this check lives in `pliwee-proto`'s
      * `notifications_schema` test, which asserts against the compiled
      * descriptors. The `lite` runtime used here has no descriptors, so this
      * is the behavioural half: a re-encode of a decoded message is

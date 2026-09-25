@@ -3,14 +3,14 @@ package io.github.yurisismotto.omnibridge
 import com.google.protobuf.ByteString
 import io.github.yurisismotto.omnibridge.net.Protocol
 import io.github.yurisismotto.omnibridge.net.ReplayGuard
-import io.github.yurisismotto.omnibridge.proto.Envelope
+import io.github.yurisismotto.pliwee.proto.Envelope
 import java.security.SecureRandom
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Must stay in lockstep with `omnibridge_core::session`. */
+/** Must stay in lockstep with `pliwee_core::session`. */
 class ProtocolTest {
 
     private val random = SecureRandom()

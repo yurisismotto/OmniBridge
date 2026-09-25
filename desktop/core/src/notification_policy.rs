@@ -1,12 +1,12 @@
 //! Per-peer `notifications.v1` policy, as this device stores it.
 //!
-//! This type lives in `omnibridge-core` rather than in the notifications
+//! This type lives in `pliwee-core` rather than in the notifications
 //! capability for the reason [`crate::clipboard_policy`] gives: it is
 //! *persisted*, and the trust store is core's. A capability crate cannot own
 //! a field of [`crate::store::TrustedPeer`] without core depending on it, and
 //! core depending on a capability would invert the plugin model. The
 //! capability re-exports it, so callers still say
-//! `omnibridge_capability_notifications::NotificationPolicy`.
+//! `pliwee_capability_notifications::NotificationPolicy`.
 //!
 //! # Two different questions, and a third
 //!

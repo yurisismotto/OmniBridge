@@ -106,7 +106,7 @@ object NotificationIdentity {
      *
      * ## Why it is computed only here
      *
-     * The sink never recomputes it. `omnibridge_core::notifications` checks the
+     * The sink never recomputes it. `pliwee_core::notifications` checks the
      * *width* and nothing else, and the sink's de-duplication keys on the
      * value it was sent rather than on one it derived. So this construction
      * cannot drift between the two implementations, because only one of them

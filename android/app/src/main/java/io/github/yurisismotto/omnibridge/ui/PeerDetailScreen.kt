@@ -43,22 +43,22 @@ import io.github.yurisismotto.omnibridge.capability.FilesCapability
 import io.github.yurisismotto.omnibridge.capability.NotificationsCapability
 import io.github.yurisismotto.omnibridge.clipboard.ClipboardCapabilities
 import io.github.yurisismotto.omnibridge.notifications.NotificationReadiness
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeCapabilityRow
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeCard
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeDestructiveButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeFingerprint
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgePrimaryButton
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSectionLabel
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeSecurityNotice
-import io.github.yurisismotto.omnibridge.ui.components.OmniBridgeStatusBadge
+import io.github.yurisismotto.omnibridge.ui.components.PliweeCapabilityRow
+import io.github.yurisismotto.omnibridge.ui.components.PliweeCard
+import io.github.yurisismotto.omnibridge.ui.components.PliweeDestructiveButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeFingerprint
+import io.github.yurisismotto.omnibridge.ui.components.PliweePrimaryButton
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSectionLabel
+import io.github.yurisismotto.omnibridge.ui.components.PliweeSecurityNotice
+import io.github.yurisismotto.omnibridge.ui.components.PliweeStatusBadge
 import io.github.yurisismotto.omnibridge.ui.components.NoticeTone
-import io.github.yurisismotto.omnibridge.ui.components.omniBridgeContentColumn
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeIconSize
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeRadius
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeSpacing
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeStatus
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeTheme
-import io.github.yurisismotto.omnibridge.ui.theme.OmniBridgeType
+import io.github.yurisismotto.omnibridge.ui.components.pliweeContentColumn
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeIconSize
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeRadius
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeSpacing
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeStatus
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeTheme
+import io.github.yurisismotto.omnibridge.ui.theme.PliweeType
 import io.github.yurisismotto.omnibridge.ui.theme.MinTouchTarget
 
 /**
@@ -81,12 +81,12 @@ fun PeerDetailScreen(
     onOpenNotifications: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val peer = state.peerByHex(fingerprintHex)
     if (peer == null) {
         // The peer was forgotten while this screen was open.
-        Column(modifier.fillMaxSize().padding(OmniBridgeSpacing.md)) {
-            Text("This device is no longer paired.", style = OmniBridgeType.body, color = colors.textSecondary)
+        Column(modifier.fillMaxSize().padding(PliweeSpacing.md)) {
+            Text("This device is no longer paired.", style = PliweeType.body, color = colors.textSecondary)
         }
         return
     }
@@ -110,15 +110,15 @@ fun PeerDetailScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .omniBridgeContentColumn()
-            .padding(horizontal = OmniBridgeSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.sm),
+            .pliweeContentColumn()
+            .padding(horizontal = PliweeSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(PliweeSpacing.sm),
     ) {
         // --- identity ----------------------------------------------------
         Column(
-            Modifier.fillMaxSize().padding(vertical = OmniBridgeSpacing.md),
+            Modifier.fillMaxSize().padding(vertical = PliweeSpacing.md),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs),
+            verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xs),
         ) {
             Box(
                 Modifier
@@ -130,23 +130,23 @@ fun PeerDetailScreen(
                     painter = painterResource(R.drawable.ic_device_desktop),
                     contentDescription = null,
                     tint = colors.accentBlue,
-                    modifier = Modifier.size(OmniBridgeIconSize.xlarge),
+                    modifier = Modifier.size(PliweeIconSize.xlarge),
                 )
             }
-            Text(peer.deviceName, style = OmniBridgeType.title, color = colors.textPrimary)
-            OmniBridgeStatusBadge(state.statusFor(peer))
+            Text(peer.deviceName, style = PliweeType.title, color = colors.textPrimary)
+            PliweeStatusBadge(state.statusFor(peer))
             // The pinned identity, not an invented platform: the wire carries
             // no operating system. See UiMapping.peerIdentityLine.
             Text(
                 UiMapping.peerIdentityLine(peer, state.liveSession),
-                style = OmniBridgeType.mono,
+                style = PliweeType.mono,
                 color = colors.textMuted,
             )
         }
 
         // --- permissions --------------------------------------------------
-        OmniBridgeSectionLabel("Permissions")
-        OmniBridgeCard {
+        PliweeSectionLabel("Permissions")
+        PliweeCard {
             Text(
                 // Pairing allows files and battery (SensitiveCapabilities says
                 // why); saying "nothing is granted automatically" here was
@@ -155,10 +155,10 @@ fun PeerDetailScreen(
                     "Files and battery are allowed when you pair, and every " +
                     "incoming file still asks you first. Clipboard and " +
                     "notifications stay off until you turn them on.",
-                style = OmniBridgeType.caption,
+                style = PliweeType.caption,
                 color = colors.textSecondary,
             )
-            OmniBridgeCapabilityRow(
+            PliweeCapabilityRow(
                 title = "Clipboard",
                 description = "Send and receive clipboard text",
                 icon = R.drawable.ic_clipboard,
@@ -166,7 +166,7 @@ fun PeerDetailScreen(
                 checked = clipboardGranted,
                 onCheckedChange = { actions.onSetClipboardGrant(peer, it) },
             )
-            OmniBridgeCapabilityRow(
+            PliweeCapabilityRow(
                 title = "Files",
                 description = "Offer and receive files",
                 icon = R.drawable.ic_files,
@@ -174,7 +174,7 @@ fun PeerDetailScreen(
                 checked = peer.allows(FilesCapability.ID),
                 onCheckedChange = { actions.onSetFilesGrant(peer, it) },
             )
-            OmniBridgeCapabilityRow(
+            PliweeCapabilityRow(
                 title = "Battery",
                 description = "Share this device's battery level",
                 icon = R.drawable.ic_battery,
@@ -187,7 +187,7 @@ fun PeerDetailScreen(
             // — Android's own notification access, this computer's grant, and
             // which applications — and they fail separately. A switch on this
             // card would have to claim one of them stood for all three.
-            OmniBridgeNotificationsEntry(
+            PliweeNotificationsEntry(
                 readiness = notificationReadiness,
                 granted = notificationsGranted,
                 appCount = peer.notificationPolicy.allowedApps.size,
@@ -196,17 +196,17 @@ fun PeerDetailScreen(
         }
 
         // --- clipboard direction and automation ----------------------------
-        OmniBridgeSectionLabel("Clipboard")
-        OmniBridgeCard {
+        PliweeSectionLabel("Clipboard")
+        PliweeCard {
             if (!clipboardGranted) {
                 Text(
                     "Clipboard is off. ${peer.deviceName} cannot send or receive " +
                         "clipboard text.",
-                    style = OmniBridgeType.body,
+                    style = PliweeType.body,
                     color = colors.textSecondary,
                 )
             } else {
-                OmniBridgeCapabilityRow(
+                PliweeCapabilityRow(
                     title = "Receive clipboard",
                     description = "Accept clipboard text from ${peer.deviceName}",
                     icon = R.drawable.ic_receive,
@@ -216,7 +216,7 @@ fun PeerDetailScreen(
                         actions.onSetClipboardPolicy(peer, policy.copy(allowReceive = it))
                     },
                 )
-                OmniBridgeCapabilityRow(
+                PliweeCapabilityRow(
                     title = "Apply automatically",
                     description = if (policy.mayAutoReceive()) {
                         "Received text replaces your clipboard as it arrives"
@@ -231,7 +231,7 @@ fun PeerDetailScreen(
                         actions.onSetClipboardPolicy(peer, policy.copy(autoReceive = it))
                     },
                 )
-                OmniBridgeCapabilityRow(
+                PliweeCapabilityRow(
                     title = "Send clipboard",
                     description = "Allow sending this device's clipboard",
                     icon = R.drawable.ic_send,
@@ -247,8 +247,8 @@ fun PeerDetailScreen(
                 // than not offering one: the person would turn it on and
                 // quietly get nothing.
                 if (!ClipboardCapabilities.AUTO_SEND_SUPPORTED) {
-                    Spacer(Modifier.height(OmniBridgeSpacing.xxs))
-                    OmniBridgeSecurityNotice(
+                    Spacer(Modifier.height(PliweeSpacing.xxs))
+                    PliweeSecurityNotice(
                         title = "Automatic sending is not possible on Android",
                         body = ClipboardCapabilities.AUTO_SEND_REASON,
                         tone = NoticeTone.Info,
@@ -256,9 +256,9 @@ fun PeerDetailScreen(
                     )
                 }
 
-                Spacer(Modifier.height(OmniBridgeSpacing.xxs))
+                Spacer(Modifier.height(PliweeSpacing.xxs))
                 val clipboardGate = state.clipboardSendGate(peer)
-                OmniBridgePrimaryButton(
+                PliweePrimaryButton(
                     text = "Send clipboard",
                     icon = R.drawable.ic_send,
                     enabled = clipboardGate.ready,
@@ -271,7 +271,7 @@ fun PeerDetailScreen(
                 clipboardGate.reasonOrNull?.let { reason ->
                     Text(
                         reason,
-                        style = OmniBridgeType.caption,
+                        style = PliweeType.caption,
                         color = colors.textMuted,
                     )
                 }
@@ -279,18 +279,18 @@ fun PeerDetailScreen(
         }
 
         // --- security -----------------------------------------------------
-        OmniBridgeSectionLabel("Security")
-        OmniBridgeCard {
-            Text("Device fingerprint", style = OmniBridgeType.label, color = colors.textSecondary)
+        PliweeSectionLabel("Security")
+        PliweeCard {
+            Text("Device fingerprint", style = PliweeType.label, color = colors.textSecondary)
             // Never abbreviated for balance. This is the string a person
             // compares against the computer's screen, and it is the whole
             // reason pairing is safe.
-            OmniBridgeFingerprint(peer.fingerprint.toDisplayShort())
-            Spacer(Modifier.height(OmniBridgeSpacing.xxs))
+            PliweeFingerprint(peer.fingerprint.toDisplayShort())
+            Spacer(Modifier.height(PliweeSpacing.xxs))
             Text(
                 "Paired directly over your local network and pinned to this key. " +
                     "A different key cannot impersonate it.",
-                style = OmniBridgeType.caption,
+                style = PliweeType.caption,
                 color = colors.textSecondary,
             )
         }
@@ -298,9 +298,9 @@ fun PeerDetailScreen(
         // Set apart from everything else, and never beside a confirming
         // button: revoking a device ends the pairing and costs a QR scan to
         // undo.
-        Spacer(Modifier.height(OmniBridgeSpacing.md))
+        Spacer(Modifier.height(PliweeSpacing.md))
         var confirmRevoke by remember { mutableStateOf(false) }
-        OmniBridgeDestructiveButton(
+        PliweeDestructiveButton(
             text = stringResource(R.string.device_revoke_action),
             icon = R.drawable.ic_shield_off,
             onClick = { confirmRevoke = true },
@@ -318,7 +318,7 @@ fun PeerDetailScreen(
                 },
             )
         }
-        Spacer(Modifier.height(OmniBridgeSpacing.xxl))
+        Spacer(Modifier.height(PliweeSpacing.xxl))
     }
 }
 
@@ -338,20 +338,20 @@ private fun RevokedPeerDetail(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     var confirmRemove by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = OmniBridgeSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.sm),
+            .padding(horizontal = PliweeSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(PliweeSpacing.sm),
     ) {
         Column(
-            Modifier.fillMaxSize().padding(vertical = OmniBridgeSpacing.md),
+            Modifier.fillMaxSize().padding(vertical = PliweeSpacing.md),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs),
+            verticalArrangement = Arrangement.spacedBy(PliweeSpacing.xs),
         ) {
             Box(
                 Modifier
@@ -363,32 +363,32 @@ private fun RevokedPeerDetail(
                     painter = painterResource(R.drawable.ic_shield_off),
                     contentDescription = null,
                     tint = colors.accentRed,
-                    modifier = Modifier.size(OmniBridgeIconSize.xlarge),
+                    modifier = Modifier.size(PliweeIconSize.xlarge),
                 )
             }
-            Text(peer.deviceName, style = OmniBridgeType.title, color = colors.textPrimary)
-            OmniBridgeStatusBadge(OmniBridgeStatus.Revoked)
+            Text(peer.deviceName, style = PliweeType.title, color = colors.textPrimary)
+            PliweeStatusBadge(PliweeStatus.Revoked)
             Text(
                 stringResource(R.string.device_revoked_explanation),
-                style = OmniBridgeType.body,
+                style = PliweeType.body,
                 color = colors.textSecondary,
             )
         }
 
-        OmniBridgeSectionLabel("Security")
-        OmniBridgeCard {
-            Text("Device fingerprint", style = OmniBridgeType.label, color = colors.textSecondary)
-            OmniBridgeFingerprint(peer.fingerprint.toDisplayShort())
-            Spacer(Modifier.height(OmniBridgeSpacing.xxs))
+        PliweeSectionLabel("Security")
+        PliweeCard {
+            Text("Device fingerprint", style = PliweeType.label, color = colors.textSecondary)
+            PliweeFingerprint(peer.fingerprint.toDisplayShort())
+            Spacer(Modifier.height(PliweeSpacing.xxs))
             Text(
                 stringResource(R.string.device_revoked_pin_note),
-                style = OmniBridgeType.caption,
+                style = PliweeType.caption,
                 color = colors.textSecondary,
             )
         }
 
-        Spacer(Modifier.height(OmniBridgeSpacing.md))
-        OmniBridgeDestructiveButton(
+        Spacer(Modifier.height(PliweeSpacing.md))
+        PliweeDestructiveButton(
             text = stringResource(R.string.device_remove_from_list_action),
             icon = R.drawable.ic_trash,
             onClick = { confirmRemove = true },
@@ -409,7 +409,7 @@ private fun RevokedPeerDetail(
                 },
             )
         }
-        Spacer(Modifier.height(OmniBridgeSpacing.xxl))
+        Spacer(Modifier.height(PliweeSpacing.xxl))
     }
 }
 
@@ -429,11 +429,11 @@ private fun ConfirmDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title, style = OmniBridgeType.subtitle) },
-        text = { Text(body, style = OmniBridgeType.body, color = colors.textSecondary) },
+        title = { Text(title, style = PliweeType.subtitle) },
+        text = { Text(body, style = PliweeType.body, color = colors.textSecondary) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(confirmLabel, color = colors.accentRed)
@@ -457,54 +457,54 @@ private fun ConfirmDialog(
  * "On" — and it is sharing exactly nothing, which is what the words say.
  */
 @Composable
-private fun OmniBridgeNotificationsEntry(
+private fun PliweeNotificationsEntry(
     readiness: NotificationReadiness,
     granted: Boolean,
     appCount: Int,
     onClick: () -> Unit,
 ) {
-    val colors = OmniBridgeTheme.colors
+    val colors = PliweeTheme.colors
     val title = stringResource(R.string.notif_capability_title)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = MinTouchTarget)
-            .clip(RoundedCornerShape(OmniBridgeRadius.medium))
+            .clip(RoundedCornerShape(PliweeRadius.medium))
             .clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = title }
-            .padding(vertical = OmniBridgeSpacing.xs),
+            .padding(vertical = PliweeSpacing.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_notifications),
             contentDescription = null,
             tint = colors.accentViolet,
-            modifier = Modifier.size(OmniBridgeIconSize.large),
+            modifier = Modifier.size(PliweeIconSize.large),
         )
-        Spacer(Modifier.width(OmniBridgeSpacing.sm))
+        Spacer(Modifier.width(PliweeSpacing.sm))
         Column(Modifier.weight(1f)) {
-            Text(title, style = OmniBridgeType.body, color = colors.textPrimary)
+            Text(title, style = PliweeType.body, color = colors.textPrimary)
             Text(
                 if (granted && appCount > 0) {
                     stringResource(R.string.notif_apps_count, appCount, appCount)
                 } else {
                     stringResource(R.string.notif_capability_description)
                 },
-                style = OmniBridgeType.caption,
+                style = PliweeType.caption,
                 color = colors.textSecondary,
             )
         }
-        OmniBridgeStatusBadge(
+        PliweeStatusBadge(
             status = NotificationUiMapping.status(readiness),
             label = stringResource(NotificationUiMapping.statusLabel(readiness)),
             showIcon = false,
         )
-        Spacer(Modifier.width(OmniBridgeSpacing.xxs))
+        Spacer(Modifier.width(PliweeSpacing.xxs))
         Icon(
             painter = painterResource(R.drawable.ic_chevron_right),
             contentDescription = null,
             tint = colors.textMuted,
-            modifier = Modifier.size(OmniBridgeIconSize.large),
+            modifier = Modifier.size(PliweeIconSize.large),
         )
     }
 }

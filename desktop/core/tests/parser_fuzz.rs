@@ -34,13 +34,13 @@
 //!
 //! The filename sanitiser gets the same treatment in
 //! `capabilities/files/tests/filename_fuzz.rs`. It is a separate file because
-//! `omnibridge-core` does not depend on a capability and must not start — the
+//! `pliwee-core` does not depend on a capability and must not start — the
 //! generator is duplicated there rather than the crate layering bent to share
 //! a thirty-line test helper.
 
 use std::time::{Duration, Instant};
 
-use omnibridge_core::framing::{self, MAX_FRAME_LEN};
+use pliwee_core::framing::{self, MAX_FRAME_LEN};
 
 // ---------------------------------------------------------------------------
 // A deterministic generator
@@ -144,7 +144,7 @@ async fn sec_fuzz_01_the_framing_parser_returns_on_every_input() {
 
         match result {
             Ok(_) => outcomes[0] += 1,
-            Err(omnibridge_core::Error::Closed) => outcomes[2] += 1,
+            Err(pliwee_core::Error::Closed) => outcomes[2] += 1,
             Err(_) => outcomes[1] += 1,
         }
     }
@@ -296,7 +296,7 @@ async fn sec_fuzz_01_an_enormous_declared_length_is_refused_before_allocating() 
         let elapsed = started.elapsed();
 
         assert!(
-            matches!(result, Err(omnibridge_core::Error::FrameTooLarge(..))),
+            matches!(result, Err(pliwee_core::Error::FrameTooLarge(..))),
             "a frame declaring {declared} bytes was not refused as too large: {result:?}"
         );
         assert!(
@@ -313,7 +313,7 @@ async fn sec_fuzz_01_a_zero_length_frame_is_refused() {
     let mut cursor = std::io::Cursor::new(0u32.to_be_bytes().to_vec());
     assert!(matches!(
         framing::read_envelope(&mut cursor).await,
-        Err(omnibridge_core::Error::Protocol(_))
+        Err(pliwee_core::Error::Protocol(_))
     ));
 }
 
@@ -403,7 +403,7 @@ fn sec_fuzz_01_device_name_sanitising_returns_on_every_input() {
     for i in 0..ITERATIONS {
         let seed = rng.0;
         let raw = adversarial_filename(&mut rng); // the same hostile corpus
-        let out = omnibridge_core::discovery::sanitize_device_name(&raw);
+        let out = pliwee_core::discovery::sanitize_device_name(&raw);
 
         assert!(
             !out.contains('\0'),

@@ -11,7 +11,7 @@ import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
-import io.github.yurisismotto.omnibridge.OmniBridgeApp
+import io.github.yurisismotto.omnibridge.PliweeApp
 
 /**
  * The platform listener.
@@ -60,7 +60,7 @@ import io.github.yurisismotto.omnibridge.OmniBridgeApp
 class OmniBridgeNotificationListener : NotificationListenerService() {
 
     private val source: NotificationSource?
-        get() = (application as? OmniBridgeApp)?.notifications
+        get() = (application as? PliweeApp)?.notifications
 
     private val control = object : NotificationSource.ListenerControl {
         override fun requestUnbind() {
@@ -249,7 +249,7 @@ class OmniBridgeNotificationListener : NotificationListenerService() {
     }.getOrDefault("")
 
     companion object {
-        private const val TAG = "OmniBridgeListener"
+        private const val TAG = "PliweeListener"
     }
 }
 

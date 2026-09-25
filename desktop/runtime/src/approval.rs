@@ -56,9 +56,9 @@
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 
-use omnibridge_capability_files::transfer::TransferId;
-use omnibridge_capability_files::{IncomingOffer, TransferApproval};
-use omnibridge_core::Fingerprint;
+use pliwee_capability_files::transfer::TransferId;
+use pliwee_capability_files::{IncomingOffer, TransferApproval};
+use pliwee_core::Fingerprint;
 use tokio::sync::{mpsc, oneshot};
 
 /// How many offers may be queued towards a provider before it is considered
