@@ -218,7 +218,7 @@ impl Default for Settings {
     /// and this value is only ever seen if a caller builds `Settings` by hand.
     fn default() -> Self {
         Self {
-            device_name: "OmniBridge Device".to_string(),
+            device_name: "Pliwee Device".to_string(),
             listen_port: crate::DEFAULT_PORT,
             auto_grant: vec!["battery.v1".to_string()],
         }
@@ -870,7 +870,7 @@ fn refuse_access(what: &str, e: &StoreAccessError) -> Resolution {
             message: detail.clone(),
         },
         StoreAccessError::PermissionDenied { .. } => refuse(IdentityState::Lost(format!(
-            "{what} exists but cannot be read ({e}). OmniBridge will not generate \
+            "{what} exists but cannot be read ({e}). Pliwee will not generate \
              a replacement identity over one it cannot read"
         ))),
         StoreAccessError::Io { .. } => refuse(IdentityState::TemporarilyUnavailable(format!(

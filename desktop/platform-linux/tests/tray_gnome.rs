@@ -582,7 +582,7 @@ async fn n4_the_host_going_away_leaves_the_daemon_and_the_item_alone() {
     let caller = bus.connect().await;
     let proxy = proxy_onto(&caller, &item, ITEM_INTERFACE, ITEM_OBJECT_PATH).await;
     let title: String = proxy.get_property("Title").await.expect("Title");
-    assert_eq!(title, "OmniBridge");
+    assert_eq!(title, "Pliwee");
 }
 
 /// N5 — a duplicate registration is not a duplicate icon.
@@ -629,7 +629,7 @@ async fn n6_the_item_is_ready_and_visible_by_the_extensions_own_rules() {
     assert!(facts.is_ready(), "the extension would never draw this item");
     assert_eq!(facts.id, "io.github.yurisismotto.omnibridge");
     assert_eq!(facts.menu_path, MENU_OBJECT_PATH);
-    assert_eq!(facts.title, "OmniBridge");
+    assert_eq!(facts.title, "Pliwee");
 
     // `Passive` is the one status that makes the extension hide the icon.
     // OmniBridge's `Active` is not a decoration: it is the reason the icon is on
@@ -1115,8 +1115,8 @@ async fn n16_nothing_the_extension_reads_is_private() {
     let allowed = [
         "",
         "io.github.yurisismotto.omnibridge",
-        "OmniBridge",
-        "One bridge. Any device.",
+        "Pliwee",
+        "One flow. Any device.",
         "ApplicationStatus",
         "Active",
         "normal",

@@ -67,7 +67,7 @@ impl std::fmt::Display for ActivationError {
 
 impl std::error::Error for ActivationError {}
 
-/// Presents one of OmniBridge's desktop surfaces.
+/// Presents one of Pliwee's desktop surfaces.
 #[async_trait::async_trait]
 pub trait ApplicationActivator: Send + Sync + 'static {
     /// Presents the surface `action` names.

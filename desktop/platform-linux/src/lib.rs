@@ -1,6 +1,6 @@
 //! The Linux adapter.
 //!
-//! Everything the OmniBridge Agent needs that is specific to a Linux desktop
+//! Everything the Pliwee Agent needs that is specific to a Linux desktop
 //! session, and nothing else:
 //!
 //! * the control endpoint — a Unix domain socket under `$XDG_RUNTIME_DIR`,
@@ -18,7 +18,7 @@
 //! to put a protocol decision in an adapter, that is the signal that the seam
 //! is in the wrong place.
 //!
-//! # The OmniBridge Agent
+//! # The Pliwee Agent
 //!
 //! "Agent" is the portable name for the always-on user-session process. It is
 //! one concept with a different lifetime on each platform:
@@ -34,13 +34,13 @@
 //! Wave 0 implements the Linux row and only the Linux row. The rows below it
 //! are recorded so that the shape of this crate — bind an endpoint, resolve
 //! paths, enforce local protection — is legible as *one row of a table*
-//! rather than as the way OmniBridge works.
+//! rather than as the way Pliwee works.
 //!
 //! # The desktop-shell adapter
 //!
 //! [`tray`] is the third thing in this crate and the newest: a
 //! `StatusNotifierItem` on the session bus, so that KDE Plasma can show
-//! OmniBridge in its system tray. It belongs here for the same reason the control
+//! Pliwee in its system tray. It belongs here for the same reason the control
 //! endpoint does — it is a *Linux desktop session* concept with no portable
 //! meaning, and the portable crates must never learn the words "D-Bus" or
 //! "tray". It is behind the `tray` feature, which is on by default for the

@@ -421,7 +421,7 @@ impl Pages {
                 "security-low-symbolic",
                 "ob-status-disconnected",
                 "Daemon not reachable",
-                "Start the OmniBridge daemon to connect to your devices.",
+                "Start the Pliwee daemon to connect to your devices.",
             )
         };
         let icon = gtk::Image::from_icon_name(icon_name);

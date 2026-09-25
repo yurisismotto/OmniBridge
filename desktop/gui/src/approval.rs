@@ -64,7 +64,7 @@ const ACCEPT: &str = "accept";
 ///
 /// `parent` is asked, each time an offer arrives, which window the question
 /// should appear over. It is a closure rather than a window because the
-/// attachment outlives any one of them: OmniBridge has a Quick Panel and a
+/// attachment outlives any one of them: Pliwee has a Quick Panel and a
 /// Settings window, either may be closed, and closing one must not stop the
 /// machine being able to accept a file. When it answers `None` there is no
 /// window to ask over and the offer is left unanswered — which the daemon

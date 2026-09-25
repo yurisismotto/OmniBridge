@@ -416,7 +416,7 @@ class SendRetryTest {
             "No content provider: content://media/external/images/media/42",
         )
         val message = UiMapping.sendFailureMessage(leak)
-        assertEquals("OmniBridge could not send that file.", message)
+        assertEquals("Pliwee could not send that file.", message)
         assertFalse(message.contains("content://"))
     }
 }

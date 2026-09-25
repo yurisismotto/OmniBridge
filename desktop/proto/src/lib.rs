@@ -1,4 +1,4 @@
-//! Generated Protocol Buffers types for the OmniBridge wire protocol.
+//! Generated Protocol Buffers types for the Pliwee wire protocol.
 //!
 //! This crate contains *only* generated code plus small, hand-written helpers
 //! that are pure functions of the generated types. Nothing here knows about

@@ -51,7 +51,7 @@ use tokio::sync::mpsc;
 ///
 /// A `u32` because that is what freedesktop uses, and wrapping it in a newtype
 /// would buy nothing here — but note what it is **not**: it is not stable
-/// across a server restart, it is not an OmniBridge identity, and a peer never
+/// across a server restart, it is not a Pliwee identity, and a peer never
 /// sees one. The mapping from the opaque remote identity to this local number
 /// is `MirrorTable`'s, and it is memory-only.
 pub type ServerId = u32;

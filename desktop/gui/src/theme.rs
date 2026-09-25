@@ -1,4 +1,4 @@
-//! OmniBridge design tokens for the desktop.
+//! Pliwee design tokens for the desktop.
 //!
 //! The canonical values live in `docs/design/tokens.json`; `tests/tokens.rs`
 //! reads that file and fails if this module drifts from it. The Android side
@@ -7,7 +7,7 @@
 //!
 //! # Two colour families, and the split is load-bearing
 //!
-//! The brand hues are chosen for identity, not legibility: Bridge Cyan on
+//! The brand hues are chosen for identity, not legibility: Flow Cyan on
 //! white is 2.40:1, well under the 4.5:1 WCAG AA needs for text. So:
 //!
 //! * [`brand`] — fills, marks, gradients, the indicator dot itself;
@@ -19,7 +19,7 @@
 
 /// The identity palette. Decorative surfaces only.
 pub mod brand {
-    /// Bridge Cyan — the flow origin, connected, toggles.
+    /// Flow Cyan — the flow origin, connected, toggles.
     pub const CYAN: &str = "#18B8C9";
     /// Primary Blue — primary actions, links, progress, selection.
     pub const BLUE: &str = "#4F6BFF";
@@ -376,14 +376,14 @@ mod tests {
     /// The brand hues are *not* safe as text, and that must stay documented.
     ///
     /// A guard rather than a curiosity: if a future palette change made
-    /// Bridge Cyan legible as text, the two-family split could be collapsed —
+    /// Flow Cyan legible as text, the two-family split could be collapsed —
     /// and this failing is how anyone would find out.
     #[test]
     fn the_raw_brand_hues_are_known_to_fail_as_text() {
         let floor = num(&tokens_json(), &["contrast_floor", "text_on_surface"]);
         assert!(
             contrast(brand::CYAN, "#FFFFFF") < floor,
-            "Bridge Cyan now passes AA on white — revisit the two-family palette split \
+            "Flow Cyan now passes AA on white — revisit the two-family palette split \
              in docs/design/BRAND.md before using it for text"
         );
     }

@@ -297,7 +297,7 @@ impl TransferApproval for FileApproval {
                 peer = %offer.peer.to_display_short(),
                 reason = why.as_str(),
                 "declining an incoming file: no way to ask a human. Open the \
-                 OmniBridge desktop application, or start the daemon with \
+                 Pliwee desktop application, or start the daemon with \
                  --accept-files-without-asking to accept unattended."
             );
             return false;

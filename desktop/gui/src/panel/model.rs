@@ -46,7 +46,7 @@ pub const BATTERY: &str = "battery.v1";
 // Daemon health
 // ---------------------------------------------------------------------------
 
-/// Whether there is an OmniBridge service to talk to at all.
+/// Whether there is a Pliwee service to talk to at all.
 ///
 /// Three states rather than two: "we have not heard back yet" is the first
 /// second of every panel and is not a failure, and drawing it as one would
@@ -772,7 +772,7 @@ impl RecentTransfer {
             (Outcome::Failed, _) => format!("{} did not finish.", self.filename),
         };
         format!(
-            "{what} Device {}. Open OmniBridge Settings for the full list.",
+            "{what} Device {}. Open Pliwee Settings for the full list.",
             widgets_group(&self.peer_fingerprint_short)
         )
     }
@@ -916,7 +916,7 @@ fn health_of(state: &DaemonState) -> Health {
         // path and an errno, which tells the person nothing they can act on;
         // Settings and the log still carry it verbatim.
         return Health::Unavailable {
-            headline: "OmniBridge service is not available".into(),
+            headline: "Pliwee service is not available".into(),
         };
     }
     match state.status {
@@ -1062,13 +1062,13 @@ fn preconditions<'a>(
 ) -> Result<&'a PeerCard, Action> {
     match health {
         Health::Unavailable { headline } => return Err(Action::blocked(headline.clone())),
-        Health::Reaching => return Err(Action::blocked("Connecting to the OmniBridge service…")),
+        Health::Reaching => return Err(Action::blocked("Connecting to the Pliwee service…")),
         Health::Available => {}
     }
     match target {
         Target::NoTrustedPeer => {
             return Err(Action::blocked(
-                "No device is paired yet. Pair one in OmniBridge Settings.",
+                "No device is paired yet. Pair one in Pliwee Settings.",
             ))
         }
         Target::MustChoose { stale_choice: true } => {
@@ -1130,7 +1130,7 @@ fn clipboard_action(
         Err(blocked) => return blocked,
     };
     let Some(report) = report else {
-        return Action::blocked("Waiting for the OmniBridge service…");
+        return Action::blocked("Waiting for the Pliwee service…");
     };
     if !report.enabled {
         return Action::blocked("Clipboard sharing is not enabled on this computer.");
@@ -1154,7 +1154,7 @@ fn clipboard_action(
             peer.name
         )),
         None => Action::blocked(format!(
-            "The OmniBridge service has no clipboard policy for {}.",
+            "The Pliwee service has no clipboard policy for {}.",
             peer.name
         )),
     }
@@ -1194,7 +1194,7 @@ fn files_status(health: &Health, peer: Option<&PeerCard>) -> StatusLine {
     if !health.is_available() {
         return StatusLine::new(
             StatusValue::Unavailable,
-            "The OmniBridge service is not running.",
+            "The Pliwee service is not running.",
         );
     }
     let Some(peer) = peer else {
@@ -1245,14 +1245,11 @@ fn clipboard_status(
     if !health.is_available() {
         return StatusLine::new(
             StatusValue::Unavailable,
-            "The OmniBridge service is not running.",
+            "The Pliwee service is not running.",
         );
     }
     let Some(report) = report else {
-        return StatusLine::new(
-            StatusValue::Unavailable,
-            "Waiting for the OmniBridge service.",
-        );
+        return StatusLine::new(StatusValue::Unavailable, "Waiting for the Pliwee service.");
     };
     if !report.enabled {
         return StatusLine::new(
@@ -1355,14 +1352,11 @@ fn notifications_status(
     if !health.is_available() {
         return StatusLine::new(
             StatusValue::Unavailable,
-            "The OmniBridge service is not running.",
+            "The Pliwee service is not running.",
         );
     }
     let Some(report) = report else {
-        return StatusLine::new(
-            StatusValue::Unavailable,
-            "Waiting for the OmniBridge service.",
-        );
+        return StatusLine::new(StatusValue::Unavailable, "Waiting for the Pliwee service.");
     };
     if !report.enabled {
         return StatusLine::new(

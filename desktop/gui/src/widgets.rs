@@ -1,4 +1,4 @@
-//! The OmniBridge desktop component set.
+//! The Pliwee desktop component set.
 //!
 //! Every screen is assembled from these, so a card, a status or a button
 //! cannot look one way on the dashboard and another on the pairing page. The
@@ -400,7 +400,7 @@ pub fn empty_state(title_text: &str, subtitle_text: &str) -> gtk::Box {
 ///
 /// A constant rather than a convention, because this action shows up in three
 /// unrelated places — the sidebar row, the Quick Panel header button and the
-/// Quick Panel's own "Open OmniBridge Settings" — and a fourth caller
+/// Quick Panel's own "Open Pliwee Settings" — and a fourth caller
 /// reaching for a different name is how one action ends up with two
 /// metaphors.
 ///

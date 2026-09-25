@@ -1,4 +1,4 @@
-//! OmniBridge for the desktop.
+//! Pliwee for the desktop.
 //!
 //! A GTK4 / libadwaita front end for the daemon. It is a *client* of the same
 //! local control socket the `omnibridge` CLI uses and adds no protocol, no
@@ -23,7 +23,7 @@
 //! of device. The two windows are two views of that; neither owns it, and
 //! closing either leaves the other — and the daemon — entirely alone. There is
 //! no `omnibridge-quickpanel` anything: the agent is `omnibridged` and stays the
-//! only long-lived process OmniBridge runs.
+//! only long-lived process Pliwee runs.
 //!
 //! # Activation
 //!
@@ -213,7 +213,7 @@ fn install_styles() {
 ///
 /// # What this does, and what it cannot do
 ///
-/// The icon is compiled into the binary, so anything OmniBridge draws itself can
+/// The icon is compiled into the binary, so anything Pliwee draws itself can
 /// ask for it by name — and on **X11** that is also enough for the window
 /// list, because GTK resolves the default icon name through this same theme
 /// and attaches the result to the window as `_NET_WM_ICON`. Measured under
@@ -769,13 +769,13 @@ impl App {
         let split = adw::NavigationSplitView::builder()
             .sidebar(
                 &adw::NavigationPage::builder()
-                    .title("OmniBridge")
+                    .title("Pliwee")
                     .child(&sidebar)
                     .build(),
             )
             .content(
                 &adw::NavigationPage::builder()
-                    .title("OmniBridge")
+                    .title("Pliwee")
                     .child(&content)
                     .build(),
             )
@@ -786,16 +786,16 @@ impl App {
         let header = adw::HeaderBar::new();
         let title_box = widgets::row(widgets::SPACING_XS);
         title_box.append(&widgets::brand_mark(22));
-        title_box.append(&gtk::Label::new(Some("OmniBridge")));
+        title_box.append(&gtk::Label::new(Some("Pliwee")));
         header.set_title_widget(Some(&title_box));
 
         // The way back to the everyday surface, so the two are not two
         // separate programs that happen to share a name.
         let panel_button = gtk::Button::from_icon_name("view-grid-symbolic");
         panel_button.add_css_class("flat");
-        panel_button.set_tooltip_text(Some("Open the OmniBridge Quick Panel"));
+        panel_button.set_tooltip_text(Some("Open the Pliwee Quick Panel"));
         panel_button.update_property(&[gtk::accessible::Property::Label(
-            "Open the OmniBridge Quick Panel",
+            "Open the Pliwee Quick Panel",
         )]);
         panel_button.set_action_name(Some("app.quick-panel"));
         header.pack_end(&panel_button);
@@ -806,7 +806,7 @@ impl App {
 
         let window = adw::ApplicationWindow::builder()
             .application(&self.app)
-            .title("OmniBridge Settings")
+            .title("Pliwee Settings")
             .default_width(1000)
             .default_height(680)
             .width_request(360)
@@ -962,7 +962,7 @@ pub(crate) mod application_gate {
     ///
     /// Registered because GTK refuses to attach a window to an application
     /// that has not emitted `::startup`. `NON_UNIQUE` because a unique one
-    /// would single-instance the test against whatever OmniBridge the developer
+    /// would single-instance the test against whatever Pliwee the developer
     /// is running. And `suffix` because even a non-unique GApplication
     /// exports `org.gtk.Application` at an object path derived from its id, so
     /// two of them sharing an id in one process collide on the bus.

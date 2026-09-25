@@ -360,7 +360,7 @@ class AppPickerUiTest {
             "com.example.bank" to "Banco",
             "com.example.chat" to "Chat",
             "com.example.maps" to "Maps",
-            Fx.OWN_PACKAGE to "OmniBridge",
+            Fx.OWN_PACKAGE to "Pliwee",
         )
         val offered = NotificationApps.build(
             launchable = labels.keys,
@@ -374,9 +374,9 @@ class AppPickerUiTest {
         // Not one picker row for it, and nothing that could tick it.
         compose.onAllNodes(pickerRowFor(Fx.OWN_PACKAGE)).assertCountEquals(0)
         compose
-            .onAllNodes(isToggleable() and hasContentDescription("OmniBridge"), useUnmergedTree = true)
+            .onAllNodes(isToggleable() and hasContentDescription("Pliwee"), useUnmergedTree = true)
             .assertCountEquals(0)
-        compose.onAllNodesWithText("OmniBridge").assertCountEquals(0)
+        compose.onAllNodesWithText("Pliwee").assertCountEquals(0)
         // And the three real applications are still offered, so this is not an
         // empty list passing by accident.
         compose.onAllNodes(pickerRowFor("com.example.chat")).assertCountEquals(1)

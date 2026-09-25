@@ -176,7 +176,7 @@ class NotificationConsentUiTest {
         compose.onNodeWithText("What is sent", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Where it goes", substring = true).assertIsDisplayed()
         compose.onNodeWithText("When: only while", substring = true).assertIsDisplayed()
-        compose.onNodeWithText("Never to the developers of OmniBridge", substring = true)
+        compose.onNodeWithText("Never to the developers of Pliwee", substring = true)
             .assertIsDisplayed()
         assertTrue("granted before the person answered", recorder.grants.isEmpty())
         // Android's access screen is not on offer until the grant exists.
@@ -580,7 +580,7 @@ class NotificationConsentUiTest {
             Fx.Recorder(),
         )
         compose
-            .onNodeWithText("Android has not given OmniBridge notification access", substring = true)
+            .onNodeWithText("Android has not given Pliwee notification access", substring = true)
             .performScrollTo()
             .assertIsDisplayed()
     }

@@ -22,7 +22,7 @@ use omnibridge_daemon::{approval::FileApproval, listener, mdns, server, state::D
 use tokio_rustls::TlsAcceptor;
 
 #[derive(Parser, Debug)]
-#[command(name = "omnibridged", about = "OmniBridge daemon", version)]
+#[command(name = "omnibridged", about = "Pliwee daemon", version)]
 struct Args {
     /// Data directory (identity and trust store).
     #[arg(long)]
@@ -354,7 +354,7 @@ async fn main() -> anyhow::Result<()> {
     // an application in its system tray. The daemon owns it because the daemon
     // is the process that is always here: the GUI is two windows a person
     // opens and closes, and keeping one alive forever to hold an icon would
-    // have made OmniBridge a product with two resident processes.
+    // have made Pliwee a product with two resident processes.
     //
     // Held, never awaited, and deliberately **not** in the `select!` below.
     // Everything in that race is load-bearing — the network listener, the
@@ -375,7 +375,7 @@ async fn main() -> anyhow::Result<()> {
     //
     // A package installs the GUI's D-Bus service file as root, and the user's
     // *already running* session bus does not read it until something says so.
-    // Until then the tray item above activates nothing: clicking OmniBridge on
+    // Until then the tray item above activates nothing: clicking Pliwee on
     // a correctly installed machine returns ServiceUnknown. Root cannot fix
     // that — it has no route to a user's session bus — but this process runs
     // as the user, in the session, and can. Audit §8.2.

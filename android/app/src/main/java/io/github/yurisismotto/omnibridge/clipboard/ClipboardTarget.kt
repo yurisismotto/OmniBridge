@@ -46,7 +46,7 @@ interface ClipboardTarget {
 
         fun describe(): String = when (this) {
             NotAllowed ->
-                "Android would not let OmniBridge read the clipboard. Open OmniBridge " +
+                "Android would not let Pliwee read the clipboard. Open Pliwee " +
                     "and try again — the clipboard can only be read while the app " +
                     "is on screen."
             Empty -> "The clipboard is empty."
@@ -90,6 +90,6 @@ interface ClipboardTarget {
     fun write(
         text: ClipboardText,
         sensitive: Boolean,
-        label: String = "OmniBridge",
+        label: String = "Pliwee",
     ): WriteResult
 }

@@ -3,7 +3,7 @@
 //! # What is deliberately absent
 //!
 //! The design reference shows a **clipboard history** panel with previous
-//! clips and their text. OmniBridge has none, by design and not by omission:
+//! clips and their text. Pliwee has none, by design and not by omission:
 //! clipboard content is never written to disk, and the control socket carries
 //! no clip text at all — a pending clip is described by its size, a hash
 //! prefix and its age (`PendingClipReport`), which is enough to tell two
@@ -181,7 +181,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
 
     container.append(&widgets::security_notice(
         "Clipboard text is never stored",
-        "OmniBridge keeps no clipboard history. A received clip waits in memory with a \
+        "Pliwee keeps no clipboard history. A received clip waits in memory with a \
          five-minute expiry and is gone once applied, dismissed or expired — nothing \
          about it reaches a log or a file.",
         false,
@@ -234,7 +234,7 @@ impl BackendSummary {
             // per-distribution answer, and the tooltip above already carries
             // the exact one for anyone diagnosing it.
             Self::Unavailable => {
-                "This desktop session has no clipboard OmniBridge can use, so \
+                "This desktop session has no clipboard Pliwee can use, so \
                  clipboard text cannot be sent or received."
             }
         }
@@ -287,15 +287,15 @@ impl SensitiveState {
                 "A clip your phone marks as a password or other secret is written here \
                  marked sensitive, so clipboard managers leave it out of their history."
             }
-            // No package-manager command: OmniBridge does not know which package
+            // No package-manager command: Pliwee does not know which package
             // manager this machine has, and the package is named the same on
-            // every distribution OmniBridge supports. The version is offered as
+            // every distribution Pliwee supports. The version is offered as
             // guidance for choosing a build, not as the test — some
             // distributions backport the flag into an earlier version, which
-            // is why OmniBridge asks the tool instead of reading its version.
+            // is why Pliwee asks the tool instead of reading its version.
             Self::NotMarkable => {
                 "Ordinary clipboard sharing works normally. What this desktop cannot do is \
-                 mark a clip as sensitive: its wl-copy has no --sensitive option. OmniBridge \
+                 mark a clip as sensitive: its wl-copy has no --sensitive option. Pliwee \
                  therefore refuses a clip your phone marked as a secret rather than writing \
                  it unmarked, because an unmarked password would be kept in your clipboard \
                  manager's history without you being told. Installing a wl-clipboard build \
@@ -627,7 +627,7 @@ pub(in crate::views) mod tests {
         // Ordinary clipboard sharing still works, and the page must say so
         // before it says anything is wrong.
         assert!(detail.contains("Ordinary clipboard sharing works normally"));
-        // Why OmniBridge refuses rather than downgrading (PLAT-DEC-013).
+        // Why Pliwee refuses rather than downgrading (PLAT-DEC-013).
         assert!(detail.contains("refuses"));
         assert!(detail.contains("history"));
         // And what to do about it, without choosing the user's package manager.

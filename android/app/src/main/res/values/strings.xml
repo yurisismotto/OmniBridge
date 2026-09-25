@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">OmniBridge</string>
+    <string name="app_name">Pliwee</string>
     <string name="channel_connection">Connection status</string>
     <string name="notif_connected">Connected to %1$s</string>
     <string name="notif_connecting">Connecting…</string>
-    <string name="share_target_label">Send with OmniBridge</string>
+    <string name="share_target_label">Send with Pliwee</string>
     <string name="notif_receiving">Receiving %1$s</string>
     <string name="notif_sending">Sending %1$s</string>
     <string name="channel_transfers">File transfers</string>
@@ -18,7 +18,7 @@
     <string name="channel_clipboard">Clipboard</string>
     <string name="channel_clipboard_description">Clipboard text received from a paired computer.</string>
     <string name="clip_received_title">Clipboard received from %1$s</string>
-    <string name="clip_received_body">%1$d bytes of text. Open OmniBridge to copy it.</string>
+    <string name="clip_received_body">%1$d bytes of text. Open Pliwee to copy it.</string>
     <string name="clip_marked_sensitive">Marked sensitive.</string>
     <string name="clip_action_copy">Copy</string>
     <string name="clipboard_tile_label">Send clipboard</string>
@@ -44,7 +44,7 @@
           notifications to an untrusted listener entirely unredacted, with the
           platform flag on and Google's classifier bound. "Android hides
           verification codes" would be false here;
-        * nothing may imply OmniBridge inspects notification content. It does not,
+        * nothing may imply Pliwee inspects notification content. It does not,
           by design (ADR-0015 §5). The honest sentence is the one the product
           can keep: what you choose to share is shared in full with the
           computer you named.
@@ -61,7 +61,7 @@
     <string name="notif_access_title">Notification access</string>
     <string name="notif_access_allowed">Allowed</string>
     <string name="notif_access_not_allowed">Not allowed</string>
-    <string name="notif_access_explainer">Allowing Android notification access lets OmniBridge read notifications on this device. It does not share them with any computer on its own — each computer has to be allowed separately, and then you choose which apps.</string>
+    <string name="notif_access_explainer">Allowing Android notification access lets Pliwee read notifications on this device. It does not share them with any computer on its own — each computer has to be allowed separately, and then you choose which apps.</string>
     <string name="notif_access_open_settings">Open Android settings</string>
     <string name="notif_access_revoke_hint">Turn this off in Android settings at any time. Doing so stops every computer at once.</string>
 
@@ -78,8 +78,8 @@
     -->
     <string name="notif_disclosure_title">Share notifications with %1$s?</string>
     <string name="notif_disclosure_what">What is sent: for each notification from an app you choose — the app\'s name and package name, the title and text, when it was posted, its category, importance and progress, and whether it is ongoing or can be dismissed. Pictures, icons, action buttons and replies are never sent.</string>
-    <string name="notif_disclosure_where">Where it goes: only to %1$s, directly over your local network, on an encrypted connection pinned to that computer. Never to the developers of OmniBridge or to any cloud service — OmniBridge has none. No notification is stored on this device.</string>
-    <string name="notif_disclosure_when">When: only while this device is connected to %1$s — including while OmniBridge is in the background. While connected, OmniBridge appears in Android\'s list of active apps, and as an ongoing notification if you allow notifications. While this device is locked, only the app\'s name is sent unless you change that.</string>
+    <string name="notif_disclosure_where">Where it goes: only to %1$s, directly over your local network, on an encrypted connection pinned to that computer. Never to the developers of Pliwee or to any cloud service — Pliwee has none. No notification is stored on this device.</string>
+    <string name="notif_disclosure_when">When: only while this device is connected to %1$s — including while Pliwee is in the background. While connected, Pliwee appears in Android\'s list of active apps, and as an ongoing notification if you allow notifications. While this device is locked, only the app\'s name is sent unless you change that.</string>
     <string name="notif_disclosure_next">Nothing is shared yet. You will also need to allow Android notification access and pick the apps. You can stop at any time here, in Android settings, or by removing the computer.</string>
     <string name="notif_disclosure_allow">Allow</string>
     <string name="notif_disclosure_decline">Not now</string>
@@ -97,12 +97,12 @@
     <string name="notif_status_ready">Ready</string>
 
     <string name="notif_detail_sharing_off">This computer cannot see any notification from this device.</string>
-    <string name="notif_detail_needs_access">Android has not given OmniBridge permission to read notifications on this device.</string>
-    <string name="notif_detail_unavailable">OmniBridge cannot read notifications right now. This usually clears on its own.</string>
+    <string name="notif_detail_needs_access">Android has not given Pliwee permission to read notifications on this device.</string>
+    <string name="notif_detail_unavailable">Pliwee cannot read notifications right now. This usually clears on its own.</string>
     <string name="notif_detail_paused">Sharing is allowed but paused, so nothing is being sent.</string>
     <string name="notif_detail_no_apps">Nothing is being shared, because no app has been chosen yet.</string>
     <string name="notif_detail_not_connected">Set up and waiting. Notifications will appear once this device connects.</string>
-    <string name="notif_detail_peer_not_receiving">This device is connected, but the computer has not said it can show notifications. Check that OmniBridge on the computer allows notifications from this device.</string>
+    <string name="notif_detail_peer_not_receiving">This device is connected, but the computer has not said it can show notifications. Check that Pliwee on the computer allows notifications from this device.</string>
     <string name="notif_detail_ready">Notifications from the apps you chose appear on this computer.</string>
 
     <!-- The app picker. -->
@@ -126,7 +126,7 @@
     <string name="notif_picker_clear_all">Clear all</string>
     <string name="notif_picker_confirm_select_all">Share notifications from all %1$d apps with this computer?</string>
     <string name="notif_picker_no_results">No app matches that search.</string>
-    <string name="notif_picker_empty">No app could be listed. OmniBridge can only offer apps you can open from your home screen, plus any app that is showing a notification right now.</string>
+    <string name="notif_picker_empty">No app could be listed. Pliwee can only offer apps you can open from your home screen, plus any app that is showing a notification right now.</string>
     <string name="notif_picker_notifying">Notifying now</string>
     <string name="notif_picker_shared">Shared</string>
     <string name="notif_picker_not_shared">Not shared</string>
@@ -159,7 +159,7 @@
     -->
     <string name="notif_dismiss_title">Allow this computer to dismiss notifications</string>
     <string name="notif_dismiss_description">Off. When on, dismissing a mirrored notification on that computer also dismisses the original here. That is all it can do: it cannot tap a notification’s buttons, reply, open an app, or clear everything at once. Ongoing notifications are never dismissed this way.</string>
-    <string name="notif_dismiss_state_needs_access">Android has not given OmniBridge notification access, so nothing on this device can be dismissed from anywhere.</string>
+    <string name="notif_dismiss_state_needs_access">Android has not given Pliwee notification access, so nothing on this device can be dismissed from anywhere.</string>
     <string name="notif_dismiss_state_off">Off. Dismissing a notification on that computer leaves this one alone.</string>
     <string name="notif_dismiss_state_not_connected">On. It takes effect the next time that computer connects.</string>
     <string name="notif_dismiss_state_peer_cannot_report">On, and that computer has not said it can report when you dismiss something. Nothing will be dismissed here until it can. If you have just changed a setting there, the two may need to reconnect.</string>
@@ -171,7 +171,7 @@
 
     <!-- Privacy copy. Reviewed as a security control, not as marketing. -->
     <string name="notif_privacy_title">What is shared, and what is not</string>
-    <string name="notif_privacy_body">Notifications from the apps you choose are sent in full to the computer you named, over the same direct, pinned connection as everything else — never to a cloud service. OmniBridge does not read, classify or hide anything inside a notification, and it keeps no history: nothing is written to this device or the computer. OmniBridge never shares its own notifications, and never shares a notification an app marks as private to the lock screen.</string>
+    <string name="notif_privacy_body">Notifications from the apps you choose are sent in full to the computer you named, over the same direct, pinned connection as everything else — never to a cloud service. Pliwee does not read, classify or hide anything inside a notification, and it keeps no history: nothing is written to this device or the computer. Pliwee never shares its own notifications, and never shares a notification an app marks as private to the lock screen.</string>
 
     <!-- Diagnostics. Protocol vocabulary lives here and nowhere else. -->
     <string name="notif_diagnostics_title">Details</string>
@@ -248,13 +248,13 @@
 
     <!--
       Said plainly, because it is the one thing about this screen a person
-      could otherwise get wrong. OmniBridge keeps no transfer history: the list
+      could otherwise get wrong. Pliwee keeps no transfer history: the list
       is what this app has done since it started, and closing it is not losing
       a log, because there was never a log.
     -->
-    <string name="files_recent_scope">Transfers from this session. OmniBridge keeps no history of what you send or receive — received files stay in Downloads/OmniBridge.</string>
+    <string name="files_recent_scope">Transfers from this session. Pliwee keeps no history of what you send or receive — received files stay in Downloads/OmniBridge.</string>
     <string name="files_empty_title">No transfers yet</string>
-    <string name="files_empty_subtitle">Files you send or receive appear here while they are moving, and stay listed until OmniBridge closes.</string>
+    <string name="files_empty_subtitle">Files you send or receive appear here while they are moving, and stay listed until Pliwee closes.</string>
 
     <!-- Direction. Words, never an arrow alone: an arrow announces nothing. -->
     <string name="files_direction_sent">Sent</string>
@@ -279,7 +279,7 @@
     <string name="files_action_open_description">Open %1$s</string>
     <string name="files_action_cancel_description">Stop transferring %1$s</string>
     <string name="files_open_file_missing">That file is no longer on this device.</string>
-    <string name="files_open_source_unavailable">OmniBridge no longer has permission to open the file it sent.</string>
+    <string name="files_open_source_unavailable">Pliwee no longer has permission to open the file it sent.</string>
     <string name="files_open_no_viewer">No app on this device can open this file.</string>
 
     <!--

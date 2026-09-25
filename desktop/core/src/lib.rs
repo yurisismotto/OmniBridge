@@ -1,4 +1,4 @@
-//! OmniBridge core: identity, pairing, transport and the capability model.
+//! Pliwee core: identity, pairing, transport and the capability model.
 //!
 //! This crate is deliberately free of any daemon, CLI or GUI concerns. It has
 //! no global state and does no logging of user content. Everything it needs

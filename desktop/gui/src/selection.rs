@@ -25,7 +25,7 @@
 //! `store/PeerTarget.kt`: trust is the *set* of peers, the selection is the
 //! person's *choice*, and a destination is a function of the two. Nothing
 //! downstream can see list position. Keeping the two platforms' rules the
-//! same is itself a safety property — a person who learns "OmniBridge asks when
+//! same is itself a safety property — a person who learns "Pliwee asks when
 //! it is ambiguous" on the phone should not find the desktop guessing.
 //!
 //! # Where it is stored, and why not in the daemon
@@ -151,7 +151,7 @@ impl Selection {
     ///
     /// A preference that cannot be written is not worth an error dialog: the
     /// choice still holds for this run, and the next run asks. Writing the
-    /// parent directory 0700 matches every other OmniBridge directory.
+    /// parent directory 0700 matches every other Pliwee directory.
     fn persist(&self) {
         if let Some(dir) = self.path.parent() {
             let _ = std::fs::create_dir_all(dir);

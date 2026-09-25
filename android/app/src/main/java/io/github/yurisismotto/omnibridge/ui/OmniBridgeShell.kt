@@ -169,7 +169,7 @@ private val ContentMaxWidth = 640.dp
 private fun ShellTopBar(screen: Screen, onBack: () -> Unit) {
     val colors = OmniBridgeTheme.colors
     val title = when (screen) {
-        Screen.Devices -> "OmniBridge"
+        Screen.Devices -> "Pliwee"
         Screen.Files -> stringResource(R.string.files_title)
         Screen.Settings -> "Settings"
         is Screen.PeerDetail -> "Device"

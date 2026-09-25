@@ -201,7 +201,7 @@ class DesignTokensTest {
     /**
      * The brand hues are known to fail as text, and that must stay true.
      *
-     * A guard, not a curiosity: if a palette change ever made Bridge Cyan
+     * A guard, not a curiosity: if a palette change ever made Flow Cyan
      * legible as a label, the two-family split could be collapsed — and this
      * failing is how anyone would find out.
      */
@@ -209,7 +209,7 @@ class DesignTokensTest {
     fun `the raw brand hues are known to fail as text`() {
         val floor = tokens.getJSONObject("contrast_floor").getDouble("text_on_surface")
         assertTrue(
-            "Bridge Cyan now passes AA on white — revisit the two-family palette " +
+            "Flow Cyan now passes AA on white — revisit the two-family palette " +
                 "split in docs/design/BRAND.md before using it for text",
             contrast(Brand.Cyan.hex(), "#FFFFFF") < floor,
         )
