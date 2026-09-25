@@ -720,3 +720,236 @@ touched.
 | `pliwee-pre-g8-gate-hardening/{harness-selftests,mutations}.txt`, `repair-2026-09-25/{harness-selftests,mutations-original-rerun}.txt` | trailing horizontal whitespace stripped (§ 10.2) |
 | `repair-2026-09-25/diff-check.txt` | a dated superseding note appended; its original lines are kept |
 | this report | a superseding note under § 9.5, and this section |
+
+## 11. Real-world gate repair — 2026-09-25 (the first physical W6 attempt)
+
+| | |
+| --- | --- |
+| **What this is** | A narrow repair of `pre-g8-manual-gates.sh` after the operator's first real `--run W6-COMPONENT-UPGRADE`. That run refused during preparation, before any device confirmation, so nothing was installed and no record was written. This section fixes the three defects behind it and one known before it. §§ 1–10 are left as they were. **This is not a certification. No gate was executed. G8 is not claimed.** |
+| **Branch / base** | `feature/pliwee-pre-g8-gate-hardening`, working tree on `cba1661`, not committed |
+| **Host** | the same as above. **No VM, emulator, container or Gradle build was started by this repair. Nothing was done on the Android device: no adb command at all. No signing media were touched.** One suite ran at a time. Android build-tools 35.0.0 `aapt2` was run once, read-only, over an APK already in the build directory |
+| **Evidence** | [`pliwee-pre-g8-gate-hardening/realworld-repair-2026-09-25/`](pliwee-pre-g8-gate-hardening/realworld-repair-2026-09-25/) (§ 11.5) |
+| **Result** | **REALWORLD GATE REPAIR: PASS.** The APK facts are read by exact field name. On the real `aapt2` line, `name` is `io.github.yurisismotto.pliwee`, not `16`. N+1 is built from a scratch copy of the checkout's commit, with one fail-closed `versionCode` edit. The checkout is never written, and no Gradle property is used. An N+1 that is not exactly N+1 is refused before any confirmation. Each U2 attempt keeps its own read-only answers file. Coordinator self-tests 198 passed, 0 failed (was 134). Mutations 9 of 9 caught. `git diff --check` and the whitespace guard are clean |
+
+### 11.1 What the real run observed
+
+Android build-tools 35.0.0 `aapt2 dump badging` printed this for APK N:
+
+```text
+package: name='io.github.yurisismotto.pliwee' versionCode='1' versionName='1.0.0' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+```
+
+It printed the same line for APK N+1. The coordinator refused:
+
+```text
+the APKs are not both io.github.yurisismotto.pliwee (16, 16); nothing was recorded
+```
+
+That one refusal hides two defects. Fixing only the first would have moved the
+refusal to the next check, "N+1 versionCode '1' is not greater than N's '1'".
+
+### 11.2 A — `apk_fact` matched field names by substring
+
+**Root cause.** `apk_fact` ran
+`sed -n "s/^package: .*$2='\([^']*\)'.*/\1/p"`. The leading `.*` is greedy,
+so for `$2=name` it matched the last place `name='` appears on the line. That
+is the tail of `compileSdkVersionCodename='16'`. So the package name read as
+`16`. The self-test's stub `aapt2` printed only `name`, `versionCode` and
+`versionName`, so the suite never saw the defect.
+
+**Fix.** `badging_field LINE KEY` reads the `package:` line one `name='value'`
+field at a time, from the left, and compares whole field names. It gives
+nothing, and fails, when:
+
+* the key appears other than exactly once;
+* the line does not parse to its end;
+* the line is not the `package:` line.
+
+`apk_fact` passes it the one `package:` line; more than one is also a failure.
+On the real line, `name` gives `io.github.yurisismotto.pliwee`, `versionCode`
+gives `1` and `versionName` gives `1.0.0`. `Codename`, `VersionName`, `ame`,
+`Name`, `Version` and `Code` give nothing. The same was measured with the real
+`aapt2` over the debug APK already in `android/app/build/outputs`
+(`real-aapt2-parse.txt`). There, the old expression still reads `16`.
+
+### 11.3 B — AGP ignored `-Pandroid.injected.version.code`
+
+**Observed.** N+1 was built by a second `./gradlew :app:assembleDebug` in the
+checkout with `-Pandroid.injected.version.code=2`. This AGP ignored the
+property. The second build was UP-TO-DATE, and N+1 was N again,
+versionCode 1. The comment claimed an ignored property would be caught. It
+would have been, but only after the parser defect above.
+
+**Fix.** No Gradle property, no edit to the operator's working tree, and no
+production override knob. Without `--apk-n`/`--apk-n1`, the gate now does
+this:
+
+1. **Refuse unless the checkout is its commit.** `git status` over `android`,
+   `protocol` and `docs/design` must be empty, untracked files included. Those
+   are the committed paths the debug build reads: `app/build.gradle.kts`
+   compiles `../../protocol/proto` and packages `protocol/testdata` and
+   `docs/design`. Otherwise N, built from the checkout, and N+1, built from the
+   commit, could differ in more than versionCode. Nothing is built.
+2. **Build N in the checkout**, as before. Then read N's package and
+   versionCode with the exact parser, and refuse unless they are Pliwee and a
+   number.
+3. **Export the scratch tree.** `git archive <that commit> -- android protocol
+   docs/design`, into a fresh `mktemp -d` under `$TMPDIR` (`pliwee-n1.*`). The
+   checkout is only read. The ignored `android/local.properties` (`sdk.dir`) is
+   copied in, so the same SDK is used.
+4. **Edit the scratch copy only** (`bump_version_code`). It fails closed.
+   There must be exactly one `versionCode` line outside `//` comments. It must
+   read exactly `versionCode = N`, with N from N's APK, and sit inside the one
+   `defaultConfig { }` block. Afterwards the file must differ from before in
+   that line alone, and say `versionCode = N+1` once and `versionCode = N`
+   nowhere. Anything else is a refusal.
+5. **Build N+1 in the scratch tree** with the same wrapper, environment
+   (`ANDROID_HOME`, `JAVA_HOME`) and `--max-workers=2`. Its build directory
+   has never been used, so no earlier APK can be picked up.
+6. **Keep only the APK.** `app-debug.apk` is copied to
+   `EVIDENCE/w6/component.*/apk-N1.apk`.
+7. **Remove the scratch tree.** It is removed on success. An `EXIT` trap
+   removes it on any refusal, and `INT`, `TERM` and `HUP` exit through it too.
+8. **Check what was built.** The N+1 APK must say exactly N+1. Merely higher is
+   not enough: it must be the edited source. Then the existing checks run:
+   both packages exactly `io.github.yurisismotto.pliwee`, and N+1 strictly
+   greater than N.
+
+All of this happens before the first `confirm_action`. The § 10.1 invariant
+holds: a refusal anywhere here, or a declined first confirmation, creates no
+attempt. It writes no state, archives nothing, and does nothing to the device.
+
+On the committed `android/app/build.gradle.kts`, the edit changes line 59 only,
+from `versionCode = 1` to `versionCode = 2`. With a second assignment added, it
+refuses. The checkout's digest was the same before and after
+(`real-gradle-edit.txt`). No Gradle build was run for this.
+
+### 11.4 C — U2 reruns overwrote the answers of an archived attempt
+
+**The defect** (known from the final hardening audit, never executed for real).
+Every G7UP-*-U2 attempt wrote `$ev/U2-operator.txt`. A `--rerun` archived the
+previous record under `state/history/`, and then rewrote the file that record
+names.
+
+**Fix.** Each attempt writes `U2-operator.<ATTEMPT>.txt`. `ATTEMPT` is the
+UTC timestamp plus the PID. The file opens with `attempt=<ATTEMPT>`, is
+refused if it already exists, and is made read-only before it is moved into
+place. The record now also carries `answers_sha256`. `reverify` checks it for
+U2 as it already did for W2, so answers altered after a PASS make the gate
+FAIL. A missing file with an empty recorded digest no longer verifies either,
+for W2 or U2.
+
+### 11.5 Tests run
+
+Only targeted checks were run, one at a time. `harness-selftests.sh` and
+`packaging-checks.sh` were not re-run; they are recorded n/a here.
+`harness-selftests.sh` runs the coordinator suite as a sub-suite, and that suite
+was run directly. Of `packaging-checks.sh`, H1 (no pipe into `grep -q`) and H4
+(no repository, release or merge action in the coordinator) bear on these
+files. They were checked by the same patterns, below.
+
+| Test | Result | File |
+| --- | --- | --- |
+| `bash -n`: both changed shell files and the mutation script | clean (3 of 3) | `bash-n.txt` |
+| `pre-g8-manual-gates-selftests.sh` | **198 passed, 0 failed** (was 134). 64 new checks, below | `pre-g8-selftests.txt` |
+| real-world mutations: 9, each on a scratch copy | **9 of 9 caught** | `mutations-realworld.sh`, `mutations-realworld.txt` |
+| the parser over the real `aapt2` output, read-only | `name`, `versionCode` and `versionName` exact; `Codename` and `VersionName` give nothing; the old expression gives `16` | `real-aapt2-parse.txt` |
+| the edit on a scratch export of the committed `build.gradle.kts` | line 59 only, 1 → 2; a second assignment is refused; the checkout is unchanged | `real-gradle-edit.txt` |
+| the H1 and H4 patterns of `packaging-checks.sh` over the changed files | no `\| grep -q`; no repository, release, merge, UID or Play action; the gate scripts are still driven | `static-patterns.txt` |
+| `evidence-whitespace-check.sh` over this report and its evidence directory, and `git diff --check` | clean | `diff-check.txt` |
+
+What the new coordinator self-tests prove:
+
+* **The parser, on the real line.** `badging_field` is loaded from the
+  coordinator itself. On the real `aapt2` line it returns the name, `1` and
+  `1.0.0`. It rejects six substring keys, a `name` that exists only inside
+  `compileSdkVersionCodename`, a duplicated field, a non-`package:` line and a
+  line that does not parse. The old expression, on the same line, reproduces
+  `16`. The stub `aapt2` now prints the real line's shape, with
+  `compileSdkVersionCodename` and the lines that follow it. So every
+  W6-COMPONENT-UPGRADE test above also exercises the parser.
+* **The edit.** On a copy of the stub build file, 1 becomes 2, in one line
+  only. It refuses when there are two assignments, when the value is
+  `versionCode = 10` with N=1, when there is no assignment, when the only
+  assignment is outside `defaultConfig`, and when the value is an expression.
+* **The scratch build, end to end.** The stub directory is now a git
+  checkout, and the stub `gradlew` builds an APK from its own
+  `build.gradle.kts`. With no APKs given, the gate builds:
+  * N (versionCode 1) in the checkout;
+  * N+1 (versionCode 2) in `$TMPDIR/pliwee-n1.*/android`, from the checkout's
+    commit, with `--max-workers=2` and no `android.injected`.
+
+  The first confirmation is then declined. Afterwards:
+  * the state directory is byte-identical, and nothing touched the device;
+  * the scratch tree is gone;
+  * the checkout has no change git sees, and its tracked files are
+    byte-identical;
+  * the checkout's own build output is still versionCode 1;
+  * the evidence directory holds only the two APKs, the list and the log.
+* **Ignored or wrong N+1.** In one case the scratch build ignores the edit and
+  N+1 is 1 again: the real failure. In another it builds 7, which is higher but
+  not N+1. In a third, N's APK disagrees with its source. Each is refused
+  before the confirmation. Nothing is recorded or done on the device, and no
+  scratch tree is left.
+* **Source preconditions.** Refused when the committed source has two
+  `versionCode` assignments: N was built, N+1 was not, and the checkout is
+  clean. Refused when the checkout has an uncommitted edit, or an untracked
+  file under `protocol/`; nothing is built.
+* **U2.** Each attempt's answers file is named for the attempt, is read-only
+  and has its digest in the record. A rerun that FAILs archives the PASS
+  record byte-identical. That record still points at its own answers file,
+  which is byte-identical. A second rerun PASSes, and three attempts leave
+  three files, the first unchanged. Answers altered after a PASS turn it
+  into FAIL, and restoring them makes it PASS again.
+
+The mutations (`mutations-realworld.sh`, each on a scratch copy of
+`packaging/tests`):
+
+* RW1 is the real defect: `apk_fact`'s substring `sed` restored. 28 checks
+  fail.
+* RW2 is the real defect: N+1 through `-Pandroid.injected.version.code`, in
+  the checkout. 12 checks fail.
+* RW3: the scratch tree is not removed. 5 checks fail.
+* RW4: the edit accepts more than one `versionCode` assignment. 6 checks fail.
+* RW5: the built N+1 is only required to be higher, not exactly N+1. 7 checks
+  fail.
+* RW6: uncommitted Android sources are not refused. 3 checks fail.
+* RW7 is the known defect: every U2 attempt writes `$ev/U2-operator.txt`.
+  6 checks fail.
+* RW8: U2's answers digest is not re-verified. 1 check fails.
+* RW9: the `versionCode` edit is made in the checkout, not the scratch copy.
+  10 checks fail.
+
+### 11.6 Not executed, kept intact, files
+
+**Not executed:** W6-COMPONENT-UPGRADE itself, and every gate that § 5, § 9.3
+and § 10.4 list. No Gradle build of the real project was run by this repair,
+so the scratch build has been measured only against the stub `gradlew`. Its
+first real use will be the operator's next `--run W6-COMPONENT-UPGRADE`. Two
+things there are expected to hold, but are not yet measured: that the SDK
+comes from `local.properties`, and that the Gradle wrapper distribution comes
+from the shared Gradle user home.
+
+**Observed, not changed:** the component evidence directory is named to the
+second (`w6/component.<UTC second>`). Two preparations started in the same
+second would share it. A human confirmation separates real attempts by far
+more than that, so it was left as it is.
+
+**Kept intact:**
+
+* no attempt before the first confirmation (§ 10.1);
+* a FAIL cannot become not-executed, and every retry is archived;
+* U6 before U10, and SECLOG/U10 ordering;
+* W9/W10 are outside the coordinator.
+
+`upgrade-gates.sh`, `lib/`, `harness-selftests.sh`, `packaging-checks.sh`,
+`android/` and the Wave 0 masters were not changed.
+
+**Files changed by this repair:**
+
+| File | Change |
+| --- | --- |
+| `packaging/tests/pre-g8-manual-gates.sh` | `badging_field` and an exact `apk_fact`; `bump_version_code`, `android_src_commit` and `n1_scratch_build`, which replace the injected-property N+1 build; `SRC_REPO` and `ANDROID_SRC_PATHS`; U2 answers per attempt, read-only, with a digest; `reverify` checks U2's answers, and needs a non-empty digest for W2 and U2 |
+| `packaging/tests/pre-g8-manual-gates-selftests.sh` | the stub `aapt2` prints the real line's shape; the stub `gradlew` builds APKs, with `ignore`/`skew`/`skew-all` modes; the stub directory is a git checkout; `TMPDIR` and a Gradle call log are passed to the coordinator; 64 new checks (§ 11.5) |
+| `realworld-repair-2026-09-25/` | **new** evidence, § 11.5 |
+| this report | this section |

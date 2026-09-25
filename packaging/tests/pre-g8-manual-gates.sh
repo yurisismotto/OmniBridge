@@ -67,7 +67,10 @@
 #     --phone-ip IP --adb-serial S       the physical Android peer
 #     --media-a PATH --media-b PATH      the two offline signing media
 #     --apk-n FILE --apk-n1 FILE         prebuilt Pliwee N and N+1 debug APKs
-#                                        (otherwise both are built here)
+#                                        (otherwise N is built from the checkout,
+#                                        which must match its commit, and N+1
+#                                        from a scratch copy of that commit with
+#                                        only versionCode raised)
 #     --rerun                  allow --run on a gate that already has a result.
 #                              A new attempt: the previous record is moved to
 #                              EVIDENCE/state/history/, never overwritten
@@ -99,10 +102,18 @@ TILE="$APP_PKG/$APP_PKG.ui.ClipboardTileService"
 # scripts. In that mode confirmations are read from stdin rather than the
 # terminal, every record is marked selftest=1, and the overall result can only
 # ever be SELFTEST: a stubbed run cannot produce a PASS.
-GATES_DIR="$HERE"; ANDROID_DIR="$REPO/android"; SELFTEST=0
+# SRC_REPO is the git checkout the Android build reads; in a self-test, the
+# stub directory is a git repository of its own.
+GATES_DIR="$HERE"; SRC_REPO="$REPO"; SELFTEST=0
 if [ -n "${PRE_G8_GATES_DIR:-}" ]; then
-    GATES_DIR="$PRE_G8_GATES_DIR"; ANDROID_DIR="$PRE_G8_GATES_DIR/android"; SELFTEST=1
+    GATES_DIR="$PRE_G8_GATES_DIR"; SRC_REPO="$PRE_G8_GATES_DIR"; SELFTEST=1
 fi
+ANDROID_DIR="$SRC_REPO/android"
+# Every committed path the Android debug build reads (android/app/build.gradle.kts
+# compiles ../../protocol/proto and packages ../../protocol/testdata and
+# ../../docs/design into the unit tests). The N+1 scratch tree is these, at
+# the commit N was built from.
+ANDROID_SRC_PATHS=(android protocol docs/design)
 
 die()  { printf 'pre-g8: REFUSED: %s\n' "$*" >&2; exit 2; }
 note() { printf 'pre-g8: %s\n' "$*"; }
@@ -266,8 +277,9 @@ reverify() {
         [ "$(g7up_sha "$log")" = "$sha" ] || { echo "its log $log was altered after it was recorded"; return 1; }
     fi
     case "$g" in
-        W2-*)
-            [ "$(g7up_sha "$(st "$g" answers)")" = "$(st "$g" answers_sha256)" ] \
+        W2-*|G7UP-*-U2)
+            sha="$(g7up_sha "$(st "$g" answers)")"
+            [ -n "$sha" ] && [ "$sha" = "$(st "$g" answers_sha256)" ] \
                 || { echo "the recorded answers are missing or altered"; return 1; } ;;
         W6-SIGNING)
             grep -q '^backups restore-verified:' "$(st "$g" status_file)" 2>/dev/null \
@@ -587,7 +599,112 @@ aapt2_bin() {
     [ -n "$a" ] || a="$(ls -1d "${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -1)"
     printf '%s' "$a"
 }
-apk_fact() { "$(aapt2_bin)" dump badging "$1" 2>/dev/null | sed -n "s/^package: .*$2='\([^']*\)'.*/\1/p" | head -1; }
+# badging_field LINE KEY — the value of the field named exactly KEY on one
+# `aapt2 dump badging` "package:" line, read one name='value' field at a time
+# from the left. A substring never matches: `name` is not the tail of
+# compileSdkVersionCodename (the real-world repair: `.*name=` read Pliwee's
+# package name as '16'). A line that does not parse to its end, or that
+# carries KEY other than exactly once, gives nothing.
+badging_field() {
+    local rest="$1" key="$2" v="" n=0 re="^[[:space:]]+([A-Za-z][A-Za-z0-9_]*)='([^']*)'(.*)$"
+    [[ "$key" =~ ^[A-Za-z][A-Za-z0-9_]*$ ]] || return 1
+    [[ "$rest" == "package:"* ]] || return 1
+    rest="${rest#package:}"
+    while [[ "$rest" =~ $re ]]; do
+        if [ "${BASH_REMATCH[1]}" = "$key" ]; then v="${BASH_REMATCH[2]}"; n=$((n + 1)); fi
+        rest="${BASH_REMATCH[3]}"
+    done
+    [ -z "${rest//[[:space:]]/}" ] && [ "$n" = 1 ] || return 1
+    printf '%s\n' "$v"
+}
+apk_fact() { # APK KEY — from the one "package:" line aapt2 prints for APK
+    local out line
+    out="$("$(aapt2_bin)" dump badging "$1" 2>/dev/null | tr -d '\r')"
+    line="$(grep '^package: ' <<<"$out")"
+    [ "$(grep -c . <<<"$line")" = 1 ] || return 1
+    badging_field "$line" "$2"
+}
+
+# bump_version_code FILE N — in FILE, a SCRATCH copy of app/build.gradle.kts,
+# raise defaultConfig's versionCode from N to N+1. Fail-closed: exactly one
+# versionCode line outside // comments, reading exactly `versionCode = N`,
+# inside the one `defaultConfig {` block; afterwards the file must differ from
+# before in that line alone, and say N+1. Prints why when it refuses.
+bump_version_code() {
+    local f="$1" n="$2" want lines ln dc dcn ind close orig new
+    [[ "$n" =~ ^[0-9]+$ ]] || { echo "N's versionCode '$n' is not a number"; return 1; }
+    want=$((10#$n + 1))
+    [ -f "$f" ] || { echo "$f is missing"; return 1; }
+    orig="$(cat "$f")"
+    lines="$(grep -nw 'versionCode' "$f" | grep -vE '^[0-9]+:[[:space:]]*//')"
+    [ "$(grep -c . <<<"$lines")" = 1 ] \
+        || { echo "expected exactly one versionCode line outside comments in $f, found $(grep -c . <<<"$lines")"; return 1; }
+    grep -qxE "[0-9]+:[[:space:]]*versionCode = $n" <<<"$lines" \
+        || { echo "the one versionCode line is '${lines#*:}', not 'versionCode = $n' (N's APK)"; return 1; }
+    ln="${lines%%:*}"
+    dc="$(grep -nE '^[[:space:]]*defaultConfig[[:space:]]*\{[[:space:]]*$' "$f")"
+    [ "$(grep -c . <<<"$dc")" = 1 ] || { echo "expected exactly one 'defaultConfig {' line in $f"; return 1; }
+    dcn="${dc%%:*}"; ind="${dc#*:}"; ind="${ind%%defaultConfig*}"
+    close="$(awk -v s="$dcn" -v c="$ind}" 'NR > s && $0 == c { print NR; exit }' "$f")"
+    [ -n "$close" ] && [ "$ln" -gt "$dcn" ] && [ "$ln" -lt "$close" ] \
+        || { echo "versionCode (line $ln) is not inside defaultConfig { } (lines $dcn-${close:-?})"; return 1; }
+    sed -i "${ln}s/^\\([[:space:]]*versionCode = \\)$n\$/\\1$want/" "$f" || { echo "could not edit $f"; return 1; }
+    new="$(cat "$f")"
+    [ "$(sed "${ln}d" <<<"$new")" = "$(sed "${ln}d" <<<"$orig")" ] \
+        && [ "$(sed -n "${ln}p" <<<"$new")" = "$(sed -n "${ln}p" <<<"$orig" | sed "s/= $n\$/= $want/")" ] \
+        && [ "$(grep -cxE "[[:space:]]*versionCode = $want" <<<"$new")" = 1 ] \
+        && [ "$(grep -cxE "[[:space:]]*versionCode = $n" <<<"$new")" = 0 ] \
+        || { echo "after the edit, $f does not differ in exactly its versionCode line, now $want"; return 1; }
+}
+
+# The N+1 scratch tree. Removed on success, on a refusal and on an interrupt.
+N1_SCRATCH=""
+n1_cleanup() { [ -z "$N1_SCRATCH" ] || rm -rf -- "$N1_SCRATCH"; N1_SCRATCH=""; }
+# android_src_commit — sets SRC_COMMIT to the commit N is built from, and
+# refuses unless the checkout's Android sources are exactly that commit: N is
+# built from the checkout and N+1 from the commit, and they must differ in the
+# versionCode alone.
+SRC_COMMIT=""
+android_src_commit() {
+    local dirty
+    need_tool git tar 2>/dev/null || die "git and tar are needed to build N+1 from a scratch copy of the committed sources"
+    SRC_COMMIT="$(git -C "$SRC_REPO" rev-parse --verify 'HEAD^{commit}' 2>/dev/null)" \
+        || die "$SRC_REPO is not a git checkout with a commit; N+1 cannot be built from committed sources (or give --apk-n/--apk-n1)"
+    dirty="$(git -C "$SRC_REPO" status --porcelain --untracked-files=all -- "${ANDROID_SRC_PATHS[@]}" 2>&1)" \
+        || die "git status failed in $SRC_REPO: $dirty"
+    [ -z "$dirty" ] || die "the Android sources (${ANDROID_SRC_PATHS[*]}) differ from commit $SRC_COMMIT, so N (built from the checkout) and N+1 (built from the commit) would differ in more than versionCode. Commit or stash them, or give --apk-n/--apk-n1. Nothing was built or recorded: $(head -3 <<<"$dirty" | tr '\n' ' ')"
+}
+# n1_scratch_build VN OUT — N+1 from a scratch copy of SRC_COMMIT with only
+# defaultConfig's versionCode raised to VN+1, built by the same Gradle wrapper,
+# SDK and JDK as N, into a build directory nothing has used before. Only the
+# APK is kept (copied to OUT). The checkout is never written.
+n1_scratch_build() {
+    local vn="$1" out="$2" want ps apk got
+    want=$((10#$vn + 1))
+    N1_SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/pliwee-n1.XXXXXXXX")" \
+        || die "cannot create a scratch directory for the N+1 build; nothing was recorded"
+    trap n1_cleanup EXIT; trap 'exit 130' INT TERM HUP
+    note "N+1: a scratch copy of $SRC_COMMIT (${ANDROID_SRC_PATHS[*]}) in $N1_SCRATCH" | tee -a "$LOG"
+    git -C "$SRC_REPO" archive --format=tar "$SRC_COMMIT" -- "${ANDROID_SRC_PATHS[@]}" | tar -x -C "$N1_SCRATCH"
+    ps=("${PIPESTATUS[@]}")
+    [ "${ps[0]}" = 0 ] && [ "${ps[1]}" = 0 ] && [ -x "$N1_SCRATCH/android/gradlew" ] \
+        || die "could not export $SRC_COMMIT into $N1_SCRATCH (git ${ps[0]}, tar ${ps[1]}); nothing was recorded"
+    # sdk.dir: ignored machine configuration, not source.
+    if [ -f "$ANDROID_DIR/local.properties" ]; then
+        cp "$ANDROID_DIR/local.properties" "$N1_SCRATCH/android/" || die "could not copy local.properties into $N1_SCRATCH; nothing was recorded"
+    fi
+    got="$(bump_version_code "$N1_SCRATCH/android/app/build.gradle.kts" "$vn")" \
+        || die "N+1: $got; nothing was built or recorded"
+    printf 'N+1 source: %s with app/build.gradle.kts versionCode %s -> %s (scratch only)\n' "$SRC_COMMIT" "$vn" "$want" | tee -a "$LOG"
+    tee_run bash -c 'cd "$1" && ./gradlew --max-workers=2 :app:assembleDebug' _ "$N1_SCRATCH/android"
+    [ "$RC" = 0 ] || die "the N+1 scratch build failed (log $LOG); nothing was recorded"
+    apk="$N1_SCRATCH/android/app/build/outputs/apk/debug/app-debug.apk"
+    [ -f "$apk" ] && cp "$apk" "$out" || die "the N+1 scratch build left no APK at $apk; nothing was recorded"
+    n1_cleanup; trap - EXIT INT TERM HUP
+    # What was built must be what was edited: exactly N+1, not merely more.
+    got="$(apk_fact "$out" versionCode)"
+    [ "$got" = "$want" ] || die "the N+1 APK built from the scratch source says versionCode '$got', not $want: it is not the edited source; nothing was recorded"
+}
 
 # The W6 component observations, taken the same way lifecycle-peer-gates.sh
 # checks the listener: the approval setting AND the live binding.
@@ -627,17 +744,19 @@ gate_component() {
         need_cfg "$APK_N" --apk-n "the Pliwee N debug APK"; need_cfg "$APK_N1" --apk-n1 "the Pliwee N+1 debug APK"
         cp "$APK_N" "$dir/apk-N.apk" && cp "$APK_N1" "$dir/apk-N1.apk" || die "could not copy the APKs into $dir; nothing was recorded"
     else
-        # N as the tree stands, then N+1 with only versionCode raised through
-        # AGP's injected property: the tree's versionCode is never edited. The
-        # result is checked below with aapt2, so an ignored property fails.
+        # N as the checkout stands, which must be its commit; then N+1 from a
+        # scratch copy of that commit with only the versionCode raised. The
+        # checkout is never edited, and no Gradle property is relied on: AGP
+        # ignored -Pandroid.injected.version.code on the real run (the second
+        # build was UP-TO-DATE and N+1 stayed versionCode 1).
+        android_src_commit
         tee_run bash -c 'cd "$1" && ./gradlew --max-workers=2 :app:assembleDebug' _ "$ANDROID_DIR"
         [ "$RC" = 0 ] || die "the N build failed (log $LOG); nothing was recorded"
-        cp "$ANDROID_DIR/app/build/outputs/apk/debug/app-debug.apk" "$dir/apk-N.apk"
-        vn="$(apk_fact "$dir/apk-N.apk" versionCode)"
-        [ -n "$vn" ] || die "could not read the N versionCode; nothing was recorded"
-        tee_run bash -c 'cd "$1" && ./gradlew --max-workers=2 "-Pandroid.injected.version.code=$2" :app:assembleDebug' _ "$ANDROID_DIR" "$((vn + 1))"
-        [ "$RC" = 0 ] || die "the N+1 build failed (log $LOG); nothing was recorded"
-        cp "$ANDROID_DIR/app/build/outputs/apk/debug/app-debug.apk" "$dir/apk-N1.apk"
+        cp "$ANDROID_DIR/app/build/outputs/apk/debug/app-debug.apk" "$dir/apk-N.apk" || die "the N build left no APK; nothing was recorded"
+        n="$(apk_fact "$dir/apk-N.apk" name)"; vn="$(apk_fact "$dir/apk-N.apk" versionCode)"
+        [ "$n" = "$APP_PKG" ] || die "the N APK is package '$n', not $APP_PKG; nothing was recorded"
+        [[ "$vn" =~ ^[0-9]+$ ]] || die "could not read the N versionCode ('$vn'); nothing was recorded"
+        n1_scratch_build "$vn" "$dir/apk-N1.apk"
     fi
     n="$(apk_fact "$dir/apk-N.apk" name)"; n1="$(apk_fact "$dir/apk-N1.apk" name)"
     vn="$(apk_fact "$dir/apk-N.apk" versionCode)"; vn1="$(apk_fact "$dir/apk-N1.apk" versionCode)"
@@ -739,13 +858,18 @@ gate_g7up() {
                          "clipboard.v1 and files.v1 are granted to it"
                          "a clipboard policy is set for it" "a notification lock policy is set for it"
                          "omnibridge-gui was opened and the peer selected (gui.json written)") i a fails=() f
-            f="$ev/U2-operator.txt"; STARTED="$(date -u +%FT%TZ)"; LOG=""; RC=0
+            # One answers file per attempt, written once and left read-only: a
+            # rerun's record points at its own file, and an archived record
+            # keeps pointing at the one it was made from, unchanged.
+            f="$ev/U2-operator.$ATTEMPT.txt"; STARTED="$(date -u +%FT%TZ)"; LOG=""; RC=0
+            [ ! -e "$f" ] && [ ! -e "$f.partial" ] || die "$f already exists; an earlier attempt's answers are never overwritten"
             printf '\n%s — in guest %s, by hand (the upgrade stage then measures them in O1):\n' "$g" "$dom" >&2
-            : > "$f.partial"
+            echo "attempt=$ATTEMPT" > "$f.partial" || die "cannot write $f.partial"
             for i in "${items[@]}"; do a="$(yn "$i")"; echo "$a  $i" >> "$f.partial"; [ "$a" = y ] || fails+=("$i"); done
-            echo "recorded_utc=$(date -u +%FT%TZ)" >> "$f.partial"; mv "$f.partial" "$f"
-            if [ "${#fails[@]}" -eq 0 ]; then record "$g" PASS "" "answers=$f"
-            else record "$g" FAIL "$(printf '%s; ' "${fails[@]}")" "answers=$f"; fi ;;
+            echo "recorded_utc=$(date -u +%FT%TZ)" >> "$f.partial"; chmod a-w "$f.partial"; mv -n "$f.partial" "$f"
+            [ ! -e "$f.partial" ] && [ -f "$f" ] || die "could not put the answers in place at $f"
+            if [ "${#fails[@]}" -eq 0 ]; then record "$g" PASS "" "answers=$f" "answers_sha256=$(g7up_sha "$f")"
+            else record "$g" FAIL "$(printf '%s; ' "${fails[@]}")" "answers=$f" "answers_sha256=$(g7up_sha "$f")"; fi ;;
         UPGRADE)
             need_cfg "$new" "--distro $d --new-pkgdir" "the Pliwee package set for $d (NEW_PKGDIR_$d)"
             need_cfg "$old" "--distro $d --old-pkgdir" "the published OmniBridge 1.0.0 set for $d (OLD_PKGDIR_$d)"

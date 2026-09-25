@@ -1,0 +1,12 @@
+# The packaging-checks.sh H1 and H4 patterns, applied to the two changed files (packaging-checks.sh itself not run)
+H1 '| grep -q' outside comments in packaging/tests/pre-g8-manual-gates.sh: 0
+H1 '| grep -q' outside comments in packaging/tests/pre-g8-manual-gates-selftests.sh: 0
+H4 repository/release/merge/UID/Play actions in pre-g8-manual-gates.sh: 0
+H4 bare signing invocation: present
+H4 drives upgrade-gates.sh: yes
+H4 drives security-log-evidence.sh: yes
+H4 drives lifecycle-gates.sh: yes
+H4 drives provision-signing-keys.sh: yes
+H4 drives connectedDebugAndroidTest: yes
+occurrences of android.injected in the coordinator (comment only): 1
+750:        # ignored -Pandroid.injected.version.code on the real run (the second

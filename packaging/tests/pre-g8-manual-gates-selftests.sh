@@ -31,7 +31,13 @@
 #   * no attempt exists before its first confirmation is accepted: declining
 #     it (or having no terminal to answer at) leaves the current record, the
 #     history and the overall result exactly as they were — on every gate that
-#     asks, W6-COMPONENT-UPGRADE included (the final-repair finding).
+#     asks, W6-COMPONENT-UPGRADE included (the final-repair finding);
+#   * the real-world repair: the APK facts are read by exact field name from
+#     the "package:" line aapt2 printed on the real run (where the old parser
+#     read the package name as '16'); N+1 is built from a scratch copy of the
+#     committed sources with exactly one versionCode edit, never in the
+#     checkout, and an N+1 that does not carry N+1 is refused before any
+#     confirmation; a U2 rerun leaves every earlier answers file byte-identical.
 
 set -uo pipefail
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -100,6 +106,23 @@ printf 'upload  SHA-256 AA:BB\n\nbackups restore-verified:        2026-09-25T00:
 EOF
 cat > "$STUB/android/gradlew" <<'EOF'
 #!/usr/bin/env bash
+# assembleDebug "builds" a stub APK carrying the versionCode its own
+# app/build.gradle.kts says, in its own build directory. STUB_GRADLE_MODE
+# makes the scratch (N+1) build misbehave: `ignore` reproduces the real AGP
+# run (the raised versionCode did not reach the APK), `skew` builds something
+# else again. `skew-all` makes every build, N's too, disagree with its source.
+A="$(cd "$(dirname "$0")" && pwd)"
+echo "gradlew $A $*" >> "${STUB_GRADLE_LOG:-/dev/null}"
+case " $* " in *" :app:assembleDebug "*)
+    v="$(sed -n 's/^ *versionCode = \([0-9]*\)$/\1/p' "$A/app/build.gradle.kts" | head -1)"
+    [ -n "$v" ] || { echo "stub gradle: no versionCode"; exit 1; }
+    case "${STUB_GRADLE_MODE:-}:$A" in
+      ignore:*/pliwee-n1.*) v=1 ;; skew:*/pliwee-n1.*|skew-all:*) v=$((v + 5)) ;;
+    esac
+    mkdir -p "$A/app/build/outputs/apk/debug"
+    printf 'versionCode=%s\n' "$v" > "$A/app/build/outputs/apk/debug/app-debug.apk"
+    echo "BUILD SUCCESSFUL"; exit 0 ;;
+esac
 D="$(dirname "$0")/app/build/outputs/androidTest-results/connected"; mkdir -p "$D"
 n=5; [ -e "$(dirname "$0")/zero-tests" ] && n=0
 printf '<?xml version="1.0"?>\n<testsuite name="x" tests="%s" failures="0" errors="0" skipped="0">\n</testsuite>\n' "$n" > "$D/TEST-device.xml"
@@ -128,15 +151,42 @@ case "$*" in
 esac
 exit 0
 EOF
+# It prints the "package:" line in the exact shape Android build-tools 35.0.0
+# aapt2 printed on the real run, compileSdkVersionCodename included.
 cat > "$WORK/bin/aapt2" <<'EOF'
 #!/usr/bin/env bash
 [ "$1 $2" = "dump badging" ] || exit 1
-printf "package: name='io.github.yurisismotto.pliwee' versionCode='%s' versionName='1.0'\n" "$(sed -n 's/^versionCode=//p' "$3")"
+p="$(sed -n 's/^package=//p' "$3")"
+printf "package: name='%s' versionCode='%s' versionName='1.0.0' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'\n" \
+    "${p:-io.github.yurisismotto.pliwee}" "$(sed -n 's/^versionCode=//p' "$3")"
+printf "sdkVersion:'29'\ntargetSdkVersion:'36'\napplication-label:'Pliwee'\n"
 EOF
 chmod +x "$WORK/bin/adb" "$WORK/bin/aapt2"
 printf 'versionCode=7\n' > "$WORK/apk-n.apk"; printf 'versionCode=8\n' > "$WORK/apk-n1.apk"
 printf 'versionCode=7\n' > "$WORK/apk-same.apk"
+printf 'versionCode=8\npackage=io.github.yurisismotto.other\n' > "$WORK/apk-other.apk"
 : > "$STUB/running"
+
+# The stub is also the git checkout the Android build reads: an app module
+# whose defaultConfig says versionCode = 1, and the other committed paths the
+# real build reads. The N+1 scratch tree is exported from its commit.
+mkdir -p "$STUB/android/app" "$STUB/protocol/proto" "$STUB/docs/design" "$WORK/tmp"
+cat > "$STUB/android/app/build.gradle.kts" <<'EOF'
+android {
+    defaultConfig {
+        applicationId = "io.github.yurisismotto.pliwee"
+        // versionCode is Play's ordering key: it must rise for every upload.
+        versionCode = 1
+        versionName = "1.0.0"
+    }
+}
+EOF
+echo 'syntax = "proto3";' > "$STUB/protocol/proto/stub.proto"; echo '{}' > "$STUB/docs/design/tokens.json"
+printf '/android/app/build/\n/android/signing/record\n/android/zero-tests\n' > "$STUB/.gitignore"
+sgit() { git -C "$STUB" -c user.name=pre-g8-selftest -c user.email=selftest@invalid -c commit.gpgsign=false "$@"; }
+sgit init -q && sgit add -- .gitignore android protocol docs && sgit commit -qm "stub Android sources" \
+    || notok "the stub checkout could not be created: the N+1 checks below cannot mean anything"
+GRADLE_LOG="$WORK/gradle-calls"; : > "$GRADLE_LOG"
 
 cat > "$WORK/config" <<EOF
 DOMAIN_fedora44=g7-f44
@@ -153,7 +203,7 @@ EOF
 
 # co [ARGS...] — run the coordinator on the stubs; stdin is the operator.
 OUT=""; RC=0
-co() { OUT="$(PATH="$WORK/bin:$PATH" XDG_RUNTIME_DIR="$WORK" PRE_G8_GATES_DIR="$STUB" \
+co() { OUT="$(PATH="$WORK/bin:$PATH" XDG_RUNTIME_DIR="$WORK" PRE_G8_GATES_DIR="$STUB" TMPDIR="$WORK/tmp" STUB_GRADLE_LOG="$GRADLE_LOG" \
              bash "$COORD" --evidence "$EV" "$@" 2>&1)"; RC=$?; }
 gstate() { # GATE — its state in the last summary printed
     sed -n "s/^PRE_G8_GATE id=$1 state=\([A-Z]*\) .*/\1/p" <<<"$OUT"
@@ -189,6 +239,52 @@ acts() { grep -cvE '^adb (devices|-s [^ ]+ shell (dumpsys|settings get) )' "$CAL
 # refused FRAGMENT — the last run was a refusal (exit 2, "REFUSED:") naming
 # FRAGMENT. Not merely text that a confirmation prompt might also print.
 refused() { [ "$RC" -eq 2 ] && contains "$OUT" "REFUSED:" && contains "$(grep -F 'REFUSED:' <<<"$OUT")" "$1"; }
+
+# ---------------------------------------------------------------------------
+section "APK facts: exact field names, on the line aapt2 printed on the real run"
+# ---------------------------------------------------------------------------
+# The coordinator's own functions, loaded from it: the code under test, not a copy.
+fn_src() { sed -n "/^$1() {/,/^}/p" "$COORD"; }
+eval "$(fn_src badging_field)"; eval "$(fn_src bump_version_code)"
+check "badging_field and bump_version_code were loaded from the coordinator" \
+    test "$(type -t badging_field) $(type -t bump_version_code)" = "function function"
+# Android build-tools 35.0.0 aapt2, APK N and APK N+1 of the real run (both said this).
+REAL="package: name='io.github.yurisismotto.pliwee' versionCode='1' versionName='1.0.0' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'"
+old_fact() { sed -n "s/^package: .*$2='\([^']*\)'.*/\1/p" <<<"$1" | head -1; }
+check "REGRESSION: the old parser, on the real line, reads name as '16' (the real refusal)" test "$(old_fact "$REAL" name)" = 16
+check "name        -> io.github.yurisismotto.pliwee" test "$(badging_field "$REAL" name)" = io.github.yurisismotto.pliwee
+check "versionCode -> 1" test "$(badging_field "$REAL" versionCode)" = 1
+check "versionName -> 1.0.0" test "$(badging_field "$REAL" versionName)" = 1.0.0
+check "compileSdkVersionCodename -> 16 (the field the old parser mistook for name)" test "$(badging_field "$REAL" compileSdkVersionCodename)" = 16
+for k in Codename VersionName ame Name Version Code; do
+    check "the substring key '$k' matches no field" bash -c '! out="$(eval "$1"; badging_field "$2" "$3")" && [ -z "$out" ]' _ "$(fn_src badging_field)" "$REAL" "$k"
+done
+check "name present only inside compileSdkVersionCodename is not name" bash -c '! (eval "$1"; badging_field "package: compileSdkVersionCodename='"'"'16'"'"'" name)' _ "$(fn_src badging_field)"
+check "a field given twice gives nothing" bash -c '! (eval "$1"; badging_field "package: name='"'"'a'"'"' name='"'"'b'"'"'" name)' _ "$(fn_src badging_field)"
+check "a line that is not the package: line gives nothing" bash -c '! (eval "$1"; badging_field "application: name='"'"'x'"'"'" name)' _ "$(fn_src badging_field)"
+check "a line that does not parse to its end gives nothing" bash -c '! (eval "$1"; badging_field "package: name='"'"'x'"'"' garbage" name)' _ "$(fn_src badging_field)"
+
+# ---------------------------------------------------------------------------
+section "The N+1 source edit: exactly one versionCode assignment, in a scratch file"
+# ---------------------------------------------------------------------------
+BV="$WORK/bv"; mkdir -p "$BV"
+cp "$STUB/android/app/build.gradle.kts" "$BV/good.kts"; cp "$BV/good.kts" "$BV/good.orig"
+why="$(bump_version_code "$BV/good.kts" 1)"; brc=$?
+check "the stub's defaultConfig versionCode = 1 is raised to 2" test "$brc" -eq 0 -a -z "$why"
+check "…the file now says versionCode = 2, once" need_exact_count "versionCode = 2 lines" "$(grep -cx '        versionCode = 2' "$BV/good.kts")" 1
+dl="$(diff "$BV/good.orig" "$BV/good.kts" | grep -c '^[<>]')"
+check "…and differs from before in that one line only" need_exact_count "changed lines" "$dl" 2
+sed 's/^    }$/    }\n    productFlavors { create("x") { versionCode = 1 } }/' "$BV/good.orig" > "$BV/two.kts"
+check "two versionCode assignments are refused" bash -c '! (eval "$1"; bump_version_code "$2" 1)' _ "$(fn_src bump_version_code)" "$BV/two.kts"
+check "…and the file is not edited" test "$(grep -c 'versionCode = 2' "$BV/two.kts")" = 0
+sed 's/versionCode = 1$/versionCode = 10/' "$BV/good.orig" > "$BV/ten.kts"
+check "versionCode = 10 is not 'versionCode = 1' (N=1): refused" bash -c '! (eval "$1"; bump_version_code "$2" 1)' _ "$(fn_src bump_version_code)" "$BV/ten.kts"
+grep -v 'versionCode = 1$' "$BV/good.orig" > "$BV/none.kts"
+check "no versionCode assignment is refused" bash -c '! (eval "$1"; bump_version_code "$2" 1)' _ "$(fn_src bump_version_code)" "$BV/none.kts"
+printf 'android {\n    versionCode = 1\n    defaultConfig {\n        versionName = "1.0.0"\n    }\n}\n' > "$BV/outside.kts"
+check "a versionCode outside defaultConfig { } is refused" bash -c '! (eval "$1"; bump_version_code "$2" 1)' _ "$(fn_src bump_version_code)" "$BV/outside.kts"
+sed 's/versionCode = 1$/versionCode = 1 + 0/' "$BV/good.orig" > "$BV/expr.kts"
+check "an expression instead of the literal is refused" bash -c '! (eval "$1"; bump_version_code "$2" 1)' _ "$(fn_src bump_version_code)" "$BV/expr.kts"
 
 # ---------------------------------------------------------------------------
 section "A fresh evidence directory: nothing is PASS"
@@ -252,6 +348,35 @@ co --config "$WORK/config" --run G7UP-fedora44-INSTALL <<<"yes"
 check "INSTALL runs after 'yes' and is PASS" test "$(gstate G7UP-fedora44-INSTALL)" = PASS
 co --config "$WORK/config" --run G7UP-fedora44-U2 <<<$'y\ny\ny\ny\ny'
 check "U2 (operator attestation) is PASS on five 'y'" test "$(gstate G7UP-fedora44-U2)" = PASS
+# U2 reruns: before the repair every attempt wrote $ev/U2-operator.txt, so a
+# rerun rewrote the answers an archived record points at.
+u2_rec="$(cat "$EV/state/G7UP-fedora44-U2")"; u2_ans="$(sed -n 's/^answers=//p' <<<"$u2_rec")"
+u2_sum="$(sha256sum < "$u2_ans" 2>/dev/null)"
+check "U2's answers file is named for its attempt" contains "$u2_ans" "U2-operator.$(sed -n 's/^attempt=//p' <<<"$u2_rec").txt"
+check "…is read-only" test "$(stat -c %A "$u2_ans" 2>/dev/null | tr -cd w)" = ""
+check "…and its digest is in the record" test "$(sed -n 's/^answers_sha256=//p' <<<"$u2_rec")" = "${u2_sum%% *}"
+co --config "$WORK/config" --rerun --run G7UP-fedora44-U2 <<<$'y\ny\ny\ny\nn'
+check "a U2 rerun with one item not done is FAIL" test "$(gstate G7UP-fedora44-U2)" = FAIL
+u2_fail_ans="$(sed -n 's/^answers=//p' "$EV/state/G7UP-fedora44-U2")"; u2_fail_sum="$(sha256sum < "$u2_fail_ans" 2>/dev/null)"
+h="$(hist_with G7UP-fedora44-U2 PASS)"
+check "…the PASS it replaced is archived byte-identical" test -n "$h" -a "$(cat "$h" 2>/dev/null)" = "$u2_rec"
+check "…and still points at its own answers file" test "$(sed -n 's/^answers=//p' "$h")" = "$u2_ans"
+check "…which the rerun left byte-identical" test "$(sha256sum < "$u2_ans")" = "$u2_sum"
+check "…the rerun's record points at a different file" test -n "$u2_fail_ans" -a "$u2_fail_ans" != "$u2_ans"
+chmod u+w "$u2_fail_ans"; echo "y  forged afterwards" >> "$u2_fail_ans"
+co --config "$WORK/config" --status </dev/null
+check "a U2 FAIL stays FAIL whatever happens to its answers" test "$(gstate G7UP-fedora44-U2)" = FAIL
+co --config "$WORK/config" --rerun --run G7UP-fedora44-U2 <<<$'y\ny\ny\ny\ny'
+check "a second U2 rerun is PASS" test "$(gstate G7UP-fedora44-U2)" = PASS
+check "…the first attempt's answers are still byte-identical" test "$(sha256sum < "$u2_ans")" = "$u2_sum"
+check "…three attempts, three answers files" need_exact_count "U2 answers files" "$(find "$EV/g7up/fedora44" -maxdepth 1 -name 'U2-operator.*.txt' | grep -c .)" 3
+u2_ans3="$(sed -n 's/^answers=//p' "$EV/state/G7UP-fedora44-U2")"; cp -p "$u2_ans3" "$WORK/u2-ans3"
+chmod u+w "$u2_ans3"; echo "y  forged afterwards" >> "$u2_ans3"
+co --config "$WORK/config" --status </dev/null
+check "U2 answers altered after a PASS turn it into FAIL" contains "$(grep -F 'id=G7UP-fedora44-U2 ' <<<"$OUT")" "answers are missing or altered"
+cat "$WORK/u2-ans3" > "$u2_ans3"; chmod a-w "$u2_ans3"
+co --config "$WORK/config" --status </dev/null
+check "…and PASS again once they are restored" test "$(gstate G7UP-fedora44-U2)" = PASS
 co --config "$WORK/config" --run G7UP-fedora44-UPGRADE <<<"yes"
 check "UPGRADE is PASS and left a checkpoint" test "$(gstate G7UP-fedora44-UPGRADE)" = PASS
 check "U10 is BLOCKED while U6 has not passed" test "$(gstate G7UP-fedora44-U10)" = BLOCKED
@@ -448,6 +573,65 @@ check "a later confirmation declined exits 5" test "$RC" -eq 5
 check "…leaving THIS attempt's record open (RUNNING), and says so" \
     test "$(sed -n 's/^state=//p' "$EV/state/$C")" = RUNNING -a -n "$(grep -F 'stays recorded as RUNNING for this attempt' <<<"$OUT")"
 check "…with the PASS it replaced archived, not lost" has_hist "$C" PASS
+
+# ---------------------------------------------------------------------------
+section "W6-COMPONENT-UPGRADE: N+1 from a scratch copy of the committed sources"
+# ---------------------------------------------------------------------------
+# The real run: -Pandroid.injected.version.code was ignored, the second build
+# was UP-TO-DATE and N+1 was versionCode 1. N+1 is now built from the commit,
+# in a scratch tree, with one versionCode edit; the checkout is never written.
+co --config "$WORK/config" --apk-n "$WORK/apk-n.apk" --apk-n1 "$WORK/apk-other.apk" --run "$C" <<<"yes"
+check "prebuilt APKs of another package are refused before the confirmation" refused "are not both io.github.yurisismotto.pliwee"
+tracked() { ( cd "$STUB" && git ls-files -z | xargs -0 sha256sum ); }
+checkout_clean() { # the stub checkout: no change git sees, tracked files byte-identical, N still 1
+    [ -z "$(sgit status --porcelain --untracked-files=all -- android protocol docs)" ] && [ "$(tracked)" = "$sums0" ] \
+        && grep -qx '        versionCode = 1' "$STUB/android/app/build.gradle.kts"
+}
+no_scratch() { [ -z "$(find "$WORK/tmp" -maxdepth 1 -name 'pliwee-n1.*' -print)" ]; }
+gone_and_clean() { no_scratch && checkout_clean; }
+sums0="$(tracked)"; head0="$(sgit rev-parse HEAD)"; : > "$GRADLE_LOG"
+check "no APKs given: both built and verified, then the first confirmation declined moves nothing" declined "$C" no
+cdir="$(sed -n 's|.* install -r \(/.*\)/apk-N\.apk .*|\1|p' <<<"$OUT" | head -1)"
+check "…N was read as io.github.yurisismotto.pliwee versionCode 1" contains "$(cat "$cdir/apks.txt" 2>/dev/null)" "N   io.github.yurisismotto.pliwee versionCode=1 "
+check "…N+1 as io.github.yurisismotto.pliwee versionCode 2" contains "$(cat "$cdir/apks.txt" 2>/dev/null)" "N+1 io.github.yurisismotto.pliwee versionCode=2 "
+check "…only the two APKs, the list and the log are kept in the evidence directory" \
+    test "$(LC_ALL=C ls "$cdir" 2>/dev/null | tr '\n' ' ')" = "apk-N.apk apk-N1.apk apks.txt run.log "
+check "…from the checkout's commit" contains "$OUT" "N+1 source: $head0 with app/build.gradle.kts versionCode 1 -> 2 (scratch only)"
+check "…two builds: N in the checkout, then N+1 in a scratch tree under TMPDIR" \
+    test "$(grep -c ':app:assembleDebug' "$GRADLE_LOG")" = 2 -a "$(sed -n 1p "$GRADLE_LOG" | cut -d' ' -f2)" = "$STUB/android" \
+    -a -n "$(sed -n 2p "$GRADLE_LOG" | cut -d' ' -f2 | grep -x "$WORK/tmp/pliwee-n1\.[A-Za-z0-9]*/android")"
+check "…with --max-workers=2, and no injected AGP property" \
+    test "$(grep -c -- '--max-workers=2' "$GRADLE_LOG")" = 2 -a "$(grep -c 'android.injected' "$GRADLE_LOG")" = 0
+check "…the scratch tree is gone" no_scratch
+check "…the checkout is byte-identical and clean" checkout_clean
+check "…and the checkout's own build output is still N" grep -qx 'versionCode=1' "$STUB/android/app/build/outputs/apk/debug/app-debug.apk"
+export STUB_GRADLE_MODE=ignore; before="$(snap)"; acts0="$(acts)"
+co --config "$WORK/config" --run "$C" <<<"yes"; unset STUB_GRADLE_MODE
+check "REGRESSION: a build that ignores the raised versionCode (N+1 = 1) is refused" refused "says versionCode '1', not 2"
+check "…before the confirmation: nothing recorded, nothing done to the device" test "$(snap)" = "$before" -a "$(acts)" = "$acts0"
+check "…and the scratch tree is gone, the checkout clean" gone_and_clean
+export STUB_GRADLE_MODE=skew; co --config "$WORK/config" --run "$C" <<<"yes"; unset STUB_GRADLE_MODE
+check "an N+1 that is higher but is not N+1 (not the edited source) is refused" refused "says versionCode '7', not 2"
+check "…the scratch tree is gone" no_scratch
+export STUB_GRADLE_MODE=skew-all; co --config "$WORK/config" --run "$C" <<<"yes"; unset STUB_GRADLE_MODE
+check "an N APK whose versionCode is not its source's is refused before the edit" refused "not 'versionCode = 6' (N's APK)"
+check "…the scratch tree is gone" no_scratch
+sed -i 's/^    }$/    }\n    productFlavors { create("x") { versionCode = 1 } }/' "$STUB/android/app/build.gradle.kts"
+sgit commit -qam "two versionCode assignments"; sums0="$(tracked)"; : > "$GRADLE_LOG"; before="$(snap)"
+co --config "$WORK/config" --run "$C" <<<"yes"
+check "a committed source with two versionCode assignments is refused" refused "expected exactly one versionCode line"
+check "…before the N+1 build (only N was built), recording nothing" test "$(grep -c . "$GRADLE_LOG")" = 1 -a "$(snap)" = "$before"
+check "…the scratch tree is gone, the checkout clean" gone_and_clean
+sgit revert --no-edit HEAD >/dev/null; sums0="$(tracked)"
+echo "// an uncommitted edit" >> "$STUB/android/app/build.gradle.kts"; : > "$GRADLE_LOG"
+co --config "$WORK/config" --run "$C" <<<"yes"
+check "uncommitted Android sources are refused: N+1 would differ from N in more than versionCode" refused "differ from commit"
+check "…before anything is built" test ! -s "$GRADLE_LOG"
+sgit checkout -q -- android; echo x > "$STUB/protocol/proto/untracked.proto"
+co --config "$WORK/config" --run "$C" <<<"yes"
+check "an untracked file among them is refused the same way" refused "differ from commit"
+rm -f "$STUB/protocol/proto/untracked.proto"
+check "the checkout is clean again" checkout_clean
 
 # ---------------------------------------------------------------------------
 section "Wave 2 real-session checks, GNOME and KDE separately"
