@@ -265,7 +265,11 @@ class ConnectionService : LifecycleService() {
                 // pinned identity. Recorded before the session runs, so a
                 // transfer offered the instant we connect has somewhere to
                 // dial.
-                app.files.attachTransport(connection.remoteAddress, peer.fingerprint)
+                app.files.attachTransport(
+                    connection.remoteAddress,
+                    peer.fingerprint,
+                    connection.profile,
+                )
                 // Remember only an address that actually worked, so the fast
                 // path stays the one that was proven, not merely advertised.
                 runCatching {

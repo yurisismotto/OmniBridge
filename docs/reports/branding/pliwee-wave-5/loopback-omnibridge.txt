@@ -1,0 +1,12 @@
+run dir: /tmp/w5-loop-bBGg  profile: omnibridge
+daemon emitted: pliwee1: (canonical only)
+sessions under omnibridge/omnibridge/1 naming 346e4973a9413ced09ee031be7b60d55: 2 (expected 2: pairing + reconnect)
+sessions under any other profile: 0 (expected 0)
+transfer 4a6b50e7: stored, sha256 bc399befb0f996e701e57ceed7d658be7ff030af8615a8fc34451491bec05b7c matches; daemon lines naming it: 3
+--- daemon anchor lines
+ INFO pliwee_runtime::listener: session established device=346e4973a9413ced09ee031be7b60d55 peer=E7F9 44A0 E4B0 9809 profile=omnibridge alpn=omnibridge/1 capabilities=["battery.v1"]
+ INFO pliwee_runtime::listener: session established device=346e4973a9413ced09ee031be7b60d55 peer=E7F9 44A0 E4B0 9809 profile=omnibridge alpn=omnibridge/1 capabilities=["battery.v1", "files.v1"]
+ INFO pliwee_capability_files: incoming file offer transfer=4a6b50e7 peer=E7F9 44A0 E4B0 9809 filename=sample.bin size=200000
+ WARN pliwee_runtime::approval: accepting a file without asking (--accept-files-without-asking) transfer=4a6b50e7 filename=sample.bin
+ INFO pliwee_capability_files: received, verified and stored transfer=4a6b50e7 filename=sample.bin bytes=200000
+PASS: omnibridge

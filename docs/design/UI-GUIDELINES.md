@@ -58,7 +58,8 @@ says:
 
 > **Secure connection** · *Direct connection · TLS 1.3, pinned · local network*
 
-with the detail in a tooltip: TLS 1.3 with ALPN `omnibridge/1`, mutually
+with the detail in a tooltip: TLS 1.3 with ALPN `pliwee/1` (`omnibridge/1` for an
+OmniBridge 1.0.0 device), mutually
 authenticated, pinned to the key approved at pairing, no relay and no cloud.
 That is precise and checkable. Reaching for a phrase whose meaning does not
 exactly match is how a security claim quietly becomes untrue.

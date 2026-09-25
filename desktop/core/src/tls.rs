@@ -45,6 +45,7 @@ use rustls_pki_types::{CertificateDer, ServerName, UnixTime};
 use crate::error::{Error, Result};
 use crate::fingerprint::Fingerprint;
 use crate::identity::IdentityProvider;
+use crate::profile::Profile;
 
 /// Only TLS 1.3. Not a runtime toggle, and not overridable by a peer.
 static TLS13_ONLY: &[&rustls::SupportedProtocolVersion] = &[&rustls::version::TLS13];
@@ -297,14 +298,15 @@ pub fn server_config<I: IdentityProvider + ?Sized>(
             identity.certified_key(),
         )));
 
-    // Both protocols are offered on one listener. Which one a connection is
-    // carrying is decided by ALPN during the handshake and read back with
-    // [`negotiated_protocol`], so the listener never has to guess from the
-    // first bytes.
-    config.alpn_protocols = vec![
-        crate::ALPN_PROTOCOL.to_vec(),
-        crate::ALPN_DATA_PROTOCOL.to_vec(),
-    ];
+    // Both protocols of both identity profiles are offered on one listener,
+    // canonical first (ADR-0020 §D4). Which one a connection is carrying —
+    // and so which profile and which kind — is decided by ALPN during the
+    // handshake and read back with [`negotiated_protocol`], so the listener
+    // never has to guess from the first bytes. rustls selects by the server's
+    // order only among values the client offered, and our clients offer
+    // exactly one, so the order never picks a profile the client did not ask
+    // for.
+    config.alpn_protocols = SERVER_ALPN_PROTOCOLS.iter().map(|p| p.to_vec()).collect();
     // Session resumption is disabled: it would let a peer skip a full
     // handshake, and full handshakes are where our pinning check lives.
     // Handshakes happen rarely enough that the cost is irrelevant.
@@ -312,27 +314,45 @@ pub fn server_config<I: IdentityProvider + ?Sized>(
     Ok(Arc::new(config))
 }
 
-/// Client config that will accept exactly one server identity.
+/// The listener's ALPN list, in preference order: `pliwee/1`,
+/// `pliwee-data/1`, `omnibridge/1`, `omnibridge-data/1` (ADR-0020 §D4).
+pub const SERVER_ALPN_PROTOCOLS: [&[u8]; 4] = [
+    crate::ALPN_PROTOCOL,
+    crate::ALPN_DATA_PROTOCOL,
+    crate::LEGACY_ALPN_PROTOCOL,
+    crate::LEGACY_ALPN_DATA_PROTOCOL,
+];
+
+/// Client config that will accept exactly one server identity, for a control
+/// session under `profile`.
+///
+/// The client offers **one** ALPN — the profile's — never both profiles'.
+/// Offering both would let the server pick the profile, and a peer that is
+/// discovered under one name must never be authenticated under another.
 pub fn client_config<I: IdentityProvider + ?Sized>(
     identity: &I,
     expected_server: Fingerprint,
+    profile: Profile,
 ) -> Result<Arc<rustls::ClientConfig>> {
-    client_config_with_alpn(identity, expected_server, crate::ALPN_PROTOCOL)
+    client_config_with_alpn(identity, expected_server, profile.control_alpn())
 }
 
-/// Client config for a bulk data stream.
+/// Client config for a bulk data stream under `profile`.
 ///
 /// Identical to [`client_config`] in every security-relevant way — same
 /// pinned verifier, same client certificate, same TLS 1.3-only version list.
 /// The only difference is the ALPN identifier, which tells the listener what
 /// kind of connection this is. A data stream is emphatically *not* a weaker
 /// connection than a control session; it is the same connection carrying
-/// different traffic.
+/// different traffic. `profile` must be the profile of the control session
+/// that issued the transfer: the listener refuses a stream whose profile
+/// differs.
 pub fn data_stream_client_config<I: IdentityProvider + ?Sized>(
     identity: &I,
     expected_server: Fingerprint,
+    profile: Profile,
 ) -> Result<Arc<rustls::ClientConfig>> {
-    client_config_with_alpn(identity, expected_server, crate::ALPN_DATA_PROTOCOL)
+    client_config_with_alpn(identity, expected_server, profile.data_alpn())
 }
 
 fn client_config_with_alpn<I: IdentityProvider + ?Sized>(
@@ -355,13 +375,38 @@ fn client_config_with_alpn<I: IdentityProvider + ?Sized>(
     Ok(Arc::new(config))
 }
 
-/// What kind of connection a completed handshake turned out to be.
+/// What kind of traffic a connection carries.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NegotiatedProtocol {
+pub enum ConnectionKind {
     /// The control session: HELLO, pairing, capability messages.
     Control,
     /// A bulk data stream carrying one transfer's bytes.
     Data,
+}
+
+/// What a completed handshake turned out to be: which identity profile, and
+/// which kind of connection. Both come from the one ALPN value negotiated.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NegotiatedProtocol {
+    pub profile: Profile,
+    pub kind: ConnectionKind,
+}
+
+impl NegotiatedProtocol {
+    /// Maps an ALPN value to *(profile, kind)*. Anything but the four known
+    /// values is `None`.
+    pub fn from_alpn(alpn: &[u8]) -> Option<Self> {
+        Profile::ALL.into_iter().find_map(|profile| {
+            let kind = if alpn == profile.control_alpn() {
+                ConnectionKind::Control
+            } else if alpn == profile.data_alpn() {
+                ConnectionKind::Data
+            } else {
+                return None;
+            };
+            Some(Self { profile, kind })
+        })
+    }
 }
 
 /// Reads back which ALPN protocol the handshake selected.
@@ -369,13 +414,10 @@ pub enum NegotiatedProtocol {
 /// A peer that negotiated no ALPN at all, or something unrecognised, gets
 /// `None` and must be dropped. Guessing "probably control" from an absent
 /// ALPN would hand an unknown client the handshake path by default, which is
-/// exactly the wrong direction to fail in.
+/// exactly the wrong direction to fail in. Guessing a profile would be worse:
+/// the profile decides which domain a proof is verified under.
 pub fn negotiated_protocol(conn: &rustls::CommonState) -> Option<NegotiatedProtocol> {
-    match conn.alpn_protocol() {
-        Some(p) if p == crate::ALPN_PROTOCOL => Some(NegotiatedProtocol::Control),
-        Some(p) if p == crate::ALPN_DATA_PROTOCOL => Some(NegotiatedProtocol::Data),
-        _ => None,
-    }
+    NegotiatedProtocol::from_alpn(conn.alpn_protocol()?)
 }
 
 /// Extracts the peer's pinned-identity fingerprint from a completed handshake.

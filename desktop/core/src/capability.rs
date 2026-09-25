@@ -31,6 +31,10 @@ use crate::fingerprint::Fingerprint;
 pub struct CapabilityContext {
     /// Pinned identity of the peer the message came from.
     pub peer: Fingerprint,
+    /// Identity profile of the session the message arrived on. A capability
+    /// that derives anything brand-bearing from a session — `files.v1`'s
+    /// data-stream domain — takes it from here, never from the peer.
+    pub profile: crate::profile::Profile,
     pub peer_device_id: String,
     /// Sends a message back to this peer, from inside a handler.
     pub outbound: tokio::sync::mpsc::Sender<OutboundMessage>,

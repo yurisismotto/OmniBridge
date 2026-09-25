@@ -1,4 +1,8 @@
 //! Pairing security tests: expiry, single-use, replay, binding, rate limiting.
+//!
+//! Every construction and lifecycle test runs once per identity profile
+//! (ADR-0020 §D4): the legacy profile is live code through Pliwee v1.x and is
+//! held to exactly the same properties as the canonical one.
 
 use std::time::Duration;
 
@@ -6,7 +10,7 @@ use pliwee_core::error::PairingError;
 use pliwee_core::pairing::{
     self, PairingSession, PairingToken, MAX_FAILED_ATTEMPTS, NONCE_LEN, TOKEN_LEN,
 };
-use pliwee_core::Fingerprint;
+use pliwee_core::{Fingerprint, Profile};
 
 fn fp(byte: u8) -> Fingerprint {
     Fingerprint::from_hex(&format!("{byte:02x}").repeat(32)).expect("valid fingerprint")
@@ -50,61 +54,73 @@ fn token_debug_never_leaks_the_secret() {
 
 #[test]
 fn proof_is_deterministic_for_identical_inputs() {
-    let token = PairingToken::generate().expect("t");
-    let nonce = [3u8; NONCE_LEN];
-    let a = pairing::compute_proof(&token, &fp(1), &fp(2), &nonce);
-    let b = pairing::compute_proof(&token, &fp(1), &fp(2), &nonce);
-    assert_eq!(a, b);
+    for profile in Profile::ALL {
+        let token = PairingToken::generate().expect("t");
+        let nonce = [3u8; NONCE_LEN];
+        let a = pairing::compute_proof(profile, &token, &fp(1), &fp(2), &nonce);
+        let b = pairing::compute_proof(profile, &token, &fp(1), &fp(2), &nonce);
+        assert_eq!(a, b);
+    }
 }
 
 #[test]
 fn proof_is_bound_to_the_responder_identity() {
-    // A proof captured while pairing with one desktop must be useless
-    // against a different desktop.
-    let token = PairingToken::generate().expect("t");
-    let nonce = [3u8; NONCE_LEN];
-    let honest = pairing::compute_proof(&token, &fp(1), &fp(2), &nonce);
-    let attacker = pairing::compute_proof(&token, &fp(0xAA), &fp(2), &nonce);
-    assert_ne!(honest, attacker);
+    for profile in Profile::ALL {
+        // A proof captured while pairing with one desktop must be useless
+        // against a different desktop.
+        let token = PairingToken::generate().expect("t");
+        let nonce = [3u8; NONCE_LEN];
+        let honest = pairing::compute_proof(profile, &token, &fp(1), &fp(2), &nonce);
+        let attacker = pairing::compute_proof(profile, &token, &fp(0xAA), &fp(2), &nonce);
+        assert_ne!(honest, attacker);
+    }
 }
 
 #[test]
 fn proof_is_bound_to_the_initiator_identity() {
-    // A captured proof must not be usable by a different phone.
-    let token = PairingToken::generate().expect("t");
-    let nonce = [3u8; NONCE_LEN];
-    let honest = pairing::compute_proof(&token, &fp(1), &fp(2), &nonce);
-    let impostor = pairing::compute_proof(&token, &fp(1), &fp(0xBB), &nonce);
-    assert_ne!(honest, impostor);
+    for profile in Profile::ALL {
+        // A captured proof must not be usable by a different phone.
+        let token = PairingToken::generate().expect("t");
+        let nonce = [3u8; NONCE_LEN];
+        let honest = pairing::compute_proof(profile, &token, &fp(1), &fp(2), &nonce);
+        let impostor = pairing::compute_proof(profile, &token, &fp(1), &fp(0xBB), &nonce);
+        assert_ne!(honest, impostor);
+    }
 }
 
 #[test]
 fn proof_is_bound_to_the_nonce() {
-    let token = PairingToken::generate().expect("t");
-    let a = pairing::compute_proof(&token, &fp(1), &fp(2), &[1u8; NONCE_LEN]);
-    let b = pairing::compute_proof(&token, &fp(1), &fp(2), &[2u8; NONCE_LEN]);
-    assert_ne!(a, b);
+    for profile in Profile::ALL {
+        let token = PairingToken::generate().expect("t");
+        let a = pairing::compute_proof(profile, &token, &fp(1), &fp(2), &[1u8; NONCE_LEN]);
+        let b = pairing::compute_proof(profile, &token, &fp(1), &fp(2), &[2u8; NONCE_LEN]);
+        assert_ne!(a, b);
+    }
 }
 
 #[test]
 fn proof_and_confirmation_are_domain_separated() {
-    // The two MACs cover the same fields. Without domain separation, a
-    // captured proof could be replayed back as a confirmation.
-    let token = PairingToken::generate().expect("t");
-    let nonce = [3u8; NONCE_LEN];
-    let proof = pairing::compute_proof(&token, &fp(1), &fp(2), &nonce);
-    let confirmation = pairing::compute_confirmation(&token, &fp(1), &fp(2), &nonce);
-    assert_ne!(proof, confirmation);
+    for profile in Profile::ALL {
+        // The two MACs cover the same fields. Without domain separation, a
+        // captured proof could be replayed back as a confirmation.
+        let token = PairingToken::generate().expect("t");
+        let nonce = [3u8; NONCE_LEN];
+        let proof = pairing::compute_proof(profile, &token, &fp(1), &fp(2), &nonce);
+        let confirmation = pairing::compute_confirmation(profile, &token, &fp(1), &fp(2), &nonce);
+        assert_ne!(proof, confirmation);
+    }
 }
 
 #[test]
 fn field_boundaries_cannot_be_shifted() {
-    // Length-prefixing must make it impossible to move bytes between
-    // adjacent fields and land on the same MAC.
-    let token = PairingToken::generate().expect("t");
-    let a = pairing::compute_proof(&token, &fp(1), &fp(2), b"ABCD");
-    let b = pairing::compute_proof(&token, &fp(1), &fp(2), b"ABC");
-    assert_ne!(a, b);
+    for profile in Profile::ALL {
+        // Length-prefixing must make it impossible to move bytes between
+        // adjacent fields and land on the same MAC.
+        let token = PairingToken::generate().expect("t");
+        let a = pairing::compute_proof(profile, &token, &fp(1), &fp(2), b"ABCD");
+        let b = pairing::compute_proof(profile, &token, &fp(1), &fp(2), b"ABC");
+        assert_ne!(a, b);
+    }
 }
 
 #[test]
@@ -120,55 +136,61 @@ fn verify_proof_rejects_wrong_length() {
 // Session lifecycle
 // ---------------------------------------------------------------------------
 
-fn valid_proof(session: &PairingSession, nonce: &[u8]) -> [u8; 32] {
-    pairing::compute_proof(session.token(), &fp(1), &fp(2), nonce)
+fn valid_proof(profile: Profile, session: &PairingSession, nonce: &[u8]) -> [u8; 32] {
+    pairing::compute_proof(profile, session.token(), &fp(1), &fp(2), nonce)
 }
 
 #[test]
 fn a_valid_proof_is_accepted_once() {
-    let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
-    let nonce = [5u8; NONCE_LEN];
-    let proof = valid_proof(&session, &nonce);
+    for profile in Profile::ALL {
+        let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
+        let nonce = [5u8; NONCE_LEN];
+        let proof = valid_proof(profile, &session, &nonce);
 
-    let confirmation = session
-        .verify_and_consume(&fp(1), &fp(2), &nonce, &proof)
-        .expect("first attempt should succeed");
+        let confirmation = session
+            .verify_and_consume(profile, &fp(1), &fp(2), &nonce, &proof)
+            .expect("first attempt should succeed");
 
-    assert_eq!(
-        confirmation,
-        pairing::compute_confirmation(session.token(), &fp(1), &fp(2), &nonce)
-    );
-    assert!(session.is_consumed());
+        assert_eq!(
+            confirmation,
+            pairing::compute_confirmation(profile, session.token(), &fp(1), &fp(2), &nonce)
+        );
+        assert!(session.is_consumed());
+    }
 }
 
 #[test]
 fn a_token_cannot_be_used_twice() {
-    let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
-    let nonce = [5u8; NONCE_LEN];
-    let proof = valid_proof(&session, &nonce);
+    for profile in Profile::ALL {
+        let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
+        let nonce = [5u8; NONCE_LEN];
+        let proof = valid_proof(profile, &session, &nonce);
 
-    session
-        .verify_and_consume(&fp(1), &fp(2), &nonce, &proof)
-        .expect("first use");
+        session
+            .verify_and_consume(profile, &fp(1), &fp(2), &nonce, &proof)
+            .expect("first use");
 
-    // Replaying the exact same proof must fail.
-    let err = session
-        .verify_and_consume(&fp(1), &fp(2), &nonce, &proof)
-        .expect_err("replay must be rejected");
-    assert_eq!(err, PairingError::AlreadyUsed);
+        // Replaying the exact same proof must fail.
+        let err = session
+            .verify_and_consume(profile, &fp(1), &fp(2), &nonce, &proof)
+            .expect_err("replay must be rejected");
+        assert_eq!(err, PairingError::AlreadyUsed);
+    }
 }
 
 #[test]
 fn an_expired_token_is_rejected() {
-    // Zero TTL: expired the instant it exists.
-    let mut session = PairingSession::new(Duration::ZERO).expect("session");
-    let nonce = [5u8; NONCE_LEN];
-    let proof = valid_proof(&session, &nonce);
+    for profile in Profile::ALL {
+        // Zero TTL: expired the instant it exists.
+        let mut session = PairingSession::new(Duration::ZERO).expect("session");
+        let nonce = [5u8; NONCE_LEN];
+        let proof = valid_proof(profile, &session, &nonce);
 
-    let err = session
-        .verify_and_consume(&fp(1), &fp(2), &nonce, &proof)
-        .expect_err("expired token must be rejected");
-    assert_eq!(err, PairingError::Expired);
+        let err = session
+            .verify_and_consume(profile, &fp(1), &fp(2), &nonce, &proof)
+            .expect_err("expired token must be rejected");
+        assert_eq!(err, PairingError::Expired);
+    }
 }
 
 #[test]
@@ -184,65 +206,74 @@ fn expiry_uses_a_monotonic_clock_not_a_peer_timestamp() {
 
 #[test]
 fn a_wrong_proof_is_rejected_and_counted() {
-    let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
-    let nonce = [5u8; NONCE_LEN];
+    for profile in Profile::ALL {
+        let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
+        let nonce = [5u8; NONCE_LEN];
 
-    let err = session
-        .verify_and_consume(&fp(1), &fp(2), &nonce, &[0u8; 32])
-        .expect_err("bad proof");
-    assert_eq!(err, PairingError::BadProof);
-    assert_eq!(session.failed_attempts(), 1);
-    assert!(!session.is_consumed());
+        let err = session
+            .verify_and_consume(profile, &fp(1), &fp(2), &nonce, &[0u8; 32])
+            .expect_err("bad proof");
+        assert_eq!(err, PairingError::BadProof);
+        assert_eq!(session.failed_attempts(), 1);
+        assert!(!session.is_consumed());
+    }
 }
 
 #[test]
 fn brute_force_is_cut_off_after_a_few_attempts() {
-    let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
-    let nonce = [5u8; NONCE_LEN];
+    for profile in Profile::ALL {
+        let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
+        let nonce = [5u8; NONCE_LEN];
 
-    for i in 0..MAX_FAILED_ATTEMPTS {
+        for i in 0..MAX_FAILED_ATTEMPTS {
+            let err = session
+                .verify_and_consume(profile, &fp(1), &fp(2), &nonce, &[i as u8; 32])
+                .expect_err("guess must fail");
+            assert_eq!(err, PairingError::BadProof);
+        }
+
+        // Even the *correct* proof is now refused: the window is burned.
+        let proof = valid_proof(profile, &session, &nonce);
         let err = session
-            .verify_and_consume(&fp(1), &fp(2), &nonce, &[i as u8; 32])
-            .expect_err("guess must fail");
-        assert_eq!(err, PairingError::BadProof);
+            .verify_and_consume(profile, &fp(1), &fp(2), &nonce, &proof)
+            .expect_err("session must be locked out");
+        assert_eq!(err, PairingError::RateLimited);
+        assert!(session.is_exhausted());
     }
-
-    // Even the *correct* proof is now refused: the window is burned.
-    let proof = valid_proof(&session, &nonce);
-    let err = session
-        .verify_and_consume(&fp(1), &fp(2), &nonce, &proof)
-        .expect_err("session must be locked out");
-    assert_eq!(err, PairingError::RateLimited);
-    assert!(session.is_exhausted());
 }
 
 #[test]
 fn a_proof_for_a_different_device_is_rejected() {
-    // Simulates a captured proof replayed by an attacker whose TLS identity
-    // is different from the device the proof was computed for.
-    let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
-    let nonce = [5u8; NONCE_LEN];
-    let proof_for_victim = pairing::compute_proof(session.token(), &fp(1), &fp(2), &nonce);
+    for profile in Profile::ALL {
+        // Simulates a captured proof replayed by an attacker whose TLS identity
+        // is different from the device the proof was computed for.
+        let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
+        let nonce = [5u8; NONCE_LEN];
+        let proof_for_victim =
+            pairing::compute_proof(profile, session.token(), &fp(1), &fp(2), &nonce);
 
-    // The responder recomputes using the *attacker's* TLS fingerprint.
-    let err = session
-        .verify_and_consume(&fp(1), &fp(0xCC), &nonce, &proof_for_victim)
-        .expect_err("cross-device replay must fail");
-    assert_eq!(err, PairingError::BadProof);
+        // The responder recomputes using the *attacker's* TLS fingerprint.
+        let err = session
+            .verify_and_consume(profile, &fp(1), &fp(0xCC), &nonce, &proof_for_victim)
+            .expect_err("cross-device replay must fail");
+        assert_eq!(err, PairingError::BadProof);
+    }
 }
 
 #[test]
 fn a_proof_for_a_previous_nonce_is_rejected() {
-    let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
-    let old_nonce = [1u8; NONCE_LEN];
-    let stale = pairing::compute_proof(session.token(), &fp(1), &fp(2), &old_nonce);
+    for profile in Profile::ALL {
+        let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
+        let old_nonce = [1u8; NONCE_LEN];
+        let stale = pairing::compute_proof(profile, session.token(), &fp(1), &fp(2), &old_nonce);
 
-    // A new connection means a new nonce.
-    let fresh_nonce = pairing::generate_nonce().expect("nonce");
-    let err = session
-        .verify_and_consume(&fp(1), &fp(2), &fresh_nonce, &stale)
-        .expect_err("stale-nonce replay must fail");
-    assert_eq!(err, PairingError::BadProof);
+        // A new connection means a new nonce.
+        let fresh_nonce = pairing::generate_nonce().expect("nonce");
+        let err = session
+            .verify_and_consume(profile, &fp(1), &fp(2), &fresh_nonce, &stale)
+            .expect_err("stale-nonce replay must fail");
+        assert_eq!(err, PairingError::BadProof);
+    }
 }
 
 #[test]
@@ -258,7 +289,7 @@ fn nonces_are_unique() {
 // ---------------------------------------------------------------------------
 //
 // This is the contract between `pliwee_core::pairing` and Kotlin's
-// `io.github.yurisismotto.omnibridge.pairing.PairingProof`. The identical vector
+// `io.github.yurisismotto.omnibridge.pairing.PairingProof`. The identical vectors
 // lives in `android/app/src/test/.../PairingProofTest.kt`. If either side
 // changes the domain separator, the field order or the length prefixing, one
 // of the two tests fails instead of pairing mysteriously breaking on a real
@@ -288,9 +319,22 @@ fn vector_nonce() -> [u8; NONCE_LEN] {
     n
 }
 
+//
+// The legacy (`omnibridge/…`) values are the ones committed before Wave 5,
+// byte for byte: they now test live legacy-profile code (ADR-0020 D10). The
+// Pliwee values were computed independently of both implementations by
+// `docs/reports/branding/pliwee-wave-5/pliwee_domain_kats.py`, which also
+// reproduces the legacy values from the same construction.
+
 #[test]
-fn proof_matches_the_cross_language_known_answer() {
-    let proof = pairing::compute_proof(&vector_token(), &fp(1), &fp(2), &vector_nonce());
+fn legacy_proof_matches_the_cross_language_known_answer() {
+    let proof = pairing::compute_proof(
+        Profile::OmniBridge,
+        &vector_token(),
+        &fp(1),
+        &fp(2),
+        &vector_nonce(),
+    );
     assert_eq!(
         data_encoding::HEXLOWER.encode(&proof),
         "d34504e66ea816d8ac8a12de225db8ae6b9c03f7010b15a15f50cf3b53b859e1",
@@ -299,12 +343,101 @@ fn proof_matches_the_cross_language_known_answer() {
 }
 
 #[test]
-fn confirmation_matches_the_cross_language_known_answer() {
-    let confirmation =
-        pairing::compute_confirmation(&vector_token(), &fp(1), &fp(2), &vector_nonce());
+fn legacy_confirmation_matches_the_cross_language_known_answer() {
+    let confirmation = pairing::compute_confirmation(
+        Profile::OmniBridge,
+        &vector_token(),
+        &fp(1),
+        &fp(2),
+        &vector_nonce(),
+    );
     assert_eq!(
         data_encoding::HEXLOWER.encode(&confirmation),
         "fd1689c7fd3715e376ea9423c858c4839cce729a9471b5f6e93f76e34d0c11f3",
         "pairing confirmation diverged from the Kotlin implementation"
     );
+}
+
+#[test]
+fn pliwee_proof_matches_the_independent_known_answer() {
+    let proof = pairing::compute_proof(
+        Profile::Pliwee,
+        &vector_token(),
+        &fp(1),
+        &fp(2),
+        &vector_nonce(),
+    );
+    assert_eq!(
+        data_encoding::HEXLOWER.encode(&proof),
+        "3a433e1b0ec55746039eba2216abb786b0537955efd8f4ed1c92886426182510",
+        "pairing proof diverged from the independently computed vector"
+    );
+}
+
+#[test]
+fn pliwee_confirmation_matches_the_independent_known_answer() {
+    let confirmation = pairing::compute_confirmation(
+        Profile::Pliwee,
+        &vector_token(),
+        &fp(1),
+        &fp(2),
+        &vector_nonce(),
+    );
+    assert_eq!(
+        data_encoding::HEXLOWER.encode(&confirmation),
+        "5f0bc7caae96da5c38f4a75fa78e7e43a75ec10daef83e7fa2efad04d9194672",
+        "pairing confirmation diverged from the independently computed vector"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// No hybrid state (ADR-0020 §D4; plan §4 rows X1, X2)
+// ---------------------------------------------------------------------------
+
+fn other(profile: Profile) -> Profile {
+    match profile {
+        Profile::Pliwee => Profile::OmniBridge,
+        Profile::OmniBridge => Profile::Pliwee,
+    }
+}
+
+/// X1 / X2: a proof computed under one profile's domain, presented on a
+/// connection that negotiated the other profile, is a wrong proof — counted
+/// as a failed attempt, and the window is not consumed. There is no fallback
+/// verification under the other domain.
+#[test]
+fn a_proof_from_the_other_profile_is_rejected() {
+    for connection in Profile::ALL {
+        let mut session = PairingSession::new(Duration::from_secs(60)).expect("session");
+        let nonce = [5u8; NONCE_LEN];
+        let foreign = valid_proof(other(connection), &session, &nonce);
+
+        let err = session
+            .verify_and_consume(connection, &fp(1), &fp(2), &nonce, &foreign)
+            .expect_err("a proof under the other profile's domain must fail");
+        assert_eq!(err, PairingError::BadProof, "connection {connection}");
+        assert_eq!(session.failed_attempts(), 1);
+        assert!(!session.is_consumed());
+
+        // The same window still accepts the proof made under the
+        // connection's own profile: the refusal was about the domain.
+        let own = valid_proof(connection, &session, &nonce);
+        session
+            .verify_and_consume(connection, &fp(1), &fp(2), &nonce, &own)
+            .expect("the connection's own profile verifies");
+    }
+}
+
+/// The confirmation is bound to the profile too: a responder answering under
+/// the other domain fails the initiator's check.
+#[test]
+fn a_confirmation_from_the_other_profile_does_not_verify() {
+    let token = PairingToken::generate().expect("t");
+    let nonce = [3u8; NONCE_LEN];
+    for connection in Profile::ALL {
+        let expected = pairing::compute_confirmation(connection, &token, &fp(1), &fp(2), &nonce);
+        let foreign =
+            pairing::compute_confirmation(other(connection), &token, &fp(1), &fp(2), &nonce);
+        assert!(!pairing::verify_proof(&expected, &foreign));
+    }
 }

@@ -1,0 +1,18 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running tests/wire.rs (target/debug/deps/wire-5787456a5347cc73)
+
+running 11 tests
+test a_client_without_a_certificate_is_rejected_during_the_handshake ... ok
+test a_hello_that_claims_someone_elses_fingerprint_is_refused ... ok
+test a_duplicate_message_id_terminates_the_session ... ok
+test a_non_increasing_sequence_number_terminates_the_session ... ok
+test a_replayed_envelope_terminates_the_session ... ok
+test an_unauthenticated_peer_cannot_skip_the_handshake ... ok
+test a_short_message_id_is_refused ... ok
+test an_unknown_peer_cannot_send_anything_but_a_pair_request ... ok
+test an_unsupported_protocol_version_is_reported_and_refused ... ok
+EVIDENCE run-profile=omnibridge daemon-session-profile=omnibridge alpn=omnibridge/1
+test the_daemon_negotiated_the_profile_this_run_names ... ok
+test changing_the_protocol_version_mid_connection_terminates_the_session ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.72s

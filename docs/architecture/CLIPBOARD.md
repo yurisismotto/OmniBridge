@@ -31,7 +31,8 @@ clipboard, cross-internet relay, and remote commands.
 ## One channel
 
 Everything travels as the opaque `payload` of a `CapabilityMessage` on the
-**existing control session** (ALPN `omnibridge/1`). No second socket, no second
+**existing control session** (ALPN `pliwee/1`, or `omnibridge/1` with an
+OmniBridge 1.0.0 peer). No second socket, no second
 listener, no data stream.
 
 ```text

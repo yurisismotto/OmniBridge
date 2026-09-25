@@ -1,0 +1,101 @@
+Picked up JAVA_TOOL_OPTIONS:  -Xmx2g
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:extractDebugProto UP-TO-DATE
+> Task :app:extractIncludeDebugProto UP-TO-DATE
+> Task :app:extractProto UP-TO-DATE
+> Task :app:generateDebugProto UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:generateDebugLintReportModel
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:generateDebugUnitTestLintModel
+> Task :app:lintAnalyzeDebugAndroidTest
+> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:lintAnalyzeDebug
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///home/yuri/Sandbox/OmniBridge/android/app/build/reports/lint-results-debug.html
+Lint found 1 error and 36 warnings. First failure:
+/home/yuri/Sandbox/OmniBridge/android/app/src/main/java/io/github/yurisismotto/omnibridge/ui/ClipboardTileService.kt:100: Error: TileService#startActivityAndCollapse(Intent) is deprecated. Use TileService#startActivityAndCollapse(PendingIntent) instead. [StartActivityAndCollapseDeprecated]
+            startActivityAndCollapse(intent)
+                                     ~~~~~~
+
+
+> Task :app:lintDebug FAILED
+Lint found 1 error, 36 warnings. First failure:
+
+/home/yuri/Sandbox/OmniBridge/android/app/src/main/java/io/github/yurisismotto/omnibridge/ui/ClipboardTileService.kt:100: Error: TileService#startActivityAndCollapse(Intent) is deprecated. Use TileService#startActivityAndCollapse(PendingIntent) instead. [StartActivityAndCollapseDeprecated]
+            startActivityAndCollapse(intent)
+                                     ~~~~~~
+
+   Explanation for issues of type "StartActivityAndCollapseDeprecated":
+   TileService#startActivityAndCollapse(Intent) has been deprecated, and will
+   throw an UnsupportedOperationException if used in apps targeting Android
+   versions UpsideDownCake and higher. Convert the Intent to a PendingIntent.
+
+
+The full lint text report is located at:
+  /home/yuri/Sandbox/OmniBridge/android/app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:lintDebug'.
+> Lint found errors in the project; aborting build.
+
+  Fix the issues identified by lint, or create a baseline to see only new errors.
+  To create a baseline, run `gradlew updateLintBaseline` after adding the following to the module's build.gradle file:
+  ```
+  android {
+      lint {
+          baseline = file("lint-baseline.xml")
+      }
+  }
+  ```
+  For more details, see https://developer.android.com/studio/write/lint#snapshot
+
+  Lint found 1 error, 36 warnings. First failure:
+
+  /home/yuri/Sandbox/OmniBridge/android/app/src/main/java/io/github/yurisismotto/omnibridge/ui/ClipboardTileService.kt:100: Error: TileService#startActivityAndCollapse(Intent) is deprecated. Use TileService#startActivityAndCollapse(PendingIntent) instead. [StartActivityAndCollapseDeprecated]
+              startActivityAndCollapse(intent)
+                                       ~~~~~~
+
+     Explanation for issues of type "StartActivityAndCollapseDeprecated":
+     TileService#startActivityAndCollapse(Intent) has been deprecated, and will
+     throw an UnsupportedOperationException if used in apps targeting Android
+     versions UpsideDownCake and higher. Convert the Intent to a PendingIntent.
+
+
+  The full lint text report is located at:
+    /home/yuri/Sandbox/OmniBridge/android/app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 27s
+31 actionable tasks: 8 executed, 23 up-to-date
+lint exit=1

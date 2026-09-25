@@ -1,6 +1,7 @@
 package io.github.yurisismotto.omnibridge.files
 
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
+import io.github.yurisismotto.omnibridge.net.WireProfile
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 import javax.crypto.Mac
@@ -17,7 +18,9 @@ import javax.crypto.spec.SecretKeySpec
  * ```text
  * mac = HMAC-SHA256(
  *     key = stream_challenge,
- *     msg = "omnibridge/files.v1/data-stream/v1"
+ *     msg = profile.filesDataStreamDomain
+ *           — "pliwee/files.v1/data-stream/v1", or on a session with an
+ *             OmniBridge 1.0.0 desktop "omnibridge/files.v1/data-stream/v1"
  *           || len_prefixed(acceptor_fingerprint)
  *           || len_prefixed(dialer_fingerprint)
  *           || len_prefixed(transfer_id))
@@ -34,8 +37,6 @@ import javax.crypto.spec.SecretKeySpec
  * the desktop issued.
  */
 object StreamAuth {
-
-    private val DOMAIN = "omnibridge/files.v1/data-stream/v1".toByteArray(Charsets.US_ASCII)
 
     /** Length of a transfer id. Must match `TRANSFER_ID_LEN` on the desktop. */
     const val TRANSFER_ID_LENGTH = 16
@@ -63,6 +64,8 @@ object StreamAuth {
     fun toHex(bytes: ByteArray): String = bytes.joinToString("") { "%02x".format(it) }
 
     /**
+     * @param profile the profile of the control session that received the
+     *   challenge. The data stream must negotiate the same one.
      * @param challenge the single-use secret the acceptor sent over the
      *   control session. Never logged and never persisted.
      * @param acceptor the device that accepts data streams and issued the
@@ -70,6 +73,7 @@ object StreamAuth {
      * @param dialer the device that opens the stream — this phone.
      */
     fun compute(
+        profile: WireProfile,
         challenge: ByteArray,
         acceptor: Fingerprint,
         dialer: Fingerprint,
@@ -82,7 +86,7 @@ object StreamAuth {
 
         val mac = Mac.getInstance("HmacSHA256")
         mac.init(SecretKeySpec(challenge, "HmacSHA256"))
-        mac.update(DOMAIN)
+        mac.update(profile.filesDataStreamDomain.toByteArray(Charsets.US_ASCII))
         updateLengthPrefixed(mac, acceptor.bytes)
         updateLengthPrefixed(mac, dialer.bytes)
         updateLengthPrefixed(mac, transferId)

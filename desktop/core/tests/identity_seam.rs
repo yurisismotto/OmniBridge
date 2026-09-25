@@ -181,7 +181,11 @@ where
     C: IdentityProvider + ?Sized,
 {
     let server_config = pliwee_core::tls::server_config(server_identity)?;
-    let client_config = pliwee_core::tls::client_config(client_identity, client_pins)?;
+    let client_config = pliwee_core::tls::client_config(
+        client_identity,
+        client_pins,
+        pliwee_core::Profile::Pliwee,
+    )?;
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
@@ -394,12 +398,14 @@ async fn the_seam_accepts_every_shape_a_caller_already_holds() {
 
     pliwee_core::tls::server_config(software.as_ref()).expect("&LocalIdentity");
     pliwee_core::tls::server_config(&software).expect("&Arc<LocalIdentity>");
-    pliwee_core::tls::client_config(&software, fingerprint).expect("&Arc<LocalIdentity>");
+    pliwee_core::tls::client_config(&software, fingerprint, pliwee_core::Profile::Pliwee)
+        .expect("&Arc<LocalIdentity>");
 
     let boxed: Arc<dyn IdentityProvider> = software;
     let identity = pliwee_core::identity::Identity::new(boxed);
     pliwee_core::tls::server_config(&identity).expect("&Identity");
-    pliwee_core::tls::client_config(&identity, fingerprint).expect("&Identity");
+    pliwee_core::tls::client_config(&identity, fingerprint, pliwee_core::Profile::Pliwee)
+        .expect("&Identity");
     assert_eq!(identity.backing(), KeyBacking::Software);
 }
 

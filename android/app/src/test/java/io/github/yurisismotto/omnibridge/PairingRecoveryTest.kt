@@ -10,6 +10,7 @@ import io.github.yurisismotto.omnibridge.identity.Fingerprint
 import io.github.yurisismotto.omnibridge.net.ConnectResult
 import io.github.yurisismotto.omnibridge.net.DialResult
 import io.github.yurisismotto.omnibridge.net.FailureKind
+import io.github.yurisismotto.omnibridge.net.WireProfile
 import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
 import io.github.yurisismotto.omnibridge.pairing.PairingGate
 import io.github.yurisismotto.omnibridge.pairing.PairingProof
@@ -211,11 +212,11 @@ class PairingRecoveryTest {
         val real = ByteArray(20) { 7 }
         val wrong = ByteArray(20) { 8 }
 
-        val expected = PairingProof.compute(real, fedora, debian, nonce)
-        val offered = PairingProof.compute(wrong, fedora, debian, nonce)
+        val expected = PairingProof.compute(WireProfile.PLIWEE, real, fedora, debian, nonce)
+        val offered = PairingProof.compute(WireProfile.PLIWEE, wrong, fedora, debian, nonce)
 
         assertFalse(PairingProof.verify(expected, offered))
-        assertTrue(PairingProof.verify(expected, PairingProof.compute(real, fedora, debian, nonce)))
+        assertTrue(PairingProof.verify(expected, PairingProof.compute(WireProfile.PLIWEE, real, fedora, debian, nonce)))
     }
 
     /**

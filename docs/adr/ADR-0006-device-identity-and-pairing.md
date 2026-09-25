@@ -2,6 +2,8 @@
 
 **Status:** Accepted · 2026-08-29
 
+> **Superseding note — 2026-09-24, Pliwee rebrand Wave 5 (branch `feature/pliwee-rebrand-wave5`), [ADR-0020](ADR-0020-rename-to-pliwee.md) §D4.** The daemon now shows `pliwee1:` codes only; the app accepts `pliwee1:` and `omnibridge1:`, and the scheme fixes the connection's identity profile. New identities carry `CN=pliwee:<device-id>`; existing ones are never regenerated. `omnibridge1:` and the `omnibridge/pairing-{proof,confirm}/v1` domains below are the legacy profile's values. The original text below is left as it was decided.
+
 ## Context
 
 Principle 6 forbids treating an IP address, hostname or MAC address as

@@ -100,6 +100,12 @@ class FileTransferManager(
     class Transport(
         val address: InetSocketAddress,
         val pinned: Fingerprint,
+        /**
+         * The control session's negotiated profile. Every data stream this
+         * session's transfers open offers its data ALPN and proves under its
+         * domain — never the other profile's (ADR-0020 §D4).
+         */
+        val profile: io.github.yurisismotto.omnibridge.net.WireProfile,
     )
 
     /** An offer the user has not answered yet. */
@@ -279,8 +285,12 @@ class FileTransferManager(
      * The data stream dials the *same address and port* the control session
      * used — there is no second discovery mechanism and no second port.
      */
-    fun attachTransport(address: InetSocketAddress, pinned: Fingerprint) {
-        transport = Transport(address, pinned)
+    fun attachTransport(
+        address: InetSocketAddress,
+        pinned: Fingerprint,
+        profile: io.github.yurisismotto.omnibridge.net.WireProfile,
+    ) {
+        transport = Transport(address, pinned, profile)
     }
 
     fun attachControl(send: suspend (ByteString) -> Unit) {
@@ -627,7 +637,7 @@ class FileTransferManager(
         }
 
         val socket = try {
-            DataStream.open(transport.address, identity, transport.pinned)
+            DataStream.open(transport.address, identity, transport.pinned, transport.profile)
         } catch (e: Exception) {
             Log.w(TAG, "data stream failed to open: ${e.javaClass.simpleName}")
             finishAndTell(transfer, TransferState.FAILED, FailureReason.TRANSPORT)
@@ -636,6 +646,7 @@ class FileTransferManager(
 
         try {
             val mac = StreamAuth.compute(
+                profile = transport.profile,
                 challenge = challenge,
                 // The desktop accepts streams and issued the challenge.
                 acceptor = transport.pinned,

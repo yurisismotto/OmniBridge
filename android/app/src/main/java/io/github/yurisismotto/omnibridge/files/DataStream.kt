@@ -53,12 +53,15 @@ object DataStream {
      * Opens an authenticated data stream to the desktop.
      *
      * The same pinned identity as the control session, the same port, and the
-     * same `PinnedTrustManager`. Only the ALPN differs.
+     * same `PinnedTrustManager`. Only the ALPN differs, and it is the data
+     * ALPN of [profile] — the control session's own profile. The desktop
+     * refuses a stream whose profile differs from its transfer's session.
      */
     fun open(
         address: InetSocketAddress,
         identity: DeviceIdentity,
         pinned: Fingerprint,
+        profile: io.github.yurisismotto.omnibridge.net.WireProfile,
         connectTimeoutMs: Int = 8_000,
     ): SSLSocket {
         val context = TlsFactory.sslContext(identity, pinned)
@@ -67,11 +70,17 @@ object DataStream {
         val socket = context.socketFactory.createSocket(
             plain, address.hostString, address.port, true,
         ) as SSLSocket
-        TlsFactory.harden(socket, TlsFactory.ALPN_DATA_PROTOCOL)
+        TlsFactory.harden(socket, profile.dataAlpn)
         socket.soTimeout = HANDSHAKE_TIMEOUT_MS
         // Forces the handshake now, so a pinning failure surfaces here rather
         // than on the first read.
         socket.startHandshake()
+        try {
+            TlsFactory.requireNegotiated(socket, profile.dataAlpn)
+        } catch (e: javax.net.ssl.SSLHandshakeException) {
+            runCatching { socket.close() }
+            throw e
+        }
         return socket
     }
 

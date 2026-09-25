@@ -140,7 +140,11 @@ impl LocalIdentity {
             .map_err(|_| Error::Certificate("bad certificate parameters"))?;
 
         let mut dn = rcgen::DistinguishedName::new();
-        dn.push(rcgen::DnType::CommonName, format!("omnibridge:{device_id}"));
+        // `pliwee:<id>` for identities generated from Wave 5 on (ADR-0020
+        // §D4). Only `generate` reaches this: an existing identity is loaded
+        // with its certificate as issued and is never regenerated to change
+        // its CN. Nothing parses the CN; trust is the SPKI pin.
+        dn.push(rcgen::DnType::CommonName, format!("pliwee:{device_id}"));
         params.distinguished_name = dn;
 
         params.not_before = rcgen::date_time_ymd(2020, 1, 1);

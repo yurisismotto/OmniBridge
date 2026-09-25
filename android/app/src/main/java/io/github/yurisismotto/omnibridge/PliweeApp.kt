@@ -18,6 +18,7 @@ import io.github.yurisismotto.omnibridge.net.ConnectResult
 import io.github.yurisismotto.omnibridge.net.Discovery
 import io.github.yurisismotto.omnibridge.net.Endpoints
 import io.github.yurisismotto.omnibridge.net.PeerConnection
+import io.github.yurisismotto.omnibridge.net.PeerProfiles
 import io.github.yurisismotto.omnibridge.notifications.KeyguardLockState
 import io.github.yurisismotto.omnibridge.notifications.NotificationAccess
 import io.github.yurisismotto.omnibridge.notifications.NotificationPolicy
@@ -364,8 +365,18 @@ class PliweeApp : Application() {
         val remembered = peer.addresses.mapNotNull(Endpoints::parse)
         if (round <= 1 && remembered.isNotEmpty()) return remembered
 
-        return remembered + discover(peer.deviceId)
+        val found = discover(peer.deviceId) ?: return remembered
+        // Which service type(s) announced it decides the profile it is
+        // dialled with — for these addresses and the remembered ones alike.
+        peerProfiles.learnedFromDiscovery(peer.fingerprint.toHex(), found.profile)
+        return remembered + found.addresses
     }
+
+    /**
+     * The profile each paired computer is dialled with. In memory only; see
+     * [PeerProfiles] for the rule and for why it is never persisted.
+     */
+    val peerProfiles = PeerProfiles()
 
     /**
      * Collects every address advertised for [deviceId] within the discovery
@@ -377,10 +388,10 @@ class PliweeApp : Application() {
      * result is capped, so a hostile responder cannot make this run long or
      * return an unbounded list.
      */
-    private suspend fun discover(deviceId: String): List<InetSocketAddress> {
-        // Collected into a set the timeout cannot take away: whatever was
+    private suspend fun discover(deviceId: String): Discovery.Device? {
+        // Collected into a list the timeout cannot take away: whatever was
         // found before the window closed is still worth dialling.
-        val found = LinkedHashSet<InetSocketAddress>()
+        val found = ArrayList<Discovery.Found>()
         withTimeoutOrNull(DISCOVERY_TIMEOUT_MS) {
             discovery.browse()
                 // Discovery failing is "nothing found", never an exception
@@ -392,13 +403,18 @@ class PliweeApp : Application() {
                 // services. It is not identity: that is decided by the pinned
                 // key during the TLS handshake.
                 .filter { it.deviceId == null || it.deviceId == deviceId }
-                .map { it.address }
                 // Completes the flow rather than cancelling anything, and
-                // bounds the work a hostile responder can cause.
-                .take(MAX_DISCOVERED_ADDRESSES)
+                // bounds the work a hostile responder can cause. Counted in
+                // records: a Pliwee daemon announces itself under both
+                // service types, so one device is up to twice as many.
+                .take(MAX_DISCOVERED_ADDRESSES * WIRE_PROFILE_COUNT)
                 .collect { found += it }
         }
-        return found.toList()
+        // One device, however many records: the two announcements of one
+        // daemon merge, and the canonical one wins the profile.
+        return Discovery.mergeFor(deviceId, found)?.let {
+            it.copy(addresses = it.addresses.take(MAX_DISCOVERED_ADDRESSES))
+        }
     }
 
     /**
@@ -418,6 +434,7 @@ class PliweeApp : Application() {
         deviceName = trustStore.deviceName,
         pinned = peer.fingerprint,
         registry = registry,
+        profile = peerProfiles.forDialing(peer.fingerprint.toHex()),
     )
 
     /**
@@ -498,8 +515,10 @@ class PliweeApp : Application() {
     ): Result<PairOutcome> {
         _connectionState.value = ConnectionState.Connecting
 
+        // The scanned scheme fixes the profile of this pairing (ADR-0020
+        // §D4); discovery may help find the computer but never changes it.
         val addresses = Endpoints.order(
-            payload.addresses.ifEmpty { discover(payload.deviceId) },
+            payload.addresses.ifEmpty { discover(payload.deviceId)?.addresses.orEmpty() },
         )
         if (addresses.isEmpty()) {
             _connectionState.value = ConnectionState.Error("could not find the computer")
@@ -514,6 +533,7 @@ class PliweeApp : Application() {
                 deviceName = trustStore.deviceName,
                 pinned = payload.fingerprint,
                 registry = registry,
+                profile = payload.profile,
                 pairingToken = payload.token,
             )
             when (result) {
@@ -548,6 +568,9 @@ class PliweeApp : Application() {
                     // `TrustStore.upsertPairedPeer` — and note this is the
                     // only line in this function that writes trust.
                     val stored = trustStore.upsertPairedPeer(peer)
+                    // Dial it back the way it was paired, until discovery
+                    // says otherwise. Memory only: never part of trust.
+                    peerProfiles.learnedFromPairing(targetHex, payload.profile)
                     connection.disconnect()
                     // `files.v1` is granted here because the person just
                     // paired this computer by hand, and every incoming file
@@ -583,5 +606,8 @@ class PliweeApp : Application() {
          * publish records until the phone ran out of patience.
          */
         private const val MAX_DISCOVERED_ADDRESSES = 6
+
+        /** Service types browsed per device: one per wire profile. */
+        private val WIRE_PROFILE_COUNT = io.github.yurisismotto.omnibridge.net.WireProfile.entries.size
     }
 }

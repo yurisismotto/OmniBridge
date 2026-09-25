@@ -1,0 +1,4 @@
+   Compiling pliwee-gui v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/gui)
+    Checking pliwee-daemon v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/daemon)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.78s
+clippy exit=0

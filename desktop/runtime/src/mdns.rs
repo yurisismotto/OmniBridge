@@ -5,18 +5,24 @@
 //! inbound connections is unreliable, while a desktop is a stable listener.
 //! Making the connection direction fixed also means there is exactly one
 //! handshake path to reason about.
+//!
+//! One instance is advertised under **both** service types — `_pliwee._tcp`
+//! and the legacy `_omnibridge._tcp` — with the same instance name, port and
+//! TXT record (ADR-0020 §D4). The legacy record is what lets an un-upgraded
+//! OmniBridge 1.0.0 app still find this daemon; the Pliwee app browses both
+//! and shows one device.
 
 use std::collections::HashMap;
 
 use mdns_sd::{IfKind, ServiceDaemon, ServiceInfo};
-use pliwee_core::discovery;
+use pliwee_core::{discovery, Profile};
 
 use crate::listener::Families;
 
-/// Live advertisement. Dropping this withdraws the record.
+/// Live advertisement. Dropping this withdraws both records.
 pub struct Advertisement {
     daemon: ServiceDaemon,
-    fullname: String,
+    fullnames: Vec<String>,
 }
 
 impl Advertisement {
@@ -55,34 +61,41 @@ impl Advertisement {
         let instance = device_id;
         let hostname = format!("{device_id}.local.");
 
-        let service = ServiceInfo::new(
-            pliwee_core::SERVICE_TYPE,
-            instance,
-            &hostname,
-            "",
-            port,
-            properties,
-        )?
-        // Let the mDNS stack track interface addresses itself, so the record
-        // stays correct across Wi-Fi/dock changes without a restart.
-        .enable_addr_auto();
+        let mut fullnames = Vec::with_capacity(Profile::ALL.len());
+        for profile in Profile::ALL {
+            let service = ServiceInfo::new(
+                profile.service_type(),
+                instance,
+                &hostname,
+                "",
+                port,
+                properties.clone(),
+            )?
+            // Let the mDNS stack track interface addresses itself, so the
+            // record stays correct across Wi-Fi/dock changes without a
+            // restart.
+            .enable_addr_auto();
 
-        let fullname = service.get_fullname().to_string();
-        daemon.register(service)?;
+            fullnames.push(service.get_fullname().to_string());
+            daemon.register(service)?;
 
-        tracing::info!(
-            port,
-            families = %families,
-            "advertising {}",
-            pliwee_core::SERVICE_TYPE
-        );
-        Ok(Self { daemon, fullname })
+            tracing::info!(
+                port,
+                families = %families,
+                profile = %profile,
+                "advertising {}",
+                profile.service_type()
+            );
+        }
+        Ok(Self { daemon, fullnames })
     }
 }
 
 impl Drop for Advertisement {
     fn drop(&mut self) {
-        // Best-effort goodbye packet so peers do not keep a stale record.
-        let _ = self.daemon.unregister(&self.fullname);
+        // Best-effort goodbye packets so peers do not keep a stale record.
+        for fullname in &self.fullnames {
+            let _ = self.daemon.unregister(fullname);
+        }
     }
 }

@@ -1,6 +1,7 @@
 package io.github.yurisismotto.omnibridge.pairing
 
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
+import io.github.yurisismotto.omnibridge.net.WireProfile
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 import javax.crypto.Mac
@@ -22,27 +23,32 @@ import javax.crypto.spec.SecretKeySpec
  * produce the same message. The domain separator is what keeps a captured
  * proof from being replayed back as a confirmation.
  *
+ * The domain comes from the connection's [WireProfile] (ADR-0020 §D4):
+ * `pliwee/pairing-proof/v1`, or on a connection to an OmniBridge 1.0.0
+ * desktop `omnibridge/pairing-proof/v1`. The proof is made, and the
+ * confirmation checked, under that one domain only.
+ *
  * Standard HMAC-SHA256 from the platform provider. Nothing bespoke.
  */
 object PairingProof {
 
-    private val PROOF_DOMAIN = "omnibridge/pairing-proof/v1".toByteArray(Charsets.US_ASCII)
-    private val CONFIRM_DOMAIN =
-        "omnibridge/pairing-confirm/v1".toByteArray(Charsets.US_ASCII)
-
     fun compute(
+        profile: WireProfile,
         token: ByteArray,
         responder: Fingerprint,
         initiator: Fingerprint,
         nonce: ByteArray,
-    ): ByteArray = mac(PROOF_DOMAIN, token, responder, initiator, nonce)
+    ): ByteArray = mac(profile.pairingProofDomain.ascii(), token, responder, initiator, nonce)
 
     fun computeConfirmation(
+        profile: WireProfile,
         token: ByteArray,
         responder: Fingerprint,
         initiator: Fingerprint,
         nonce: ByteArray,
-    ): ByteArray = mac(CONFIRM_DOMAIN, token, responder, initiator, nonce)
+    ): ByteArray = mac(profile.pairingConfirmDomain.ascii(), token, responder, initiator, nonce)
+
+    private fun String.ascii(): ByteArray = toByteArray(Charsets.US_ASCII)
 
     private fun mac(
         domain: ByteArray,

@@ -13,7 +13,7 @@ import javax.crypto.Mac
  * ```text
  * notification_id = HMAC-SHA256(
  *     key = device_notification_secret,
- *     msg = "omnibridge/notifications.v1/id/v1" || len32(platform_key) || platform_key
+ *     msg = "pliwee/notifications.v1/id/v1" || len32(platform_key) || platform_key
  * )[0..16]
  * ```
  *
@@ -28,6 +28,11 @@ import javax.crypto.Mac
  * load-bearing rather than incidental. An app that edits a message in place
  * would otherwise produce a second mirror, and two genuinely distinct alerts
  * that happened to read the same would merge into one.
+ *
+ * **Canonical domains only** (ADR-0020 §D4). These values are computed on
+ * this device alone and the desktop treats them as opaque, so there is no
+ * legacy `omnibridge/…` form to accept and none is built. The switch re-keys
+ * ids once, at the app change ADR-0020 D1 already forces.
  */
 object NotificationIdentity {
 
@@ -38,13 +43,13 @@ object NotificationIdentity {
      * `desktop/core/tests/notifications_protocol.rs` on the other, so a typo
      * fails a test rather than silently producing a different id space.
      */
-    const val ID_DOMAIN = "omnibridge/notifications.v1/id/v1"
+    const val ID_DOMAIN = "pliwee/notifications.v1/id/v1"
 
     /** ADR-0016 / [02 §6.5]: the group digest's own domain. */
-    const val GROUP_DOMAIN = "omnibridge/notifications.v1/group/v1"
+    const val GROUP_DOMAIN = "pliwee/notifications.v1/group/v1"
 
     /** ADR-0016 §11 / [02 §5.4]: the content digest's own domain. */
-    const val CONTENT_DOMAIN = "omnibridge/notifications.v1/content/v1"
+    const val CONTENT_DOMAIN = "pliwee/notifications.v1/content/v1"
 
     /**
      * Big-endian `uint32`, the length-prefixing convention the pairing proof
@@ -120,7 +125,7 @@ object NotificationIdentity {
      * digest:
      *
      * ```text
-     * SHA-256( "omnibridge/notifications.v1/content/v1"
+     * SHA-256( "pliwee/notifications.v1/content/v1"
      *        || len32(app_id)    || app_id
      *        || len32(app_label) || app_label
      *        || len32(title)     || title

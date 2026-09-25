@@ -430,8 +430,9 @@ impl Pages {
                 "security-high-symbolic",
                 "ob-status-connected",
                 "Secure connection",
-                "TLS 1.3 with ALPN omnibridge/1, mutually authenticated and pinned to the \
-                 key you approved when pairing. Direct on your network — no relay, no cloud.",
+                "TLS 1.3 with ALPN pliwee/1 (omnibridge/1 for an OmniBridge 1.0.0 device), \
+                 mutually authenticated and pinned to the key you approved when pairing. \
+                 Direct on your network — no relay, no cloud.",
             )
         } else {
             (

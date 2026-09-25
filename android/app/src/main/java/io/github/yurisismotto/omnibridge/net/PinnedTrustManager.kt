@@ -120,7 +120,11 @@ class IdentityKeyManager(private val identity: DeviceIdentity) : X509ExtendedKey
 
 object TlsFactory {
 
-    const val ALPN_PROTOCOL = "omnibridge/1"
+    /** Control ALPN of the canonical profile. See [WireProfile]. */
+    const val ALPN_PROTOCOL = "pliwee/1"
+
+    /** Control ALPN of the legacy OmniBridge profile (ADR-0020 §D4). */
+    const val LEGACY_ALPN_PROTOCOL = "omnibridge/1"
 
     /**
      * ALPN for a `files.v1` bulk data stream (ADR-0012, ADR-0013).
@@ -131,7 +135,10 @@ object TlsFactory {
      * not a weaker connection — it is the same connection carrying different
      * traffic.
      */
-    const val ALPN_DATA_PROTOCOL = "omnibridge-data/1"
+    const val ALPN_DATA_PROTOCOL = "pliwee-data/1"
+
+    /** Data ALPN of the legacy OmniBridge profile. */
+    const val LEGACY_ALPN_DATA_PROTOCOL = "omnibridge-data/1"
 
     /**
      * Builds a socket factory that will accept exactly one server identity.
@@ -156,9 +163,13 @@ object TlsFactory {
      * the "TLSv1.3" context: if the platform ever hands back a context that
      * enables more, this narrows it again.
      */
-    fun harden(socket: SSLSocket, alpn: String = ALPN_PROTOCOL) {
+    fun harden(socket: SSLSocket, alpn: String) {
         socket.enabledProtocols = arrayOf("TLSv1.3")
         socket.sslParameters = socket.sslParameters.apply {
+            // Exactly one ALPN, never both profiles' (ADR-0020 §D4). Offering
+            // both would let the server pick the profile, and a peer found
+            // under one name must never be authenticated under another. The
+            // caller passes its profile's value; there is no default.
             applicationProtocols = arrayOf(alpn)
             // Endpoint identification is left off deliberately: it verifies
             // hostnames, and hostnames are not identity in this protocol
@@ -168,5 +179,20 @@ object TlsFactory {
             endpointIdentificationAlgorithm = null
         }
         socket.tcpNoDelay = true
+    }
+
+    /**
+     * Checks, after the handshake, that the server selected the one ALPN
+     * this client offered. A server that ignored ALPN altogether would
+     * otherwise leave the connection with no negotiated profile, and the
+     * profile must never be assumed.
+     */
+    fun requireNegotiated(socket: SSLSocket, alpn: String) {
+        val negotiated = socket.applicationProtocol
+        if (negotiated != alpn) {
+            throw javax.net.ssl.SSLHandshakeException(
+                "the computer did not negotiate $alpn (got ${negotiated ?: "none"})",
+            )
+        }
     }
 }

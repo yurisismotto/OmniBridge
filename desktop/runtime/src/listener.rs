@@ -18,7 +18,7 @@ use std::time::Duration;
 
 use pliwee_core::error::Error;
 use pliwee_core::session::{self, SessionHost};
-use pliwee_core::tls::{self, NegotiatedProtocol};
+use pliwee_core::tls::{self, ConnectionKind};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_rustls::TlsAcceptor;
 
@@ -233,31 +233,36 @@ async fn handle_connection(
         "TLS established"
     );
 
-    match protocol {
-        Some(NegotiatedProtocol::Data) => {
-            // A bulk data stream. It shares this listener, this port and this
-            // pinned identity with the control session, and shares nothing
-            // else: no HELLO, no envelope, no capability dispatch. Which
-            // transfer it is for, and whether it may have it, is decided by
-            // `files.v1` from the transfer's single-use challenge.
-            return handle_data_stream(tls, fingerprint, state).await;
-        }
-        Some(NegotiatedProtocol::Control) => {}
-        None => {
-            // No ALPN, or one we do not speak. Failing closed matters here:
-            // treating an absent ALPN as "probably a control session" would
-            // hand the handshake path to any client that omitted it.
-            return Err(Error::Protocol("peer negotiated no known ALPN protocol"));
-        }
+    let Some(protocol) = protocol else {
+        // No ALPN, or one we do not speak. Failing closed matters here:
+        // treating an absent ALPN as "probably a control session" would
+        // hand the handshake path to any client that omitted it.
+        return Err(Error::Protocol("peer negotiated no known ALPN protocol"));
+    };
+    // The negotiated ALPN fixes the identity profile for this connection,
+    // once (ADR-0020 §D4). Everything below derives from it; nothing the
+    // peer sends later can change it.
+    let profile = protocol.profile;
+
+    if protocol.kind == ConnectionKind::Data {
+        // A bulk data stream. It shares this listener, this port and this
+        // pinned identity with the control session, and shares nothing
+        // else: no HELLO, no envelope, no capability dispatch. Which
+        // transfer it is for, and whether it may have it, is decided by
+        // `files.v1` from the transfer's single-use challenge — and only if
+        // the stream's profile is its control session's.
+        return handle_data_stream(tls, fingerprint, profile, state).await;
     }
 
     let host: Arc<dyn SessionHost> = state.clone();
     let (established, envelope_state) =
-        session::accept_handshake(&mut tls, &host, fingerprint).await?;
+        session::accept_handshake(&mut tls, &host, fingerprint, profile).await?;
 
     tracing::info!(
         device = %established.device.device_id,
         peer = %fingerprint.to_display_short(),
+        profile = %profile,
+        alpn = %String::from_utf8_lossy(profile.control_alpn()),
         capabilities = ?established.negotiated_capabilities,
         "session established"
     );
@@ -276,6 +281,7 @@ async fn handle_connection(
 async fn handle_data_stream(
     tls: tokio_rustls::server::TlsStream<TcpStream>,
     fingerprint: pliwee_core::Fingerprint,
+    profile: pliwee_core::Profile,
     state: Arc<DaemonState>,
 ) -> Result<(), Error> {
     let Some(transfers) = state.transfers.clone() else {
@@ -286,6 +292,7 @@ async fn handle_data_stream(
             fingerprint,
             Box::new(tls),
             pliwee_core::session::PROTOCOL_VERSION_MAX,
+            profile,
         )
         .await
 }

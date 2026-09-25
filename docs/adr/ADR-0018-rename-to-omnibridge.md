@@ -3,6 +3,8 @@
 Status: Accepted. **Supersedes the identifier tables of
 [ADR-0011](ADR-0011-project-naming-and-wire-identifiers.md).**
 
+> **Superseding note — 2026-09-24, Pliwee rebrand Wave 5 (branch `feature/pliwee-rebrand-wave5`), [ADR-0020](ADR-0020-rename-to-pliwee.md) §D4.** The wire identifiers in the table below are no longer canonical. Pliwee emits `pliwee/1`, `pliwee-data/1`, `_pliwee._tcp.local.`, `pliwee1:` and `pliwee/…/v1` domains, and accepts this table's values, except the notification domains, as the **legacy profile** through Pliwee v1.x, selected once per connection by the negotiated ALPN. The original text below is left as it was decided.
+
 ## Context
 
 The project was called **AnyFlow** — *One flow. Any device.* It is being

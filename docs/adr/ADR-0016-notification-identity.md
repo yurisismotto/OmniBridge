@@ -2,6 +2,8 @@
 
 **Status:** Accepted · 2026-09-08
 
+> **Superseding note — 2026-09-24, Pliwee rebrand Wave 5 (branch `feature/pliwee-rebrand-wave5`), [ADR-0020](ADR-0020-rename-to-pliwee.md) §D4.** The domains are now `pliwee/notifications.v1/{id,group,content}/v1`, canonical only: ids are derived on the source device and are opaque to the desktop, so no legacy form is accepted or built. The construction is unchanged; the `omnibridge/…` strings below are historical. The original text below is left as it was decided.
+
 Canonical record for how a mirrored notification is *named* on the wire.
 [ADR-0015](ADR-0015-notification-access.md) decides whether OmniBridge may read
 notifications at all and under what contract; this ADR decides what a

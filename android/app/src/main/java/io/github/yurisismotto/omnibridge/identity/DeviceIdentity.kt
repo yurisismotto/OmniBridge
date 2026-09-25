@@ -135,7 +135,11 @@ class DeviceIdentity private constructor(
                 // able to re-establish while the phone is in a pocket. The
                 // key is still confined to the TEE.
                 .setUserAuthenticationRequired(false)
-                .setCertificateSubject(X500Principal("CN=omnibridge:$deviceId"))
+                // `pliwee:<id>` for identities generated from Wave 5 on
+                // (ADR-0020 §D4). Only a brand-new key reaches this line; an
+                // existing identity is never regenerated to change its CN,
+                // and nothing parses the CN — trust is the SPKI pin.
+                .setCertificateSubject(X500Principal("CN=pliwee:$deviceId"))
                 .setCertificateSerialNumber(BigInteger(64, SecureRandom()))
                 .setCertificateNotBefore(notBefore.time)
                 .setCertificateNotAfter(notAfter.time)

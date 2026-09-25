@@ -2,6 +2,8 @@
 
 **Status:** Accepted · 2026-08-29
 
+> **Superseding note — 2026-09-24, Pliwee rebrand Wave 5 (branch `feature/pliwee-rebrand-wave5`), [ADR-0020](ADR-0020-rename-to-pliwee.md) §D4.** The daemon now advertises one instance under **both** `_pliwee._tcp.local.` (canonical) and `_omnibridge._tcp.local.` (legacy profile), and the app browses both and shows one device per TXT `id`. `_omnibridge._tcp.local.` below is the legacy value. The original text below is left as it was decided.
+
 ## Context
 
 The phone must find the desktop on a home or office network where addresses

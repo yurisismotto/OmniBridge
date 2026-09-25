@@ -25,6 +25,7 @@ pub mod notification_policy;
 pub mod notifications;
 pub mod pairing;
 pub mod platform;
+pub mod profile;
 pub mod qr;
 pub mod secret_store;
 pub mod session;
@@ -33,17 +34,25 @@ pub mod tls;
 
 pub use error::{Error, PairingError, Result};
 pub use fingerprint::Fingerprint;
+pub use profile::Profile;
 
 /// Default TCP port. Above 1024 so the daemon never needs privileges.
 /// Advertised over mDNS, so a conflicting deployment can simply use another.
 pub const DEFAULT_PORT: u16 = 55432;
 
-/// ALPN identifier for the control session. Negotiated by both ends, so a
-/// client that reaches an unrelated TLS service (or vice versa) fails fast
-/// during the handshake instead of exchanging garbage frames.
-pub const ALPN_PROTOCOL: &[u8] = b"omnibridge/1";
+/// ALPN identifier for the control session (canonical profile). Negotiated
+/// by both ends, so a client that reaches an unrelated TLS service (or vice
+/// versa) fails fast during the handshake instead of exchanging garbage
+/// frames. Which ALPN a connection negotiated also fixes its identity
+/// [`Profile`] (ADR-0020 §D4).
+pub const ALPN_PROTOCOL: &[u8] = b"pliwee/1";
 
-/// ALPN identifier for a bulk data stream (see ADR-0012, ADR-0013).
+/// Control-session ALPN of the legacy OmniBridge profile. Accepted through
+/// the Pliwee v1.x line; see [`Profile::OmniBridge`].
+pub const LEGACY_ALPN_PROTOCOL: &[u8] = b"omnibridge/1";
+
+/// ALPN identifier for a bulk data stream, canonical profile (see ADR-0012,
+/// ADR-0013).
 ///
 /// A data stream is a second TLS 1.3 connection to the *same* port, with the
 /// *same* mutual authentication and the *same* pinned identities. ALPN is
@@ -53,7 +62,15 @@ pub const ALPN_PROTOCOL: &[u8] = b"omnibridge/1";
 /// Sharing the port is deliberate: it means file transfer inherits the
 /// listener, the discovery record and the dual-stack binding that are already
 /// certified, and adds no second thing to find, firewall or advertise.
-pub const ALPN_DATA_PROTOCOL: &[u8] = b"omnibridge-data/1";
+pub const ALPN_DATA_PROTOCOL: &[u8] = b"pliwee-data/1";
 
-/// DNS-SD service type used for LAN discovery.
-pub const SERVICE_TYPE: &str = "_omnibridge._tcp.local.";
+/// Data-stream ALPN of the legacy OmniBridge profile.
+pub const LEGACY_ALPN_DATA_PROTOCOL: &[u8] = b"omnibridge-data/1";
+
+/// DNS-SD service type used for LAN discovery (canonical profile).
+pub const SERVICE_TYPE: &str = "_pliwee._tcp.local.";
+
+/// DNS-SD service type of the legacy OmniBridge profile. The daemon
+/// advertises one instance under both types, so an un-upgraded OmniBridge
+/// 1.0.0 app still finds it.
+pub const LEGACY_SERVICE_TYPE: &str = "_omnibridge._tcp.local.";

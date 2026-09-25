@@ -1,0 +1,16 @@
+== _pliwee._tcp
+= ; wlp0s20f3 ; IPv6 ; dfbdafa3505c934a21ba2abaa79c18ec ; _pliwee._tcp ; local ; dfbdafa3505c934a21ba2abaa79c18ec.local ; fe80::26c0:ae6f:206d:8e3 ; 55999 ; "id=dfbdafa3505c934a21ba2abaa79c18ec" "dn=fedora" "v=1" "pv=1-1
+= ; wlp0s20f3 ; IPv4 ; dfbdafa3505c934a21ba2abaa79c18ec ; _pliwee._tcp ; local ; dfbdafa3505c934a21ba2abaa79c18ec.local ; 192.168.68.69 ; 55999 ; "id=dfbdafa3505c934a21ba2abaa79c18ec" "dn=fedora" "v=1" "pv=1-1"
+= ; enp0s13f0u2u2c2 ; IPv6 ; dfbdafa3505c934a21ba2abaa79c18ec ; _pliwee._tcp ; local ; dfbdafa3505c934a21ba2abaa79c18ec.local ; fe80::26c0:ae6f:206d:8e3 ; 55999 ; "id=dfbdafa3505c934a21ba2abaa79c18ec" "dn=fedora" "v=1" "
+= ; enp0s13f0u2u2c2 ; IPv4 ; dfbdafa3505c934a21ba2abaa79c18ec ; _pliwee._tcp ; local ; dfbdafa3505c934a21ba2abaa79c18ec.local ; 192.168.68.69 ; 55999 ; "id=dfbdafa3505c934a21ba2abaa79c18ec" "dn=fedora" "v=1" "pv=1-1"
+== _omnibridge._tcp
+= ; wlp0s20f3 ; IPv6 ; dfbdafa3505c934a21ba2abaa79c18ec ; _omnibridge._tcp ; local ; dfbdafa3505c934a21ba2abaa79c18ec.local ; fe80::26c0:ae6f:206d:8e3 ; 55999 ; "id=dfbdafa3505c934a21ba2abaa79c18ec" "dn=fedora" "v=1" "pv
+= ; wlp0s20f3 ; IPv4 ; dfbdafa3505c934a21ba2abaa79c18ec ; _omnibridge._tcp ; local ; dfbdafa3505c934a21ba2abaa79c18ec.local ; 192.168.68.69 ; 55999 ; "id=dfbdafa3505c934a21ba2abaa79c18ec" "dn=fedora" "v=1" "pv=1-1"
+= ; enp0s13f0u2u2c2 ; IPv6 ; dfbdafa3505c934a21ba2abaa79c18ec ; _omnibridge._tcp ; local ; dfbdafa3505c934a21ba2abaa79c18ec.local ; fe80::26c0:ae6f:206d:8e3 ; 55999 ; "id=dfbdafa3505c934a21ba2abaa79c18ec" "dn=fedora" "v=
+= ; enp0s13f0u2u2c2 ; IPv4 ; dfbdafa3505c934a21ba2abaa79c18ec ; _omnibridge._tcp ; local ; dfbdafa3505c934a21ba2abaa79c18ec.local ; 192.168.68.69 ; 55999 ; "id=dfbdafa3505c934a21ba2abaa79c18ec" "dn=fedora" "v=1" "pv=1-1"
+= ; wlp0s20f3 ; IPv6 ; 7ca9ec07625f87a570f9afb6911d0ca7 ; _omnibridge._tcp ; local ; 7ca9ec07625f87a570f9afb6911d0ca7.local ; fe80::26c0:ae6f:206d:8e3 ; 55432 ; "pv=1-1" "dn=fedora" "id=7ca9ec07625f87a570f9afb6911d0ca7"
+= ; enp0s13f0u2u2c2 ; IPv6 ; 7ca9ec07625f87a570f9afb6911d0ca7 ; _omnibridge._tcp ; local ; 7ca9ec07625f87a570f9afb6911d0ca7.local ; fe80::26c0:ae6f:206d:8e3 ; 55432 ; "pv=1-1" "dn=fedora" "id=7ca9ec07625f87a570f9afb6911d
+= ; wlp0s20f3 ; IPv4 ; 7ca9ec07625f87a570f9afb6911d0ca7 ; _omnibridge._tcp ; local ; 7ca9ec07625f87a570f9afb6911d0ca7.local ; 192.168.68.69 ; 55432 ; "pv=1-1" "dn=fedora" "id=7ca9ec07625f87a570f9afb6911d0ca7" "v=1"
+= ; enp0s13f0u2u2c2 ; IPv4 ; 7ca9ec07625f87a570f9afb6911d0ca7 ; _omnibridge._tcp ; local ; 7ca9ec07625f87a570f9afb6911d0ca7.local ; 192.168.68.69 ; 55432 ; "pv=1-1" "dn=fedora" "id=7ca9ec07625f87a570f9afb6911d0ca7" "v=1"
+_pliwee._tcp: 4
+_omnibridge._tcp: 4

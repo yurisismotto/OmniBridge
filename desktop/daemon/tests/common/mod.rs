@@ -20,12 +20,39 @@ use pliwee_core::session::{
     self, ClientHandshake, PeerStatus, SessionHandle, SessionHost, SessionId,
 };
 use pliwee_core::store::Store;
-use pliwee_core::Fingerprint;
+use pliwee_core::{Fingerprint, Profile};
 use pliwee_daemon::state::DaemonState;
 use pliwee_proto::v1;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
 use tokio_rustls::{TlsAcceptor, TlsConnector};
+
+/// The wire identity profile this test process runs its clients under.
+///
+/// The Wave 5 plan runs `wire`, `e2e`, `files` and `sessions` **twice**, once
+/// per profile (ADR-0020 §D4). The run is chosen by `PLIWEE_TEST_PROFILE`:
+/// `pliwee` (also the default, when unset) or `omnibridge`. Anything else
+/// panics — a typo must not quietly run the canonical profile again and call
+/// it the legacy run. Every session the harness establishes asserts that it
+/// really negotiated this profile, so a green run is evidence of the profile
+/// it names.
+pub fn test_profile() -> Profile {
+    match std::env::var("PLIWEE_TEST_PROFILE") {
+        Err(std::env::VarError::NotPresent) => Profile::Pliwee,
+        Ok(name) => Profile::from_name(&name).unwrap_or_else(|| {
+            panic!("PLIWEE_TEST_PROFILE={name:?} is not a profile; use pliwee or omnibridge")
+        }),
+        Err(e) => panic!("PLIWEE_TEST_PROFILE is unreadable: {e}"),
+    }
+}
+
+/// The other profile, for no-hybrid tests.
+pub fn other_profile(profile: Profile) -> Profile {
+    match profile {
+        Profile::Pliwee => Profile::OmniBridge,
+        Profile::OmniBridge => Profile::Pliwee,
+    }
+}
 
 /// Installs the crypto provider once per test process.
 pub fn init_crypto() {
@@ -450,6 +477,7 @@ impl SessionHost for ClientHost {
     }
     async fn verify_pairing_proof(
         &self,
+        _profile: Profile,
         _initiator: &Fingerprint,
         _nonce: &[u8],
         _proof: &[u8],
@@ -664,31 +692,55 @@ impl TestClient {
         self.trusted.lock().await.contains(fingerprint)
     }
 
-    /// Opens a real TLS connection with the given pinned server identity.
+    /// Opens a real TLS connection with the given pinned server identity,
+    /// under this run's [`test_profile`].
     pub async fn tls_connect(
         &self,
         addr: SocketAddr,
         pinned: Fingerprint,
     ) -> Result<tokio_rustls::client::TlsStream<TcpStream>> {
-        let config = pliwee_core::tls::client_config(&self.identity, pinned)?;
+        self.tls_connect_with_profile(addr, pinned, test_profile())
+            .await
+    }
+
+    /// Opens a real TLS connection offering exactly `profile`'s control ALPN.
+    pub async fn tls_connect_with_profile(
+        &self,
+        addr: SocketAddr,
+        pinned: Fingerprint,
+        profile: Profile,
+    ) -> Result<tokio_rustls::client::TlsStream<TcpStream>> {
+        let config = pliwee_core::tls::client_config(&self.identity, pinned, profile)?;
         let connector = TlsConnector::from(config);
         let tcp = TcpStream::connect(addr).await?;
         // The name is irrelevant: our verifier pins the key and ignores it.
-        let name =
-            rustls_pki_types::ServerName::try_from("omnibridge.invalid").expect("static name");
+        let name = rustls_pki_types::ServerName::try_from("pliwee.invalid").expect("static name");
         Ok(connector.connect(name, tcp).await?)
     }
 
-    /// Full connect + handshake. `token` triggers the pairing exchange.
+    /// Full connect + handshake, under this run's [`test_profile`]. `token`
+    /// triggers the pairing exchange.
     pub async fn connect(
         &self,
         addr: SocketAddr,
         pinned: Fingerprint,
         token: Option<&PairingToken>,
     ) -> Result<ConnectedSession> {
+        self.connect_with_profile(addr, pinned, token, test_profile())
+            .await
+    }
+
+    /// Full connect + handshake under an explicit profile.
+    pub async fn connect_with_profile(
+        &self,
+        addr: SocketAddr,
+        pinned: Fingerprint,
+        token: Option<&PairingToken>,
+        profile: Profile,
+    ) -> Result<ConnectedSession> {
         self.arm_files(addr, pinned).await;
-        let mut tls = self.tls_connect(addr, pinned).await?;
-        match session::connect_handshake(&mut tls, &self.host, pinned, token).await? {
+        let mut tls = self.tls_connect_with_profile(addr, pinned, profile).await?;
+        match session::connect_handshake(&mut tls, &self.host, pinned, profile, token).await? {
             ClientHandshake::Established(established, state) => {
                 let host = Arc::clone(&self.host);
                 let capabilities = established.negotiated_capabilities.clone();
@@ -708,6 +760,13 @@ impl TestClient {
                 let handle = ready_rx
                     .await
                     .map_err(|_| pliwee_core::Error::Protocol("session ended before it started"))?;
+                // The run is evidence of the profile it names only if the
+                // session really negotiated it.
+                assert_eq!(
+                    handle.profile(),
+                    profile,
+                    "the session did not run under the requested profile"
+                );
 
                 Ok(ConnectedSession {
                     handle,
@@ -744,11 +803,12 @@ impl SessionHost for HandleNotifier {
     }
     async fn verify_pairing_proof(
         &self,
+        profile: Profile,
         i: &Fingerprint,
         n: &[u8],
         p: &[u8],
     ) -> std::result::Result<[u8; 32], PairingError> {
-        self.inner.verify_pairing_proof(i, n, p).await
+        self.inner.verify_pairing_proof(profile, i, n, p).await
     }
     async fn confirm_pairing(&self, d: &v1::DeviceInfo, f: &Fingerprint) -> bool {
         self.inner.confirm_pairing(d, f).await
@@ -929,8 +989,9 @@ pub struct TestDialer {
 
 #[async_trait::async_trait]
 impl DataStreamDialer for TestDialer {
-    async fn dial(&self, _peer: &Fingerprint) -> Result<Box<dyn DataStreamIo>> {
-        let stream = open_data_stream(self.addr, &self.identity, self.pinned).await?;
+    async fn dial(&self, _peer: &Fingerprint, profile: Profile) -> Result<Box<dyn DataStreamIo>> {
+        let stream =
+            open_data_stream_with_profile(self.addr, &self.identity, self.pinned, profile).await?;
         Ok(Box::new(stream))
     }
 }
@@ -940,15 +1001,28 @@ impl DataStreamDialer for TestDialer {
 /// Public so a test can play a hostile dialer: complete a genuine TLS
 /// handshake with a real identity and then send whatever it likes as the
 /// first frame.
+///
+/// Offers this run's [`test_profile`] data ALPN, which is the profile every
+/// control session in the run negotiated.
 pub async fn open_data_stream(
     addr: SocketAddr,
     identity: &LocalIdentity,
     pinned: Fingerprint,
 ) -> Result<tokio_rustls::client::TlsStream<TcpStream>> {
-    let config = pliwee_core::tls::data_stream_client_config(identity, pinned)?;
+    open_data_stream_with_profile(addr, identity, pinned, test_profile()).await
+}
+
+/// Opens a raw data-stream connection offering exactly `profile`'s data ALPN.
+pub async fn open_data_stream_with_profile(
+    addr: SocketAddr,
+    identity: &LocalIdentity,
+    pinned: Fingerprint,
+    profile: Profile,
+) -> Result<tokio_rustls::client::TlsStream<TcpStream>> {
+    let config = pliwee_core::tls::data_stream_client_config(identity, pinned, profile)?;
     let connector = TlsConnector::from(config);
     let tcp = TcpStream::connect(addr).await?;
-    let name = rustls_pki_types::ServerName::try_from("omnibridge.invalid").expect("static name");
+    let name = rustls_pki_types::ServerName::try_from("pliwee.invalid").expect("static name");
     Ok(connector.connect(name, tcp).await?)
 }
 

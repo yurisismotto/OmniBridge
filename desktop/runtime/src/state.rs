@@ -577,6 +577,7 @@ impl SessionHost for DaemonState {
 
     async fn verify_pairing_proof(
         &self,
+        profile: pliwee_core::Profile,
         initiator: &Fingerprint,
         nonce: &[u8],
         proof: &[u8],
@@ -589,7 +590,7 @@ impl SessionHost for DaemonState {
             return Err(PairingError::NotInPairingMode);
         };
 
-        let result = session.verify_and_consume(&responder, initiator, nonce, proof);
+        let result = session.verify_and_consume(profile, &responder, initiator, nonce, proof);
 
         // Once the window can no longer be used, drop it immediately so its
         // token is zeroed rather than lingering in memory.

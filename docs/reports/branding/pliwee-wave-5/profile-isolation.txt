@@ -1,0 +1,15 @@
+   Compiling pliwee-daemon v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/daemon)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.82s
+     Running tests/profile_isolation.rs (target/debug/deps/profile_isolation-e54a90e6b05dc250)
+
+running 2 tests
+EVIDENCE X1/X2 connection=pliwee proof=omnibridge: 2026-09-25T02:21:47.372168Z  INFO pliwee_runtime::listener: connection ended peer_addr=127.0.0.1:36100 error=pairing failed: invalid proof
+EVIDENCE X1/X2 connection=omnibridge proof=pliwee: 2026-09-25T02:21:47.555870Z  INFO pliwee_runtime::listener: connection ended peer_addr=127.0.0.1:48254 error=pairing failed: invalid proof
+EVIDENCE X3 session=pliwee stream=omnibridge: 2026-09-25T02:21:47.511112Z  WARN pliwee_capability_files: refused a data stream whose profile differs from its control session transfer=5a5a5a5a peer=F075 F3FD AE89 8FE5 session_profile=pliwee stream_profile=omnibridge
+EVIDENCE X3 session=pliwee stream=omnibridge: 2026-09-25T02:21:47.557588Z  WARN pliwee_capability_files: refused a data stream whose profile differs from its control session transfer=5a5a5a5a peer=F075 F3FD AE89 8FE5 session_profile=pliwee stream_profile=omnibridge
+test a_pairing_proof_from_the_other_profile_is_rejected_by_the_daemon ... ok
+EVIDENCE X3 session=omnibridge stream=pliwee: 2026-09-25T02:21:47.843078Z  WARN pliwee_capability_files: refused a data stream whose profile differs from its control session transfer=5a5a5a5a peer=384F 1D45 1921 6682 session_profile=omnibridge stream_profile=pliwee
+EVIDENCE X3 session=omnibridge stream=pliwee: 2026-09-25T02:21:47.890305Z  WARN pliwee_capability_files: refused a data stream whose profile differs from its control session transfer=5a5a5a5a peer=384F 1D45 1921 6682 session_profile=omnibridge stream_profile=pliwee
+test a_data_stream_from_the_other_profile_is_refused_before_any_byte ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.67s

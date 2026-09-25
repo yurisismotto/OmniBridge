@@ -1,14 +1,22 @@
 package io.github.yurisismotto.omnibridge.pairing
 
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
+import io.github.yurisismotto.omnibridge.net.WireProfile
 import java.net.InetSocketAddress
 
 /**
  * Parses the QR code shown by the desktop.
  *
  * ```text
- * omnibridge1:<responder-fingerprint-hex>:<token-base32>:<device-id>:<addr>[,<addr>]
+ * pliwee1:<responder-fingerprint-hex>:<token-base32>:<device-id>:<addr>[,<addr>]
  * ```
+ *
+ * Both `pliwee1:` (a Pliwee desktop) and `omnibridge1:` (an OmniBridge 1.0.0
+ * desktop) are accepted, and the scheme fixes the [WireProfile] of the
+ * pairing connection (ADR-0020 §D4): the ALPN it offers and the domain its
+ * proof is made under. Another version of either scheme — `pliwee2:`,
+ * `omnibridge2:` — is recognised as a newer format and refused as such
+ * (ADR-0011), never misparsed.
  *
  * Everything in a scanned code is attacker-controlled: the user may well be
  * pointing the camera at something hostile. The parser is therefore strict
@@ -20,24 +28,62 @@ import java.net.InetSocketAddress
  * trust-on-first-use design would have.
  */
 data class QrPayload(
+    /** Fixed by the scanned scheme. */
+    val profile: WireProfile,
     val fingerprint: Fingerprint,
     val token: ByteArray,
     val deviceId: String,
     val addresses: List<InetSocketAddress>,
 ) {
+    /** What a scanned string turned out to be. */
+    sealed interface Scan {
+        /** A pairing code this build speaks. */
+        data class Accepted(val payload: QrPayload) : Scan
+
+        /**
+         * A pairing code of a brand this build knows, in a version it does
+         * not speak (`pliwee2:`, `omnibridge2:`). Refused, and distinguishable
+         * from "not a pairing code" so the refusal can say why.
+         */
+        data object UnsupportedVersion : Scan
+
+        /** Not a pairing code, or a malformed one. */
+        data object Invalid : Scan
+    }
+
     companion object {
-        const val SCHEME = "omnibridge1"
+        /** The scheme a Pliwee desktop shows. */
+        const val SCHEME = "pliwee1"
+
+        /** The scheme an OmniBridge 1.0.0 desktop shows. Accepted, never emitted. */
+        const val LEGACY_SCHEME = "omnibridge1"
+
         const val MAX_LENGTH = 512
         const val TOKEN_LENGTH = 20
 
-        fun parse(input: String): QrPayload? {
-            if (input.length > MAX_LENGTH) return null
+        /** Brands whose other versions are recognised and refused. */
+        private val KNOWN_BRANDS = listOf("pliwee", "omnibridge")
+
+        fun parse(input: String): QrPayload? = (scan(input) as? Scan.Accepted)?.payload
+
+        fun scan(input: String): Scan {
+            if (input.length > MAX_LENGTH) return Scan.Invalid
 
             // Addresses contain ':' (ports and IPv6), so split into exactly
             // five parts and keep the remainder as the address list.
             val parts = input.split(':', limit = 5)
+            val profile = WireProfile.ofQrScheme(parts[0])
+                ?: return if (isOtherKnownVersion(parts[0])) Scan.UnsupportedVersion else Scan.Invalid
+            return parseBody(profile, parts)?.let { Scan.Accepted(it) } ?: Scan.Invalid
+        }
+
+        private fun isOtherKnownVersion(scheme: String): Boolean = KNOWN_BRANDS.any { brand ->
+            val version = scheme.removePrefix(brand)
+            version != scheme && version.isNotEmpty() && version.all { it in '0'..'9' }
+        }
+
+        private fun parseBody(profile: WireProfile, parts: List<String>): QrPayload? {
             if (parts.size < 4) return null
-            if (parts[0] != SCHEME) return null
 
             val fingerprint = Fingerprint.fromHex(parts[1]) ?: return null
             val token = Base32.decode(parts[2]) ?: return null
@@ -54,7 +100,7 @@ data class QrPayload(
                 ?.mapNotNull(::parseAddress)
                 ?: emptyList()
 
-            return QrPayload(fingerprint, token, deviceId, addresses)
+            return QrPayload(profile, fingerprint, token, deviceId, addresses)
         }
 
         private fun parseAddress(text: String): InetSocketAddress? {
@@ -73,7 +119,8 @@ data class QrPayload(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is QrPayload) return false
-        return fingerprint.contentEquals(other.fingerprint) &&
+        return profile == other.profile &&
+            fingerprint.contentEquals(other.fingerprint) &&
             token.contentEquals(other.token) &&
             deviceId == other.deviceId &&
             addresses == other.addresses
@@ -83,7 +130,8 @@ data class QrPayload(
 
     /** Never let a token reach a log or a crash report. */
     override fun toString(): String =
-        "QrPayload(fingerprint=${fingerprint.toDisplayShort()}, deviceId=$deviceId, " +
+        "QrPayload(profile=${profile.id}, fingerprint=${fingerprint.toDisplayShort()}, " +
+            "deviceId=$deviceId, " +
             "addresses=$addresses, token=<redacted>)"
 }
 

@@ -298,6 +298,7 @@ fn context() -> (
     (
         CapabilityContext {
             peer: peer(),
+            profile: pliwee_core::Profile::Pliwee,
             peer_device_id: "test-peer".to_string(),
             outbound: tx,
         },

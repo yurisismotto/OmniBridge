@@ -1,0 +1,94 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running tests/e2e.rs (target/debug/deps/e2e-a832953771e00a06)
+
+running 18 tests
+test a_captured_proof_cannot_be_replayed_by_another_device ... ok
+test a_declined_confirmation_does_not_pair ... ok
+test a_different_server_identity_is_rejected_by_the_client ... ok
+test a_capability_the_peer_was_not_granted_is_not_delivered ... ok
+test a_malformed_capability_payload_does_not_kill_the_session ... ok
+test a_paired_device_reconnects_without_pairing_again ... ok
+test a_revoked_device_can_pair_again_when_the_owner_opens_a_new_window ... ok
+test a_revoked_device_cannot_re_pair_without_a_new_token ... ok
+test a_revoked_device_is_refused_on_its_next_connection ... ok
+test a_token_cannot_pair_a_second_device ... ok
+test a_revoked_device_still_needs_the_right_token_and_a_human ... ok
+test a_wrong_pairing_token_is_rejected ... ok
+test an_out_of_range_battery_percentage_is_rejected ... ok
+test an_expired_pairing_window_rejects_a_valid_token ... ok
+test an_unpaired_device_cannot_use_the_protocol ... ok
+test an_unknown_capability_id_is_refused_without_closing_the_session ... ok
+test pairing_then_ping_pong_then_battery ... ok
+test several_pings_round_trip_on_one_connection ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.63s
+
+     Running tests/files.rs (target/debug/deps/files-b7f149712c0b8084)
+
+running 36 tests
+test a_data_stream_cannot_be_opened_before_the_transfer_is_agreed ... ok
+test a_data_stream_that_says_nothing_does_not_hold_a_connection_slot ... ok
+test a_filename_that_sanitizes_to_nothing_is_rejected ... ok
+test a_peer_that_floods_and_never_reads_cannot_wedge_the_daemon ... ok
+test a_file_much_larger_than_the_copy_buffer_transfers_intact ... ok
+test a_phone_sends_a_file_and_the_desktop_verifies_and_stores_it ... ok
+test a_second_file_with_the_same_name_is_numbered_not_overwritten ... ok
+test a_transfer_works_over_both_address_families ... ok
+test a_receiver_side_cancel_reaches_the_sender_as_a_cancellation ... ok
+test an_oversized_data_stream_frame_is_refused_before_allocating ... ok
+test f10_f12_a_truncated_stream_fails_and_leaves_nothing_behind ... ok
+test f13_a_receiver_can_decline_an_offer_outright ... ok
+test f11_a_stream_longer_than_its_offer_is_refused ... ok
+test f13_cancelling_mid_transfer_stops_it_and_deletes_the_partial_file ... ok
+test f14_losing_the_control_session_mid_transfer_fails_it_and_cleans_up ... ok
+test f15_a_transfer_whose_grant_disappears_is_reaped ... ok
+test f15_revoking_a_peer_mid_transfer_stops_it_immediately ... ok
+test f16_oversized_metadata_is_refused_without_allocating_for_it ... ok
+test f17_a_duplicate_file_complete_changes_nothing ... ok
+test f18_cancelling_one_transfer_does_not_disturb_another ... ok
+test f13_an_offer_nobody_answers_times_out_rather_than_hanging ... ok
+test f18_two_simultaneous_transfers_stay_isolated ... ok
+test f1_a_desktop_cannot_offer_to_a_peer_it_has_not_granted ... ok
+test f1_a_withdrawn_grant_is_enforced_by_the_receiver_within_the_session ... ok
+test f2_a_stranger_cannot_open_a_data_stream ... ok
+test f3_another_paired_device_cannot_attach_to_someone_elses_transfer ... ok
+test f1_an_offer_from_a_peer_without_a_grant_never_reaches_the_capability ... ok
+test f5_a_challenge_is_single_use_so_a_second_stream_is_refused ... ok
+test f4_a_guessed_transfer_id_is_not_a_bearer_token ... ok
+test f5_a_transfer_id_cannot_be_reused_for_a_second_offer ... ok
+test f7_f8_a_hostile_filename_cannot_escape_the_download_directory ... ok
+test f6_a_transfer_nobody_dialled_expires_and_stops_being_usable ... ok
+test f9_a_file_whose_hash_does_not_match_is_discarded_not_stored ... ok
+test files_is_advertised_but_never_granted_automatically ... ok
+test the_desktop_sends_a_file_and_the_phone_verifies_and_stores_it ... ok
+test too_many_transfers_at_once_are_refused ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.13s
+
+     Running tests/sessions.rs (target/debug/deps/sessions-28d9a3d115a6b270)
+
+running 6 tests
+test a_session_that_ends_is_removed_from_the_registry ... ok
+test a_reconnection_replaces_the_previous_session_rather_than_duplicating_it ... ok
+test a_silent_peer_is_eventually_dropped_rather_than_left_connected ... ok
+test battery_telemetry_is_dropped_when_the_session_ends ... ok
+test revoking_a_device_leaves_no_session_behind ... ok
+test a_superseded_sessions_late_close_does_not_evict_the_live_one ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.58s
+
+     Running tests/wire.rs (target/debug/deps/wire-5787456a5347cc73)
+
+running 10 tests
+test a_client_without_a_certificate_is_rejected_during_the_handshake ... ok
+test a_hello_that_claims_someone_elses_fingerprint_is_refused ... ok
+test a_duplicate_message_id_terminates_the_session ... ok
+test a_non_increasing_sequence_number_terminates_the_session ... ok
+test a_replayed_envelope_terminates_the_session ... ok
+test an_unauthenticated_peer_cannot_skip_the_handshake ... ok
+test a_short_message_id_is_refused ... ok
+test an_unknown_peer_cannot_send_anything_but_a_pair_request ... ok
+test an_unsupported_protocol_version_is_reported_and_refused ... ok
+test changing_the_protocol_version_mid_connection_terminates_the_session ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.73s

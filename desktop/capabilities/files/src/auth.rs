@@ -18,11 +18,18 @@
 //! ```text
 //! mac = HMAC-SHA256(
 //!     key = stream_challenge,
-//!     msg = "omnibridge/files.v1/data-stream/v1"
+//!     msg = domain(profile)
+//!           — "pliwee/files.v1/data-stream/v1", or on a connection that
+//!             negotiated the legacy profile "omnibridge/files.v1/data-stream/v1"
 //!           || len_prefixed(acceptor_fingerprint)
 //!           || len_prefixed(dialer_fingerprint)
 //!           || len_prefixed(transfer_id))
 //! ```
+//!
+//! The domain is the control session's identity [`Profile`] (ADR-0020 §D4),
+//! and the data stream must have negotiated that same profile: the acceptor
+//! refuses a stream whose profile differs before it even looks at the MAC,
+//! and never verifies under the other profile's domain.
 //!
 //! This is deliberately the same shape as the pairing proof in
 //! `pliwee_core::pairing`: a standard MAC, a domain separator, and every
@@ -50,7 +57,7 @@ use sha2::Sha256;
 use subtle::ConstantTimeEq;
 
 use pliwee_core::error::{Error, Result};
-use pliwee_core::Fingerprint;
+use pliwee_core::{Fingerprint, Profile};
 use rand::TryRngCore;
 
 use crate::limits::{STREAM_CHALLENGE_LEN, TRANSFER_ID_LEN};
@@ -58,9 +65,14 @@ use crate::transfer::TransferId;
 
 type HmacSha256 = Hmac<Sha256>;
 
-/// Domain separator. Versioned with the capability, so a future `files.v2`
-/// cannot have a proof from `files.v1` replayed into it.
-const DATA_STREAM_DOMAIN: &[u8] = b"omnibridge/files.v1/data-stream/v1";
+/// Domain separator of `profile`. Versioned with the capability, so a future
+/// `files.v2` cannot have a proof from `files.v1` replayed into it.
+pub fn data_stream_domain(profile: Profile) -> &'static [u8] {
+    match profile {
+        Profile::Pliwee => b"pliwee/files.v1/data-stream/v1",
+        Profile::OmniBridge => b"omnibridge/files.v1/data-stream/v1",
+    }
+}
 
 /// The single-use secret that keys a data stream's MAC.
 ///
@@ -125,8 +137,10 @@ pub fn generate_transfer_id() -> Result<TransferId> {
 /// `acceptor` is the device that accepts data-stream connections and issued
 /// the challenge (the desktop daemon); `dialer` is the device that opens the
 /// stream and proves it (the phone). The roles are fixed by which side
-/// listens, never by which side is sending the file.
+/// listens, never by which side is sending the file. `profile` is the
+/// profile of the control session that issued the challenge.
 pub fn compute_stream_mac(
+    profile: Profile,
     challenge: &StreamChallenge,
     acceptor: &Fingerprint,
     dialer: &Fingerprint,
@@ -135,7 +149,7 @@ pub fn compute_stream_mac(
     // HMAC accepts a key of any length, so this cannot fail.
     let mut m =
         <HmacSha256 as Mac>::new_from_slice(&challenge.0).expect("HMAC accepts keys of any length");
-    m.update(DATA_STREAM_DOMAIN);
+    m.update(data_stream_domain(profile));
     update_len_prefixed(&mut m, acceptor.as_bytes());
     update_len_prefixed(&mut m, dialer.as_bytes());
     update_len_prefixed(&mut m, transfer_id.as_bytes());
@@ -181,14 +195,14 @@ mod tests {
 
     #[test]
     fn a_correct_mac_verifies() {
-        let mac = compute_stream_mac(&challenge(1), &fp(2), &fp(3), &id(4));
+        let mac = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(2), &fp(3), &id(4));
         assert!(verify_stream_mac(&mac, &mac));
     }
 
     #[test]
     fn a_different_challenge_does_not_verify() {
-        let expected = compute_stream_mac(&challenge(1), &fp(2), &fp(3), &id(4));
-        let other = compute_stream_mac(&challenge(9), &fp(2), &fp(3), &id(4));
+        let expected = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(2), &fp(3), &id(4));
+        let other = compute_stream_mac(Profile::Pliwee, &challenge(9), &fp(2), &fp(3), &id(4));
         assert!(!verify_stream_mac(&expected, &other));
     }
 
@@ -196,22 +210,22 @@ mod tests {
     fn a_proof_for_one_transfer_does_not_authorize_another() {
         // The transfer-hijacking case: same peers, same challenge, different
         // transfer.
-        let expected = compute_stream_mac(&challenge(1), &fp(2), &fp(3), &id(4));
-        let other = compute_stream_mac(&challenge(1), &fp(2), &fp(3), &id(5));
+        let expected = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(2), &fp(3), &id(4));
+        let other = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(2), &fp(3), &id(5));
         assert!(!verify_stream_mac(&expected, &other));
     }
 
     #[test]
     fn a_proof_is_worthless_against_a_different_acceptor() {
-        let expected = compute_stream_mac(&challenge(1), &fp(2), &fp(3), &id(4));
-        let other = compute_stream_mac(&challenge(1), &fp(9), &fp(3), &id(4));
+        let expected = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(2), &fp(3), &id(4));
+        let other = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(9), &fp(3), &id(4));
         assert!(!verify_stream_mac(&expected, &other));
     }
 
     #[test]
     fn a_proof_cannot_be_replayed_by_a_different_dialer() {
-        let expected = compute_stream_mac(&challenge(1), &fp(2), &fp(3), &id(4));
-        let other = compute_stream_mac(&challenge(1), &fp(2), &fp(9), &id(4));
+        let expected = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(2), &fp(3), &id(4));
+        let other = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(2), &fp(9), &id(4));
         assert!(!verify_stream_mac(&expected, &other));
     }
 
@@ -219,14 +233,14 @@ mod tests {
     fn swapping_the_two_fingerprints_changes_the_mac() {
         // Length-prefixing is what guarantees this: without it, a
         // concatenation of two 32-byte values would be ambiguous.
-        let a = compute_stream_mac(&challenge(1), &fp(2), &fp(3), &id(4));
-        let b = compute_stream_mac(&challenge(1), &fp(3), &fp(2), &id(4));
+        let a = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(2), &fp(3), &id(4));
+        let b = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(3), &fp(2), &id(4));
         assert!(!verify_stream_mac(&a, &b));
     }
 
     #[test]
     fn a_truncated_or_padded_mac_is_refused() {
-        let mac = compute_stream_mac(&challenge(1), &fp(2), &fp(3), &id(4));
+        let mac = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(2), &fp(3), &id(4));
         assert!(!verify_stream_mac(&mac, &mac[..31]));
         assert!(!verify_stream_mac(&mac, &[]));
         let mut long = mac.to_vec();
@@ -264,17 +278,66 @@ mod tests {
         assert_ne!(x, y);
     }
 
-    /// The value the Kotlin suite must reproduce.
+    /// The values the Kotlin suite must reproduce, one per profile.
     ///
-    /// Pinning it here makes the MAC a checked cross-language contract rather
-    /// than two implementations that happen to agree today. `KeyDigestsTest`
-    /// and `PairingProofTest` do the same for the other shared constructions.
+    /// Pinning them here makes the MAC a checked cross-language contract
+    /// rather than two implementations that happen to agree today.
+    /// `KeyDigestsTest` and `PairingProofTest` do the same for the other
+    /// shared constructions.
+    ///
+    /// The legacy value is the one committed before Wave 5, byte for byte: it
+    /// now tests live legacy-profile code (ADR-0020 D10). The Pliwee value
+    /// was computed independently of this crate by
+    /// `docs/reports/branding/pliwee-wave-5/pliwee_domain_kats.py`.
     #[test]
-    fn the_mac_matches_the_published_cross_language_vector() {
-        let mac = compute_stream_mac(&challenge(0x01), &fp(0x02), &fp(0x03), &id(0x04));
+    fn the_legacy_mac_matches_the_published_cross_language_vector() {
+        let mac = compute_stream_mac(
+            Profile::OmniBridge,
+            &challenge(0x01),
+            &fp(0x02),
+            &fp(0x03),
+            &id(0x04),
+        );
         assert_eq!(
             mac.iter().map(|b| format!("{b:02x}")).collect::<String>(),
             "503aaf7d8c15b38971f4fbcc3ec34742ae27263ac94f2507ecab7c3691764576"
         );
+    }
+
+    #[test]
+    fn the_pliwee_mac_matches_the_independent_cross_language_vector() {
+        let mac = compute_stream_mac(
+            Profile::Pliwee,
+            &challenge(0x01),
+            &fp(0x02),
+            &fp(0x03),
+            &id(0x04),
+        );
+        assert_eq!(
+            mac.iter().map(|b| format!("{b:02x}")).collect::<String>(),
+            "de3164a18f2cfb5e042b4b755d45f30f3049e41a93d0f727b33b26e17bafc3f9"
+        );
+    }
+
+    #[test]
+    fn the_domains_are_exactly_the_approved_ones() {
+        assert_eq!(
+            data_stream_domain(Profile::Pliwee),
+            b"pliwee/files.v1/data-stream/v1"
+        );
+        assert_eq!(
+            data_stream_domain(Profile::OmniBridge),
+            b"omnibridge/files.v1/data-stream/v1"
+        );
+    }
+
+    /// No hybrid state: a MAC made under one profile's domain is not a valid
+    /// MAC under the other's, for identical inputs.
+    #[test]
+    fn a_mac_from_one_profile_does_not_verify_under_the_other() {
+        let pliwee = compute_stream_mac(Profile::Pliwee, &challenge(1), &fp(2), &fp(3), &id(4));
+        let legacy = compute_stream_mac(Profile::OmniBridge, &challenge(1), &fp(2), &fp(3), &id(4));
+        assert!(!verify_stream_mac(&pliwee, &legacy));
+        assert!(!verify_stream_mac(&legacy, &pliwee));
     }
 }

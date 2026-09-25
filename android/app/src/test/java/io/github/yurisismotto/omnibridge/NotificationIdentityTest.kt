@@ -7,6 +7,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -47,17 +48,24 @@ class NotificationIdentityTest {
     // -- the pinned vectors --------------------------------------------------
 
     /**
-     * The exact bytes ADR-0016's derivation produces.
+     * The exact bytes ADR-0016's derivation produces, under ADR-0020 §D4's
+     * canonical domain.
      *
      * ```text
      * HMAC-SHA256(secret,
-     *   "omnibridge/notifications.v1/id/v1" || len32(key) || key)[0..16]
+     *   "pliwee/notifications.v1/id/v1" || len32(key) || key)[0..16]
      * ```
+     *
+     * Computed independently by
+     * `docs/reports/branding/pliwee-wave-5/pliwee_domain_kats.py`. The same
+     * script reproduces the pre-Wave-5 `omnibridge/…` values (3c8effce…,
+     * b9f8d940…, 3561179d…, e88bcb16…), which the wave report records. They
+     * are not kept here: notification ids have no legacy profile.
      */
     @Test
     fun `the notification id vector`() {
         assertEquals(
-            "3c8effce6feb1582a65e100aeea1a810",
+            "c66b87d0c2045df6dda2925297262cb8",
             hex(NotificationIdentity.derive(mac(secret), platformKey)),
         )
     }
@@ -65,7 +73,7 @@ class NotificationIdentityTest {
     @Test
     fun `the group id vector`() {
         assertEquals(
-            "b9f8d940e134bccb",
+            "74935dada71d629f",
             hex(NotificationIdentity.groupId("0|example.fixture.app|g:chat")),
         )
     }
@@ -79,12 +87,24 @@ class NotificationIdentityTest {
         assertEquals("12345678", hex(NotificationIdentity.len32(0x12345678)))
     }
 
-    /** The domain strings are part of the contract, not decoration. */
+    /**
+     * The domain strings are part of the contract, not decoration. Canonical
+     * only (ADR-0020 §D4): no `omnibridge/…` form survives on this path.
+     */
     @Test
     fun `the domain strings are exactly the approved ones`() {
-        assertEquals("omnibridge/notifications.v1/id/v1", NotificationIdentity.ID_DOMAIN)
-        assertEquals("omnibridge/notifications.v1/group/v1", NotificationIdentity.GROUP_DOMAIN)
-        assertEquals("omnibridge/notifications.v1/content/v1", NotificationIdentity.CONTENT_DOMAIN)
+        assertEquals("pliwee/notifications.v1/id/v1", NotificationIdentity.ID_DOMAIN)
+        assertEquals("pliwee/notifications.v1/group/v1", NotificationIdentity.GROUP_DOMAIN)
+        assertEquals("pliwee/notifications.v1/content/v1", NotificationIdentity.CONTENT_DOMAIN)
+        for (domain in listOf(
+            NotificationIdentity.ID_DOMAIN,
+            NotificationIdentity.GROUP_DOMAIN,
+            NotificationIdentity.CONTENT_DOMAIN,
+        )) {
+            for (dead in listOf("omnibridge", "anyflow", "fedroid")) {
+                assertFalse(domain.contains(dead))
+            }
+        }
     }
 
     // -- the properties the design depends on --------------------------------
@@ -114,7 +134,7 @@ class NotificationIdentityTest {
     @Test
     fun `a different key derives a different id`() {
         assertEquals(
-            "3561179daf1a26a8a047f3f44758eaf3",
+            "889ab0ae9dd2c6ed9a4529e54f68ce1e",
             hex(NotificationIdentity.derive(mac(secret), otherKey)),
         )
         assertNotEquals(
@@ -130,7 +150,7 @@ class NotificationIdentityTest {
     @Test
     fun `a different secret derives a different id`() {
         assertEquals(
-            "e88bcb16b74b498c91090bc76fc3b2d9",
+            "4cf44891803581d358fe6043497e1d98",
             hex(NotificationIdentity.derive(mac(otherSecret), platformKey)),
         )
         assertNotEquals(

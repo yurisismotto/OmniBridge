@@ -90,6 +90,11 @@ class PeerConnection private constructor(
     val peerDevice: DeviceInfo,
     val negotiatedCapabilities: List<String>,
     val protocolVersion: Int,
+    /**
+     * The profile this session negotiated (ADR-0020 §D4). A `files.v1` data
+     * stream for a transfer this session carries must offer the same one.
+     */
+    val profile: WireProfile,
 ) {
 
     /**
@@ -309,20 +314,25 @@ class PeerConnection private constructor(
          * Connects, completes the TLS handshake against the pinned identity,
          * and runs the protocol handshake.
          *
+         * @param profile the one profile this connection offers — its ALPN,
+         *   and the domain any pairing proof is made under. The handshake
+         *   either negotiates it or fails; there is no fallback to the other.
          * @param pairingToken when present, offers a PAIR_REQUEST if the
          *   desktop asks for one. Absent for a normal reconnection.
          */
+        @Suppress("LongParameterList")
         suspend fun connect(
             address: InetSocketAddress,
             identity: DeviceIdentity,
             deviceName: String,
             pinned: Fingerprint,
             registry: CapabilityRegistry,
+            profile: WireProfile,
             pairingToken: ByteArray? = null,
             connectTimeoutMs: Int = 8_000,
         ): ConnectResult = withContext(Dispatchers.IO) {
             val socket = try {
-                openTls(address, identity, pinned, connectTimeoutMs)
+                openTls(address, identity, pinned, profile, connectTimeoutMs)
             } catch (e: Exception) {
                 // A pinning failure lands here. It is reported as an ordinary
                 // failure to the UI, but it is never retried against a
@@ -346,7 +356,7 @@ class PeerConnection private constructor(
 
             try {
                 handshake(
-                    socket, identity, deviceName, pinned, registry, pairingToken,
+                    socket, identity, deviceName, pinned, registry, profile, pairingToken,
                 )
             } catch (e: Exception) {
                 runCatching { socket.close() }
@@ -362,6 +372,7 @@ class PeerConnection private constructor(
             address: InetSocketAddress,
             identity: DeviceIdentity,
             pinned: Fingerprint,
+            profile: WireProfile,
             connectTimeoutMs: Int,
         ): SSLSocket {
             val context = TlsFactory.sslContext(identity, pinned)
@@ -373,11 +384,19 @@ class PeerConnection private constructor(
             val socket = context.socketFactory.createSocket(
                 plain, address.hostString, address.port, true,
             ) as SSLSocket
-            TlsFactory.harden(socket)
+            TlsFactory.harden(socket, profile.controlAlpn)
             socket.soTimeout = Protocol.HANDSHAKE_TIMEOUT_MS
             // Forces the handshake now, so a pinning failure surfaces here
             // rather than on the first read.
             socket.startHandshake()
+            // The negotiated ALPN fixes the profile; it must be the one
+            // offered. Closed on refusal so no half-open socket leaks.
+            try {
+                TlsFactory.requireNegotiated(socket, profile.controlAlpn)
+            } catch (e: javax.net.ssl.SSLHandshakeException) {
+                runCatching { socket.close() }
+                throw e
+            }
             return socket
         }
 
@@ -387,6 +406,7 @@ class PeerConnection private constructor(
             deviceName: String,
             pinned: Fingerprint,
             registry: CapabilityRegistry,
+            profile: WireProfile,
             pairingToken: ByteArray?,
         ): ConnectResult {
             val input = socket.inputStream
@@ -456,7 +476,7 @@ class PeerConnection private constructor(
                     return established(
                         socket, input, output, factory, guard, registry, pinned,
                         ack.device, registry.negotiate(ack.capabilitiesList), version,
-                        provedPairing = false,
+                        profile, provedPairing = false,
                     )
                 }
                 HelloStatus.HELLO_STATUS_PAIRING_REQUIRED -> Unit
@@ -473,7 +493,7 @@ class PeerConnection private constructor(
             factory.protocolVersion = version
 
             val nonce = ack.pairingNonce.toByteArray()
-            val proof = PairingProof.compute(token, pinned, identity.fingerprint, nonce)
+            val proof = PairingProof.compute(profile, token, pinned, identity.fingerprint, nonce)
 
             Framing.write(
                 output,
@@ -513,7 +533,7 @@ class PeerConnection private constructor(
             // this the phone would accept a pairing from a peer that merely
             // owned the pinned key.
             val expected = PairingProof.computeConfirmation(
-                token, pinned, identity.fingerprint, nonce,
+                profile, token, pinned, identity.fingerprint, nonce,
             )
             if (!PairingProof.verify(expected, response.confirmation.toByteArray())) {
                 return ConnectResult.Failed(
@@ -528,7 +548,7 @@ class PeerConnection private constructor(
             return established(
                 socket, input, output, factory, guard, registry, pinned,
                 ack.device, registry.negotiate(ack.capabilitiesList), version,
-                provedPairing = true,
+                profile, provedPairing = true,
             )
         }
 
@@ -544,6 +564,7 @@ class PeerConnection private constructor(
             device: DeviceInfo,
             capabilities: List<String>,
             version: Int,
+            profile: WireProfile,
             provedPairing: Boolean,
         ): ConnectResult {
             // An idle connection is normal, so the timeout is not a deadline
@@ -556,7 +577,7 @@ class PeerConnection private constructor(
             return ConnectResult.Established(
                 PeerConnection(
                     socket, input, output, factory, guard, registry,
-                    peer, device, capabilities, version,
+                    peer, device, capabilities, version, profile,
                 ),
                 provedPairing,
             )

@@ -51,6 +51,7 @@ use crate::capability::{CapabilityContext, CapabilityRegistry, OutboundMessage};
 use crate::error::{Error, PairingError, Result};
 use crate::fingerprint::Fingerprint;
 use crate::framing;
+use crate::profile::Profile;
 
 /// Lowest protocol version this build can speak.
 pub const PROTOCOL_VERSION_MIN: u32 = 1;
@@ -138,8 +139,12 @@ pub trait SessionHost: Send + Sync + 'static {
 
     /// Verifies a pairing proof and, on success, consumes the window.
     /// Returns the confirmation MAC to send back.
+    ///
+    /// `profile` is the profile the connection negotiated. Implementations
+    /// must verify under that profile's domain only — never "try both".
     async fn verify_pairing_proof(
         &self,
+        profile: Profile,
         initiator: &Fingerprint,
         nonce: &[u8],
         proof: &[u8],
@@ -235,6 +240,7 @@ impl WriteRequest {
 pub struct SessionHandle {
     id: SessionId,
     peer: Fingerprint,
+    profile: Profile,
     device_id: String,
     device_name: String,
     negotiated_capabilities: Arc<Vec<String>>,
@@ -254,6 +260,11 @@ impl SessionHandle {
 
     pub fn peer(&self) -> Fingerprint {
         self.peer
+    }
+
+    /// The identity profile this session negotiated. Fixed for its lifetime.
+    pub fn profile(&self) -> Profile {
+        self.profile
     }
 
     /// False once the session's message loop has stopped receiving commands,
@@ -313,6 +324,9 @@ impl SessionHandle {
 /// Result of the handshake half of a session.
 pub struct Established {
     pub peer: Fingerprint,
+    /// Fixed by the negotiated ALPN; everything brand-bearing on this
+    /// connection derives from it (ADR-0020 §D4).
+    pub profile: Profile,
     pub device: v1::DeviceInfo,
     pub negotiated_capabilities: Vec<String>,
     pub protocol_version: u32,
@@ -433,10 +447,13 @@ pub fn negotiate_version(peer_min: u32, peer_max: u32) -> Option<u32> {
 ///
 /// `peer_fingerprint` must come from the completed TLS handshake, never from
 /// anything the peer asserted in a message.
+///
+/// `profile` must come from the ALPN the same handshake negotiated.
 pub async fn accept_handshake<S>(
     stream: &mut S,
     host: &Arc<dyn SessionHost>,
     peer_fingerprint: Fingerprint,
+    profile: Profile,
 ) -> Result<(Established, EnvelopeState)>
 where
     S: AsyncRead + AsyncWrite + Unpin,
@@ -559,6 +576,7 @@ where
             Ok((
                 Established {
                     peer: peer_fingerprint,
+                    profile,
                     device: info,
                     negotiated_capabilities: effective,
                     protocol_version: version,
@@ -604,6 +622,7 @@ where
             let established = accept_pairing(
                 stream,
                 host,
+                profile,
                 &mut factory,
                 &mut guard,
                 peer_fingerprint,
@@ -623,6 +642,7 @@ where
 async fn accept_pairing<S>(
     stream: &mut S,
     host: &Arc<dyn SessionHost>,
+    profile: Profile,
     factory: &mut EnvelopeFactory,
     guard: &mut ReplayGuard,
     peer_fingerprint: Fingerprint,
@@ -661,7 +681,7 @@ where
     };
 
     let confirmation = match host
-        .verify_pairing_proof(&peer_fingerprint, nonce, &request.proof)
+        .verify_pairing_proof(profile, &peer_fingerprint, nonce, &request.proof)
         .await
     {
         Ok(c) => c,
@@ -720,6 +740,7 @@ where
 
     Ok(Established {
         peer: peer_fingerprint,
+        profile,
         device: device.clone(),
         negotiated_capabilities: effective,
         protocol_version: version,
@@ -798,6 +819,7 @@ where
     let handle = SessionHandle {
         id: session_id,
         peer: established.peer,
+        profile: established.profile,
         device_id: established.device.device_id.clone(),
         device_name: established.device.device_name.clone(),
         negotiated_capabilities: Arc::new(established.negotiated_capabilities.clone()),
@@ -851,6 +873,7 @@ where
     let registry = host.registry();
     let ctx = CapabilityContext {
         peer: established.peer,
+        profile: established.profile,
         peer_device_id: established.device.device_id.clone(),
         outbound: cap_tx.clone(),
     };
@@ -1122,10 +1145,15 @@ pub enum ClientHandshake {
 /// for one. The responder's `confirmation` MAC is verified before the session
 /// is considered established, so a responder that did not know the token is
 /// rejected even though it already passed the pinned-key check.
+///
+/// `profile` is the profile whose ALPN this client offered — its only one —
+/// and so the profile the connection runs under. The proof is computed, and
+/// the confirmation verified, under that profile's domains only.
 pub async fn connect_handshake<S>(
     stream: &mut S,
     host: &Arc<dyn SessionHost>,
     server_fingerprint: Fingerprint,
+    profile: Profile,
     pairing: Option<&crate::pairing::PairingToken>,
 ) -> Result<ClientHandshake>
 where
@@ -1183,6 +1211,7 @@ where
             return Ok(ClientHandshake::Established(
                 Established {
                     peer: server_fingerprint,
+                    profile,
                     device: remote,
                     negotiated_capabilities: mutual,
                     protocol_version: version,
@@ -1207,8 +1236,13 @@ where
     }
     factory.protocol_version = version;
 
-    let proof =
-        crate::pairing::compute_proof(token, &server_fingerprint, &local_fp, &ack.pairing_nonce);
+    let proof = crate::pairing::compute_proof(
+        profile,
+        token,
+        &server_fingerprint,
+        &local_fp,
+        &ack.pairing_nonce,
+    );
     let req = factory.build(v1::envelope::Body::PairRequest(v1::PairRequest {
         proof: proof.to_vec(),
     }));
@@ -1239,6 +1273,7 @@ where
 
     // Mutual: confirm the responder also held the token.
     let expected = crate::pairing::compute_confirmation(
+        profile,
         token,
         &server_fingerprint,
         &local_fp,
@@ -1260,6 +1295,7 @@ where
     Ok(ClientHandshake::Established(
         Established {
             peer: server_fingerprint,
+            profile,
             device: remote,
             negotiated_capabilities: mutual,
             protocol_version: version,
@@ -1342,6 +1378,7 @@ mod dispatch_tests {
         }
         async fn verify_pairing_proof(
             &self,
+            _profile: Profile,
             _i: &Fingerprint,
             _n: &[u8],
             _p: &[u8],
@@ -1374,6 +1411,7 @@ mod dispatch_tests {
         let host: Arc<dyn SessionHost> = Arc::new(TestHost { registry });
         let established = Established {
             peer: fp(0xbb),
+            profile: Profile::Pliwee,
             device: v1::DeviceInfo {
                 device_id: "peer".into(),
                 device_name: "peer".into(),
@@ -1447,6 +1485,7 @@ mod dispatch_tests {
         let host: Arc<dyn SessionHost> = Arc::new(TestHost { registry });
         let established = Established {
             peer: fp(0xbb),
+            profile: Profile::Pliwee,
             device: v1::DeviceInfo {
                 device_id: "peer".into(),
                 device_name: "peer".into(),

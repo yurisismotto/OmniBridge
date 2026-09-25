@@ -16,6 +16,20 @@ import org.junit.Test
  */
 class FingerprintTest {
 
+    /** The frozen fixture files are byte-identical to the recorded ones (D10). */
+    @Test
+    fun `the frozen fixture files are byte-identical`() {
+        fun sha256(name: String): String {
+            val der = Fixtures.certificateDer(name)
+            assertTrue("an empty fixture proves nothing", der.isNotEmpty())
+            return MessageDigest.getInstance("SHA-256").digest(der)
+                .joinToString("") { "%02x".format(it) }
+        }
+        assertEquals(Fixtures.IDENTITY_A_DER_SHA256, sha256("identity-a.der"))
+        assertEquals(Fixtures.IDENTITY_B_DER_SHA256, sha256("identity-b.der"))
+    }
+
+
     @Test
     fun `fixture certificates have the expected SPKI fingerprints`() {
         assertEquals(

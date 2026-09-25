@@ -49,15 +49,53 @@ layers, and skips the top two:
 Which one a connection is, is decided by **ALPN** during the handshake, before
 a single application byte:
 
-| ALPN | Connection |
-| --- | --- |
-| `omnibridge/1` | control session — HELLO, pairing, capability messages |
-| `omnibridge-data/1` | a `files.v1` data stream — one transfer's bytes |
+| ALPN | Profile | Connection |
+| --- | --- | --- |
+| `pliwee/1` | canonical | control session — HELLO, pairing, capability messages |
+| `pliwee-data/1` | canonical | a `files.v1` data stream — one transfer's bytes |
+| `omnibridge/1` | legacy | control session, with an OmniBridge 1.0.0 peer |
+| `omnibridge-data/1` | legacy | data stream, with an OmniBridge 1.0.0 peer |
 
-A connection that negotiates neither is dropped. Treating an absent ALPN as
+The listener offers all four, in that order. A client offers **exactly one**.
+A connection that negotiates none of them is dropped. Treating an absent ALPN as
 "probably a control session" would hand the handshake path to any client that
 omitted it, so this fails closed. See
 [ADR-0013](../adr/ADR-0013-file-transfer-data-stream.md).
+
+### Identity profiles — one connection, one identity
+
+Pliwee emits its canonical identifiers and, through the v1.x line, also
+accepts the OmniBridge ones as a **legacy profile**, so an OmniBridge 1.0.0
+peer keeps working ([ADR-0020](../adr/ADR-0020-rename-to-pliwee.md) §D4).
+
+| Identifier | Canonical (`pliwee`) | Legacy (`omnibridge`) |
+| --- | --- | --- |
+| Control / data ALPN | `pliwee/1`, `pliwee-data/1` | `omnibridge/1`, `omnibridge-data/1` |
+| mDNS / NSD | `_pliwee._tcp.local.` | `_omnibridge._tcp.local.` |
+| QR scheme | `pliwee1:` | `omnibridge1:` (parsed, never emitted) |
+| Pairing proof / confirm | `pliwee/pairing-proof/v1`, `pliwee/pairing-confirm/v1` | `omnibridge/pairing-proof/v1`, `omnibridge/pairing-confirm/v1` |
+| `files.v1` data stream | `pliwee/files.v1/data-stream/v1` | `omnibridge/files.v1/data-stream/v1` |
+| `notifications.v1` ids | `pliwee/notifications.v1/{id,group,content}/v1` | none — canonical only |
+| Certificate CN (new identities) | `pliwee:<device-id>` | existing certificates keep theirs; the CN is never parsed |
+
+The rules:
+
+* The profile is fixed **once per connection**, by the negotiated ALPN. Every
+  brand-bearing value on that connection derives from it.
+* A client offers the canonical ALPN, unless it knows the peer only as legacy:
+  paired from an `omnibridge1:` code, or found on `_omnibridge._tcp` and not
+  on `_pliwee._tcp`.
+* A proof, confirmation or data-stream MAC is verified under the negotiated
+  profile's domain **only**. There is no fallback to the other domain.
+* A data stream must negotiate the same profile as the control session that
+  issued its challenge; a mismatch is refused before any byte of the file.
+* A peer's profile is remembered in memory for dialling. It is never
+  persisted and is not trust: trust is the SPKI pin, which no profile changes.
+
+The two profiles share one construction: same TLS 1.3, pinning, HMAC-SHA256,
+framing, token size, TTL and limits. Selecting the legacy profile changes
+labels, not algorithms. Removing it is a breaking change that needs its own
+ADR and a major version.
 
 ## Framing
 
@@ -88,7 +126,7 @@ connection.
 ```
 Phone                                        Desktop
   │                                             │
-  │──── TCP + TLS 1.3 (mutual, ALPN omnibridge/1) ─│
+  │──── TCP + TLS 1.3 (mutual, ALPN pliwee/1) ─────│
   │     phone pins the desktop SPKI             │
   │     desktop proves possession of its key    │
   │     desktop learns the phone's SPKI         │
@@ -125,13 +163,16 @@ is open. **Anything else closes the connection**, including a `PING`.
 ## Pairing proof
 
 ```
-proof        = HMAC-SHA256(token, "omnibridge/pairing-proof/v1"
+proof        = HMAC-SHA256(token, "pliwee/pairing-proof/v1"
                                   ‖ len32(responder_fp) ‖ responder_fp
                                   ‖ len32(initiator_fp) ‖ initiator_fp
                                   ‖ len32(nonce)        ‖ nonce)
 
-confirmation = HMAC-SHA256(token, "omnibridge/pairing-confirm/v1" ‖ …)
+confirmation = HMAC-SHA256(token, "pliwee/pairing-confirm/v1" ‖ …)
 ```
+
+On a legacy-profile connection the domains are `omnibridge/pairing-proof/v1`
+and `omnibridge/pairing-confirm/v1`; nothing else differs.
 
 * `token` — 20 raw bytes (the base32 in the QR, decoded)
 * `responder_fp` / `initiator_fp` — 32 raw fingerprint bytes
@@ -143,7 +184,8 @@ separators prevent a proof being replayed as a confirmation. Both sides
 compare in constant time.
 
 This is a cross-language contract. `PairingProofTest` on Android and
-`desktop/core/tests/pairing.rs` both pin it.
+`desktop/core/tests/pairing.rs` both pin it, with a known-answer vector per
+profile.
 
 ## Replay protection
 
@@ -159,8 +201,14 @@ A violation is fatal. A correct peer never produces one.
 ## QR payload
 
 ```
-omnibridge1:<responder-fingerprint-hex>:<token-base32>:<device-id>:<addr>[,<addr>…]
+pliwee1:<responder-fingerprint-hex>:<token-base32>:<device-id>:<addr>[,<addr>…]
 ```
+
+The daemon shows `pliwee1:` only. The phone also accepts `omnibridge1:`, the
+code of an OmniBridge 1.0.0 desktop, and the scheme fixes the profile of the
+pairing connection. `pliwee2:` and `omnibridge2:` are recognised as a newer
+format and refused as such. An OmniBridge app cannot scan a `pliwee1:` code;
+that is unsupported, not worked around.
 
 Maximum 512 bytes. The fingerprint is the load-bearing field: it is pinned
 before the socket opens, which is what removes the man-in-the-middle window.
@@ -216,7 +264,7 @@ DataStreamReady { status, reason }                       acceptor → dialer
 ```text
 mac = HMAC-SHA256(
     key = stream_challenge,
-    msg = "omnibridge/files.v1/data-stream/v1"
+    msg = "pliwee/files.v1/data-stream/v1"   (legacy profile: "omnibridge/files.v1/data-stream/v1")
           || len_prefixed(acceptor_identity_fingerprint)
           || len_prefixed(dialer_identity_fingerprint)
           || len_prefixed(transfer_id))
@@ -300,7 +348,7 @@ NotificationControl {
 ```
 
 `notification_id` is **exactly 16 bytes**, derived at the source as
-`HMAC-SHA256(device_notification_secret, "omnibridge/notifications.v1/id/v1" ||
+`HMAC-SHA256(device_notification_secret, "pliwee/notifications.v1/id/v1" ||
 len32(key) || key)[0..16]`. The raw Android `key` is never transmitted: it
 carries a profile id and an install-specific uid that have no destination-side
 purpose. An id of any other width is refused and *not answered* — there is
@@ -354,5 +402,8 @@ Held in memory only, dropped on disconnect. Never persisted.
 
 ## mDNS
 
-`_omnibridge._tcp.local.`, TXT: `v=1`, `pv=1-1`, `id=<hex>`, `dn=<name>`.
+`_pliwee._tcp.local.` **and** `_omnibridge._tcp.local.` — one instance, the
+same instance name, port and TXT under both types — TXT: `v=1`, `pv=1-1`,
+`id=<hex>`, `dn=<name>`. The phone browses both and shows one device per `id`,
+dialling it with the canonical profile if any record was canonical.
 The fingerprint is **not** published. See ADR-0005.

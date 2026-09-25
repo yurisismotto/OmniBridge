@@ -514,7 +514,13 @@ async fn f3_another_paired_device_cannot_attach_to_someone_elses_transfer() {
     // and the challenge, and forges the MAC exactly as Alice would — naming
     // Alice as the dialer. The only thing Mallory cannot forge is the TLS
     // identity on the socket, and that is what must stop her.
-    let forged = compute_stream_mac(&challenge, &server.fingerprint, &alice.fingerprint, &id);
+    let forged = compute_stream_mac(
+        common::test_profile(),
+        &challenge,
+        &server.fingerprint,
+        &alice.fingerprint,
+        &id,
+    );
 
     let mut io = open_data_stream(server.addr, &mallory.identity, server.fingerprint)
         .await
@@ -539,7 +545,13 @@ async fn f3_another_paired_device_cannot_attach_to_someone_elses_transfer() {
 
     // A MAC computed honestly for Mallory's own identity fails too: the
     // challenge is keyed to a transfer that is not hers.
-    let own = compute_stream_mac(&challenge, &server.fingerprint, &mallory.fingerprint, &id);
+    let own = compute_stream_mac(
+        common::test_profile(),
+        &challenge,
+        &server.fingerprint,
+        &mallory.fingerprint,
+        &id,
+    );
     let mut io2 = open_data_stream(server.addr, &mallory.identity, server.fingerprint)
         .await
         .expect("TLS");
@@ -706,7 +718,13 @@ async fn f5_a_challenge_is_single_use_so_a_second_stream_is_refused() {
         other => panic!("expected acceptance, got {other:?}"),
     };
     let challenge = StreamChallenge::from_bytes(&accept.stream_challenge).expect("challenge");
-    let mac = compute_stream_mac(&challenge, &server.fingerprint, &phone.fingerprint, &id);
+    let mac = compute_stream_mac(
+        common::test_profile(),
+        &challenge,
+        &server.fingerprint,
+        &phone.fingerprint,
+        &id,
+    );
 
     // First stream: accepted, and it completes the transfer.
     let mut io = open_data_stream(server.addr, &phone.identity, server.fingerprint)
@@ -793,7 +811,13 @@ async fn f6_a_transfer_nobody_dialled_expires_and_stops_being_usable() {
         other => panic!("expected acceptance, got {other:?}"),
     };
     let challenge = StreamChallenge::from_bytes(&accept.stream_challenge).expect("challenge");
-    let mac = compute_stream_mac(&challenge, &server.fingerprint, &phone.fingerprint, &id);
+    let mac = compute_stream_mac(
+        common::test_profile(),
+        &challenge,
+        &server.fingerprint,
+        &phone.fingerprint,
+        &id,
+    );
 
     // Nobody dials. The harness configures a short `stream_open_timeout`, so
     // this exercises the production reaper rather than a test shortcut.
@@ -869,7 +893,13 @@ async fn hostile_transfer(
     };
 
     let challenge = StreamChallenge::from_bytes(&accept.stream_challenge).expect("challenge");
-    let mac = compute_stream_mac(&challenge, &server.fingerprint, &phone.fingerprint, &id);
+    let mac = compute_stream_mac(
+        common::test_profile(),
+        &challenge,
+        &server.fingerprint,
+        &phone.fingerprint,
+        &id,
+    );
 
     let mut io = open_data_stream(server.addr, &phone.identity, server.fingerprint)
         .await
@@ -1313,7 +1343,13 @@ async fn f17_a_duplicate_file_complete_changes_nothing() {
         other => panic!("expected FILE_READY, got {other:?}"),
     };
     let challenge = StreamChallenge::from_bytes(&ready.stream_challenge).expect("challenge");
-    let mac = compute_stream_mac(&challenge, &server.fingerprint, &phone.fingerprint, &id);
+    let mac = compute_stream_mac(
+        common::test_profile(),
+        &challenge,
+        &server.fingerprint,
+        &phone.fingerprint,
+        &id,
+    );
 
     let mut io = open_data_stream(server.addr, &phone.identity, server.fingerprint)
         .await
@@ -1536,7 +1572,13 @@ async fn start_stalled_transfer(
         other => panic!("expected acceptance, got {other:?}"),
     };
     let challenge = StreamChallenge::from_bytes(&accept.stream_challenge).expect("challenge");
-    let mac = compute_stream_mac(&challenge, &server.fingerprint, &phone.fingerprint, &id);
+    let mac = compute_stream_mac(
+        common::test_profile(),
+        &challenge,
+        &server.fingerprint,
+        &phone.fingerprint,
+        &id,
+    );
 
     let mut io = open_data_stream(server.addr, &phone.identity, server.fingerprint)
         .await
@@ -2043,10 +2085,15 @@ async fn a_peer_that_floods_and_never_reads_cannot_wedge_the_daemon() {
         .tls_connect(server.addr, server.fingerprint)
         .await
         .expect("TLS");
-    let handshake =
-        pliwee_core::session::connect_handshake(&mut tls, &phone.host, server.fingerprint, None)
-            .await
-            .expect("handshake");
+    let handshake = pliwee_core::session::connect_handshake(
+        &mut tls,
+        &phone.host,
+        server.fingerprint,
+        common::test_profile(),
+        None,
+    )
+    .await
+    .expect("handshake");
     assert!(matches!(
         handshake,
         pliwee_core::session::ClientHandshake::Established(_, _)

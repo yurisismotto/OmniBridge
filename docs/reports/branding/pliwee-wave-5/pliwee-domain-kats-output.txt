@@ -1,0 +1,17 @@
+[omnibridge]
+pairing-proof      d34504e66ea816d8ac8a12de225db8ae6b9c03f7010b15a15f50cf3b53b859e1
+pairing-confirm    fd1689c7fd3715e376ea9423c858c4839cce729a9471b5f6e93f76e34d0c11f3
+files-data-stream  503aaf7d8c15b38971f4fbcc3ec34742ae27263ac94f2507ecab7c3691764576
+notif-id           3c8effce6feb1582a65e100aeea1a810
+notif-id-other-key 3561179daf1a26a8a047f3f44758eaf3
+notif-id-other-sec e88bcb16b74b498c91090bc76fc3b2d9
+notif-group        b9f8d940e134bccb
+
+[pliwee]
+pairing-proof      3a433e1b0ec55746039eba2216abb786b0537955efd8f4ed1c92886426182510
+pairing-confirm    5f0bc7caae96da5c38f4a75fa78e7e43a75ec10daef83e7fa2efad04d9194672
+files-data-stream  de3164a18f2cfb5e042b4b755d45f30f3049e41a93d0f727b33b26e17bafc3f9
+notif-id           c66b87d0c2045df6dda2925297262cb8
+notif-id-other-key 889ab0ae9dd2c6ed9a4529e54f68ce1e
+notif-id-other-sec 4cf44891803581d358fe6043497e1d98
+notif-group        74935dada71d629f

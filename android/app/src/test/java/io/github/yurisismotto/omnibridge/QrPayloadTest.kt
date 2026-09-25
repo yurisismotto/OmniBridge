@@ -1,6 +1,7 @@
 package io.github.yurisismotto.omnibridge
 
 import io.github.yurisismotto.omnibridge.identity.Fingerprint
+import io.github.yurisismotto.omnibridge.net.WireProfile
 import io.github.yurisismotto.omnibridge.pairing.QrPayload
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -19,7 +20,7 @@ class QrPayloadTest {
     private val deviceId = "deb769060ca6dce3bee7a92f6a82e606"
 
     private fun payload(
-        scheme: String = "omnibridge1",
+        scheme: String = "pliwee1",
         fingerprint: String = fingerprintHex,
         token: String = tokenBase32,
         device: String = deviceId,
@@ -55,8 +56,43 @@ class QrPayloadTest {
     @Test
     fun `rejects a foreign scheme`() {
         assertNull(QrPayload.parse(payload(scheme = "omnibridge9")))
+        assertNull(QrPayload.parse(payload(scheme = "pliwee9")))
         assertNull(QrPayload.parse("http://evil.example/"))
         assertNull(QrPayload.parse(""))
+    }
+
+    /**
+     * The Wave 5 parse matrix (ADR-0020 §D4, ADR-0011): `pliwee1` and
+     * `omnibridge1` are accepted and each fixes its profile; `pliwee2` and
+     * `omnibridge2` are recognised as newer and refused as such; `anyflow1`
+     * is not a pairing code at all.
+     */
+    @Test
+    fun `scheme matrix`() {
+        val canonical = QrPayload.scan(payload(scheme = "pliwee1"))
+        assertTrue(canonical is QrPayload.Scan.Accepted)
+        assertEquals(WireProfile.PLIWEE, (canonical as QrPayload.Scan.Accepted).payload.profile)
+
+        val legacy = QrPayload.scan(payload(scheme = "omnibridge1"))
+        assertTrue(legacy is QrPayload.Scan.Accepted)
+        assertEquals(WireProfile.OMNIBRIDGE, (legacy as QrPayload.Scan.Accepted).payload.profile)
+
+        // Same body, same pinned identity: only the profile differs.
+        assertTrue(canonical.payload.fingerprint.contentEquals(legacy.payload.fingerprint))
+
+        for (newer in listOf("pliwee2", "omnibridge2")) {
+            assertEquals(newer, QrPayload.Scan.UnsupportedVersion, QrPayload.scan(payload(scheme = newer)))
+            assertNull(QrPayload.parse(payload(scheme = newer)))
+        }
+        for (foreign in listOf("anyflow1", "fedroid1", "PLIWEE1", "pliwee", "pliwee1x")) {
+            assertEquals(foreign, QrPayload.Scan.Invalid, QrPayload.scan(payload(scheme = foreign)))
+        }
+    }
+
+    @Test
+    fun `the canonical and legacy scheme constants`() {
+        assertEquals("pliwee1", QrPayload.SCHEME)
+        assertEquals("omnibridge1", QrPayload.LEGACY_SCHEME)
     }
 
     @Test

@@ -2,6 +2,8 @@
 
 **Status:** Accepted · 2026-08-29
 
+> **Superseding note — 2026-09-24, Pliwee rebrand Wave 5 (branch `feature/pliwee-rebrand-wave5`), [ADR-0020](ADR-0020-rename-to-pliwee.md) §D4.** The listener now offers `pliwee/1`, `pliwee-data/1`, `omnibridge/1`, `omnibridge-data/1`, in that order; a client offers exactly one, and the negotiated ALPN fixes the connection's identity profile. `omnibridge/1` below is the legacy value. The original text below is left as it was decided.
+
 ## Context
 
 Every byte between the devices must be encrypted and authenticated (principles

@@ -971,10 +971,18 @@ fn the_shared_vector_decodes_and_validates() {
 use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
 
-/// ADR-0016 §1. Pinned as a constant so a change to it is a visible diff.
-const ID_DOMAIN: &str = "omnibridge/notifications.v1/id/v1";
-/// [02 §6.5].
-const GROUP_DOMAIN: &str = "omnibridge/notifications.v1/group/v1";
+/// ADR-0016 §1, with ADR-0020 §D4's canonical domain. Pinned as a constant
+/// so a change to it is a visible diff.
+///
+/// Canonical only: notification ids are derived on the source device alone
+/// and are opaque to the desktop, so there is no legacy form to accept and
+/// none is built. The values below were computed independently by
+/// `docs/reports/branding/pliwee-wave-5/pliwee_domain_kats.py`; the
+/// pre-Wave-5 `omnibridge/…` values (3c8effce…, b9f8d940…, 3561179d…,
+/// e88bcb16…) are recorded in that wave's report.
+const ID_DOMAIN: &str = "pliwee/notifications.v1/id/v1";
+/// [02 §6.5], canonical domain (ADR-0020 §D4).
+const GROUP_DOMAIN: &str = "pliwee/notifications.v1/group/v1";
 
 /// The same 32 bytes `NotificationSecretTest` uses. Obviously not from a
 /// CSPRNG, and therefore obviously a test.
@@ -1023,7 +1031,7 @@ fn the_notification_id_derivation_matches_the_android_vector() {
             &fixture_secret(),
             FIXTURE_PLATFORM_KEY
         )),
-        "3c8effce6feb1582a65e100aeea1a810",
+        "c66b87d0c2045df6dda2925297262cb8",
     );
 }
 
@@ -1031,7 +1039,7 @@ fn the_notification_id_derivation_matches_the_android_vector() {
 fn the_group_id_derivation_matches_the_android_vector() {
     assert_eq!(
         to_hex(&derive_group_id("0|example.fixture.app|g:chat")),
-        "b9f8d940e134bccb",
+        "74935dada71d629f",
     );
 }
 
@@ -1049,11 +1057,11 @@ fn a_different_key_or_secret_derives_a_different_id() {
 
     assert_eq!(
         to_hex(&derive_notification_id(&secret, other_key)),
-        "3561179daf1a26a8a047f3f44758eaf3",
+        "889ab0ae9dd2c6ed9a4529e54f68ce1e",
     );
     assert_eq!(
         to_hex(&derive_notification_id(&other_secret, FIXTURE_PLATFORM_KEY)),
-        "e88bcb16b74b498c91090bc76fc3b2d9",
+        "4cf44891803581d358fe6043497e1d98",
     );
 }
 

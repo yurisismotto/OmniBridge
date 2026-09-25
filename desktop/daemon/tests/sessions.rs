@@ -239,6 +239,7 @@ async fn a_silent_peer_is_eventually_dropped_rather_than_left_connected() {
         &mut tls,
         &client.host,
         server.fingerprint,
+        common::test_profile(),
         Some(&token),
     )
     .await

@@ -13,7 +13,7 @@ them apart.
 
 ```
   control session                             data stream
-  ALPN "omnibridge/1"                            ALPN "omnibridge-data/1"
+  ALPN "pliwee/1"                             ALPN "pliwee-data/1"
   ────────────────────────────────────        ──────────────────────────────
   length-prefixed Envelopes, ≤ 64 KiB         DataStreamAuth   (≤ 4 KiB)
   replay guard, sequence numbers              DataStreamReady  (≤ 4 KiB)
@@ -65,7 +65,7 @@ phone                                          desktop
   │                                               │ ask the human
   │◄──────── FILE_ACCEPT {id, challenge} ─────────│ state: TRANSFERRING
   │                                               │ (temp file opened)
-  │ ══ TLS "omnibridge-data/1" ═════════════════════►│
+  │ ══ TLS "pliwee-data/1" ═════════════════════════►│
   │ DataStreamAuth {id, mac} ────────────────────►│ verify identity + MAC
   │◄──────────────── DataStreamReady {READY} ─────│ challenge consumed
   │ ═══════════ size_bytes of file ═════════════►│ hash while writing
@@ -87,7 +87,7 @@ desktop                                        phone
   │◄──────────────── FILE_ACCEPT {id} ────────────│  (pending entry opened)
   │ state: TRANSFERRING                           │
   │ FILE_READY {id, challenge} ──────────────────►│
-  │◄══ TLS "omnibridge-data/1" ══════════════════════│
+  │◄══ TLS "pliwee-data/1" ══════════════════════════│
   │◄─────────────── DataStreamAuth {id, mac} ─────│
   │ DataStreamReady {READY} ─────────────────────►│
   │ ═══════════ size_bytes of file ══════════════►│ hash while writing
@@ -149,11 +149,20 @@ crash reports.
 ```text
 mac = HMAC-SHA256(
     key = stream_challenge,              # 32 random bytes, single-use
-    msg = "omnibridge/files.v1/data-stream/v1"
+    msg = "pliwee/files.v1/data-stream/v1"
           || len_prefixed(acceptor_identity_fingerprint)
           || len_prefixed(dialer_identity_fingerprint)
           || len_prefixed(transfer_id))
 ```
+
+**One connection, one identity** ([ADR-0020](../adr/ADR-0020-rename-to-pliwee.md)
+§D4). With an OmniBridge 1.0.0 peer the control session negotiates the legacy
+`omnibridge/1`; its data streams then use `omnibridge-data/1` and the domain
+`omnibridge/files.v1/data-stream/v1`. A transfer remembers the profile of the
+control session that issued its challenge. A data stream that negotiated the
+other profile is refused before any byte of the file moves. The MAC is
+verified under the session's own domain only, never "under both". See
+[PROTOCOL.md](PROTOCOL.md#identity-profiles--one-connection-one-identity).
 
 Same construction as the pairing proof: a standard MAC, a versioned domain
 separator, every field length-prefixed. What each binding buys:

@@ -125,7 +125,7 @@ class HostDrivenCertificationHarness {
 
         val payload = QrPayload.parse(raw)
         assertNotNull("the desktop's payload did not parse", payload)
-        say("pair payload-parsed fingerprint=${payload!!.fingerprint.toDisplayShort()}")
+        say("pair payload-parsed profile=${payload!!.profile.id} fingerprint=${payload.fingerprint.toDisplayShort()}")
 
         val result = runBlocking { app.pair(payload) }
         val outcome = result.getOrNull()
