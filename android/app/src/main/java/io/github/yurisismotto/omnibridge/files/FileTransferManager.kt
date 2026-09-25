@@ -335,7 +335,7 @@ class FileTransferManager(
         val shared = SharedFile(context, uri)
         val filename = shared.displayName()
             ?: return@withContext Result.failure(
-                IllegalStateException("that file has no name OmniBridge can send safely"),
+                IllegalStateException("that file has no name Pliwee can send safely"),
             )
 
         val (size, digest) = try {

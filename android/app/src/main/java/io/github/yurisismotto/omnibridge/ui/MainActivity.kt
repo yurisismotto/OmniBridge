@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
             // Never echo the scanned text back to the screen: it may contain
             // a pairing token, and it is attacker-supplied either way.
             PairingScanner.Outcome.NotOmniBridgeCode -> {
-                showError("That QR code is not a OmniBridge pairing code.")
+                showError("That QR code is not a Pliwee pairing code.")
                 return@registerForActivityResult
             }
             is PairingScanner.Outcome.Pair -> outcome.payload

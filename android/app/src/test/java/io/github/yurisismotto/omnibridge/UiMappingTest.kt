@@ -363,7 +363,7 @@ class UiMappingTest {
             Result.failure(IllegalStateException("this computer is not allowed to receive files")),
             Result.failure(IllegalStateException("not connected")),
             Result.failure(IllegalStateException("too many transfers at once")),
-            Result.failure(IllegalStateException("that file has no name OmniBridge can send safely")),
+            Result.failure(IllegalStateException("that file has no name Pliwee can send safely")),
             Result.failure(IllegalStateException("that file could not be read")),
             Result.failure(java.io.IOException("the app that shared this file would not open it")),
             Result.failure(SecurityException("Permission Denial")),
@@ -391,7 +391,7 @@ class UiMappingTest {
             "this computer is not allowed to receive files",
             "not connected",
             "too many transfers at once",
-            "that file has no name OmniBridge can send safely",
+            "that file has no name Pliwee can send safely",
             "that file could not be read",
         )) {
             assertEquals(stated, UiMapping.sendFailureMessage(IllegalStateException(stated)))
@@ -415,7 +415,7 @@ class UiMappingTest {
         )
         for (error in leaky) {
             val shown = UiMapping.sendFailureMessage(error)
-            assertEquals("OmniBridge could not send that file.", shown)
+            assertEquals("Pliwee could not send that file.", shown)
             assertFalse("a URI must not reach the screen", shown.contains("content://"))
             assertFalse("a path must not reach the screen", shown.contains("/storage/"))
             assertFalse(
@@ -428,14 +428,14 @@ class UiMappingTest {
     @Test
     fun `an error with no message still says something`() {
         assertEquals(
-            "OmniBridge could not send that file.",
+            "Pliwee could not send that file.",
             UiMapping.sendFailureMessage(IllegalStateException()),
         )
         assertEquals(
-            "OmniBridge could not send that file.",
+            "Pliwee could not send that file.",
             UiMapping.sendFailureMessage(IllegalStateException("   ")),
         )
-        assertEquals("OmniBridge could not send that file.", UiMapping.sendFailureMessage(null))
+        assertEquals("Pliwee could not send that file.", UiMapping.sendFailureMessage(null))
     }
 
     @Test

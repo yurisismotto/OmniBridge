@@ -1,4 +1,4 @@
-# OmniBridge — UI guidelines
+# Pliwee — UI guidelines
 
 How the [brand](BRAND.md) is applied on each platform, and the rules that are
 not negotiable.
@@ -24,7 +24,7 @@ else.
 
 ### 2. Text uses the corrected accents, never the brand hues
 
-Bridge Cyan is 2.40 : 1 on white. See [the two-family rule](BRAND.md#the-two-family-rule).
+Flow Cyan is 2.40 : 1 on white. See [the two-family rule](BRAND.md#the-two-family-rule).
 Tests on both platforms fail if a text accent drops below AA — on the
 background as well as on a card, and on the elevated dark surface as well as
 the plain one, because those are the harder of each pair and were the ones
@@ -39,14 +39,14 @@ full, in monospace, selectable, grouped in fours. Aesthetics do not get a vote.
 ### 4. Nothing is stored to make a screen look better
 
 The reference shows a **clipboard history** panel and a persistent transfer
-**History** tab. OmniBridge has neither, by design: clipboard text never reaches
+**History** tab. Pliwee has neither, by design: clipboard text never reaches
 disk and the control socket carries no clip content at all — a pending clip is
 size, hash prefix and age.
 
 Both were removed rather than faked. What replaced them says plainly what is
 and is not kept:
 
-> *"OmniBridge keeps no clipboard history. A received clip waits in memory with a
+> *"Pliwee keeps no clipboard history. A received clip waits in memory with a
 > five-minute expiry and is gone once applied, dismissed or expired."*
 
 Transfers are listed for the current daemon run, under a line saying so.
@@ -98,7 +98,10 @@ Two distinctions worth keeping:
 
 ## Components
 
-Both platforms carry the same vocabulary under the same names.
+Both platforms carry the same vocabulary under the same names. The Kotlin
+names below keep their `OmniBridge` prefix until the code-naming wave (W3 of
+the [rebrand plan](../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md))
+renames them; they are identifiers, not copy.
 
 | Concept | Android (`ui/components`) | Desktop (`gui/src/widgets.rs`) |
 |---|---|---|
@@ -232,8 +235,8 @@ be a filter over the light one.
 
 ## Android — Compose / Material 3
 
-Material semantics are kept, not replaced. OmniBridge should look like
-**OmniBridge on Android**, not like a foreign design language pasted onto the
+Material semantics are kept, not replaced. Pliwee should look like
+**Pliwee on Android**, not like a foreign design language pasted onto the
 platform: a `Switch` still behaves and reads as an Android switch, a dialog
 still sits where Android puts one.
 

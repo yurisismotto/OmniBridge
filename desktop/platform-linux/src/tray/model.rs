@@ -11,7 +11,7 @@
 //! The shell sends a menu item id (`i`) and an event name (`s`). The GUI is
 //! driven by `GAction` names on the session bus. The obvious implementation
 //! carries a `String` from the first to the second, and the obvious
-//! implementation is wrong: it makes every action OmniBridge's GUI will ever
+//! implementation is wrong: it makes every action Pliwee's GUI will ever
 //! export reachable from a D-Bus message, including ones added later by
 //! someone who never thought about the tray. [`TrayAction`] has three
 //! variants, no payload, and one function that turns a variant into a name.
@@ -60,7 +60,7 @@ pub const ITEM_ID: &str = DESKTOP_APP_ID;
 /// The product name, because this is what a person reads in a tooltip or in
 /// the tray's own configuration list. Not the application id: that is an
 /// identifier, and showing an identifier to a person is a category error.
-pub const ITEM_TITLE: &str = "OmniBridge";
+pub const ITEM_TITLE: &str = "Pliwee";
 
 /// `ApplicationStatus`, from the category enum in KDE's
 /// `kstatusnotifieritem.h`.
@@ -78,12 +78,12 @@ pub const ITEM_CATEGORY: &str = "ApplicationStatus";
 /// The enum has three values and two of them would be untrue here:
 ///
 /// * **`NeedsAttention`** is for an item that wants the user *now*; shells
-///   respond by unhiding it and, on Plasma, animating it. OmniBridge's phone
+///   respond by unhiding it and, on Plasma, animating it. Pliwee's phone
 ///   being asleep, off the network or not paired at all is not an emergency,
 ///   and a tray icon that demands attention because a device is offline is
 ///   the behaviour this product exists not to have. Nothing in v1 sets it.
 /// * **`Passive`** means "not important enough to show", which shells take as
-///   permission to hide the item entirely. A running OmniBridge is a running
+///   permission to hide the item entirely. A running Pliwee is a running
 ///   service the user can reach; it is not a thing to hide. There is no state
 ///   in v1 where `Passive` would be the truthful answer, so it is never sent.
 ///
@@ -93,7 +93,7 @@ pub const ITEM_CATEGORY: &str = "ApplicationStatus";
 pub const ITEM_STATUS: &str = "Active";
 
 /// The tooltip title.
-pub const TOOLTIP_TITLE: &str = "OmniBridge";
+pub const TOOLTIP_TITLE: &str = "Pliwee";
 
 /// The tooltip's second line.
 ///
@@ -101,10 +101,10 @@ pub const TOOLTIP_TITLE: &str = "OmniBridge";
 /// usefully say — "connected to Yuri's phone", "sending holiday-photos.zip" —
 /// is exactly what must not be here: the `ToolTip` property is a public
 /// property of a public object on the session bus, readable by every process
-/// in the session, at any time, without a click. The tray is the one OmniBridge
+/// in the session, at any time, without a click. The tray is the one Pliwee
 /// surface whose contents leave the process without anyone asking, so the
 /// only safe contents are the ones that were already public.
-pub const TOOLTIP_BODY: &str = "One bridge. Any device.";
+pub const TOOLTIP_BODY: &str = "One flow. Any device.";
 
 // ---------------------------------------------------------------------------
 // Actions
@@ -195,7 +195,7 @@ pub struct MenuEntry {
 /// granting, revoking, sending a file, sending the clipboard. Those decide
 /// who may read this machine, and a decision like that belongs on a surface
 /// where the person can see what they are deciding about — not two clicks
-/// deep in a menu that is drawn by another process. "Quit OmniBridge" is absent
+/// deep in a menu that is drawn by another process. "Quit Pliwee" is absent
 /// for a different reason: the only thing it could honestly quit is
 /// `omnibridged`, and stopping the continuity service from a tray menu is not
 /// closing a window, it is turning the product off.

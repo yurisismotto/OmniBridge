@@ -88,7 +88,7 @@ fun SettingsScreen(
             // Every clause is a property of the code, checked for the Play v1
             // privacy policy. The earlier "transfers are not logged" was not
             // true: file names went to the system log (audit F5).
-            body = "OmniBridge has no account, no cloud service, no ads and no analytics. " +
+            body = "Pliwee has no account, no cloud service, no ads and no analytics. " +
                 "It talks only to the computers you pair. Clipboard text, notification " +
                 "content and file names are never written to this device's storage or " +
                 "its system log, and no transfer history is kept.",
@@ -108,10 +108,10 @@ fun SettingsScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(OmniBridgeSpacing.xs),
         ) {
-            OmniBridgeBrandMark(contentDescription = "OmniBridge")
-            Text("OmniBridge", style = OmniBridgeType.subtitle, color = colors.textPrimary)
+            OmniBridgeBrandMark(contentDescription = "Pliwee")
+            Text("Pliwee", style = OmniBridgeType.subtitle, color = colors.textPrimary)
             Text(
-                "One bridge. Any device.",
+                "One flow. Any device.",
                 style = OmniBridgeType.caption,
                 color = colors.textSecondary,
                 textAlign = TextAlign.Center,

@@ -79,7 +79,7 @@ const APP_ID: &str = "io.github.yurisismotto.omnibridge";
 ///
 /// Not `0` ("never expire"), which would leave every mirror on the screen
 /// until it was clicked, and not a number of our own: how long a banner stays
-/// up is a desktop-environment preference and overriding it would make OmniBridge
+/// up is a desktop-environment preference and overriding it would make Pliwee
 /// behave unlike every other application on the machine.
 const EXPIRE_DEFAULT: i32 = -1;
 

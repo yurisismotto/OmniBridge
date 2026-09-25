@@ -4,7 +4,7 @@
 //!
 //! Any list of notifications, past or present. The desktop's own notification
 //! list is where mirrored notifications live, and duplicating it inside
-//! OmniBridge would create exactly the history the design forbids. There is
+//! Pliwee would create exactly the history the design forbids. There is
 //! nothing to build one out of either: `NotificationsStatusReport` carries
 //! counts, states and platform identifiers, and has no field that could hold a
 //! title, a body or an application's name.
@@ -116,7 +116,7 @@ impl Readiness {
             }
             Readiness::PeerNotSourcing => {
                 "Connected, and the device has not said it can send notifications. Check \
-                 that OmniBridge on the device shares notifications with this computer, and \
+                 that Pliwee on the device shares notifications with this computer, and \
                  that Android has given it notification access. A change to either takes \
                  effect on its own — reconnecting by hand is not needed."
             }
@@ -206,13 +206,13 @@ impl DismissReadiness {
         match self {
             DismissReadiness::Off => {
                 "Off. When this is on, dismissing a mirrored notification here also \
-                 dismisses the original on the device. Nothing else is sent: OmniBridge \
+                 dismisses the original on the device. Nothing else is sent: Pliwee \
                  cannot press a notification's buttons, reply to it, open an app, or \
                  clear everything at once."
             }
             DismissReadiness::NoReporting => {
                 "On, and this desktop cannot act on it. The notification server here \
-                 does not report why a notification closed, so OmniBridge cannot tell a \
+                 does not report why a notification closed, so Pliwee cannot tell a \
                  dismissal from a banner timing out — and it will never guess."
             }
             DismissReadiness::NotConnected => {
@@ -301,7 +301,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
 
     container.append(&widgets::security_notice(
         "Nothing is kept",
-        "OmniBridge keeps no notification history. A mirrored notification exists on this \
+        "Pliwee keeps no notification history. A mirrored notification exists on this \
          desktop's own notification list and nowhere else — nothing about it reaches a \
          log, a database or a file, and closing it here leaves nothing behind.",
         false,
@@ -351,7 +351,7 @@ fn this_computer(report: &NotificationsStatusReport) -> gtk::Box {
         "This computer is unlocked."
     }));
     card.append(&widgets::caption(
-        "Lock state is read from this desktop session. If it cannot be read, OmniBridge \
+        "Lock state is read from this desktop session. If it cannot be read, Pliwee \
          treats the session as locked.",
     ));
     card.append(&widgets::caption(&format!(
@@ -411,7 +411,7 @@ fn peer_card(peer: &NotificationPeerReport, available: bool, pages: &Pages) -> g
     card.append(&widgets::section_label("When this computer is locked"));
     card.append(&lock_choices(peer, pages));
     card.append(&widgets::caption(
-        "Unlocking does not bring back text that was withheld: OmniBridge never kept it. \
+        "Unlocking does not bring back text that was withheld: Pliwee never kept it. \
          The next update from the app arrives in full.",
     ));
 

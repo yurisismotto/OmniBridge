@@ -386,7 +386,7 @@ impl From<IdentityState> for Error {
     /// operator can see both what happened and that nothing was destroyed.
     fn from(state: IdentityState) -> Self {
         Error::Store(format!(
-            "{state}. The existing identity has NOT been replaced: OmniBridge \
+            "{state}. The existing identity has NOT been replaced: Pliwee \
              never generates a new identity over one it cannot read, because \
              that would silently break every pairing on every peer."
         ))

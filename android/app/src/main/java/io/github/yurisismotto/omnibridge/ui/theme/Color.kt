@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
  *
  * ## Why there are two sets of accent colours
  *
- * The brand hues are chosen for identity, not for legibility. Bridge Cyan on
+ * The brand hues are chosen for identity, not for legibility. Flow Cyan on
  * white is **2.40:1** — well under the 4.5:1 WCAG AA needs for text. Using it
  * for a "Connected" label, which is exactly what the design reference shows,
  * would make the most important word on the screen the hardest one to read.
@@ -29,7 +29,7 @@ import androidx.compose.ui.graphics.Color
  * exists to prevent.
  */
 object Brand {
-    /** Bridge Cyan — the flow origin, connected, toggles. */
+    /** Flow Cyan — the flow origin, connected, toggles. */
     val Cyan = Color(0xFF18B8C9)
 
     /** Primary Blue — primary actions, links, progress, selection. */

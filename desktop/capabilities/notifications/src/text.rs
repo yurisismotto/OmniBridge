@@ -3,7 +3,7 @@
 //! # Everything here is untrusted
 //!
 //! `app_id`, `app_label`, `title` and `body` all originate in an arbitrary
-//! application on someone else's phone. OmniBridge's peer is authenticated; the
+//! application on someone else's phone. Pliwee's peer is authenticated; the
 //! *content* it forwards is not, and cannot be — the whole point of the
 //! capability is to carry text an unrelated third party wrote.
 //!

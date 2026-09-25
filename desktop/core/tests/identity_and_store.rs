@@ -7,7 +7,7 @@ use omnibridge_core::identity::LocalIdentity;
 use omnibridge_core::notification_policy::NotificationPolicy;
 use omnibridge_core::pairing::PairingToken;
 use omnibridge_core::qr::QrPayload;
-use omnibridge_core::store::{Store, TrustedPeer};
+use omnibridge_core::store::{Settings, Store, TrustedPeer};
 use omnibridge_core::Fingerprint;
 use omnibridge_proto::v1::Platform;
 
@@ -271,6 +271,42 @@ fn peers_persist_across_restarts() {
     let loaded = store.trusted_peer(&fingerprint).expect("peer must persist");
     assert_eq!(loaded.device_name, "Galaxy S25");
     assert!(loaded.allows("battery.v1"));
+}
+
+/// The placeholder a hand-built `Settings` carries is the product's name.
+#[test]
+fn the_placeholder_device_name_is_the_product_name() {
+    assert_eq!(Settings::default().device_name, "Pliwee Device");
+}
+
+/// A default device name only ever applies to an identity created from now
+/// on. A name already in `state.json` — including an OmniBridge-era default —
+/// belongs to the user, and peers already store it: reopening must not
+/// rename the device.
+#[test]
+fn a_stored_device_name_survives_the_rename() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    {
+        let _store = Store::open(dir.path()).expect("open");
+    }
+
+    let path = dir.path().join("state.json");
+    let mut state: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&path).expect("read")).expect("parse");
+    let name = &mut state["settings"]["device_name"];
+    assert!(
+        name.is_string(),
+        "state.json must carry settings.device_name"
+    );
+    *name = "OmniBridge Desktop".into();
+    std::fs::write(
+        &path,
+        serde_json::to_string_pretty(&state).expect("serialize"),
+    )
+    .expect("write");
+
+    let store = Store::open(dir.path()).expect("reopen");
+    assert_eq!(store.settings().device_name, "OmniBridge Desktop");
 }
 
 #[test]

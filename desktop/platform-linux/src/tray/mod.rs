@@ -5,17 +5,17 @@
 //! `omnibridged` does. That is the decision this module exists to implement and
 //! the one worth defending, because the alternative is easier and wrong.
 //!
-//! A tray icon has to be there whenever the product is there. OmniBridge's
+//! A tray icon has to be there whenever the product is there. Pliwee's
 //! "whenever the product is there" is `omnibridged`: a `systemd --user` service
 //! that starts at login and holds the TCP listener, the mDNS record, the trust
 //! store and every capability. The GUI is not that, deliberately — it is two
 //! windows a person opens and closes, and `desktop/gui/src/lib.rs` has said so
 //! since the Quick Panel sprint: *"the agent is `omnibridged` and stays the only
-//! long-lived process OmniBridge runs."*
+//! long-lived process Pliwee runs."*
 //!
 //! So the item is owned by the process that is already always running. The
 //! obvious shortcut — keep `omnibridge-gui` alive forever, hidden, because GTK
-//! makes drawing a tray icon easy — would have made OmniBridge a product with two
+//! makes drawing a tray icon easy — would have made Pliwee a product with two
 //! resident processes, one of which exists only to hold an icon, and would
 //! have reversed a stated architectural position as a side effect of a UI
 //! feature.
@@ -38,7 +38,7 @@
 //!
 //! The daemon does not depend on `omnibridge-gui`, on GTK, on Qt, on KDE
 //! Frameworks, on `libappindicator` or on a tray crate. It speaks the two
-//! D-Bus interfaces directly, with the `zbus` that OmniBridge's D-Bus-using
+//! D-Bus interfaces directly, with the `zbus` that Pliwee's D-Bus-using
 //! capabilities already resolve. `KDE-STATUSNOTIFIER-V1.md` §16 records the
 //! dependency review.
 //!
@@ -176,7 +176,7 @@ impl Drop for TrayHandle {
 /// # Supervision
 ///
 /// Everything below this line is convenience. The tray is not part of
-/// OmniBridge's security core, it holds no key, it answers no peer, and nothing
+/// Pliwee's security core, it holds no key, it answers no peer, and nothing
 /// else in the daemon reads its state — so its failure must cost exactly the
 /// tray and nothing more. Two things make that true:
 ///
@@ -197,7 +197,7 @@ impl Drop for TrayHandle {
 pub fn spawn(activator_for: ActivatorChoice) -> TrayHandle {
     let inner = tokio::spawn(async move {
         match run(activator_for).await {
-            Ok(()) => tracing::info!("the session bus closed; the OmniBridge tray item is gone"),
+            Ok(()) => tracing::info!("the session bus closed; the Pliwee tray item is gone"),
             Err(e) => tracing::info!(reason = %e, "no tray integration on this session"),
         }
     });
@@ -205,7 +205,7 @@ pub fn spawn(activator_for: ActivatorChoice) -> TrayHandle {
         if let Err(e) = inner.await {
             if e.is_panic() {
                 tracing::error!(
-                    "the tray task stopped unexpectedly; OmniBridge continues without a \
+                    "the tray task stopped unexpectedly; Pliwee continues without a \
                      tray item and everything else is unaffected"
                 );
             }
@@ -236,7 +236,7 @@ async fn run(choice: ActivatorChoice) -> Result<(), TrayError> {
     let published = publish(connection, activator).await?;
     tracing::info!(
         item = %published.bus_name(),
-        "OmniBridge tray item published on the session bus"
+        "Pliwee tray item published on the session bus"
     );
     published
         .follow_shell()

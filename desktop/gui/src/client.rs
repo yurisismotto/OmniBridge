@@ -44,7 +44,7 @@ async fn exchange(request: Request) -> anyhow::Result<Response> {
     let path = control_socket_path();
     let stream = UnixStream::connect(&path).await.map_err(|e| {
         anyhow::anyhow!(
-            "could not reach the OmniBridge daemon at {}: {e}",
+            "could not reach the Pliwee daemon at {}: {e}",
             path.display()
         )
     })?;
@@ -101,7 +101,7 @@ where
             Err(e) => {
                 let _ = event_tx
                     .send(Err(anyhow::anyhow!(
-                        "could not reach the OmniBridge daemon at {}: {e}",
+                        "could not reach the Pliwee daemon at {}: {e}",
                         path.display()
                     )))
                     .await;

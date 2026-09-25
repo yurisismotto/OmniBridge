@@ -13,7 +13,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
 
     if let Some(error) = &state.error {
         container.append(&widgets::security_notice(
-            "The OmniBridge daemon is not reachable",
+            "The Pliwee daemon is not reachable",
             error,
             true,
         ));
@@ -243,7 +243,7 @@ fn platform_icon(platform: &str) -> &'static str {
 /// What is moving right now.
 ///
 /// The reference calls this "Recent activity" and shows timestamps going back
-/// half an hour. OmniBridge keeps no such log: the daemon reports the transfers
+/// half an hour. Pliwee keeps no such log: the daemon reports the transfers
 /// of *this run* and nothing is written to disk. So this shows exactly that,
 /// and says so, rather than implying a history that does not exist.
 fn activity_card(state: &DaemonState) -> gtk::Box {
@@ -290,7 +290,7 @@ fn activity_card(state: &DaemonState) -> gtk::Box {
         }
     }
     card.append(&widgets::caption(
-        "This run only. OmniBridge keeps no transfer history on disk.",
+        "This run only. Pliwee keeps no transfer history on disk.",
     ));
     card
 }

@@ -39,7 +39,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState) {
     // daemon holds transfers in memory for the life of the process and writes
     // nothing about them to disk.
     container.append(&widgets::caption(
-        "This list covers the current daemon run. OmniBridge keeps no transfer history on disk.",
+        "This list covers the current daemon run. Pliwee keeps no transfer history on disk.",
     ));
 }
 

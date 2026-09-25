@@ -205,7 +205,7 @@ class SystemClipboard(context: Context) : ClipboardTarget {
          * so putting any part of the text here would leak it onto a screen
          * the user did not ask for.
          */
-        const val DEFAULT_LABEL = "OmniBridge"
+        const val DEFAULT_LABEL = "Pliwee"
     }
 }
 

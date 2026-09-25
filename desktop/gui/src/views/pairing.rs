@@ -35,7 +35,7 @@ pub fn present_pairing_dialog(parent: Option<&gtk::Window>, pages: &Pages) {
 
     root.append(&widgets::heading("Pair a new device"));
     root.append(&widgets::body_muted(
-        "Scan this code with OmniBridge on your other device.",
+        "Scan this code with Pliwee on your other device.",
     ));
 
     let columns = widgets::row(SPACING_MD);
@@ -51,7 +51,7 @@ pub fn present_pairing_dialog(parent: Option<&gtk::Window>, pages: &Pages) {
         .build();
     qr_area.set_accessible_role(gtk::AccessibleRole::Img);
     qr_area.update_property(&[gtk::accessible::Property::Label(
-        "Pairing QR code. Scan it with OmniBridge on the other device.",
+        "Pairing QR code. Scan it with Pliwee on the other device.",
     )]);
     qr_card.append(&qr_area);
     let expiry = widgets::caption("Opening a pairing window…");

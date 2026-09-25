@@ -430,7 +430,7 @@ object UiMapping {
      */
     fun sendFailureMessage(error: Throwable?): String {
         val stated = (error as? IllegalStateException)?.message?.takeIf { it.isNotBlank() }
-        return stated ?: "OmniBridge could not send that file."
+        return stated ?: "Pliwee could not send that file."
     }
 
     /**

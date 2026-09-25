@@ -1,6 +1,6 @@
-# OmniBridge — Brand
+# Pliwee — Brand
 
-**One bridge. Any device.**
+**One flow. Any device.**
 
 ---
 
@@ -8,32 +8,46 @@
 
 | Field | Value |
 |---|---|
-| **Product name** | **OmniBridge** — one word, capital O, capital B. Never "Omnibridge", "Omni Bridge" or "OB". |
-| **Tagline** | **One bridge. Any device.** |
-| **Positioning** | A single bridge between devices and platforms. |
+| **Product name** | **Pliwee** — one word, capital P only. |
+| **Tagline** | **One flow. Any device.** |
+| **Positioning** | A single flow between devices and platforms. |
 | **Identity direction** | **Platform-neutral.** Not an Android product, not a Linux product: Android and Linux are its first two implementations. Nothing in the name, the mark or the copy may imply otherwise. |
-| **Translated?** | The name is **not** translated. The tagline is not currently localised (the app ships one locale); if it is localised later, it is translated as one whole sentence pair, never assembled from parts. |
-| **Previous name** | AnyFlow (*One flow. Any device.*), renamed before the public v1.0.0 release — see [ADR-0018](../adr/ADR-0018-rename-to-omnibridge.md) and [the migration note](../migrations/MIGRATION-ANYFLOW-TO-OMNIBRIDGE.md). |
+| **Translated?** | The name is **not** translated ([ADR-0020 §D8](../adr/ADR-0020-rename-to-pliwee.md)). The tagline is not currently localised (the app ships one locale); if it is localised later, it is translated as one whole sentence pair, never assembled from parts. |
+| **Previous names** | **OmniBridge** (*One bridge. Any device.*), the name of the public Linux v1.0.0 release — see [ADR-0020](../adr/ADR-0020-rename-to-pliwee.md). Before it, **AnyFlow** (*One flow. Any device.*), renamed before v1.0.0 — see [ADR-0018](../adr/ADR-0018-rename-to-omnibridge.md) and [the migration note](../migrations/MIGRATION-ANYFLOW-TO-OMNIBRIDGE.md). Pliwee's tagline is AnyFlow's, re-adopted deliberately (ADR-0020 §D8). |
+
+**Where the product name is not yet Pliwee.** Wave 1 of the
+[rebrand plan](../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md)
+changed what the product *says*. It did not change what the product *is
+called by the system*: binaries, paths, package names, the Android
+`applicationId`, the desktop app id, protocol identifiers and URLs still carry
+`omnibridge`, and each moves in the wave that owns it (plan §2). Copy that
+quotes one of those — "Run `omnibridge pair`", `~/Downloads/OmniBridge` —
+quotes it exactly until then.
 
 ### Reserved naming family
 
-Reserved for future use, and **not implemented today**. Nothing in the product
-currently uses any of these, and no surface should adopt one without a
-decision record:
+The OmniBridge era reserved a naming family that was **never implemented**:
+*OmniBridge Desktop* (the desktop application, when it needs naming apart
+from the product), *OmniBridge for Android*, *OmniBridge Connect*,
+*OmniBridge Mirror* and *OmniBridge Find*. ADR-0020 does not carry it over, so
+nothing is reserved under Pliwee. Adopting any Pliwee-suffixed product name
+needs a decision record.
 
-| Name | Reserved for |
-|---|---|
-| **OmniBridge Desktop** | the desktop application, when it needs naming apart from the product |
-| **OmniBridge for Android** | the Android application, likewise |
-| **OmniBridge Connect** | — |
-| **OmniBridge Mirror** | — |
-| **OmniBridge Find** | — |
-
-The current application is called **OmniBridge**, everywhere, with no suffix.
+The current application is called **Pliwee**, everywhere, with no suffix.
+"Pliwee Desktop" and "Pliwee Device" are **default device names**, not
+product names: the first is what a peer sees for a desktop identity created
+on a machine that reports no hostname, the second the placeholder of a
+hand-built `Settings`. Neither renames a device that already exists.
 
 ---
 
-## Visual identity: CLOSED
+## Shipped artwork: OmniBridge, until W6 and W7
+
+> **2026-09-24 (Pliwee Wave 1).** The product's *copy* now says Pliwee. The
+> *artwork* the builds draw is still the OmniBridge set below, until the
+> platform waves re-point each derivative at the Pliwee masters: Android in
+> W6, the Linux desktop in W7, Play graphics in W10. This section describes
+> that artwork as it ships; its file names are identifiers those waves own.
 
 The official OmniBridge artwork was supplied and installed on 2026-09-21. The
 `BLOCKED_VISUAL_ASSET` notice that stood here is withdrawn: there is no
@@ -42,11 +56,11 @@ any active surface.
 
 | | |
 |---|---|
-| **Canonical mark** | [`assets/omnibridge-mark.svg`](assets/omnibridge-mark.svg) |
-| **Name** | OmniBridge |
-| **Tagline** | One bridge. Any device. |
+| **Canonical mark (shipped)** | [`assets/omnibridge-mark.svg`](assets/omnibridge-mark.svg) |
+| **Name drawn by the wordmark and lockup** | OmniBridge |
+| **Tagline drawn by the lockup** | One bridge. Any device. |
 | **Typeface** | Inter |
-| **Palette** | `#4F6BFF` Primary Blue · `#18B8C9` Bridge Cyan · `#7C5CFC` Accent Violet · `#0B1020` Dark · `#F7F9FC` Surface |
+| **Palette** | `#4F6BFF` Primary Blue · `#18B8C9` Flow Cyan · `#7C5CFC` Accent Violet · `#0B1020` Dark · `#F7F9FC` Surface |
 
 `omnibridge-mark.svg` is the single source of truth for geometry. Every other
 asset and every platform derivative is built from *its* outline, and that is
@@ -199,16 +213,19 @@ board in the same way. Neither depends on a font being installed. Product
 
 ## The idea
 
-OmniBridge moves what matters between the machines a person already owns, over
+Pliwee moves what matters between the machines a person already owns, over
 their own network, with nothing in the middle. The brand has one job: to make
 that feel calm and obviously trustworthy rather than clever.
 
 Two consequences run through everything below.
 
-**The bridge is the metaphor, not decoration.** One span joining two sides is
-the product in one shape: two endpoints, one crossing, no third party. It
-appears as the mark, as the empty-state illustration, as the transfer motif —
-always the same artwork, never a generic swoosh.
+**The mark is the metaphor, not decoration.** One continuous gesture joining
+two sides is the product in one shape: two endpoints, one flow, no third
+party. It appears as the mark, as the empty-state illustration, as the
+transfer motif — always the same artwork, never a generic swoosh. Under
+Pliwee that gesture is the **Flow Monogram**; until W6 and W7 re-point the
+derivatives, the surfaces still draw the OmniBridge span described under
+[Logo](#logo).
 
 **The interface stays quiet.** The palette is vivid but the UI is mostly
 neutral: white or Ink surfaces, hairline borders, one accent at a time. Colour
@@ -218,6 +235,10 @@ already saturated has nothing left to say those things with.
 ---
 
 ## Logo
+
+> This section describes the **OmniBridge** mark the builds still draw. The
+> Pliwee mark is the Flow Monogram in [Pliwee vector masters](#pliwee-vector-masters);
+> the rules below (one mark, no redraw, misuse) carry over to it unchanged.
 
 There is **one** mark. Not a pair with different jobs, not an institutional cut
 and a product cut — one piece of artwork, used everywhere, at every size.
@@ -263,7 +284,7 @@ Do not:
 
 | Token | Hex | What it is for |
 |---|---|---|
-| **Bridge Cyan** | `#18B8C9` | Connected, active, flow origin, toggles |
+| **Flow Cyan** | `#18B8C9` | Connected, active, flow origin, toggles |
 | **Primary Blue** | `#4F6BFF` | Primary actions, links, progress, selection |
 | **Accent Violet** | `#7C5CFC` | Secondary accent, gradients, flow destination |
 | **Dark** | `#0B1020` | Primary text, dark surfaces, dark-theme card |
@@ -273,11 +294,14 @@ The token names are these names. `Brand.Teal`, `brand::INK` and `brand::PAPER`
 are gone: a constant called `Teal` holding a cyan is a comment that lies, and
 it is the kind that survives a rebrand.
 
+Flow Cyan was called *Bridge Cyan* under OmniBridge. ADR-0020 §D8 renamed it;
+the hex value did not move.
+
 ### The two-family rule
 
 This is the single most important thing on this page.
 
-**The brand hues above are not legible as text.** Bridge Cyan on white is
+**The brand hues above are not legible as text.** Flow Cyan on white is
 **2.40 : 1** — WCAG AA asks for 4.5 : 1. Blue reaches 4.30 : 1 and violet
 4.38 : 1, both short of it. The design reference draws "Connected" in brand
 cyan; done literally, that makes the most important word on the screen the
@@ -408,7 +432,7 @@ face makes `1`/`l` and `0`/`O` a coin toss.
 
 One family per platform, and that is the point rather than a compromise:
 
-- **Android** — the OmniBridge set in
+- **Android** — the Pliwee icon set in
   [`assets/icons/`](assets/icons/), mirrored as vector drawables in
   `android/app/src/main/res/drawable/`. 24 dp grid, 2 px stroke, round caps
   and joins. The drawables are generated from the SVGs, so the two cannot
@@ -483,7 +507,7 @@ No screen contains a literal hex value.
 | [`omnibridge-android-monochrome.svg`](assets/omnibridge-android-monochrome.svg) | Android themed-icon cut |
 | [`omnibridge-wordmark.svg`](assets/omnibridge-wordmark.svg) | Wordmark |
 | [`omnibridge-logo-lockup.svg`](assets/omnibridge-logo-lockup.svg) | Mark + wordmark + tagline |
-| [`assets/icons/`](assets/icons/) | The 28-glyph OmniBridge icon family — brand-neutral UI glyphs, carried over unchanged |
+| [`assets/icons/`](assets/icons/) | The 28-glyph Pliwee icon family — brand-neutral UI glyphs, carried over unchanged from the OmniBridge era |
 | `assets/pliwee-*.svg` | The five Pliwee masters — **BRAND APPROVED, canonical and frozen** (2026-09-24, `1ea65e6`); not yet used by any build (W6/W7 derive from them); see [Pliwee vector masters](#pliwee-vector-masters) |
 
 Android adaptive icon: `res/mipmap-anydpi-v26/ic_launcher.xml` with a Dark
@@ -493,8 +517,11 @@ generated from `omnibridge-mark.svg` and asserted against it.
 
 The wordmark and the lockup ship as **outlines**, not live text. That is a
 property of the supplied artwork and it is the reason the typeface is recorded
-here as well: a surface that sets "OmniBridge" as text must set it in Inter to
+here as well: a surface that sets the name as text must set it in Inter to
 match the wordmark it sits beside. It also means the letterforms cannot be
 checked by reading the file — what the tests assert instead is that no active
 asset carries the pre-rename identity, and that every product surface which
-*speaks* the name says OmniBridge.
+*speaks* the name says Pliwee (`BrandingResourcesTest` for the Android label,
+the tray and panel tests for the desktop). The OmniBridge wordmark and lockup
+above still *draw* "OmniBridge" until they are retired with the other
+OmniBridge artwork (W6, W7).

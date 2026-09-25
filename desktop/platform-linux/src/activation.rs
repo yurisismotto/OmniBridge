@@ -6,7 +6,7 @@
 //! A package installs
 //! `/usr/share/dbus-1/services/io.github.yurisismotto.omnibridge.service`, and
 //! the session bus that is *already running* does not read it until something
-//! tells it to — so until the user logs out, clicking OmniBridge in the tray
+//! tells it to — so until the user logs out, clicking Pliwee in the tray
 //! gets `org.freedesktop.DBus.Error.ServiceUnknown` on a machine where
 //! everything is installed correctly.
 //!
@@ -64,7 +64,7 @@
 //! Every failure path returns a value and logs; none of them is an error the
 //! daemon can fail on. A headless machine, an `ssh` session, a container, a
 //! bus that refuses `ReloadConfig` under a hardened policy — all of them are
-//! normal, and all of them end with OmniBridge moving files as usual and one
+//! normal, and all of them end with Pliwee moving files as usual and one
 //! line in the journal.
 
 /// What one self-heal attempt did.
@@ -298,7 +298,7 @@ pub fn log(outcome: &Activation) {
         // means a package was installed into this live session.
         Activation::HealedByReload => {
             tracing::info!(
-                "the session bus had not read OmniBridge's D-Bus service file; one \
+                "the session bus had not read Pliwee's D-Bus service file; one \
                  ReloadConfig fixed it, so the desktop application activates without a logout"
             );
         }

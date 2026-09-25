@@ -242,7 +242,7 @@ pub fn default_device_name() -> String {
             return name;
         }
     }
-    "OmniBridge Desktop".to_string()
+    "Pliwee Desktop".to_string()
 }
 
 #[cfg(test)]

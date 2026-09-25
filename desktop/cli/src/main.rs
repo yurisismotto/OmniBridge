@@ -16,7 +16,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::UnixStream;
 
 #[derive(Parser, Debug)]
-#[command(name = "omnibridge", about = "OmniBridge control", version)]
+#[command(name = "omnibridge", about = "Pliwee control", version)]
 struct Args {
     #[command(subcommand)]
     command: Command,
@@ -108,7 +108,7 @@ enum NotificationsCommand {
     /// Shows the notification server this session actually has, where the
     /// lock state is read from, and how many notifications are currently
     /// mirrored. It never lists the notifications themselves: there is no
-    /// notification history anywhere in OmniBridge, and this is not one.
+    /// notification history anywhere in Pliwee, and this is not one.
     Status,
 
     /// Show or stop showing a device's notifications here.
@@ -375,7 +375,7 @@ async fn simple(stream: UnixStream, request: Request) -> anyhow::Result<()> {
 
     match serde_json::from_str::<Response>(&line)? {
         Response::Status(s) => {
-            println!("OmniBridge");
+            println!("Pliwee");
             println!("  device      {} ({})", s.device_name, s.device_id);
             println!("  fingerprint {}", s.fingerprint_short);
             // Local truth, never a wire claim: a peer's assertion about its
@@ -811,7 +811,7 @@ async fn pair(stream: UnixStream, ttl: Option<u64>) -> anyhow::Result<()> {
                 expires_in_secs,
             } => {
                 println!("{qr_ascii}");
-                println!("Scan this with OmniBridge on your phone.");
+                println!("Scan this with Pliwee on your phone.");
                 println!("Expires in {expires_in_secs}s. The code is single-use.\n");
                 println!("If your phone cannot scan, the payload is:\n  {payload}\n");
             }

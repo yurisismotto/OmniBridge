@@ -233,7 +233,7 @@ fun DevicesScreen(
         item {
             OmniBridgeSecurityNotice(
                 title = "Local network only",
-                body = "OmniBridge talks straight to your computer over TLS 1.3, pinned to " +
+                body = "Pliwee talks straight to your computer over TLS 1.3, pinned to " +
                     "the key you approved when pairing. No account, no cloud, no relay.",
             )
         }

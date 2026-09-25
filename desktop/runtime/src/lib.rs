@@ -1,4 +1,4 @@
-//! The OmniBridge Agent, minus the platform it runs on.
+//! The Pliwee Agent, minus the platform it runs on.
 //!
 //! Everything the always-on user-session process does that is not specific to
 //! one operating system: the TCP listener, the mDNS advertisement, the shared

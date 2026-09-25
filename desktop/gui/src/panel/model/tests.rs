@@ -524,7 +524,7 @@ fn a_display_name_collision_does_not_affect_routing() {
 fn an_unreachable_daemon_produces_a_safe_state() {
     let state = DaemonState {
         error: Some(
-            "could not reach the OmniBridge daemon at /run/user/1000/omnibridge/control.sock: \
+            "could not reach the Pliwee daemon at /run/user/1000/omnibridge/control.sock: \
              No such file or directory"
                 .into(),
         ),
@@ -534,7 +534,7 @@ fn an_unreachable_daemon_produces_a_safe_state() {
     assert_eq!(
         m.health,
         Health::Unavailable {
-            headline: "OmniBridge service is not available".into()
+            headline: "Pliwee service is not available".into()
         }
     );
     assert!(m.peers.is_empty());

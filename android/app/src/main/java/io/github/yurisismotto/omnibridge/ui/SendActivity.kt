@@ -513,7 +513,7 @@ private fun SendScreen(
                     title = "Files",
                     icon = R.drawable.ic_device_generic,
                     headline = "No computer paired yet",
-                    body = "Open OmniBridge and scan the pairing code first.",
+                    body = "Open Pliwee and scan the pairing code first.",
                 )
 
             eligible.isEmpty() ->
@@ -524,7 +524,7 @@ private fun SendScreen(
                     title = "Files",
                     icon = R.drawable.ic_shield_off,
                     headline = "No paired computer may receive files",
-                    body = "Turn on \"Receive files\" for one of them in OmniBridge first.",
+                    body = "Turn on \"Receive files\" for one of them in Pliwee first.",
                     accent = colors.accentAmber,
                 )
 
@@ -758,7 +758,7 @@ private fun SendTextScreen(
                     title = "Text",
                     icon = R.drawable.ic_device_generic,
                     headline = "No computer paired yet",
-                    body = "Open OmniBridge and scan the pairing code first.",
+                    body = "Open Pliwee and scan the pairing code first.",
                 )
 
             eligible.isEmpty() ->
@@ -766,7 +766,7 @@ private fun SendTextScreen(
                     title = "Text",
                     icon = R.drawable.ic_shield_off,
                     headline = "No paired computer is set up to receive your clipboard",
-                    body = "Turn on \"Share clipboard with this computer\" in OmniBridge first.",
+                    body = "Turn on \"Share clipboard with this computer\" in Pliwee first.",
                     accent = colors.accentAmber,
                 )
 

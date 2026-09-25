@@ -612,7 +612,7 @@ class ClipboardSyncTest {
         val reason = failure.failure as ClipboardSync.SendFailure.CannotRead
         assertEquals(ClipboardTarget.ReadFailure.NotAllowed, reason.failure)
         // The message tells the person what to do about it.
-        assertTrue(failure.message!!.contains("Open OmniBridge"))
+        assertTrue(failure.message!!.contains("Open Pliwee"))
     }
 
     @Test

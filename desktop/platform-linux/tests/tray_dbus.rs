@@ -496,7 +496,7 @@ async fn d7_the_item_properties_have_the_types_and_values_the_spec_requires() {
     // And the values.
     assert_eq!(text("Category"), "ApplicationStatus");
     assert_eq!(text("Id"), "io.github.yurisismotto.omnibridge");
-    assert_eq!(text("Title"), "OmniBridge");
+    assert_eq!(text("Title"), "Pliwee");
     assert_eq!(text("Status"), "Active");
     assert_eq!(text("IconName"), "io.github.yurisismotto.omnibridge");
     assert_eq!(text("IconThemePath"), "", "the item names a directory");
@@ -1035,10 +1035,10 @@ async fn d15_every_string_on_the_tray_objects_is_one_of_eight_constants() {
     let allowed = [
         "",
         "io.github.yurisismotto.omnibridge",
-        "OmniBridge",
+        "Pliwee",
         "ApplicationStatus",
         "Active",
-        "One bridge. Any device.",
+        "One flow. Any device.",
         "Quick Panel",
         "Files",
         "Settings",

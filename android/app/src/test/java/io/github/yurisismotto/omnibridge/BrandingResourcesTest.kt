@@ -523,8 +523,8 @@ class BrandingResourcesTest {
     fun `the app label is the product name and comes from resources`() {
         assertEquals("@string/app_name", attr(withoutComments(manifest), "android:label"))
         assertTrue(
-            "the launcher entry must read OmniBridge",
-            res("values/strings.xml").contains("""<string name="app_name">OmniBridge</string>"""),
+            "the launcher entry must read Pliwee",
+            res("values/strings.xml").contains("""<string name="app_name">Pliwee</string>"""),
         )
     }
 

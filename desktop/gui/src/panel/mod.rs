@@ -2,8 +2,8 @@
 //!
 //! ```text
 //! ┌────────────────────────────────────┐
-//! │ (A) OmniBridge                     ⚙  │
-//! │     One bridge. Any device.          │
+//! │ (A) Pliwee                         ⚙  │
+//! │     One flow. Any device.            │
 //! │                                    │
 //! │  ● SM-X620                      ✓  │
 //! │    Connected · 78%                 │
@@ -15,7 +15,7 @@
 //! │  Clipboard                      On │
 //! │  Files                          On │
 //! │                                    │
-//! │  Open OmniBridge Settings             │
+//! │  Open Pliwee Settings                 │
 //! └────────────────────────────────────┘
 //! ```
 //!
@@ -107,7 +107,7 @@ impl QuickPanel {
 
         let header = adw::HeaderBar::new();
         header.add_css_class("flat");
-        let title = adw::WindowTitle::new("OmniBridge", "One bridge. Any device.");
+        let title = adw::WindowTitle::new("Pliwee", "One flow. Any device.");
         header.set_title_widget(Some(&title));
 
         let mark = widgets::brand_mark(20);
@@ -117,12 +117,12 @@ impl QuickPanel {
         // Icon-only, and therefore labelled. An unlabelled gear is a control
         // a screen reader reads out as "button".
         // The same cog the sidebar's Settings row uses, and the same one the
-        // "Open OmniBridge Settings" button below carries: one action, one
+        // "Open Pliwee Settings" button below carries: one action, one
         // metaphor. See `widgets::SETTINGS_ICON`.
         let settings = gtk::Button::from_icon_name(widgets::SETTINGS_ICON);
         settings.add_css_class("flat");
-        settings.set_tooltip_text(Some("Open OmniBridge Settings"));
-        settings.update_property(&[gtk::accessible::Property::Label("Open OmniBridge Settings")]);
+        settings.set_tooltip_text(Some("Open Pliwee Settings"));
+        settings.update_property(&[gtk::accessible::Property::Label("Open Pliwee Settings")]);
         settings.set_action_name(Some("app.settings"));
         header.pack_end(&settings);
 
@@ -132,7 +132,7 @@ impl QuickPanel {
 
         let window = adw::ApplicationWindow::builder()
             .application(app)
-            .title("OmniBridge")
+            .title("Pliwee")
             .default_width(WIDTH)
             .width_request(WIDTH)
             .resizable(false)
@@ -204,14 +204,13 @@ impl QuickPanel {
         match &model.health {
             Health::Available => {}
             Health::Reaching => {
-                self.content.append(&widgets::body_muted(
-                    "Connecting to the OmniBridge service…",
-                ));
+                self.content
+                    .append(&widgets::body_muted("Connecting to the Pliwee service…"));
             }
             Health::Unavailable { headline } => {
                 self.content.append(&widgets::security_notice(
                     headline,
-                    "OmniBridge keeps trying. Your devices stay paired, and nothing is lost.",
+                    "Pliwee keeps trying. Your devices stay paired, and nothing is lost.",
                     true,
                 ));
             }
@@ -219,9 +218,8 @@ impl QuickPanel {
 
         if model.health.is_available() {
             if model.peers.is_empty() {
-                let empty = widgets::body_muted(
-                    "No device is paired yet. Pair one from OmniBridge Settings.",
-                );
+                let empty =
+                    widgets::body_muted("No device is paired yet. Pair one from Pliwee Settings.");
                 self.content.append(&empty);
             } else {
                 self.content.append(&self.peer_list(model, selection));
@@ -272,7 +270,7 @@ impl QuickPanel {
 
         self.content.append(&widgets::separator());
         let settings =
-            widgets::secondary_button("Open OmniBridge Settings", Some(widgets::SETTINGS_ICON));
+            widgets::secondary_button("Open Pliwee Settings", Some(widgets::SETTINGS_ICON));
         settings.set_action_name(Some("app.settings"));
         self.content.append(&settings);
     }
@@ -319,7 +317,7 @@ impl QuickPanel {
         list.set_selection_mode(gtk::SelectionMode::None);
         list.set_accessible_role(gtk::AccessibleRole::ListBox);
         list.update_property(&[gtk::accessible::Property::Label(if choosing {
-            "Devices. Choose which one OmniBridge sends to."
+            "Devices. Choose which one Pliwee sends to."
         } else {
             "Devices"
         })]);
@@ -440,7 +438,7 @@ impl QuickPanel {
                         // delivery here was optimistic by exactly one round
                         // trip, and on hardware the two came apart.
                         Ok(_) => panel.toast(&model::clipboard_submitted_message(&peer)),
-                        Err(_) => panel.toast("The OmniBridge service is not available"),
+                        Err(_) => panel.toast("The Pliwee service is not available"),
                     }
                 });
             });
@@ -494,7 +492,7 @@ impl QuickPanel {
                         // and the next poll picks the transfer up, so the only
                         // thing worth saying here is that it started.
                         Ok(_) => panel.toast(&format!("Offering {name} to {peer}")),
-                        Err(_) => panel.toast("The OmniBridge service is not available"),
+                        Err(_) => panel.toast("The Pliwee service is not available"),
                     }
                 });
             },
@@ -675,10 +673,10 @@ fn recent_section(recent: &[model::RecentTransfer]) -> gtk::Box {
     let all = widgets::secondary_button("View all transfers", Some("folder-symbolic"));
     all.set_action_name(Some("app.transfers"));
     all.set_tooltip_text(Some(
-        "Opens the Transfers page in OmniBridge Settings. It does not change which device you send to.",
+        "Opens the Transfers page in Pliwee Settings. It does not change which device you send to.",
     ));
     all.update_property(&[gtk::accessible::Property::Description(
-        "Opens the Transfers page in OmniBridge Settings. It does not change which device you send to.",
+        "Opens the Transfers page in Pliwee Settings. It does not change which device you send to.",
     )]);
     section.append(&all);
     section
@@ -1301,15 +1299,12 @@ pub(crate) mod tests {
 
     fn an_unreachable_daemon_draws_no_live_actions() {
         let state = DaemonState {
-            error: Some("could not reach the OmniBridge daemon at /run/…: ENOENT".into()),
+            error: Some("could not reach the Pliwee daemon at /run/…: ENOENT".into()),
             ..DaemonState::default()
         };
         let (_panel, content, _selection) = panel(&state, None);
         let text = labels(&content).join(" | ");
-        assert!(
-            text.contains("OmniBridge service is not available"),
-            "{text}"
-        );
+        assert!(text.contains("Pliwee service is not available"), "{text}");
         // The raw error stays out of the panel.
         assert!(!text.contains("ENOENT"), "{text}");
         // No device rows, and no action that could be pressed.
@@ -1328,7 +1323,7 @@ pub(crate) mod tests {
             DaemonState::default(),
         ] {
             let (_panel, content, _selection) = panel(&state, None);
-            let settings = button(&content, "Open OmniBridge Settings");
+            let settings = button(&content, "Open Pliwee Settings");
             // Through the application action, not through a reference to a
             // window: this is the same seam a tray would use.
             assert_eq!(
