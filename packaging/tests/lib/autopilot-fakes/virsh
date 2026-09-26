@@ -10,6 +10,18 @@ the seed volume attached to the domain (the fake genisoimage's output).
 
 It also WATCHES the autopilot: starting a domain while another one runs is
 written to $FAKE_LIBVIRT/violations, which the self-tests require empty.
+
+SELinux, as the first real Fedora 44 template met it (2026-09-26): a fedora44
+guest's agent runs guest-exec in virt_qemu_ga_t, enforcing, and the probe can
+read neither cloud-init's status, nor the host name, nor the template marker,
+nor systemd's default target — until the template seed has made that domain
+permissive (typepermissive virt_qemu_ga_t, loaded by semodule in the prepare
+script). A seed without that fix leaves the guest confined forever, exactly as
+it did for real. Per-run knobs, each naming the domain it applies to:
+  FAKE_STAY_CONFINED  the fix is in the seed but does not take effect;
+  FAKE_AGENT_DEAD     the agent never answers;
+  FAKE_NO_GNOME       the desktop is missing from the prepared template;
+  FAKE_PREPARE_NEVER  the prepare script never finishes (no marker).
 """
 import base64, json, os, random, re, shlex, shutil, sys, time
 
@@ -65,6 +77,13 @@ def vols(): return sorted(n[:-5] for n in os.listdir(P("vols")) if n.endswith(".
 
 PEER_FPR = "ABCD 1234 5678 9ABC"
 
+def distro_of(d):
+    m = re.search(r"<distro>([^<]+)</distro>", rd(P("doms", d, "xml")))
+    return m.group(1) if m else ""
+def knob(name, d): return d in os.environ.get(name, "").split(",")
+def confined(d, s):
+    return distro_of(d) == "fedora44" and s.get("qga_permissive") != "yes"
+
 def cloud_init(d):
     disk, seed = disk_of(d), disk_of(d, "cdrom")
     s = gstate(disk)
@@ -75,11 +94,15 @@ def cloud_init(d):
             s["instance_id"] = iid
             h = re.search(r"^hostname: (\S+)", text, re.M)
             if h: s["hostname"] = h.group(1)
-            if "pliwee-g8-prepare" in text and not os.path.exists(P("doms", d, "prepare-fails")):
+            prep = "pliwee-g8-prepare" in text
+            if prep and "(typepermissive virt_qemu_ga_t)" in text and "semodule -i" in text and not knob("FAKE_STAY_CONFINED", d):
+                s["qga_permissive"] = "yes"
+            if prep and not os.path.exists(P("doms", d, "prepare-fails")) and not knob("FAKE_PREPARE_NEVER", d):
                 s.update(template_ready="yes", user_uid="1000", default_target="graphical.target")
+                if knob("FAKE_NO_GNOME", d): s["no_gnome"] = "yes"
             t = re.search(r'/var/lib/pliwee-g8/identity\n.*?content: "([0-9a-f]+)"', text, re.S)
             if t: s["identity"] = t.group(1)
-            s["cloud_init"] = "done"
+            s["cloud_init"] = "running" if knob("FAKE_PREPARE_NEVER", d) else "done"
     if not s.get("machine_id"):
         s["machine_id"] = "%032x" % random.getrandbits(128)
     s["boots"] = s.get("boots", 0) + 1
@@ -95,12 +118,36 @@ def guest(d, c):
     if "# ap-probe" in c:
         running = dstate(d) == "running"
         sess = "wayland" if running and s.get("template_ready") == "yes" and not os.path.exists(P("doms", d, "no-session")) else ""
+        sel = ["sel_context=system_u:system_r:virt_qemu_ga_t:s0", "sel_enforce=1"] if distro_of(d) == "fedora44" else \
+              ["sel_context=", "sel_enforce="]
+        diag = sel + ["datasource=nocloud", "pkg_procs=0", "net_ipv4=192.168.68.200/22",
+                      "prepare_stage=stage: verify" if s.get("template_ready") == "yes" else "prepare_stage=stage: desktop",
+                      "uptime_s=%d" % (60 * s.get("boots", 1))]
+        if confined(d, s):
+            # What the real probe printed under virt_qemu_ga_t: every read that
+            # SELinux denied is an empty value.
+            out = "\n".join(["identity=", "template_ready=", "machine_id=" + s.get("machine_id", ""), "hostname=",
+                             "cloud_init=", "user_uid=" + s.get("user_uid", ""), "session_type=", "default_target=",
+                             "os=FakeOS " + d, "kernel=6.99.0-fake"] + diag) + "\n"
+            return out, 0
         out = "\n".join([
             "identity=" + s.get("identity", ""), "template_ready=" + s.get("template_ready", ""),
             "machine_id=" + s.get("machine_id", ""), "hostname=" + s.get("hostname", "localhost"),
             "cloud_init=" + s.get("cloud_init", "running"), "user_uid=" + s.get("user_uid", ""),
             "session_type=" + sess, "default_target=" + s.get("default_target", "multi-user.target"),
-            "os=FakeOS " + d, "kernel=6.99.0-fake"]) + "\n"
+            "os=FakeOS " + d, "kernel=6.99.0-fake"] + diag) + "\n"
+    elif "# ap-template-check" in c:
+        fed = distro_of(d) == "fedora44"
+        out = "\n".join([
+            "pkg_gnome_shell=" + ("" if s.get("no_gnome") else "49.1-1"), "pkg_gdm=49.0-1", "pkg_qga=10.2.2-1",
+            "autologin=anyflow", "no_lock=yes", "initial_setup_done=yes",
+            "default_target=" + s.get("default_target", ""), "selinux=" + ("Enforcing" if fed else ""),
+            "qga_permissive=" + (s.get("qga_permissive", "") if fed else ""),
+            "marker=2026-09-26T00:00:00Z" if s.get("template_ready") == "yes" else "marker="]) + "\n"
+    elif "# ap-diagnose" in c:
+        out = "## tail /var/log/pliwee-g8-prepare.log\n== stage: desktop\n## AVC denials (last 40)\n%s\n" % (
+            "avc:  denied  { getattr } for comm=\"sh\" path=\"/usr/bin/cloud-init\" scontext=system_u:system_r:virt_qemu_ga_t:s0"
+            if confined(d, s) else "")
     elif "# ap-generalize" in c:
         s.pop("identity", None); s["machine_id"] = ""; gput(disk, s)
         wr(P("doms", d, "state"), "shut off"); return "", 0
@@ -218,7 +265,7 @@ elif cmd == "vol-dumpxml":
 elif cmd == "qemu-agent-command":
     d = pos[0]; req = json.loads(pos[1]); ex = req["execute"]
     if not os.path.isdir(P("doms", d)) or dstate(d) != "running": die("domain is not running")
-    if os.path.exists(P("doms", d, "agent-dead")): die("Guest agent is not responding")
+    if os.path.exists(P("doms", d, "agent-dead")) or knob("FAKE_AGENT_DEAD", d): die("Guest agent is not responding")
     if ex == "guest-ping": print('{"return":{}}')
     elif ex == "guest-exec":
         c = req["arguments"]["arg"][-1]; pid = random.randint(1000, 999999)

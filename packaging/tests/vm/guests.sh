@@ -35,7 +35,10 @@ AP_GUEST_VCPUS="${AP_GUEST_VCPUS:-2}"
 AP_MEM_RESERVE_MIB="${AP_MEM_RESERVE_MIB:-2048}"
 AP_DISK_GIB="${AP_DISK_GIB:-30}"
 AP_BOOT_TIMEOUT="${AP_BOOT_TIMEOUT:-900}"
-AP_TEMPLATE_TIMEOUT="${AP_TEMPLATE_TIMEOUT:-7200}"
+AP_TEMPLATE_TIMEOUT="${AP_TEMPLATE_TIMEOUT:-5400}"
+# How long guest-exec may stay confined by SELinux before the template gives
+# up: the prepare script lifts it a minute or two after boot (cloud-init.sh).
+AP_CONFINED_LIMIT="${AP_CONFINED_LIMIT:-1800}"
 AP_SHUTDOWN_TIMEOUT="${AP_SHUTDOWN_TIMEOUT:-300}"
 AP_META_NS="https://github.com/yurisismotto/OmniBridge/pre-g8-autopilot"
 
@@ -121,8 +124,12 @@ PY
 
 # ap_probe DOM — one guest-exec, key=value lines: what the autopilot checks
 # inside a guest. The marker comment lets a self-test's fake guest answer it.
+# The last group is diagnosis only, for ap_probe_summary. When the agent itself
+# fails, its error comes back as probe_error= instead of being thrown away: an
+# empty probe is not "not ready yet", it is "not observed".
 ap_probe() {
-    ga_exec "$1" '# ap-probe
+    local out rc
+    out="$(ga_exec "$1" '# ap-probe
 echo "identity=$(cat /var/lib/pliwee-g8/identity 2>/dev/null)"
 echo "template_ready=$(test -e /var/lib/pliwee-g8/template-ready && echo yes)"
 echo "machine_id=$(cat /etc/machine-id 2>/dev/null)"
@@ -133,25 +140,88 @@ s="$(loginctl show-user '"$AP_GUEST_USER"' -p Display --value 2>/dev/null)"
 echo "session_type=$([ -n "$s" ] && loginctl show-session "$s" -p Type --value 2>/dev/null)"
 echo "default_target=$(systemctl get-default 2>/dev/null)"
 echo "os=$(. /etc/os-release 2>/dev/null; echo "$PRETTY_NAME")"
-echo "kernel=$(uname -r)"' 2>/dev/null
+echo "kernel=$(uname -r)"
+echo "sel_context=$(tr -d "\0" < /proc/self/attr/current 2>/dev/null)"
+echo "sel_enforce=$(cat /sys/fs/selinux/enforce 2>/dev/null)"
+echo "datasource=$(cat /run/cloud-init/cloud-id 2>/dev/null)"
+echo "pkg_procs=$(pgrep -c -x "dnf|dnf5|dnf-3|rpm|apt-get|apt|dpkg" 2>/dev/null)"
+echo "net_ipv4=$(ip -4 -o addr show scope global 2>/dev/null | awk "{print \$4}" | head -1)"
+echo "prepare_stage=$(grep "^== " /var/log/pliwee-g8-prepare.log 2>/dev/null | tail -1 | cut -c4-80)"
+echo "uptime_s=$(cut -d. -f1 /proc/uptime 2>/dev/null)"' 2>&1)"; rc=$?
+    grep -E '^[a-z_0-9]+=' <<<"$out"
+    [ "$rc" = 0 ] || printf 'probe_error=%s\n' "$(grep -vE '^[a-z_0-9]+=' <<<"$out" | tr '\n' ' ' | cut -c1-240)"
 }
 ap_kv() { sed -n "s/^$2=//p" <<<"$1" | head -1; }   # TEXT KEY
 
+# ap_probe_confined PROBE — guest-exec answered, but SELinux kept it from
+# reading what the probe asks: uname answered, yet neither the host name nor
+# cloud-init's status nor the default target could be read, and the command
+# ran in the agent's domain (or its own context was unreadable too). This is
+# what the first real Fedora 44 template looked like, for 50 minutes, from
+# the host. A working guest always has a host name.
+ap_probe_confined() {
+    [ -n "$(ap_kv "$1" kernel)" ] && [ -z "$(ap_kv "$1" hostname)" ] && [ -z "$(ap_kv "$1" cloud_init)" ] \
+        && [ -z "$(ap_kv "$1" default_target)" ] || return 1
+    case "$(ap_kv "$1" sel_context)" in ""|*virt_qemu_ga_t*) return 0 ;; esac
+    return 1
+}
+# ap_probe_summary PROBE — one line saying what the guest is doing, as far as
+# the host can observe it. Every clause is a measurement or says it is missing.
+ap_probe_summary() {
+    local p="$1" ci s=() sel_ctx sel_enf
+    sel_ctx="$(ap_kv "$p" sel_context)"; sel_enf="$(ap_kv "$p" sel_enforce)"
+    if [ -n "$(ap_kv "$p" probe_error)" ] && [ -z "$(ap_kv "$p" kernel)" ]; then
+        printf 'QGA unavailable or guest-exec failed: %s' "$(ap_kv "$p" probe_error)"; return
+    fi
+    [ -n "$(ap_kv "$p" kernel)" ] || { printf 'no probe output (guest-exec returned nothing)'; return; }
+    if ap_probe_confined "$p"; then
+        s+=("guest-exec confined by SELinux (${sel_ctx:-context unreadable}, enforce=${sel_enf:-unreadable}): cloud-init, host name and marker unreadable")
+    else
+        ci="$(ap_kv "$p" cloud_init)"
+        case "$ci" in
+            "") s+=("cloud-init status unreadable") ;;
+            disabled) s+=("cloud-init disabled: guest booted but no datasource") ;;
+            *) s+=("cloud-init ${ci}")
+               [ -n "$(ap_kv "$p" datasource)" ] || s+=("datasource missing") ;;
+        esac
+    fi
+    case "$(ap_kv "$p" pkg_procs)" in
+        ""|0) : ;; *) s+=("package transaction active ($(ap_kv "$p" pkg_procs) processes)") ;;
+    esac
+    if [ -n "$(ap_kv "$p" net_ipv4)" ]; then s+=("net $(ap_kv "$p" net_ipv4)"); else s+=("network: no IPv4 address"); fi
+    [ -z "$(ap_kv "$p" prepare_stage)" ] || s+=("prepare: $(ap_kv "$p" prepare_stage)")
+    s+=("marker $([ "$(ap_kv "$p" template_ready)" = yes ] && echo present || echo absent)")
+    local IFS=';'; printf '%s' "${s[*]}" | sed 's/;/; /g'
+}
+
 # ap_wait_probe DOM TIMEOUT WHAT CONDITION_FN — poll the probe until
-# CONDITION_FN (given the probe text) succeeds. Sets PROBE.
+# CONDITION_FN (given the probe text) succeeds. Sets PROBE, and WAIT_WHY to
+# why it gave up: timeout, not-running, or confined (guest-exec stayed confined
+# by SELinux for AP_CONFINED_LIMIT seconds — waiting longer cannot help).
 ap_wait_probe() {
-    local dom="$1" limit="$2" what="$3" fn="$4" waited=0 poll="${AP_POLL:-30}" next_say=300
-    PROBE=""
+    local dom="$1" limit="$2" what="$3" fn="$4" waited=0 poll="${AP_POLL:-30}" next_say="${AP_SAY_EVERY:-300}" confined=0
+    local seen="" now
+    PROBE=""; WAIT_WHY=""
     while [ "$waited" -lt "$limit" ]; do
         PROBE="$(ap_probe "$dom")"
+        # The journal keeps every change in what the guest was observed doing.
+        now="$(ap_probe_summary "$PROBE")"
+        [ "$now" = "$seen" ] || { ap_log "$what — observed at ${waited}s (up $(ap_kv "$PROBE" uptime_s)s): $now"; seen="$now"; }
         "$fn" "$PROBE" && return 0
-        ap_dom_running "$dom" || return 1
+        ap_dom_running "$dom" || { WAIT_WHY=not-running; return 1; }
+        if ap_probe_confined "$PROBE"; then
+            confined=$(( confined + poll ))
+            [ "$confined" -lt "$AP_CONFINED_LIMIT" ] || { WAIT_WHY=confined; return 1; }
+        else
+            confined=0
+        fi
         if [ "$waited" -ge "$next_say" ]; then
-            ap_say INFO "$what — still waiting (${waited}s; cloud-init: $(ap_kv "$PROBE" cloud_init))"
-            next_say=$(( next_say + 300 ))
+            ap_say INFO "$what — still waiting (${waited}s of ${limit}s; $now)"
+            next_say=$(( next_say + ${AP_SAY_EVERY:-300} ))
         fi
         sleep "$poll"; waited=$(( waited + poll ))
     done
+    WAIT_WHY=timeout
     return 1
 }
 
@@ -159,13 +229,16 @@ ap_wait_probe() {
 # ap_guest_boot DOM [AGENT_TIMEOUT] — start it (one VM, enough memory) and wait
 # for the agent. A template's first boot passes AP_TEMPLATE_TIMEOUT: some cloud
 # images only get qemu-guest-agent from cloud-init, minutes after boot.
+ap_guest_power_on() { # DOM — one VM, enough memory, started
+    ap_one_vm "$1"
+    ap_wait_memory $(( AP_GUEST_MEM_MIB + AP_MEM_RESERVE_MIB )) "starting $1"
+    ap_virsh start "$1" >/dev/null || ap_stop "libvirt refused to start $1"
+    ap_log "started $1"
+}
 ap_guest_boot() {
     local dom="$1" agent_wait="${2:-$AP_BOOT_TIMEOUT}"
     ap_dom_running "$dom" && { ga_ping "$dom" "$agent_wait" >/dev/null 2>&1; return; }
-    ap_one_vm "$dom"
-    ap_wait_memory $(( AP_GUEST_MEM_MIB + AP_MEM_RESERVE_MIB )) "starting $dom"
-    ap_virsh start "$dom" >/dev/null || ap_stop "libvirt refused to start $dom"
-    ap_log "started $dom"
+    ap_guest_power_on "$dom"
     ga_ping "$dom" "$agent_wait" >/dev/null 2>&1 \
         || ap_stop "$dom booted but its guest agent did not answer within ${agent_wait}s" \
             "Running does not mean ready; nothing was run on it. It was left running for inspection (--cleanup-vms stops it)."
@@ -197,6 +270,43 @@ ap_tmpl_ready_fn() {
 }
 ap_session_fn() { case "$(ap_kv "$1" session_type)" in wayland|x11) return 0 ;; esac; return 1; }
 
+# ap_template_check DOM — what the gate harnesses need from a template, read
+# from the prepared guest after its reboot: key=value lines.
+ap_template_check() {
+    ga_exec "$1" '# ap-template-check
+q() { for n in "$@"; do
+        if command -v rpm >/dev/null; then
+            rpm -q "$n" >/dev/null 2>&1 && { rpm -q --qf "%{VERSION}-%{RELEASE}" "$n"; return; }
+        else
+            v="$(dpkg-query -W -f="\${Status} \${Version}" "$n" 2>/dev/null)"
+            case "$v" in "install ok installed "*) echo "${v##* }"; return ;; esac
+        fi
+      done; }
+echo "pkg_gnome_shell=$(q gnome-shell)"
+echo "pkg_gdm=$(q gdm gdm3)"
+echo "pkg_qga=$(q qemu-guest-agent)"
+echo "autologin=$(sed -n "s/^AutomaticLogin=//p" /etc/gdm/custom.conf /etc/gdm3/custom.conf 2>/dev/null | head -1)"
+echo "no_lock=$(grep -qx "lock-enabled=false" /etc/dconf/db/local.d/00-pliwee-g8 2>/dev/null && echo yes)"
+echo "initial_setup_done=$(test -e /home/'"$AP_GUEST_USER"'/.config/gnome-initial-setup-done && echo yes)"
+echo "default_target=$(systemctl get-default 2>/dev/null)"
+echo "selinux=$(getenforce 2>/dev/null)"
+echo "qga_permissive=$(semodule -l 2>/dev/null | grep -x pliwee-g8-qga >/dev/null && echo yes)"
+echo "marker=$(cat /var/lib/pliwee-g8/template-ready 2>/dev/null)"' 2>&1
+}
+# ap_template_check_fn CHECK — every line present and as required. On an SELinux
+# guest the system must still be Enforcing: only the agent's domain was changed.
+ap_template_check_fn() {
+    local c="$1" k
+    for k in pkg_gnome_shell pkg_gdm pkg_qga marker; do [ -n "$(ap_kv "$c" "$k")" ] || return 1; done
+    [ "$(ap_kv "$c" autologin)" = "$AP_GUEST_USER" ] && [ "$(ap_kv "$c" no_lock)" = yes ] \
+        && [ "$(ap_kv "$c" initial_setup_done)" = yes ] && [ "$(ap_kv "$c" default_target)" = graphical.target ] || return 1
+    case "$(ap_kv "$c" selinux)" in
+        "") return 0 ;;
+        Enforcing) [ "$(ap_kv "$c" qga_permissive)" = yes ] ;;
+        *) return 1 ;;
+    esac
+}
+
 # ap_template_verify DISTRO — its record says ready, and the volume is unchanged.
 ap_template_verify() {
     local d="$1" rec="template-$1" vol facts
@@ -209,6 +319,58 @@ ap_template_verify() {
             "Something wrote to a backing file every $d guest depends on. Refusing to continue."
 }
 
+# ap_template_diagnose DOM DIR — everything the host can learn about a guest
+# whose preparation did not finish, into DIR: the last probe and its reading,
+# libvirt's view, the agent's own view (no guest-exec needed), and the guest's
+# logs through guest-exec. A step that cannot be observed says so in its file.
+ap_template_diagnose() {
+    local dom="$1" dir="$2" q
+    mkdir -p "$dir" || return 1
+    printf '%s\n' "$PROBE" > "$dir/probe.txt"
+    printf '%s\n' "$(ap_probe_summary "$PROBE")" > "$dir/summary.txt"
+    { ap_virsh dominfo "$dom"; ap_virsh domstate --reason "$dom"; } > "$dir/libvirt.txt" 2>&1
+    for q in guest-ping guest-info guest-get-osinfo guest-network-get-interfaces; do
+        printf '## %s\n' "$q"
+        ap_virsh qemu-agent-command "$dom" "{\"execute\":\"$q\"}" 2>&1 || printf '(no answer: exit %s)\n' "$?"
+    done > "$dir/qga.txt"
+    ga_exec "$dom" '# ap-diagnose
+for f in /var/log/pliwee-g8-prepare.log /var/log/cloud-init-output.log /var/log/cloud-init.log; do
+    echo "## tail $f"; tail -n 200 "$f" 2>&1
+done
+echo "## cloud-init status --long"; cloud-init status --long 2>&1
+echo "## semodule -l | grep pliwee"; semodule -l 2>&1 | grep pliwee
+echo "## package processes"; pgrep -a -x "dnf|dnf5|dnf-3|rpm|apt-get|apt|dpkg" 2>&1
+echo "## ip -br addr"; ip -br addr 2>&1
+echo "## resolv.conf"; cat /etc/resolv.conf 2>&1
+echo "## AVC denials (last 40)"; grep -h "avc: *denied" /var/log/audit/audit.log 2>&1 | tail -n 40
+echo "## journal warnings (last 100)"; journalctl -b -p warning --no-pager 2>&1 | tail -n 100' \
+        > "$dir/guest-logs.txt" 2>&1 || printf '\n(guest-exec failed: exit %s)\n' "$?" >> "$dir/guest-logs.txt"
+}
+
+# ap_template_fail DISTRO DOM WHY — the template's preparation did not finish.
+# Infrastructure, not a gate: no gate is run, recorded or failed. The logs are
+# kept, the guest is shut down cleanly (never forced), the record says failed,
+# and a resume discards it and builds the template again.
+ap_template_fail() {
+    local d="$1" dom="$2" why="$3" dir stopped
+    dir="$AP_STATE/templates/$d/failure.$(ap_stamp)"
+    ap_template_diagnose "$dom" "$dir"
+    if ap_guest_shutdown "$dom"; then stopped="shut down cleanly"
+    else stopped="did NOT shut down within $((2 * AP_SHUTDOWN_TIMEOUT))s and was not forced; shut it down yourself"; fi
+    # A new version of the record with ONE state line (ap_rec_get refuses two);
+    # the building version moves to the history.
+    local cur=()
+    mapfile -t cur < <(grep -vE '^(state|failed_utc|failed_why|failure_dir)=' "$(ap_rec "template-$d")" 2>/dev/null)
+    ap_rec_put "template-$d" "${cur[@]}" "state=failed" "failed_utc=$(ap_utc)" "failed_why=$why" "failure_dir=$dir" \
+        || ap_say WARN "cannot record the $d template's failure"
+    ap_stop "TEMPLATE-$d — infrastructure preparation FAILED: $why (no gate was run or recorded)" \
+        "last observed: $(ap_probe_summary "$PROBE")" \
+        "diagnosis:     $dir/summary.txt" \
+        "guest logs:    $dir/guest-logs.txt" \
+        "agent view:    $dir/qga.txt" \
+        "$dom $stopped. Resuming discards it and builds the template again."
+}
+
 # ap_template_ensure DISTRO — the prepared, generalised desktop for DISTRO.
 ap_template_ensure() {
     local d="$1" rec="template-$1" vol dom seed host pw hash mac nic xml facts
@@ -216,13 +378,13 @@ ap_template_ensure() {
     host="g8-$(ap_abbr "$d")-tmpl"
     if [ "$(ap_rec_get "$rec" state 2>/dev/null)" = ready ]; then ap_template_verify "$d"; return 0; fi
     ap_base_ensure "$d"
-    if [ "$(ap_rec_get "$rec" state 2>/dev/null)" = building ]; then
-        ap_say INFO "TEMPLATE-$d — an interrupted build is discarded and started again (a template is not evidence)"
+    case "$(ap_rec_get "$rec" state 2>/dev/null)" in building|failed)
+        ap_say INFO "TEMPLATE-$d — an unfinished build ($(ap_rec_get "$rec" state)) is discarded and started again (a template is not evidence)"
         ap_dom_running "$dom" && ap_virsh destroy "$dom" >/dev/null 2>&1
         ap_dom_exists "$dom" && ap_virsh undefine "$dom" --snapshots-metadata >/dev/null 2>&1
         ap_vol_exists "$vol" && ap_virsh vol-delete --pool "$AP_POOL" "$vol" >/dev/null
         ap_vol_exists "$seed" && ap_virsh vol-delete --pool "$AP_POOL" "$seed" >/dev/null
-    fi
+    esac
     if ap_dom_exists "$dom" || ap_vol_exists "$vol"; then
         ap_stop "$dom / $vol exist, but no record says this autopilot created them" \
             "Refusing to use or replace them. Remove them yourself if they are stale, then resume."
@@ -247,23 +409,35 @@ ap_template_ensure() {
     xml="$AP_STATE/templates/$d/domain.xml"
     ap_domain_xml "$dom" "$d" tmpl "$vol" "$seed" "$mac" "$nic" > "$xml"
     ap_virsh define "$xml" >/dev/null || ap_stop "libvirt refused the $d template definition ($xml)"
-    ap_say RUN "TEMPLATE-$d — installing a GNOME desktop into $dom (unattended; typically 20-60 min)"
-    ap_guest_boot "$dom" "$AP_TEMPLATE_TIMEOUT"
-    ap_wait_probe "$dom" "$AP_TEMPLATE_TIMEOUT" "TEMPLATE-$d" ap_tmpl_ready_fn || {
-        ga_exec "$dom" 'tail -n 200 /var/log/pliwee-g8-prepare.log; tail -n 200 /var/log/cloud-init-output.log' \
-            > "$AP_STATE/templates/$d/prepare-failure.$(ap_stamp).log" 2>&1
-        ap_stop "TEMPLATE-$d was not prepared (cloud-init: $(ap_kv "$PROBE" cloud_init))" \
-            "The guest's preparation log is in $AP_STATE/templates/$d/prepare-failure.*.log." \
-            "$dom is left as it is for inspection; resuming discards it and builds it again."
-    }
+    ap_say RUN "TEMPLATE-$d — installing a GNOME desktop into $dom (unattended; typically 5-60 min, at most ${AP_TEMPLATE_TIMEOUT}s)"
+    ap_guest_power_on "$dom"
+    PROBE=""
+    ga_ping "$dom" "$AP_TEMPLATE_TIMEOUT" >/dev/null 2>&1 \
+        || ap_template_fail "$d" "$dom" "QGA unavailable: the guest agent did not answer within ${AP_TEMPLATE_TIMEOUT}s of boot"
+    if ! ap_wait_probe "$dom" "$AP_TEMPLATE_TIMEOUT" "TEMPLATE-$d" ap_tmpl_ready_fn; then
+        case "$WAIT_WHY" in
+            confined) ap_template_fail "$d" "$dom" "guest-exec stayed confined by SELinux for ${AP_CONFINED_LIMIT}s; the template's readiness cannot be observed" ;;
+            not-running) ap_template_fail "$d" "$dom" "the guest stopped running during preparation" ;;
+            *) ap_template_fail "$d" "$dom" "not ready after ${AP_TEMPLATE_TIMEOUT}s" ;;
+        esac
+    fi
+    printf '%s\n' "$PROBE" > "$AP_STATE/templates/$d/prepared-probe.txt"
     ap_say INFO "TEMPLATE-$d — prepared; rebooting once to prove a graphical session comes up by itself"
     ap_guest_shutdown_or_stop "$dom"
-    ap_guest_boot "$dom"
+    ap_guest_power_on "$dom"
+    ga_ping "$dom" "$AP_BOOT_TIMEOUT" >/dev/null 2>&1 \
+        || ap_template_fail "$d" "$dom" "QGA unavailable after the proving reboot (no answer within ${AP_BOOT_TIMEOUT}s)"
     ap_wait_probe "$dom" "$AP_BOOT_TIMEOUT" "TEMPLATE-$d session" ap_session_fn \
-        || ap_stop "TEMPLATE-$d: no graphical session for $AP_GUEST_USER after a reboot (session: '$(ap_kv "$PROBE" session_type)')" \
-            "The lifecycle gates need one. $dom is left as it is; resuming rebuilds it."
+        || ap_template_fail "$d" "$dom" "no graphical session for $AP_GUEST_USER after a reboot (session: '$(ap_kv "$PROBE" session_type)')"
+    local check
+    check="$(ap_template_check "$dom")"
+    printf '%s\n' "$check" > "$AP_STATE/templates/$d/readiness.txt"
+    ap_template_check_fn "$check" \
+        || ap_template_fail "$d" "$dom" "the readiness check did not pass: $(tr '\n' ' ' <<<"$check" | cut -c1-400)"
     ga_exec "$dom" 'if command -v rpm >/dev/null; then rpm -qa | sort; else dpkg-query -W | sort; fi' \
         > "$AP_STATE/templates/$d/packages.txt" 2>/dev/null
+    [ -s "$AP_STATE/templates/$d/packages.txt" ] \
+        || ap_template_fail "$d" "$dom" "the package list came back empty; the template is not described"
     printf '%s\n' "$PROBE" > "$AP_STATE/templates/$d/probe.txt"
     ga_exec "$dom" '# ap-generalize
 cloud-init clean --logs --machine-id --seed >/dev/null 2>&1 || { rm -rf /var/lib/cloud/instances /var/lib/cloud/instance; : > /etc/machine-id; }
@@ -279,6 +453,7 @@ sync
     ap_rec_put "$rec" "state=ready" "volume=$vol" "path=$(ap_vol_path "$vol")" "facts=$facts" "base=$BASE_VOL" \
         "base_sha256=$(ap_rec_get "base-$d" image_sha256)" "os=$(ap_kv "$PROBE" os)" "kernel=$(ap_kv "$PROBE" kernel)" \
         "packages=$AP_STATE/templates/$d/packages.txt" "packages_sha256=$(ap_sha "$AP_STATE/templates/$d/packages.txt")" \
+        "readiness=$AP_STATE/templates/$d/readiness.txt" "readiness_sha256=$(ap_sha "$AP_STATE/templates/$d/readiness.txt")" \
         "password_file=$([ -n "$hash" ] && echo "$pw")" "built_utc=$(ap_utc)" || ap_stop "cannot record the $d template"
     ap_say PASS "TEMPLATE-$d — $(ap_kv "$PROBE" os), graphical session verified, generalised ($vol)"
 }

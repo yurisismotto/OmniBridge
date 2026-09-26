@@ -18,6 +18,15 @@
 #   * user anyflow, uid 1000 (GUEST_USER/GUEST_UID in every harness);
 #   * qemu-guest-agent with guest-exec and guest-file-* allowed (guest-agent.sh
 #     drives everything through them; Fedora's packaging can filter them);
+#   * Fedora: the agent's SELinux domain, virt_qemu_ga_t, made permissive (a
+#     CIL module, pliwee-g8-qga). Everything guest-exec starts runs in that
+#     domain, and under enforcing it may not even stat /usr/bin/cloud-init,
+#     /usr/bin/hostname or /var/lib/pliwee-g8/template-ready, nor ask systemd
+#     for the default target: the first real Fedora 44 template (2026-09-26)
+#     finished in five minutes and was watched for 50 more, the probe reading
+#     every one of those as empty (316 AVC denials in the guest's audit log).
+#     Only that one domain changes; the system stays enforcing, and every
+#     other domain, the product's included, is confined as shipped;
 #   * a GNOME desktop, graphical.target, GDM autologin for anyflow — a
 #     graphical logind session for the user (lifecycle-gates.sh preconditions;
 #     it restarts the display manager after terminate-user because "there is no
@@ -103,13 +112,24 @@ write_files:
       set -eu
       exec >>/var/log/pliwee-g8-prepare.log 2>&1
       echo "== \$(date -u) start"
+      echo "== stage: agent"
       qga="\$(command -v qemu-ga)"
       mkdir -p /etc/systemd/system/qemu-guest-agent.service.d
       printf '[Service]\\nExecStart=\\nExecStart=%s --method=virtio-serial --path=/dev/virtio-ports/org.qemu.guest_agent.0\\n' "\$qga" \\
           > /etc/systemd/system/qemu-guest-agent.service.d/50-pliwee-g8.conf
       systemctl daemon-reload
       systemctl restart qemu-guest-agent || systemctl start qemu-guest-agent
+      if command -v selinuxenabled >/dev/null && selinuxenabled; then
+          echo "== stage: selinux"
+          mkdir -p /var/lib/pliwee-g8
+          echo '(typepermissive virt_qemu_ga_t)' > /var/lib/pliwee-g8/pliwee-g8-qga.cil
+          semodule -i /var/lib/pliwee-g8/pliwee-g8-qga.cil
+          semodule -l > /var/lib/pliwee-g8/semodules.txt
+          grep -qx pliwee-g8-qga /var/lib/pliwee-g8/semodules.txt
+      fi
+      echo "== stage: desktop"
       $desktop
+      echo "== stage: session"
       ${fw:-true}
       systemctl set-default graphical.target
       dconf update
@@ -123,6 +143,7 @@ write_files:
           systemctl stop "\$u" 2>/dev/null || true
           systemctl mask "\$u" 2>/dev/null || true
       done
+      echo "== stage: verify"
       for t in systemctl sha256sum runuser journalctl loginctl ping; do command -v "\$t" >/dev/null; done
       if command -v dnf >/dev/null; then command -v rpm >/dev/null; command -v firewall-cmd >/dev/null
       else command -v apt-get >/dev/null; command -v dpkg >/dev/null; command -v apt-ftparchive >/dev/null; fi

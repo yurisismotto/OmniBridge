@@ -9,6 +9,8 @@
 #   pre-g8-autopilot.sh --cleanup-vms   stop its guests; remove those whose gates are PASS
 #   pre-g8-autopilot.sh --retry GATE    one new attempt of a FAILed G7-UP/lifecycle
 #                                       gate (the FAIL is kept in the history), then go on
+#   pre-g8-autopilot.sh --template D    prepare (or verify) only distribution D's
+#                                       template, then stop: no gate, no coordinator
 #   options: --no-wait (stop at the first human step instead of waiting at it),
 #            --nic IF (the wired NIC for macvtap), --evidence DIR, --grant-hours N
 #
@@ -106,13 +108,16 @@ else
 fi
 
 # ---------------------------------------------------------------- arguments --
-CMD=run; EVIDENCE=""; RETRY_GATE=""; AP_NO_WAIT=0
+CMD=run; EVIDENCE=""; RETRY_GATE=""; AP_NO_WAIT=0; TEMPLATE_DISTRO=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --resume) CMD=run; shift ;;
         --status) CMD=status; shift ;;
         --plan) CMD=plan; shift ;;
         --cleanup-vms) CMD=cleanup; shift ;;
+        --template) CMD=template; TEMPLATE_DISTRO="${2:?--template needs a distribution}"; shift 2
+            ap_abbr "$TEMPLATE_DISTRO" >/dev/null \
+                || { echo "pre-g8-autopilot: --template takes one of: ${AP_DISTROS[*]}" >&2; exit 2; } ;;
         --retry) CMD=run; RETRY_GATE="${2:?--retry needs a gate}"; shift 2 ;;
         --no-wait) AP_NO_WAIT=1; shift ;;
         --nic) export AP_NIC="${2:?}"; shift 2 ;;
@@ -474,6 +479,22 @@ cmd_plan() {
     for g in "${AP_ALL_GATES[@]}"; do ap_manual_gate "$g" && printf '    %-22s %s\n' "$g" "$(ap_gate_state "$g")"; done
 }
 
+# cmd_template — the one distribution's template, as infrastructure only: the
+# coordinator is not called, no gate is run or recorded, no grant is needed
+# (no gate acts on a guest), and no other guest is created.
+cmd_template() {
+    local d="$TEMPLATE_DISTRO"
+    ap_take_locks
+    AP_SESSION_ID="$(ap_stamp)-$$"; AP_RUN="$AP_STATE/runs/$AP_SESSION_ID"; mkdir -p "$AP_RUN"
+    ap_log "=== template $d $AP_SESSION_ID (commit $(git -C "$REPO" rev-parse --short HEAD 2>/dev/null), selftest=$AP_SELFTEST)"
+    trap ap_on_interrupt INT TERM HUP
+    ap_host_prereqs
+    ap_detect_nic
+    ap_template_ensure "$d"
+    ap_finish DONE "TEMPLATE-$d is ready ($(ap_rec_get "template-$d" volume)); no gate was run or recorded" \
+        "readiness: $(ap_rec_get "template-$d" readiness 2>/dev/null || echo "(verified earlier: $(ap_rec_get "template-$d" built_utc))")"
+}
+
 cmd_cleanup() {
     ap_take_locks
     AP_SESSION_ID="$(ap_stamp)-$$"; AP_RUN="$AP_STATE/runs/$AP_SESSION_ID"; mkdir -p "$AP_RUN"
@@ -487,4 +508,5 @@ case "$CMD" in
     status) cmd_status ;;
     plan) cmd_plan ;;
     cleanup) cmd_cleanup ;;
+    template) cmd_template ;;
 esac

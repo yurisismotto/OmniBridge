@@ -26,7 +26,11 @@
 # ONE stop with ONE command; low memory pauses; Ctrl+C deletes nothing;
 # existing evidence stays byte-identical; nothing signing-related is touched;
 # the generated config; the phone's address parsing; and the report says G8 is
-# NOT eligible while W2 is unresolved.
+# NOT eligible while W2 is unresolved. And the template, against what the
+# first real Fedora 44 run met: an agent confined by SELinux, whose probe read
+# every answer as empty, so a template ready in five minutes was waited on for
+# fifty — now fixed in the seed, diagnosed in one line, bounded, and failed as
+# infrastructure, never as a gate.
 
 set -uo pipefail
 HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -553,6 +557,127 @@ check "…the interrupted attempt's record is in the history" \
     bash -c 'grep -lx "state=RUNNING" "$1"/state/history/LIFECYCLE-fedora44.* >/dev/null' _ "$SC/ev"
 check "…and the files it had written were copied aside first" test -d "$(ls -d "$SC/ev/autopilot/preserved/LIFECYCLE-fedora44."* 2>/dev/null | head -1)"
 check "…and the run went on to the WAIT at U2 (exit 4)" test "$RC" -eq 4
+
+# ---------------------------------------------------------------------------
+section "Units: what the template probe says about a guest"
+# ---------------------------------------------------------------------------
+UNITG() { ( AP_STATE="$WORK/unit"; mkdir -p "$AP_STATE/records"
+            . "$HERE/lib/autopilot-common.sh"; . "$HERE/lib/autopilot-host.sh"; . "$HERE/vm/guests.sh"; "$@" ); }
+# The probe the first real Fedora 44 template answered for 50 minutes: the
+# guest had finished; SELinux (virt_qemu_ga_t, enforcing) denied every read.
+CONFINED=$'identity=\ntemplate_ready=\nmachine_id=5e0c\nhostname=\ncloud_init=\nuser_uid=1000\nsession_type=\ndefault_target=\nos=Fedora Linux 44 (Cloud Edition)\nkernel=7.0.9-200.fc44.x86_64\nsel_context=system_u:system_r:virt_qemu_ga_t:s0\nsel_enforce=1\ndatasource=\npkg_procs=\nnet_ipv4=192.168.68.200/22\nprepare_stage=\nuptime_s=900'
+check "the observed Fedora 44 probe is recognised as a confined agent" UNITG ap_probe_confined "$CONFINED"
+check "…and summarised as such, not as 'cloud-init: '" \
+    contains "$(UNITG ap_probe_summary "$CONFINED")" "guest-exec confined by SELinux (system_u:system_r:virt_qemu_ga_t:s0, enforce=1)"
+check "…also when the agent's own context is unreadable" \
+    UNITG ap_probe_confined "$(sed 's/^sel_context=.*/sel_context=/; s/^sel_enforce=.*/sel_enforce=/' <<<"$CONFINED")"
+is_false_g() { if UNITG "$@" >/dev/null 2>&1; then return 1; else return 0; fi; }
+check "a probe with a host name is never 'confined'" is_false_g ap_probe_confined "$(sed 's/^hostname=$/hostname=g8-f44-tmpl/' <<<"$CONFINED")"
+check "the agent failing: 'QGA unavailable', with its error" \
+    contains "$(UNITG ap_probe_summary 'probe_error=guest-agent: FATAL: guest-exec rejected by x: error: Guest agent is not responding')" "QGA unavailable or guest-exec failed: guest-agent: FATAL"
+check "no output at all is said to be no output" contains "$(UNITG ap_probe_summary '')" "no probe output"
+BUSY=$'hostname=g8\ncloud_init=running\nkernel=k\ndatasource=nocloud\npkg_procs=2\nnet_ipv4=\nprepare_stage=stage: desktop\ntemplate_ready='
+check "cloud-init running, a package transaction, no network, the prepare stage, no marker — each named" \
+    test "$(UNITG ap_probe_summary "$BUSY")" = "cloud-init running; package transaction active (2 processes); network: no IPv4 address; prepare: stage: desktop; marker absent"
+check "cloud-init disabled: 'guest booted but no datasource'" \
+    contains "$(UNITG ap_probe_summary $'hostname=g8\ncloud_init=disabled\nkernel=k')" "guest booted but no datasource"
+check "cloud-init done without a datasource id: 'datasource missing'" \
+    contains "$(UNITG ap_probe_summary $'hostname=g8\ncloud_init=done\nkernel=k\ndatasource=')" "datasource missing"
+GOOD=$'pkg_gnome_shell=49.1-1\npkg_gdm=49.0-1\npkg_qga=10.2.2-1\nautologin=anyflow\nno_lock=yes\ninitial_setup_done=yes\ndefault_target=graphical.target\nselinux=Enforcing\nqga_permissive=yes\nmarker=2026-09-26T00:00:00Z'
+check "readiness: a complete Fedora template passes" UNITG ap_template_check_fn "$GOOD"
+check "readiness: no gnome-shell fails" is_false_g ap_template_check_fn "$(sed 's/^pkg_gnome_shell=.*/pkg_gnome_shell=/' <<<"$GOOD")"
+check "readiness: a system made Permissive fails (only the agent's domain may change)" is_false_g ap_template_check_fn "$(sed 's/^selinux=.*/selinux=Permissive/' <<<"$GOOD")"
+check "readiness: Enforcing without the agent-domain module fails" is_false_g ap_template_check_fn "$(sed 's/^qga_permissive=.*/qga_permissive=/' <<<"$GOOD")"
+check "readiness: autologin for someone else fails" is_false_g ap_template_check_fn "$(sed 's/^autologin=.*/autologin=root/' <<<"$GOOD")"
+check "readiness: no marker fails" is_false_g ap_template_check_fn "$(sed 's/^marker=.*/marker=/' <<<"$GOOD")"
+check "readiness: an empty check fails" is_false_g ap_template_check_fn ""
+seed_fix_ok() { # the Fedora seed makes virt_qemu_ga_t permissive BEFORE the desktop, and verifies it
+    python3 - "$WORK/ud-fedora44.yaml" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+prep = {w["path"]: w["content"] for w in d["write_files"]}["/usr/local/sbin/pliwee-g8-prepare"]
+i, j = prep.index("(typepermissive virt_qemu_ga_t)"), prep.index("@gnome-desktop")
+assert i < j and "semodule -i" in prep and "grep -qx pliwee-g8-qga" in prep
+assert "setenforce" not in prep and "SELINUX=permissive" not in prep
+PY
+}
+check "the Fedora seed makes only virt_qemu_ga_t permissive, verifies it, before the desktop (never setenforce)" seed_fix_ok
+
+# ---------------------------------------------------------------------------
+section "TEMPLATE: a confined agent, a timeout, no agent, an incomplete desktop"
+# ---------------------------------------------------------------------------
+tmpl_fail_common() { # LABEL — what every template failure must be
+    local label="$1" rec="$SC/ev/autopilot/records/template-fedora44" dir
+    dir="$(sed -n 's/^failure_dir=//p' "$rec" 2>/dev/null)"
+    check "$label: STOP (exit 3) as infrastructure, not a gate FAIL" \
+        test "$RC" -eq 3 -a -n "$(grep '^\[STOP\] TEMPLATE-fedora44 — infrastructure preparation FAILED' <<<"$OUT")"
+    check "$label: the template is recorded failed, with its diagnosis directory" \
+        test "$(sed -n 's/^state=//p' "$rec")" = failed -a -s "$dir/summary.txt" -a -s "$dir/probe.txt" -a -s "$dir/qga.txt" -a -e "$dir/guest-logs.txt"
+    check "$label: the paths are printed" contains "$OUT" "diagnosis:     $dir/summary.txt"
+    check "$label: the guest was shut down cleanly (not destroyed)" \
+        test "$(cat "$SC/libvirt/doms/pliwee-g8-f44-tmpl/state")" = "shut off" -a -z "$(vcalls | grep '^destroy pliwee-g8-f44-tmpl')"
+    check "$label: no gate ran and no gate was recorded" \
+        test ! -s "$STUB/calls" -a -z "$(find "$SC/ev/state" -maxdepth 1 \( -name 'G7UP-*' -o -name 'LIFECYCLE-*' \))" -a "$(cstate G7UP-fedora44-U8)" = PENDING
+    check "$label: the evidence is byte-identical" test "$(evsnap)" = "$before"
+}
+tmpl_faildir() { sed -n 's/^failure_dir=//p' "$SC/ev/autopilot/records/template-fedora44"; }
+scenario tmplconf
+before="$(evsnap)"
+FAKE_STAY_CONFINED=pliwee-g8-f44-tmpl AP_CONFINED_LIMIT=5 AP_SAY_EVERY=2 apx "yes" --no-wait
+tmpl_fail_common "agent confined by SELinux"
+check "…ended by the confinement limit, not the full timeout" contains "$OUT" "guest-exec stayed confined by SELinux for 5s"
+check "…the waiting line says what the guest is doing, never an empty 'cloud-init: '" \
+    test -n "$(grep '^\[INFO\] TEMPLATE-fedora44 — still waiting (.*guest-exec confined by SELinux' <<<"$OUT")" -a -z "$(grep 'cloud-init: )' <<<"$OUT")"
+check "…the journal records the observed state as it changed" \
+    test -n "$(grep 'TEMPLATE-fedora44 — observed at 0s (up [0-9]*s): guest-exec confined by SELinux' "$SC/ev/autopilot/journal.log")"
+check "…the guest's AVC denials are in the kept logs" contains "$(cat "$(tmpl_faildir)/guest-logs.txt")" "virt_qemu_ga_t"
+FAKE_AGENT_DEAD=pliwee-g8-f44-u8 apx "" --no-wait
+check "resume after the failure: the failed template is discarded and built again, and is ready" \
+    test -n "$(grep 'TEMPLATE-fedora44 — an unfinished build (failed) is discarded' <<<"$OUT")" -a \
+         -n "$(grep '^\[PASS\] TEMPLATE-fedora44' <<<"$OUT")" -a "$(sed -n 's/^state=//p' "$SC/ev/autopilot/records/template-fedora44")" = ready
+RDY="$SC/ev/autopilot/templates/fedora44/readiness.txt"
+check "…its readiness check was recorded: Enforcing, the agent's domain permissive, GNOME present" \
+    test -n "$(grep -x 'selinux=Enforcing' "$RDY")" -a -n "$(grep -x 'qga_permissive=yes' "$RDY")" -a -n "$(grep -x 'pkg_gnome_shell=49.1-1' "$RDY")"
+check "…and the failure's diagnosis is still there" test -n "$(compgen -G "$SC/ev/autopilot/templates/fedora44/failure.*/summary.txt")"
+
+scenario tmpltimeout
+before="$(evsnap)"
+FAKE_PREPARE_NEVER=pliwee-g8-f44-tmpl AP_SAY_EVERY=2 apx "yes" --no-wait
+tmpl_fail_common "preparation never finishes"
+check "…bounded: 'not ready after 6s' (AP_TEMPLATE_TIMEOUT)" contains "$OUT" "infrastructure preparation FAILED: not ready after 6s"
+check "…the waiting line: cloud-init running, the prepare stage, marker absent" \
+    test -n "$(grep '^\[INFO\] TEMPLATE-fedora44 — still waiting (.*cloud-init running; .*prepare: stage: desktop; marker absent' <<<"$OUT")"
+
+scenario tmplnoqga
+before="$(evsnap)"
+FAKE_AGENT_DEAD=pliwee-g8-f44-tmpl apx "yes" --no-wait
+tmpl_fail_common "no guest agent"
+check "…said as 'QGA unavailable'" contains "$OUT" "infrastructure preparation FAILED: QGA unavailable"
+check "…and the agent's silence is in qga.txt" contains "$(cat "$(tmpl_faildir)/qga.txt")" "(no answer"
+
+scenario tmplnognome
+before="$(evsnap)"
+FAKE_NO_GNOME=pliwee-g8-f44-tmpl apx "yes" --no-wait
+tmpl_fail_common "no GNOME in the prepared guest"
+check "…the readiness check names what is missing" contains "$OUT" "the readiness check did not pass: pkg_gnome_shell= "
+
+scenario tmplonly
+before="$(evsnap)"
+apx "" --template fedora44
+check "--template fedora44: DONE (exit 0), the template ready, its readiness recorded" \
+    test "$RC" -eq 0 -a "$(sed -n 's/^state=//p' "$SC/ev/autopilot/records/template-fedora44")" = ready \
+         -a -s "$SC/ev/autopilot/templates/fedora44/readiness.txt" -a -n "$(grep '^\[DONE\] TEMPLATE-fedora44 is ready' <<<"$OUT")"
+check "…no gate ran or was recorded, and no grant was asked for" \
+    test ! -s "$STUB/calls" -a -z "$(find "$SC/ev/state" -maxdepth 1 \( -name 'G7UP-*' -o -name 'LIFECYCLE-*' \))" \
+         -a ! -e "$SC/ev/autopilot/records/grant-current" -a -z "$(grep -i 'authoris' <<<"$OUT")"
+check "…nothing else was built: no Pliwee build, one image, one guest defined (the template)" \
+    test ! -s "$SC/build" -a "$(grep -c '\.qcow2$\|\.img$' "$WEB.calls")" = 1 -a "$(vcalls | grep -c '^define ')" = 1
+check "…and the evidence is byte-identical" test "$(evsnap)" = "$before"
+apx "" --template fedora44
+check "--template on a ready template verifies it and builds nothing" \
+    test "$RC" -eq 0 -a "$(vcalls | grep -c '^define ')" = 1
+apx "" --template fedora45
+check "--template with an unknown distribution is refused (exit 2)" test "$RC" -eq 2
 
 # ---------------------------------------------------------------------------
 section "Nothing in the autopilot touches signing, releases, history or the phone's data"
