@@ -9,6 +9,9 @@
 #   pre-g8-autopilot.sh --cleanup-vms   stop its guests; remove those whose gates are PASS
 #   pre-g8-autopilot.sh --retry GATE    one new attempt of a FAILed G7-UP/lifecycle
 #                                       gate (the FAIL is kept in the history), then go on
+#   pre-g8-autopilot.sh --retry GATE --only
+#                                       that one new attempt and nothing else: no gate
+#                                       before it, none after it
 #   pre-g8-autopilot.sh --template D    prepare (or verify) only distribution D's
 #                                       template, then stop: no gate, no coordinator
 #   options: --no-wait (stop at the first human step instead of waiting at it),
@@ -108,7 +111,7 @@ else
 fi
 
 # ---------------------------------------------------------------- arguments --
-CMD=run; EVIDENCE=""; RETRY_GATE=""; AP_NO_WAIT=0; TEMPLATE_DISTRO=""
+CMD=run; EVIDENCE=""; RETRY_GATE=""; AP_NO_WAIT=0; TEMPLATE_DISTRO=""; RETRY_ONLY=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --resume) CMD=run; shift ;;
@@ -120,6 +123,7 @@ while [ $# -gt 0 ]; do
                 || { echo "pre-g8-autopilot: --template takes one of: ${AP_DISTROS[*]}" >&2; exit 2; } ;;
         --retry) CMD=run; RETRY_GATE="${2:?--retry needs a gate}"; shift 2 ;;
         --no-wait) AP_NO_WAIT=1; shift ;;
+        --only) RETRY_ONLY=1; shift ;;
         --nic) export AP_NIC="${2:?}"; shift 2 ;;
         --evidence) EVIDENCE="${2:?}"; shift 2 ;;
         --grant-hours) AP_GRANT_HOURS="${2:?}"; shift 2
@@ -130,6 +134,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 export AP_NO_WAIT
+[ "$RETRY_ONLY" = 0 ] || [ -n "$RETRY_GATE" ] || { echo "pre-g8-autopilot: --only goes with --retry GATE" >&2; exit 2; }
 EVIDENCE="${EVIDENCE:-${XDG_STATE_HOME:-$HOME/.local/state}/pliwee-pre-g8}"
 case "$EVIDENCE" in /*) : ;; *) echo "pre-g8-autopilot: --evidence must be absolute" >&2; exit 2 ;; esac
 case "$EVIDENCE/" in "$REPO/"*) echo "pre-g8-autopilot: the evidence directory must be outside the source tree" >&2; exit 2 ;; esac
@@ -435,6 +440,8 @@ cmd_run() {
     }
     ap_old_set_ensure
     for g in $(ap_plan); do
+        # --retry GATE --only: that gate, and nothing before or after it.
+        [ "$RETRY_ONLY" = 1 ] && [ "$g" != "$RETRY_GATE" ] && continue
         st="$(ap_gate_state "$g")"; own="$(ap_gate_own "$g")"
         case "$st" in
             PASS) ap_say PASS "$g"; continue ;;
@@ -447,6 +454,10 @@ cmd_run() {
                 esac ;;
         esac
         ap_run_gate "$g"
+        if [ "$RETRY_ONLY" = 1 ]; then
+            ap_finish DONE "$g — retried alone (--only): $(ap_gate_state "$g"); no other gate was run" \
+                "To go on with the rest: pre-g8-autopilot.sh --resume"
+        fi
         [ "$g" = "$RETRY_GATE" ] && RETRY_GATE=""
     done
     ap_finish DONE "all automatable pre-G8 work is done"

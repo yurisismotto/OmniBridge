@@ -621,6 +621,22 @@ check "…and the retry did write over the originals (so the copy was needed)" \
     test "$(cd "$SC/ev/lifecycle/fedora44" && sha256sum ./*)" != "$lcfail_files"
 check "…saying so" contains "$OUT" "the FAILed attempt's files in $SC/ev/lifecycle/fedora44 were copied to"
 
+scenario retryonly
+echo fail > "$STUB/mode/lifecycle-fedora44"
+apx "yes" --no-wait
+rm -f "$STUB/mode/lifecycle-fedora44"
+n0="$(grep -c . "$STUB/calls")"
+apx "" --no-wait --retry LIFECYCLE-fedora44 --only
+check "--retry GATE --only: that gate alone, now PASS, then DONE (exit 0)" \
+    test "$RC" -eq 0 -a "$(cstate LIFECYCLE-fedora44)" = PASS -a -n "$(grep 'retried alone (--only): PASS; no other gate was run' <<<"$OUT")"
+check "…exactly one gate ran (the retried one) and nothing of ubuntu2404" \
+    test "$(( $(grep -c . "$STUB/calls") - n0 ))" = 1 -a "$(nlines 'ubuntu2404' "$STUB/calls")" = 0 -a "$(cstate G7UP-ubuntu2404-U8)" = PENDING
+check "…on its guest reverted to ap-fresh, with the FAILed attempt's files preserved first" \
+    test -n "$(vcalls | grep 'snapshot-revert --domain pliwee-g8-f44-lc --snapshotname ap-fresh')" -a -n "$(compgen -G "$SC/ev/autopilot/preserved/LIFECYCLE-fedora44.*/fedora44")"
+check "…and no guest is left running" test -z "$(for f in "$SC/libvirt/doms"/*/state; do grep -x running "$f"; done)"
+apx "" --only
+check "--only without --retry is refused (exit 2)" test "$RC" -eq 2
+
 # ---------------------------------------------------------------------------
 section "Ctrl+C mid-gate: nothing deleted, the gate resumes on a reverted guest"
 # ---------------------------------------------------------------------------
