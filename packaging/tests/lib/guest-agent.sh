@@ -109,7 +109,11 @@ ga_exec() {
     out="$(printf '%s' "$resp" | jq -r '.return["out-data"] // empty' 2>/dev/null)"
     err="$(printf '%s' "$resp" | jq -r '.return["err-data"] // empty' 2>/dev/null)"
     [ -n "$out" ] && printf '%s' "$out" | base64 -d 2>/dev/null
-    [ -n "$err" ] && printf '%s' "$err" | base64 -d 2>/dev/null >&2
+    # >&2 BEFORE 2>/dev/null: the other order points stdout at the /dev/null
+    # stderr has just become, and every guest's stderr vanished. It did until
+    # 2026-09-26, which is why G7UP-fedora44-INSTALL kept an empty
+    # U2-firewall.txt although firewall-cmd had said "Error: INVALID_SERVICE".
+    [ -n "$err" ] && printf '%s' "$err" | base64 -d >&2 2>/dev/null
     return "$code"
 }
 

@@ -426,6 +426,44 @@ stale="$(grep -nv '^[[:space:]]*#' "$LG" | tr -d '[]' | grep -i 'omnibridged' ||
                 || notok "STATIC lifecycle-gates.sh still inspects the old daemon name: $stale"
 
 # ---------------------------------------------------------------------------
+section "A guest's stderr thrown away  (G7UP-fedora44-INSTALL, 2026-09-26: an empty U2-firewall.txt)"
+# ---------------------------------------------------------------------------
+# ga_exec printed the guest's stderr with `base64 -d 2>/dev/null >&2`, which
+# sends it to /dev/null. firewall-cmd's "Error: INVALID_SERVICE" (exit 101)
+# never reached the harness, whose capture of it was 0 bytes. Here ga_exec
+# reads the agent reply that firewall-cmd produced (stdout empty, the error
+# on stderr, exit 101) from a stand-in virsh, and must pass all of it on.
+GA="$WORK/ga"; mkdir -p "$GA"
+fw_err="Error: INVALID_SERVICE: Zone 'work': 'omnibridge' not among existing services"
+cat > "$GA/virsh" <<VIRSH
+#!/bin/sh
+while [ "\$1" = -c ]; do shift 2; done
+case "\$1" in
+  dominfo) echo "Name: \$2" ;;
+  domstate) echo running ;;
+  dumpxml) echo "<target name='org.qemu.guest_agent.0'/>" ;;
+  qemu-agent-command) case "\$3" in
+      *'"guest-exec"'*) echo '{"return":{"pid":2553}}' ;;
+      *) echo '{"return":{"exitcode":101,"err-data":"$(printf '%s\n' "$fw_err" | base64 -w0)","out-truncated":false,"err-truncated":false,"exited":true}}' ;;
+    esac ;;
+esac
+VIRSH
+chmod +x "$GA/virsh"
+ga_run() { ( PATH="$GA:$PATH"; . "$HERE/lib/guest-agent.sh"; ga_exec g7-test "$@" ); }
+ga_run 'firewall-cmd --permanent --zone=work --add-service=omnibridge' >"$GA/out" 2>"$GA/err"; ga_rc=$?
+[ "$ga_rc" = 101 ] && ok "ga_exec returns the guest's exit code (101)" || notok "ga_exec returned $ga_rc, not the guest's 101"
+if contains "$(cat "$GA/err")" "$fw_err"; then
+    ok "REGRESSION: ga_exec passes the guest's stderr on (firewall-cmd's INVALID_SERVICE error)"
+else
+    notok "REGRESSION: ga_exec dropped the guest's stderr: '$(cat "$GA/err")'"
+fi
+ga_run 'firewall-cmd --permanent --zone=work --add-service=omnibridge' > "$GA/capture" 2>&1
+[ -s "$GA/capture" ] && contains "$(cat "$GA/capture")" INVALID_SERVICE \
+    && ok "REGRESSION: the harness's own capture form (> file 2>&1) keeps the error: $(wc -c < "$GA/capture") bytes, not 0" \
+    || notok "REGRESSION: the '> file 2>&1' capture is $(wc -c < "$GA/capture") bytes"
+[ ! -s "$GA/out" ] && ok "…and nothing was invented on stdout" || notok "ga_exec wrote '$(cat "$GA/out")' on stdout"
+
+# ---------------------------------------------------------------------------
 section "The pre-G8 coordinator  (pre-g8-manual-gates-selftests.sh)"
 # ---------------------------------------------------------------------------
 # Non-vacuous: a suite that ran nothing would also "pass".
