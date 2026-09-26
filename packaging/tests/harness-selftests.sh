@@ -379,6 +379,53 @@ rejects "a set with no SHA256SUMS" g7up_pkg_subdir "$L/nosums" debian13 deb
 rejects "the published layout asked for a distribution it does not carry" g7up_pkg_subdir "$L/signed" ubuntu2404 deb
 
 # ---------------------------------------------------------------------------
+section "A process matched by its old name  (LIFECYCLE-fedora44, 2026-09-26: '[o]mnibridged' after the rebrand)"
+# ---------------------------------------------------------------------------
+# lifecycle-gates.sh saw `pgrep -x pliweed` succeed, then looked for the
+# daemon with `ps -eo user,pid,cmd | grep "[o]mnibridged"`, found nothing and
+# aborted "no pliweed process found after start" (gate log
+# LIFECYCLE-fedora44.20260926T043103Z.log). Its root count read the same stale
+# name, so it would have said 0 whatever ran as root. Both are run here, as the
+# harness defines them, against a REAL process called pliweed.
+LG="$HERE/lifecycle-gates.sh"
+l4_ps="$(sed -n "s/^L4_PS='\(.*\)'\$/\1/p" "$LG")"
+l4_root="$(sed -n "s/^L4_ROOT_AWK='\(.*\)'\$/\1/p" "$LG")"
+if [ -n "$l4_ps" ] && [ -n "$l4_root" ]; then
+    ok "STATIC lifecycle-gates.sh defines the L4 capture (L4_PS) and its root count (L4_ROOT_AWK)"
+else
+    notok "STATIC lifecycle-gates.sh no longer defines L4_PS / L4_ROOT_AWK; the checks below would test nothing"
+fi
+mkdir -p "$WORK/l4"; cp "$(command -v sleep)" "$WORK/l4/pliweed"
+"$WORK/l4/pliweed" 60 & l4_pid=$!
+for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -x pliweed >/dev/null 2>&1 && break; sleep 0.2; done
+if [ -n "$l4_ps" ] && pgrep -x pliweed >/dev/null 2>&1; then
+    cap="$(sh -c "$l4_ps" 2>/dev/null)"
+    if contains_re "$cap" "^ *$(id -un) +$l4_pid +$WORK/l4/pliweed 60\$"; then
+        ok "REGRESSION: L4_PS captures a running pliweed as 'user pid args' ($(id -un) $l4_pid)"
+    else
+        notok "REGRESSION: L4_PS did not capture the running pliweed (pid $l4_pid): '$cap'"
+    fi
+    old="$(sh -c 'ps -eo user,pid,cmd | grep "[o]mnibridged"' 2>/dev/null)"
+    [ -z "$old" ] && ok "MEASURED: the old '[o]mnibridged' match finds nothing for that same process (the observed abort)" \
+                  || notok "MEASURED: the old match unexpectedly found: $old"
+else
+    notok "REGRESSION: could not run a process called pliweed, or L4_PS is missing; L4 was not tested"
+fi
+kill "$l4_pid" 2>/dev/null; wait "$l4_pid" 2>/dev/null
+root_is() { [ "$(awk "$l4_root" <<<"$1")" = "$2" ]; }
+if [ -n "$l4_root" ]; then
+    root_is $'anyflow 1234 /usr/bin/pliweed' 0 && ok "L4 root count: the user's daemon alone is 0" || notok "L4 root count: the user's daemon alone is not 0"
+    root_is $'anyflow 1234 /usr/bin/pliweed\nroot 99 /usr/bin/pliweed' 1 \
+        && ok "REGRESSION: L4 root count: a pliweed owned by root IS counted (the old one read 0)" \
+        || notok "REGRESSION: L4 root count missed a pliweed owned by root"
+fi
+# No command in the harness may inspect the old binary name, however it is
+# spelled: brackets are removed before searching, comments are ignored.
+stale="$(grep -nv '^[[:space:]]*#' "$LG" | tr -d '[]' | grep -i 'omnibridged' || true)"
+[ -z "$stale" ] && ok "STATIC lifecycle-gates.sh inspects no 'omnibridged' process, bracketed or not" \
+                || notok "STATIC lifecycle-gates.sh still inspects the old daemon name: $stale"
+
+# ---------------------------------------------------------------------------
 section "The pre-G8 coordinator  (pre-g8-manual-gates-selftests.sh)"
 # ---------------------------------------------------------------------------
 # Non-vacuous: a suite that ran nothing would also "pass".

@@ -74,6 +74,17 @@ abort() { printf '\nPRECONDITION FAILED: %s\n' "$*" >&2; printf 'Aborting: %d ok
 # gx  — run as root in the guest
 # gu  — run as the desktop user, inside their session bus
 gx() { ga_exec "$DOMAIN" "$@"; }
+
+# L4 — the daemon's processes, by exact executable name (as `pgrep -x pliweed`
+# sees them), one "user pid args" line each; and the count of those owned by
+# root, read from that same capture. Until 2026-09-26 L4 matched
+# `grep "[o]mnibridged"`, the pre-rebrand binary name, which the bracket also
+# hid from a search for it: the first real LIFECYCLE-fedora44 run found
+# pliweed running and then aborted "no pliweed process found after start", and
+# the root count beside it would have read 0 whatever ran as root.
+# harness-selftests.sh runs both against a real process called pliweed.
+L4_PS='ps -C pliweed -o user=,pid=,args='
+L4_ROOT_AWK='$1 == "root" { n++ } END { print n + 0 }'
 gu() {
     ga_exec "$DOMAIN" "runuser -u $GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$GUEST_UID \
         DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$GUEST_UID/bus \
@@ -363,7 +374,7 @@ gu 'systemctl --user start pliweed.service' >/dev/null 2>&1
 ga_wait_for "$DOMAIN" 60 "pgrep -x pliweed >/dev/null" \
     || abort "pliweed did not start in the guest; L4/L5/L18 would measure nothing"
 
-ps_out="$(gx 'ps -eo user,pid,cmd | grep "[o]mnibridged"')"
+ps_out="$(gx "$L4_PS")"
 [ -n "${ps_out//[[:space:]]/}" ] || abort "no pliweed process found after start"
 printf '%s\n' "$ps_out" | save "04-L4-process.txt"
 ok "L4: pliweed is running: $(printf '%s' "$ps_out" | head -1 | awk '{print $1, $2}')"
@@ -373,7 +384,7 @@ daemon_user="$(printf '%s' "$ps_out" | awk 'NR==1{print $1}')"
     && ok "L4: the daemon runs as $GUEST_USER" \
     || notok "L4: the daemon runs as '$daemon_user', not $GUEST_USER"
 
-root_daemons="$(gx 'ps -eo user,cmd | grep "[o]mnibridged" | grep -c "^root " || true')"
+root_daemons="$(awk "$L4_ROOT_AWK" <<<"$ps_out")"
 [ "${root_daemons//[[:space:]]/}" = "0" ] \
     && ok "L4: no pliweed process runs as root" \
     || notok "L4: ${root_daemons//[[:space:]]/} pliweed process(es) run as root"

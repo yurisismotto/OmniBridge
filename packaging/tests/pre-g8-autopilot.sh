@@ -245,12 +245,20 @@ ap_coord_run() {
 
 # ap_preserve WHAT DIR — copy a harness directory an interrupted attempt wrote
 # into, before a new attempt writes into it again. Copy, never move.
+# ap_preserve GATE DIR [WHOSE] — copy DIR aside before GATE runs over it
+# again, and prove the copy is complete before anything is written there.
+# The harnesses write fixed file names (lifecycle-gates.sh: save() truncates
+# 00-preconditions.txt, 01-L1-install.txt, …): a new attempt would overwrite
+# the old one's files, a FAILed attempt's included.
 ap_preserve() {
     local dst
     [ -e "$2" ] || return 0
     dst="$AP_STATE/preserved/$1.$(ap_stamp)"
-    mkdir -p "$dst" && cp -a "$2" "$dst/" || ap_stop "cannot preserve $2 before resuming $1"
-    ap_say INFO "the interrupted attempt's files in $2 were copied to $dst"
+    [ ! -e "$dst" ] || dst="$(mktemp -d "$dst.XXXXXX")"
+    mkdir -p "$dst" && cp -a "$2" "$dst/" || ap_stop "cannot preserve $2 before running $1 again"
+    diff -r "$2" "$dst/$(basename "$2")" >/dev/null 2>&1 \
+        || ap_stop "the copy of $2 in $dst does not match it; refusing to run $1 over the original"
+    ap_say INFO "${3:-the interrupted attempt}'s files in $2 were copied to $dst (verified identical)"
 }
 
 # ap_prepare_gate GATE — everything a gate needs before the coordinator runs
@@ -270,9 +278,15 @@ ap_prepare_gate() {
     ap_write_config
     case "$step" in
         U8|LIFECYCLE|INSTALL)
-            if [ "$own" = RUNNING ] || [ "$own" = INCOMPLETE ]; then
-                case "$step" in U8) ap_preserve "$g" "$EVIDENCE/g7up-u8/$d" ;; LIFECYCLE) ap_preserve "$g" "$EVIDENCE/lifecycle/$d" ;;
-                                INSTALL) ap_preserve "$g" "$EVIDENCE/g7up/$d" ;; esac
+            # An interrupted attempt, or a FAILed one about to be retried: its
+            # files are evidence, and the new attempt writes the same names.
+            local whose=""
+            case "$own" in RUNNING|INCOMPLETE) whose="the interrupted attempt" ;; esac
+            [ "${#RERUN[@]}" -gt 0 ] && whose="the FAILed attempt"
+            if [ -n "$whose" ]; then
+                case "$step" in U8) ap_preserve "$g" "$EVIDENCE/g7up-u8/$d" "$whose" ;;
+                                LIFECYCLE) ap_preserve "$g" "$EVIDENCE/lifecycle/$d" "$whose" ;;
+                                INSTALL) ap_preserve "$g" "$EVIDENCE/g7up/$d" "$whose" ;; esac
             fi
             if ! ap_guest_is_fresh "$GUEST"; then
                 ap_guest_revert "$GUEST" ap-fresh "$g needs a guest no gate has used (last used by $(ap_rec_get "$(ap_guest_rec "$GUEST")" used_by 2>/dev/null))"

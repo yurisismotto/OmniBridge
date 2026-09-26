@@ -93,7 +93,7 @@ cat > "$STUB/lifecycle-gates.sh" <<'EOF'
 #!/usr/bin/env bash
 STUB="$(dirname "$0")"; echo "lifecycle $*" >> "$STUB/calls"
 while [ $# -gt 0 ]; do case "$1" in --distro) D="$2"; shift 2 ;; --evidence) E="$2"; shift 2 ;; *) shift ;; esac; done
-mkdir -p "$E" && date -u > "$E/00-preconditions.txt"   # as the real harness writes first
+mkdir -p "$E" && { date -u; echo "attempt $$ $(date +%N)"; } > "$E/00-preconditions.txt"   # as the real harness writes first (one per attempt)
 case "$(cat "$STUB/mode/lifecycle-$D" 2>/dev/null)" in
   fail) echo "not ok  L6: stub failure"; exit 1 ;;
   sleep) echo "ok    L1: started"; sleep 120 ;;
@@ -603,6 +603,7 @@ check "…after U8 fedora44 and before anything of ubuntu2404" \
     test "$(cstate G7UP-fedora44-U8)" = PASS -a "$(nlines 'ubuntu2404' "$STUB/calls")" = 0
 check "…naming the gate and its log" test -n "$(grep '^\[FAIL\] LIFECYCLE-fedora44' <<<"$OUT")" -a -n "$(grep 'gate log:  /' <<<"$OUT")"
 lcfail="$(cat "$SC/ev/state/LIFECYCLE-fedora44")"
+lcfail_files="$(cd "$SC/ev/lifecycle/fedora44" && sha256sum ./* )"
 rm -f "$STUB/mode/lifecycle-fedora44"
 apx "" --no-wait --retry LIFECYCLE-fedora44
 check "--retry: a new attempt on a guest reverted to ap-fresh, now PASS" \
@@ -610,6 +611,15 @@ check "--retry: a new attempt on a guest reverted to ap-fresh, now PASS" \
 check "…the FAIL record kept byte-identical in the history" \
     bash -c 'for f in "$1"/state/history/LIFECYCLE-fedora44.*; do [ "$(cat "$f")" = "$2" ] && exit 0; done; exit 1' _ "$SC/ev" "$lcfail"
 check "…and the run went on to the next gates" test "$(cstate G7UP-ubuntu2404-U8)" = PASS
+# The retry writes the same file names as the FAILed attempt (the stub, like
+# lifecycle-gates.sh, rewrites 00-preconditions.txt): that attempt's files are
+# evidence and must be copied aside, verified, before it runs.
+lcpres="$(ls -d "$SC/ev/autopilot/preserved/LIFECYCLE-fedora44."* 2>/dev/null | head -1)"
+check "--retry: the FAILed attempt's harness files were copied aside first, byte-identical" \
+    test -n "$lcpres" -a "$(cd "$lcpres/fedora44" 2>/dev/null && sha256sum ./*)" = "$lcfail_files"
+check "…and the retry did write over the originals (so the copy was needed)" \
+    test "$(cd "$SC/ev/lifecycle/fedora44" && sha256sum ./*)" != "$lcfail_files"
+check "…saying so" contains "$OUT" "the FAILed attempt's files in $SC/ev/lifecycle/fedora44 were copied to"
 
 # ---------------------------------------------------------------------------
 section "Ctrl+C mid-gate: nothing deleted, the gate resumes on a reverted guest"
@@ -787,8 +797,10 @@ all_records_ok() { # every current record every scenario wrote: key=value, each 
         [ -f "$f" ] || continue
         case "$f" in *.partial.*) continue ;; esac
         n=$((n + 1))
-        if [ -n "$(cut -d= -f1 "$f" | sort | uniq -d)" ] || grep -qvE '^[A-Za-z0-9_.-]+=' "$f"; then
-            echo "malformed: $f" >&2; bad=1
+        if [ -n "$(cut -d= -f1 "$f" | sort | uniq -d)" ]; then
+            echo "duplicate key: $f" >&2; bad=1
+        elif grep -qvE '^[A-Za-z0-9_.-]+=' "$f"; then
+            echo "not key=value: $f" >&2; bad=1
         fi
     done
     [ "$n" -gt 50 ] && [ "$bad" = 0 ]
