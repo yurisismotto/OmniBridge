@@ -1052,6 +1052,44 @@ done
 [ "$h2_bad" -eq 0 ] || true
 
 # ---------------------------------------------------------------------------
+# F1 — no document has a user add a just-installed firewalld service unreloaded
+# ---------------------------------------------------------------------------
+# OmniBridge 1.0.0's Fedora README said `--permanent --add-service=omnibridge`,
+# then `--reload`. The package installs omnibridge.xml (pliwee.xml) while
+# firewalld runs, and a running firewalld refuses a service it has not loaded:
+# INVALID_SERVICE, exit 101 (G7UP-fedora44-INSTALL, 2026-09-26). In a code
+# block, a `firewall-cmd --permanent --add-service=pliwee|omnibridge` must come
+# after a `firewall-cmd --reload` in the same block. Historical evidence
+# (docs/audits, certification, reports) is left as it was measured, and the
+# erratum quotes the 1.0.0 block on purpose.
+fw_order_hits() { # FILE... — "file:line" of each add-service with no reload before it in its block
+    awk '/^[[:space:]]*```/ { inblk = !inblk; reloaded = 0; next }
+         inblk && /firewall-cmd/ && /--reload/ && !/--permanent/ { reloaded = 1 }
+         inblk && /firewall-cmd/ && /--permanent/ && /--add-service=(pliwee|omnibridge)/ && !reloaded { print FILENAME ":" FNR }' "$@"
+}
+printf '\n== F1: firewalld services are reloaded before they are added ==\n'
+f1_old="$(mktemp)"; f1_new="$(mktemp)"
+printf '```bash\nsudo firewall-cmd --permanent --add-service=omnibridge\nsudo firewall-cmd --reload\n```\n' > "$f1_old"
+printf '```bash\nsudo firewall-cmd --reload\nsudo firewall-cmd --permanent --add-service=pliwee\nsudo firewall-cmd --reload\n```\n' > "$f1_new"
+if [ -n "$(fw_order_hits "$f1_old")" ] && [ -z "$(fw_order_hits "$f1_new")" ]; then
+    pass "F1: the check flags the 1.0.0 order and accepts reload / add / reload"
+else
+    fail "F1: the check itself does not tell the 1.0.0 order from the corrected one"
+fi
+rm -f "$f1_old" "$f1_new"
+f1_docs=()
+while IFS= read -r f; do f1_docs+=("$ROOT/$f"); done < <(git -C "$ROOT" ls-files '*.md' \
+    | grep -vE '^docs/(audits|certification|reports)/|^docs/migrations/OMNIBRIDGE-1\.0\.0-FEDORA-FIREWALL-ERRATUM\.md$')
+if [ "${#f1_docs[@]}" -lt 20 ]; then
+    fail "F1: only ${#f1_docs[@]} Markdown files found; the scan would prove nothing"
+else
+    f1_hits="$(fw_order_hits "${f1_docs[@]}")"
+    [ -z "$f1_hits" ] \
+        && pass "F1: none of ${#f1_docs[@]} current documents adds a Pliwee/OmniBridge service before reloading" \
+        || fail "F1: add-service before reload in: $(sed "s|^$ROOT/||" <<<"$f1_hits" | tr '\n' ' ')"
+fi
+
+# ---------------------------------------------------------------------------
 # H3 — the self-tests exist, are executable, and actually assert both ways
 # ---------------------------------------------------------------------------
 # A self-test file that only ever checked the good case would pass whatever the

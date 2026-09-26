@@ -464,6 +464,102 @@ ga_run 'firewall-cmd --permanent --zone=work --add-service=omnibridge' > "$GA/ca
 [ ! -s "$GA/out" ] && ok "…and nothing was invented on stdout" || notok "ga_exec wrote '$(cat "$GA/out")' on stdout"
 
 # ---------------------------------------------------------------------------
+section "A service used before firewalld has loaded it  (G7UP-fedora44-INSTALL, 2026-09-26: INVALID_SERVICE)"
+# ---------------------------------------------------------------------------
+# U2 followed the OmniBridge 1.0.0 README: --permanent --add-service, then
+# --reload. The package had installed omnibridge.xml while firewalld was
+# running, and a running firewalld knows only the service files it loaded at
+# its last start or reload: "Error: INVALID_SERVICE: Zone 'work': 'omnibridge'
+# not among existing services", exit 101. Measured on a write-protected copy
+# of that guest, 2026-09-26: the old order fails so, and reload / add / reload
+# puts it in the permanent and the running zone. FW models exactly that
+# (state in files), with a knob to fail each step, and g7up_fw_add_service,
+# the code U2 runs, is driven through it.
+FW="$WORK/fw"; mkdir -p "$FW/bin"
+cat > "$FW/bin/firewall-cmd" <<'FWC'
+#!/usr/bin/env bash
+# TEST ONLY: firewalld's service-definition loading, as measured.
+S="$FW_STATE"; perm=0; zone=""; add=""; list=0
+for a in "$@"; do case "$a" in
+  --permanent) perm=1 ;; --zone=*) zone="${a#--zone=}" ;; --add-service=*) add="${a#--add-service=}" ;;
+  --list-services) list=1 ;; --reload) reload=1 ;; esac; done
+if [ "${reload:-0}" = 1 ]; then
+    n=$(( $(cat "$S/reloads" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$S/reloads"
+    [ "${FW_FAIL_RELOAD:-}" = "$n" ] && { echo "Error: COMMAND_FAILED: reload $n" >&2; exit 13; }
+    cp "$S/disk" "$S/loaded"; cp "$S/perm" "$S/runtime"; echo success; exit 0
+fi
+if [ -n "$add" ]; then
+    [ "${FW_FAIL_ADD:-}" = 1 ] && { echo "Error: COMMAND_FAILED: add" >&2; exit 12; }
+    grep -qx -- "$add" "$S/loaded" || { echo "Error: INVALID_SERVICE: Zone '$zone': '$add' not among existing services" >&2; exit 101; }
+    grep -qx -- "$add" "$S/perm" || echo "$add" >> "$S/perm"; echo success; exit 0
+fi
+if [ "$list" = 1 ]; then
+    f="$S/runtime"; [ "$perm" = 1 ] && f="$S/perm"
+    [ "${FW_HIDE_PERM:-}" = 1 ] && [ "$perm" = 1 ] && { echo "ssh"; exit 0; }
+    tr '\n' ' ' < "$f" | sed 's/ $//'; echo; exit 0
+fi
+exit 2
+FWC
+chmod +x "$FW/bin/firewall-cmd"
+fw_boot() { # a guest whose firewalld started before the package installed omnibridge.xml
+    rm -rf "$FW/state"; mkdir -p "$FW/state"
+    printf 'ssh\nmdns\n' > "$FW/state/disk"; cp "$FW/state/disk" "$FW/state/loaded"
+    printf 'ssh\n' > "$FW/state/perm"; cp "$FW/state/perm" "$FW/state/runtime"
+    echo omnibridge >> "$FW/state/disk"          # the package install, after firewalld started
+}
+fw_env() { env PATH="$FW/bin:$PATH" FW_STATE="$FW/state" "$@"; }
+FWRUN() { fw_env bash -c '. "$0/lib/g7up-evidence.sh"; gx() { sh -c "$1"; }
+          g7up_fw_add_service work omnibridge "$1/U2-firewall.txt"
+          printf "rc=%s\nperm=%s\nrt=%s\n" "$FW_RC" "$FW_PERMANENT" "$FW_RUNTIME"
+          g7up_has_service "$FW_PERMANENT" omnibridge && echo perm_has=yes
+          g7up_has_service "$FW_RUNTIME" omnibridge && echo rt_has=yes' "$HERE" "$FW"; }
+
+fw_boot
+old_out="$(fw_env sh -c 'firewall-cmd --permanent --zone=work --add-service=omnibridge && firewall-cmd --reload' 2>&1)"; old_rc=$?
+[ "$old_rc" = 101 ] && contains "$old_out" "INVALID_SERVICE: Zone 'work': 'omnibridge' not among existing services" \
+    && ok "MEASURED: the old order (add, then reload) fails with INVALID_SERVICE, exit 101" \
+    || notok "the model does not reproduce the measured failure (rc $old_rc: $old_out)"
+fw_boot; r="$(FWRUN)"
+contains "$r" "rc=0" && contains "$r" "perm_has=yes" && contains "$r" "rt_has=yes" \
+    && ok "REGRESSION: reload / add / reload: exit 0, omnibridge in the permanent AND the running zone 'work'" \
+    || notok "the U2 sequence did not succeed: $r"
+cap="$(cat "$FW/U2-firewall.txt")"
+contains "$cap" '$ firewall-cmd --reload' && contains "$cap" '$ firewall-cmd --permanent --zone=work --add-service=omnibridge' \
+    && contains "$cap" "# sequence exit status: 0" && contains "$cap" "ssh omnibridge" \
+    && ok "U2-firewall.txt records each command, its output, the exit status and both service lists" \
+    || notok "U2-firewall.txt is missing something: $cap"
+fw_boot; r="$(FW_FAIL_RELOAD=1 FWRUN)"
+contains "$r" "rc=13" && ! contains "$r" "perm_has=yes" && contains "$(cat "$FW/U2-firewall.txt")" "COMMAND_FAILED: reload 1" \
+    && ok "REJECTS a failing first reload: exit 13, nothing added, the error kept in the evidence" \
+    || notok "a failing first reload was not caught: $r"
+fw_boot; r="$(FW_FAIL_ADD=1 FWRUN)"
+contains "$r" "rc=12" && ! contains "$r" "perm_has=yes" && contains "$(cat "$FW/U2-firewall.txt")" "COMMAND_FAILED: add" \
+    && ok "REJECTS a failing --add-service: exit 12, the error kept in the evidence" \
+    || notok "a failing --add-service was not caught: $r"
+fw_boot; r="$(FW_FAIL_RELOAD=2 FWRUN)"
+contains "$r" "rc=13" && contains "$r" "perm_has=yes" && ! contains "$r" "rt_has=yes" \
+    && ok "REJECTS a failing final reload: exit 13, and the running zone does not have it" \
+    || notok "a failing final reload was not caught: $r"
+fw_boot; r="$(FW_HIDE_PERM=1 FWRUN)"
+contains "$r" "rc=0" && ! contains "$r" "perm_has=yes" \
+    && ok "REJECTS a permanent zone that does not list omnibridge, even when every command said success" \
+    || notok "a permanent list without omnibridge was accepted: $r"
+g7up_has_service "ssh omnibridge-extra mdns" omnibridge >/dev/null 2>&1 \
+    && notok "g7up_has_service matched 'omnibridge' inside 'omnibridge-extra'" \
+    || ok "the service match is exact: 'omnibridge-extra' is not omnibridge"
+# U2 itself: the fixed sequence, and all three assertions on it.
+u2="$(sed -n '/^section "U2 — enable, start, firewall/,/^cat <<NEXT$/p' "$HERE/upgrade-gates.sh")"
+contains "$u2" 'g7up_fw_add_service work omnibridge "$EVIDENCE/U2-firewall.txt"' && contains "$u2" '[ "$FW_RC" = 0 ]' \
+    && contains "$u2" 'g7up_has_service "$FW_PERMANENT" omnibridge' && contains "$u2" 'g7up_has_service "$FW_RUNTIME" omnibridge' \
+    && ok "STATIC U2 runs g7up_fw_add_service and asserts its exit status, the permanent and the running zone" \
+    || notok "STATIC U2 no longer runs the reload/add/reload sequence with all three assertions"
+# (This file reproduces the old order on purpose, above, so it is not scanned.)
+old_form="$(grep -nE -- "--permanent[^'\"]*--add-service=[a-z]+ *&& *firewall-cmd --reload" "$HERE"/*.sh "$HERE"/lib/*.sh \
+    | grep -v "^$HERE/harness-selftests.sh:" | grep -v '^[^:]*:[0-9]*: *#' || true)"
+[ -z "$old_form" ] && ok "STATIC no harness adds a service before reloading (the 1.0.0 README order)" \
+                   || notok "STATIC the add-then-reload order is back: $old_form"
+
+# ---------------------------------------------------------------------------
 section "The pre-G8 coordinator  (pre-g8-manual-gates-selftests.sh)"
 # ---------------------------------------------------------------------------
 # Non-vacuous: a suite that ran nothing would also "pass".

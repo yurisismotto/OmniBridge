@@ -84,6 +84,42 @@ g7up_kv() {
 
 g7up_sha() { sha256sum "$1" 2>/dev/null | awk '{print $1}'; }
 
+# g7up_fw_add_service ZONE SERVICE OUT — put SERVICE in ZONE permanently and
+# apply it, in the one order that works right after the package that ships
+# SERVICE was installed: reload (firewalld learns the new service definition),
+# --permanent --add-service, reload (the permanent zone becomes runtime). The
+# commands run in the guest through gx; OUT keeps everything they printed,
+# stderr included, then the permanent and runtime service lists. Sets FW_RC
+# (the sequence's exit status; it stops at the first failing step),
+# FW_PERMANENT and FW_RUNTIME.
+#
+# The order the OmniBridge 1.0.0 README gave, --permanent --add-service
+# first, fails whenever firewalld was running when the package installed the
+# service file: "Error: INVALID_SERVICE: Zone 'work': 'omnibridge' not among
+# existing services", exit 101 (G7UP-fedora44-INSTALL, 2026-09-26).
+g7up_fw_add_service() {
+    local zone="$1" svc="$2" out="$3" seq
+    seq="set -e
+echo '\$ firewall-cmd --reload'
+firewall-cmd --reload
+echo '\$ firewall-cmd --permanent --zone=$zone --add-service=$svc'
+firewall-cmd --permanent --zone=$zone --add-service=$svc
+echo '\$ firewall-cmd --reload'
+firewall-cmd --reload"
+    FW_SEQ_OUT="$(gx "$seq" 2>&1)"; FW_RC=$?
+    FW_PERMANENT="$(gx "firewall-cmd --permanent --zone=$zone --list-services" 2>&1)"
+    FW_RUNTIME="$(gx "firewall-cmd --zone=$zone --list-services" 2>&1)"
+    {
+        printf '%s\n' "$FW_SEQ_OUT"
+        printf '# sequence exit status: %s\n' "$FW_RC"
+        printf '$ firewall-cmd --permanent --zone=%s --list-services\n%s\n' "$zone" "$FW_PERMANENT"
+        printf '$ firewall-cmd --zone=%s --list-services\n%s\n' "$zone" "$FW_RUNTIME"
+    } > "$out"
+}
+# g7up_has_service LIST SERVICE — SERVICE is one of the space-separated names,
+# exactly (grep -w would find "omnibridge" inside "omnibridge-extra").
+g7up_has_service() { grep -qxF -- "$2" <<<"$(tr ' ' '\n' <<<"$1")"; }
+
 # g7up_pkg_subdir DIR DISTRO EXT — where DISTRO's packages sit in a package
 # set: "" for a flat set (packages beside a SHA256SUMS that names them bare,
 # the shape of a locally built Pliwee set), "DISTRO/" for the PUBLISHED signed

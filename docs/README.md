@@ -72,7 +72,7 @@ docs/
 │   ├── notifications/          notifications.v1 N0 → N5 waves — see its README
 │   ├── security/               trust-store and device-revocation work
 │   └── ux/                     UX hardening and debt cleanup
-├── migrations/                 AnyFlow → OmniBridge
+├── migrations/                 AnyFlow → OmniBridge; the OmniBridge 1.0.0 Fedora firewall erratum
 └── policy/                     public policies the app links to: PRIVACY-POLICY (its URL is compiled into the app)
 ```
 

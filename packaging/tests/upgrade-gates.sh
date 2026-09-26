@@ -288,10 +288,20 @@ gx "test ! -e /home/$IDLE_USER/.config/systemd/user/default.target.wants/omnibri
     && ok "U9 setup: '$IDLE_USER' exists and has never enabled omnibridged.service" \
     || notok "U9 setup: '$IDLE_USER' already has an enablement link"
 if [ "$PKGEXT" = rpm ]; then
-    gx 'firewall-cmd --permanent --zone=work --add-service=omnibridge && firewall-cmd --reload' > "$EVIDENCE/U2-firewall.txt" 2>&1 \
-        && contains "$(gx 'firewall-cmd --permanent --zone=work --list-services')" omnibridge \
-        && ok "U2: the omnibridge firewalld service is in zone 'work'" \
-        || notok "U2: could not add the omnibridge service to zone 'work'"
+    # Reload, add, reload: see g7up_fw_add_service. The service file was
+    # installed seconds ago by U1, while firewalld was running.
+    g7up_fw_add_service work omnibridge "$EVIDENCE/U2-firewall.txt"
+    need_nonempty "U2: the firewall-cmd output" "$(cat "$EVIDENCE/U2-firewall.txt")" 4 \
+        || notok "U2: nothing was captured from firewall-cmd"
+    [ "$FW_RC" = 0 ] \
+        && ok "U2: firewalld reloaded, omnibridge added permanently to zone 'work', reloaded again" \
+        || notok "U2: could not add the omnibridge service to zone 'work' (exit $FW_RC): $(tail -n 1 <<<"$FW_SEQ_OUT")"
+    g7up_has_service "$FW_PERMANENT" omnibridge \
+        && ok "U2: the omnibridge firewalld service is in zone 'work' (permanent)" \
+        || notok "U2: the permanent zone 'work' does not list omnibridge: '$FW_PERMANENT'"
+    g7up_has_service "$FW_RUNTIME" omnibridge \
+        && ok "U2: … and in the running configuration after the final reload" \
+        || notok "U2: the running zone 'work' does not list omnibridge: '$FW_RUNTIME'"
 fi
 cat <<NEXT
 

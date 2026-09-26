@@ -95,10 +95,22 @@ permits both flows (MEASURED, audit §4.6). The rest of this section is for
 `public`, `FedoraServer`, and anyone who has tightened their own zone.
 
 ```bash
+sudo firewall-cmd --reload                               # load pliwee.xml (see below)
 sudo firewall-cmd --permanent --add-service=pliwee       # TCP 55432
 sudo firewall-cmd --permanent --add-service=mdns         # discovery
-sudo firewall-cmd --reload
+sudo firewall-cmd --reload                               # apply the permanent zone
 ```
+
+**Why reload first.** A running firewalld knows only the service definitions
+it read when it last started or reloaded. The package installs
+`/usr/lib/firewalld/services/pliwee.xml` while firewalld is running, so until
+the first reload, `--add-service=pliwee` is refused with
+`Error: INVALID_SERVICE: … 'pliwee' not among existing services` (exit 101).
+The first reload only teaches firewalld the new definition; it opens nothing.
+The last one applies what `--permanent` wrote. (Measured on Fedora 44,
+firewalld 2.4.4, 2026-09-26; the OmniBridge 1.0.0 README gave the order
+without the first reload, see
+[docs/migrations](../../docs/migrations/OMNIBRIDGE-1.0.0-FEDORA-FIREWALL-ERRATUM.md).)
 
 **Upgraded from OmniBridge?** A zone you added the `omnibridge` service to
 keeps working: `omnibridge.xml` is still installed, unchanged, and opens the
@@ -106,6 +118,7 @@ same single port. Nothing edits your zone for you. To move the rule to the
 new name, once:
 
 ```bash
+sudo firewall-cmd --reload                               # load pliwee.xml, just installed
 sudo firewall-cmd --permanent --add-service=pliwee --remove-service=omnibridge
 sudo firewall-cmd --reload
 ```
