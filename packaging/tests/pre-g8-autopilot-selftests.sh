@@ -48,6 +48,11 @@ for t in python3 gpg jq setsid taskset flock; do
     command -v "$t" >/dev/null 2>&1 || { echo "PRECONDITION FAILED: $t is needed by these self-tests" >&2; exit 3; }
 done
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/pliwee-autopilot-selftest.XXXXXXXX")"
+# The operator's real evidence (records included) is read here, once before
+# and once after, and must come out byte-identical: no self-test writes to it.
+REAL_EV="${XDG_STATE_HOME:-$HOME/.local/state}/pliwee-pre-g8"
+real_ev_snap() { [ -d "$REAL_EV" ] || { echo absent; return; }; ( cd "$REAL_EV" && find . -type f -print0 | sort -z | xargs -0 -r sha256sum ); }
+REAL_EV_BEFORE="$(real_ev_snap)"
 # AP_SELFTEST_KEEP=1 keeps the work directory for a post-mortem.
 trap '[ "${AP_SELFTEST_KEEP:-0}" = 1 ] && echo "kept: $WORK" || rm -rf "$WORK"' EXIT
 
@@ -295,6 +300,85 @@ mem_ok() { # low memory pauses, then goes on once memory is back
     grep -q '^\[WAIT\] starting x paused' "$WORK/mem-unit.out" && grep -q 'memory recovered' "$WORK/mem-unit.out"
 }
 check "low memory: the launch WAITs, then continues once memory is back" mem_ok
+
+# ---------------------------------------------------------------------------
+section "Records: one value per key, replaced in place, malformed refused"
+# ---------------------------------------------------------------------------
+# REC DIR CMD... — CMD with the record functions, AP_STATE=DIR (a fresh one per test).
+REC() { local st="$1"; shift; ( AP_STATE="$st"; mkdir -p "$AP_STATE/records"
+        . "$HERE/lib/autopilot-common.sh"; . "$HERE/lib/autopilot-host.sh"; . "$HERE/vm/guests.sh"; "$@" ); }
+is_false_r() { if REC "$@" >/dev/null 2>&1; then return 1; else return 0; fi; }
+RS="$WORK/rec"; rm -rf "$RS"
+nhist() { find "$1/records/history" -name "$2.*" 2>/dev/null | grep -c .; }
+REC "$RS/a" ap_rec_set t "state=building" "domain=d1"
+check "first insert: exactly the lines given, no history" \
+    test "$(cat "$RS/a/records/t")" = $'state=building\ndomain=d1' -a "$(nhist "$RS/a" t)" = 0
+REC "$RS/a" ap_rec_set t "state=ready" "built_utc=x"
+check "update: the key replaced where it stands, other keys kept, a new key appended" \
+    test "$(cat "$RS/a/records/t")" = $'state=ready\ndomain=d1\nbuilt_utc=x'
+check "…the previous version is in the history, byte-identical" \
+    test "$(nhist "$RS/a" t)" = 1 -a "$(cat "$RS/a/records/history"/t.*)" = $'state=building\ndomain=d1'
+for v in failed building ready removed ready; do REC "$RS/a" ap_rec_set t "state=$v" "n_$v=1"; done
+check "repeated updates: ONE state= line, the last value, every other key kept" \
+    test "$(grep -c '^state=' "$RS/a/records/t")" = 1 -a "$(REC "$RS/a" ap_rec_get t state)" = ready \
+         -a "$(REC "$RS/a" ap_rec_get t domain)" = d1 -a "$(REC "$RS/a" ap_rec_get t n_failed)" = 1
+check "state changes: every version kept in the history (building→ready→failed→building→ready→removed→ready)" \
+    test "$(nhist "$RS/a" t)" = 6
+REC "$RS/a" ap_rec_set t "state=ready"
+check "setting a value it already has changes nothing and adds no history" test "$(nhist "$RS/a" t)" = 6
+absent_ok() { local out rc; out="$(REC "$RS/a" ap_rec_get t nosuchkey)"; rc=$?; [ "$rc" = 1 ] && [ -z "$out" ]; }
+check "ap_rec_get: an absent key is exit 1, nothing printed" absent_ok
+
+# fresh=yes -> fresh=no -> (revert) fresh=yes, through the functions the autopilot uses
+REC "$RS/f" ap_rec_put guest-g1 "state=ready" "domain=g1" "fresh=yes"
+REC "$RS/f" ap_guest_mark_used g1 LIFECYCLE-fedora44
+check "fresh=yes → used: ONE fresh=no line, used_by recorded, not fresh" \
+    test "$(grep -c '^fresh=' "$RS/f/records/guest-g1")" = 1 -a "$(REC "$RS/f" ap_rec_get guest-g1 fresh)" = no \
+         -a "$(REC "$RS/f" ap_rec_get guest-g1 used_by)" = LIFECYCLE-fedora44
+check "…ap_guest_is_fresh says no" is_false_r "$RS/f" ap_guest_is_fresh g1
+REC "$RS/f" ap_rec_set guest-g1 "fresh=yes" "reverted_utc=t1" "reverted_why=w"   # what ap_guest_revert writes
+fresh_again() { [ "$(grep -c '^fresh=' "$RS/f/records/guest-g1")" = 1 ] && REC "$RS/f" ap_guest_is_fresh g1; }
+check "reverted: ONE fresh=yes line, and ap_guest_is_fresh says yes (it said no forever before)" fresh_again
+REC "$RS/f" ap_guest_mark_used g1 LIFECYCLE-fedora44
+REC "$RS/f" ap_rec_set guest-g1 "fresh=yes" "reverted_utc=t2" "reverted_why=w2"
+REC "$RS/f" ap_guest_mark_used g1 LIFECYCLE-fedora44
+check "used, reverted, used again: still ONE line per key (fresh, used_by, reverted_utc)" \
+    test "$(cut -d= -f1 "$RS/f/records/guest-g1" | sort | uniq -d)" = "" -a "$(REC "$RS/f" ap_rec_get guest-g1 reverted_utc)" = t2
+
+# malformed input: refused, never guessed at, never rewritten
+mkdir -p "$RS/m/records"; printf 'state=building\ndomain=d\nstate=failed\n' > "$RS/m/records/t"; cp "$RS/m/records/t" "$RS/m-t.orig"
+out="$(REC "$RS/m" ap_rec_get t state 2>"$RS/m-err")"; rc=$?
+check "a record with state= twice: ap_rec_get exits 2 and prints NO value" test "$rc" = 2 -a -z "$out"
+check "…saying so on stderr" contains "$(cat "$RS/m-err")" "has 2 state= lines; not guessing which is current"
+check "…its other keys still read" test "$(REC "$RS/m" ap_rec_get t domain)" = d
+out="$(REC "$RS/m" ap_rec_set t "state=ready" 2>&1)"; rc=$?
+check "ap_rec_set on it: STOP (exit 3), naming the key" test "$rc" = 3 -a -n "$(grep 'key state appears 2 times' <<<"$out")"
+check "…and the record is byte-identical (not repaired, not guessed)" cmp -s "$RS/m/records/t" "$RS/m-t.orig"
+out="$(REC "$RS/m" ap_records_verify 2>&1)"; rc=$?
+check "ap_records_verify: STOP (exit 3) naming the file and the duplicate" \
+    test "$rc" = 3 -a -n "$(grep "$RS/m/records/t: key state appears 2 times" <<<"$out")"
+REC "$RS/p" ap_rec_put t "state=a" "state=b" 2>/dev/null; rc=$?
+check "ap_rec_put with a key twice: refused (exit 1), nothing written" test "$rc" = 1 -a ! -e "$RS/p/records/t"
+REC "$RS/p" ap_rec_put t "state=a" $'why=two\nlines' 2>/dev/null; rc=$?
+check "ap_rec_put with a value that would split into a second line: refused" test "$rc" = 1 -a ! -e "$RS/p/records/t"
+REC "$RS/p" ap_rec_put t "state=a" "no equals sign" 2>/dev/null; rc=$?
+check "ap_rec_put with a line that is not key=value: refused" test "$rc" = 1 -a ! -e "$RS/p/records/t"
+out="$(REC "$RS/a" ap_rec_set t "state=x" "state=y" 2>&1)"; rc=$?
+check "ap_rec_set asked to set one key twice: STOP, record unchanged" \
+    test "$rc" = 3 -a "$(REC "$RS/a" ap_rec_get t state)" = ready
+
+# an interrupted write: the old version or the new one, never neither
+REC "$RS/i" ap_rec_put template-x "state=building" "domain=d"
+printf 'state=ready\n' > "$RS/i/records/template-x.partial.12345"   # a write killed before its rename
+check "interrupted write: the record still reads its last complete version" \
+    test "$(REC "$RS/i" ap_rec_get template-x state)" = building
+check "…and the leftover partial file does not fail the startup check" REC "$RS/i" ap_records_verify
+REC "$RS/i" ap_rec_set template-x "state=failed" "failure_dir=/f1"   # the failed build …
+REC "$RS/i" ap_rec_put template-x "state=building" "domain=d"        # … discarded and started again on resume
+REC "$RS/i" ap_rec_set template-x "state=failed" "failure_dir=/f2"
+check "interrupted/failed/resumed template: one state=, one failure_dir=, the latest" \
+    test "$(REC "$RS/i" ap_rec_get template-x state)" = failed -a "$(REC "$RS/i" ap_rec_get template-x failure_dir)" = /f2 \
+         -a "$(cut -d= -f1 "$RS/i/records/template-x" | sort | uniq -d)" = ""
 
 # ---------------------------------------------------------------------------
 section "Refusals before anything is done"
@@ -693,6 +777,29 @@ check "no --run of a W2/W6 gate, and no --next (which would pick W2-KDE)" forbid
 check "no release publication, repository creation, push or merge" forbid 'gh (release|repo)|git (push|merge|commit|rebase)'
 check "no sudo and no host reboot, as a command" forbid '^[[:space:]]*(sudo|reboot|shutdown|systemctl reboot)( |$)'
 check "no install, uninstall or data wipe on the phone" forbid 'adb[^|]* (install|uninstall)|pm clear'
+
+# ---------------------------------------------------------------------------
+section "Records across every scenario, and the real evidence"
+# ---------------------------------------------------------------------------
+all_records_ok() { # every current record every scenario wrote: key=value, each key once
+    local f bad=0 n=0
+    for f in "$WORK"/sc-*/ev/autopilot/records/*; do
+        [ -f "$f" ] || continue
+        case "$f" in *.partial.*) continue ;; esac
+        n=$((n + 1))
+        if [ -n "$(cut -d= -f1 "$f" | sort | uniq -d)" ] || grep -qvE '^[A-Za-z0-9_.-]+=' "$f"; then
+            echo "malformed: $f" >&2; bad=1
+        fi
+    done
+    [ "$n" -gt 50 ] && [ "$bad" = 0 ]
+}
+check "every record written in every scenario has one line per key (more than 50 records checked)" all_records_ok
+check "the interrupted-then-resumed lifecycle guest: ONE fresh= line, fresh=no (used by the resumed gate)" \
+    test "$(grep -c '^fresh=' "$WORK/sc-interrupt/ev/autopilot/records/guest-pliwee-g8-f44-lc")" = 1 \
+         -a "$(sed -n 's/^fresh=//p' "$WORK/sc-interrupt/ev/autopilot/records/guest-pliwee-g8-f44-lc")" = no
+check "…and its revert is in the record once (reverted_why=)" \
+    test "$(grep -c '^reverted_why=' "$WORK/sc-interrupt/ev/autopilot/records/guest-pliwee-g8-f44-lc")" = 1
+check "the real Pre-G8 evidence ($REAL_EV) is byte-identical after the whole suite" test "$(real_ev_snap)" = "$REAL_EV_BEFORE"
 
 printf '\n-----------------------------------------------\n'
 printf '%d passed, %d failed\n' "$PASS" "$FAIL"

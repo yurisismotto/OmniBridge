@@ -503,6 +503,8 @@ cmd_cleanup() {
     ap_say DONE "cleanup finished; no evidence was touched"
 }
 
+# Every command reads the records; none of them may guess at a malformed one.
+ap_records_verify
 case "$CMD" in
     run) cmd_run ;;
     status) cmd_status ;;

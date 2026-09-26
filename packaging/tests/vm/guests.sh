@@ -357,11 +357,7 @@ ap_template_fail() {
     ap_template_diagnose "$dom" "$dir"
     if ap_guest_shutdown "$dom"; then stopped="shut down cleanly"
     else stopped="did NOT shut down within $((2 * AP_SHUTDOWN_TIMEOUT))s and was not forced; shut it down yourself"; fi
-    # A new version of the record with ONE state line (ap_rec_get refuses two);
-    # the building version moves to the history.
-    local cur=()
-    mapfile -t cur < <(grep -vE '^(state|failed_utc|failed_why|failure_dir)=' "$(ap_rec "template-$d")" 2>/dev/null)
-    ap_rec_put "template-$d" "${cur[@]}" "state=failed" "failed_utc=$(ap_utc)" "failed_why=$why" "failure_dir=$dir" \
+    ap_rec_set "template-$d" "state=failed" "failed_utc=$(ap_utc)" "failed_why=$(tr '\n' ' ' <<<"$why")" "failure_dir=$dir" \
         || ap_say WARN "cannot record the $d template's failure"
     ap_stop "TEMPLATE-$d — infrastructure preparation FAILED: $why (no gate was run or recorded)" \
         "last observed: $(ap_probe_summary "$PROBE")" \
@@ -573,12 +569,12 @@ ap_guest_revert() { # DOM SNAPSHOT WHY
         || ap_stop "$dom has no snapshot '$snap' to return to"
     ap_virsh snapshot-revert --domain "$dom" --snapshotname "$snap" >/dev/null \
         || ap_stop "cannot revert $dom to $snap"
-    [ "$snap" = ap-fresh ] && ap_rec_add "$(ap_guest_rec "$dom")" "fresh=yes" "reverted_utc=$(ap_utc)" "reverted_why=$3"
-    [ "$snap" = ap-fresh ] || ap_rec_add "$(ap_guest_rec "$dom")" "reverted_to=$snap" "reverted_utc=$(ap_utc)" "reverted_why=$3"
+    [ "$snap" = ap-fresh ] && ap_rec_set "$(ap_guest_rec "$dom")" "fresh=yes" "reverted_utc=$(ap_utc)" "reverted_why=$3"
+    [ "$snap" = ap-fresh ] || ap_rec_set "$(ap_guest_rec "$dom")" "reverted_to=$snap" "reverted_utc=$(ap_utc)" "reverted_why=$3"
     ap_say INFO "$dom reverted to $snap ($3)"
 }
 ap_guest_mark_used() { # DOM GATE
-    ap_rec_add "$(ap_guest_rec "$1")" "fresh=no" "used_by=$2" "used_utc=$(ap_utc)"
+    ap_rec_set "$(ap_guest_rec "$1")" "fresh=no" "used_by=$2" "used_utc=$(ap_utc)"
 }
 ap_guest_snapshot() { # DOM NAME DESCRIPTION — once; the guest must be off
     local dom="$1" snap="$2"
@@ -586,7 +582,7 @@ ap_guest_snapshot() { # DOM NAME DESCRIPTION — once; the guest must be off
     ap_guest_shutdown_or_stop "$dom"
     ap_virsh snapshot-create-as --domain "$dom" --name "$snap" --description "$3" --atomic >/dev/null \
         || ap_stop "cannot snapshot $dom as $snap"
-    ap_rec_add "$(ap_guest_rec "$dom")" "snapshot_$snap=$(ap_utc)"
+    ap_rec_set "$(ap_guest_rec "$dom")" "snapshot_$snap=$(ap_utc)"
     ap_say INFO "$dom snapshotted as $snap"
 }
 
@@ -614,7 +610,7 @@ ap_cleanup_vms() {
             if [ "$(ap_gate_state "$g")" = PASS ] && ! ap_dom_running "$dom"; then
                 ap_virsh undefine "$dom" --snapshots-metadata >/dev/null 2>&1
                 ap_virsh vol-delete --pool "$AP_POOL" "$dom.qcow2" >/dev/null 2>&1
-                ap_rec_add "$(ap_guest_rec "$dom")" "state=removed" "removed_utc=$(ap_utc)"
+                ap_rec_set "$(ap_guest_rec "$dom")" "state=removed" "removed_utc=$(ap_utc)"
                 ap_say DONE "removed $dom ($g is PASS; its evidence is untouched)"
             else
                 keep=1
@@ -623,9 +619,9 @@ ap_cleanup_vms() {
         done
         if [ "$keep" = 0 ] && [ "$(ap_rec_get "template-$d" state 2>/dev/null)" = ready ]; then
             ap_virsh vol-delete --pool "$AP_POOL" "$(ap_tmpl_vol "$d")" >/dev/null 2>&1 \
-                && ap_rec_add "template-$d" "state=removed" "removed_utc=$(ap_utc)" && ap_say DONE "removed the $d template"
+                && ap_rec_set "template-$d" "state=removed" "removed_utc=$(ap_utc)" && ap_say DONE "removed the $d template"
             ap_virsh vol-delete --pool "$AP_POOL" "pliwee-g8-base-$(ap_abbr "$d").qcow2" >/dev/null 2>&1 \
-                && ap_rec_add "base-$d" "state=removed" "removed_utc=$(ap_utc)" && ap_say DONE "removed the $d base image volume"
+                && ap_rec_set "base-$d" "state=removed" "removed_utc=$(ap_utc)" && ap_say DONE "removed the $d base image volume"
         fi
     done
 }

@@ -62,35 +62,96 @@ ap_detail() { printf '       %s\n' "$@"; }
 ap_log() { [ -z "$AP_JOURNAL" ] || printf '%s %s\n' "$(ap_utc)" "$*" >> "$AP_JOURNAL" 2>/dev/null || true; }
 
 # --------------------------------------------------------------- records --
+# A record is key=value lines, each key at most once. Writers keep it so
+# (ap_rec_put refuses anything else) and readers refuse a record that is not:
+# with two state= lines there is no telling which one is current, and a
+# resumable run must not guess.
 ap_rec()      { printf '%s/records/%s' "$AP_STATE" "$1"; }
 ap_rec_has()  { [ -f "$(ap_rec "$1")" ]; }
-ap_rec_get()  { # NAME KEY — exactly one KEY= line, or nothing
-    local f n; f="$(ap_rec "$1")"
-    n="$(grep -c "^$2=" "$f" 2>/dev/null || true)"
-    [ "${n:-0}" = 1 ] || return 1
-    sed -n "s/^$2=//p" "$f"
+# ap_rec_problems LINE... — what is wrong with these lines as a record (one
+# line per problem), or nothing.
+ap_rec_problems() {
+    [ $# -gt 0 ] || { echo "no lines"; return; }
+    awk '!/^[A-Za-z0-9_.-]+=/ { printf "line %d is not key=value: %.60s\n", NR, $0; next }
+         { k = $0; sub(/=.*/, "", k); if (n[k]++ == 1) dup[++m] = k }
+         END { for (i = 1; i <= m; i++) printf "key %s appears %d times\n", dup[i], n[dup[i]] }' \
+        <<<"$(printf '%s\n' "$@")"
 }
-# ap_rec_put NAME key=value... — write a whole record. An existing record with
-# different content is moved to records/history/ first; identical content is
-# left alone (a resume re-deriving the same facts does not churn the history).
+# ap_rec_file_problems NAME — the same, for the record on disk.
+ap_rec_file_problems() {
+    local cur=()
+    mapfile -t cur < "$(ap_rec "$1")" || { echo "unreadable"; return; }
+    ap_rec_problems "${cur[@]}"
+}
+# ap_rec_get NAME KEY — the one KEY= value. Absent: exit 1. The key twice: a
+# refusal on stderr and exit 2, never one of the values.
+ap_rec_get() {
+    local f; f="$(ap_rec "$1")"
+    [ -f "$f" ] || return 1
+    awk -v k="$2" '{ key = $0; sub(/=.*/, "", key) }
+        key == k && index($0, "=") { n++; v = substr($0, length(k) + 2) }
+        END { if (n == 1) { print v; exit 0 }
+              if (n > 1) { printf "pre-g8-autopilot: REFUSED: record %s has %d %s= lines; not guessing which is current\n", FILENAME, n, k > "/dev/stderr"; exit 2 }
+              exit 1 }' "$f"
+}
+# ap_rec_put NAME key=value... — write a whole record. Refused (exit 1, nothing
+# written) unless every line is key=value with no key twice. An existing record
+# with different content is copied to records/history/ first; the new one then
+# replaces it in one rename, so an interruption leaves the old version or the
+# new one, never neither. Identical content is left alone (a resume re-deriving
+# the same facts does not churn the history).
 ap_rec_put() {
-    local name="$1" f tmp; shift
+    local name="$1" f tmp bad; shift
+    bad="$(ap_rec_problems "$@")"
+    [ -z "$bad" ] || { printf 'pre-g8-autopilot: REFUSED to write record %s: %s\n' "$name" "$(tr '\n' ';' <<<"$bad")" >&2; return 1; }
     f="$(ap_rec "$name")"; tmp="$f.partial.$$"
     mkdir -p "$(dirname "$f")" "$AP_STATE/records/history" || return 1
-    printf '%s\n' "$@" > "$tmp" || return 1
+    printf '%s\n' "$@" > "$tmp" || { rm -f "$tmp"; return 1; }
     if [ -f "$f" ]; then
         if cmp -s "$tmp" "$f"; then rm -f "$tmp"; return 0; fi
-        mv "$f" "$(mktemp "$AP_STATE/records/history/$name.$(ap_stamp).XXXXXX")" || { rm -f "$tmp"; return 1; }
+        cp -p "$f" "$(mktemp "$AP_STATE/records/history/$name.$(ap_stamp).XXXXXX")" || { rm -f "$tmp"; return 1; }
     fi
-    mv "$tmp" "$f"
+    mv -f "$tmp" "$f"
 }
-# ap_rec_add NAME key=value... — the record as it is, plus these lines (a new
-# version of it, the old one kept in the history).
-ap_rec_add() {
-    local name="$1" f cur=(); shift
-    f="$(ap_rec "$name")"
-    [ -f "$f" ] && mapfile -t cur < "$f"
-    ap_rec_put "$name" "${cur[@]}" "$@"
+# ap_rec_set NAME key=value... — the record with these keys set: a key it has
+# is replaced where it stands, a new key is added at the end, every other line
+# is kept as it is. A new version, the old one kept in the history. A record
+# that is already malformed is refused, not repaired: the run stops.
+ap_rec_set() {
+    local name="$1" line k bad cur=() out=(); shift
+    declare -A upd=()
+    bad="$(ap_rec_problems "$@")"
+    [ -z "$bad" ] || ap_stop "internal: an update to record $name is malformed: $(tr '\n' ';' <<<"$bad")"
+    if ap_rec_has "$name"; then
+        bad="$(ap_rec_file_problems "$name")"
+        [ -z "$bad" ] || ap_stop "record $(ap_rec "$name") is malformed; refusing to update it" \
+            "$bad" "Nothing was changed. Its earlier versions are in $AP_STATE/records/history/."
+        mapfile -t cur < "$(ap_rec "$name")"
+    fi
+    for line in "$@"; do upd["${line%%=*}"]="$line"; done
+    for line in "${cur[@]}"; do
+        k="${line%%=*}"
+        if [ -n "${upd[$k]+set}" ]; then out+=("${upd[$k]}"); unset "upd[$k]"; else out+=("$line"); fi
+    done
+    for line in "$@"; do
+        k="${line%%=*}"
+        [ -n "${upd[$k]+set}" ] && { out+=("$line"); unset "upd[$k]"; }
+    done
+    ap_rec_put "$name" "${out[@]}"
+}
+# ap_records_verify — every current record is well-formed, before anything
+# reads one. A malformed record stops the run, naming it and what is wrong.
+ap_records_verify() {
+    local f name bad all=()
+    for f in "$AP_STATE"/records/*; do
+        [ -f "$f" ] || continue
+        name="${f##*/}"
+        case "$name" in *.partial.*) continue ;; esac
+        bad="$(ap_rec_file_problems "$name")"
+        [ -z "$bad" ] || all+=("$f: $(tr '\n' ';' <<<"$bad")")
+    done
+    [ "${#all[@]}" -eq 0 ] || ap_stop "malformed autopilot records; refusing to guess which values are current" \
+        "${all[@]}" "Nothing was changed. Earlier versions are in $AP_STATE/records/history/."
 }
 
 # --------------------------------------------------------------- stopping --
@@ -115,7 +176,7 @@ ap_finish() { # KIND MESSAGE [DETAIL...]
     ap_say "$kind" "$msg"
     [ $# -eq 0 ] || ap_detail "$@"
     if [ -n "${AP_STATE:-}" ] && [ -d "$AP_STATE" ]; then
-        ap_rec_put last-stop "kind=$kind" "message=$msg" "detail=$(printf '%s | ' "$@")" \
+        ap_rec_put last-stop "kind=$kind" "message=$(tr '\n' ' ' <<<"$msg")" "detail=$(printf '%s | ' "$@" | tr '\n' ' ')" \
             "session=${AP_SESSION_ID:-}" "recorded_utc=$(ap_utc)" "exit=$code" 2>/dev/null || true
         declare -F ap_on_finish >/dev/null && ap_on_finish "$kind" "$msg"
     fi
