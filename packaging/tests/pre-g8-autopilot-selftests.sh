@@ -822,6 +822,27 @@ check "NOT terminal: cloud-init running, package transaction active (the first 9
 check "NOT terminal: the marker is there, whatever cloud-init says" not_term 's/^template_ready=.*/template_ready=yes/'
 
 ubu_rec() { sed -n "s/^$1=//p" "$SC/ev/autopilot/records/template-ubuntu2404"; }
+# ---------------------------------------------------------------------------
+section "The probe, run for real against cloud-init's own status output"
+# ---------------------------------------------------------------------------
+# ap_probe's guest script, executed here by sh with a cloud-init that prints
+# what the real guests printed: the failed TEMPLATE-ubuntu2404 ("error - done",
+# one error) and the one that passed ("degraded done": an empty errors: list,
+# recoverable warnings only — whose ci_error once read "recoverable_errors:").
+mkdir -p "$WORK/ci/fail" "$WORK/ci/ok"
+printf '#!/bin/sh\ncat <<X\nstatus: error\nextended_status: error - done\nboot_status_code: enabled-by-generator\ndetail: DataSourceNoCloud [seed=/dev/sr0]\nerrors:\n\t- (%s)\nrecoverable_errors:\nDEPRECATED:\n\t- Deprecated cloud-config provided: users.0.uid\nX\n' \
+    "'scripts_user', RuntimeError('Runparts: 1 failures (runcmd) in 1 attempted commands')" > "$WORK/ci/fail/cloud-init"
+printf '#!/bin/sh\ncat <<X\nstatus: done\nextended_status: degraded done\nboot_status_code: enabled-by-generator\ndetail: DataSourceNoCloud [seed=/dev/sr0]\nerrors:\nrecoverable_errors:\nDEPRECATED:\n\t- Deprecated cloud-config provided: users.0.uid\nX\n' > "$WORK/ci/ok/cloud-init"
+chmod +x "$WORK/ci/fail/cloud-init" "$WORK/ci/ok/cloud-init"
+probe_local() { PATH="$1:$PATH" UNITG eval 'ga_exec() { shift; sh -c "$*"; }; ap_probe local'; }
+pf="$(probe_local "$WORK/ci/fail")"; po="$(probe_local "$WORK/ci/ok")"
+check "real 'error - done' output: cloud_init=error, ci_extended='error - done', ci_error names scripts_user" \
+    test "$(UNITG ap_kv "$pf" cloud_init)" = error -a "$(UNITG ap_kv "$pf" ci_extended)" = "error - done" \
+         -a "$(UNITG ap_kv "$pf" ci_error)" = "('scripts_user', RuntimeError('Runparts: 1 failures (runcmd) in 1 attempted commands'))"
+check "real 'degraded done' output: cloud_init=done and NO error (not the next header, 'recoverable_errors:')" \
+    test "$(UNITG ap_kv "$po" cloud_init)" = "done" -a "$(UNITG ap_kv "$po" ci_extended)" = "degraded done" -a -z "$(UNITG ap_kv "$po" ci_error)"
+check "…and 'degraded done' is not terminal" is_false_g ap_probe_terminal "$po"
+
 scenario ubuterm
 before="$(evsnap)"
 FAKE_CONFFILE_FAIL=pliwee-g8-u2404-tmpl apx "" --template ubuntu2404
