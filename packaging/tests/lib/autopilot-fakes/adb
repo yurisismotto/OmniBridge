@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# TEST ONLY — the physical tablet, as adb would describe it. State: $FAKE_ADB.
+#   absent / unauthorized   the device is not attached / not authorised
+#   locked                  screen off and keyguard showing
+#   ip                      its wlan0 address (default 192.168.68.63/22)
+#   noapps                  the Pliwee app and fixture are not installed
+# Anything that would CHANGE the device outside a gate (install, uninstall,
+# pm clear/grant, rm, reboot, settings put) is written to $FAKE_ADB/violations.
+S="$FAKE_ADB"; mkdir -p "$S"
+echo "adb $*" >> "$S/calls"
+SERIAL=RX2Y500C7SY
+if [ "${1:-}" = devices ]; then
+    echo "List of devices attached"
+    [ -e "$S/absent" ] || { [ -e "$S/unauthorized" ] && printf '%s\tunauthorized\n' "$SERIAL" || printf '%s\tdevice\n' "$SERIAL"; }
+    exit 0
+fi
+[ "${1:-}" = -s ] && { [ "$2" = "$SERIAL" ] || { echo "error: device '$2' not found" >&2; exit 1; }; shift 2; }
+[ -e "$S/absent" ] && { echo "error: no devices/emulators found" >&2; exit 1; }
+a="$*"
+case "$a" in
+    *" install"*|install*|*uninstall*|*"pm clear"*|*"pm grant"*|*"shell rm "*|*reboot*|*"settings put"*)
+        echo "$a" >> "$S/violations" ;;
+esac
+case "$a" in
+    "shell getprop ro.product.model") echo "${FAKE_ADB_MODEL:-SM-X620}" ;;
+    "shell ip -4 -br addr show wlan0") printf 'wlan0            UP             %s \r\n' "$(cat "$S/ip" 2>/dev/null || echo 192.168.68.63/22)" ;;
+    "shell ip -4 addr show wlan0") printf '31: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500\r\n    inet %s brd 192.168.71.255 scope global wlan0\r\n' "$(cat "$S/ip" 2>/dev/null || echo 192.168.68.63/22)" ;;
+    "shell pm list packages")
+        [ -e "$S/noapps" ] || printf 'package:com.android.shell\r\npackage:io.github.yurisismotto.pliwee\r\npackage:io.github.yurisismotto.pliwee.fixture\r\n' ;;
+    "shell dumpsys package io.github.yurisismotto.pliwee.fixture") echo "      android.permission.POST_NOTIFICATIONS: granted=true" ;;
+    "shell dumpsys power") [ -e "$S/locked" ] && echo "  mWakefulness=Asleep" || echo "  mWakefulness=Awake" ;;
+    "shell dumpsys window") [ -e "$S/locked" ] && echo "    mDreamingLockscreen=true" || echo "    mDreamingLockscreen=false" ;;
+    "shell am start -n "*) echo "Starting: Intent { cmp=${a#shell am start -n } }" ;;
+    "shell uiautomator dump "*) echo "UI hierchary dumped to: /sdcard/ob-ui.xml" ;;
+    "shell cat /sdcard/ob-ui.xml") echo '<hierarchy><node text="Devices" /><node content-desc="Pair a new device" bounds="[100,200][300,400]" /></hierarchy>' ;;
+    "shell input tap "*) echo "${a#shell input tap }" >> "$S/taps" ;;
+    "shell dumpsys activity activities") echo "  topResumedActivity=ActivityRecord{1a2b u0 io.github.yurisismotto.pliwee/.pairing.PairingCaptureActivity t42}" ;;
+esac
+exit 0

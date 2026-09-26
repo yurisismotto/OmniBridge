@@ -718,6 +718,7 @@ else
         LC_ALL=C rpm -qpl "$rpm_file" 2>/dev/null > "$listing"
         cat "$listing" >> "$SCRATCH/all.list"
         pass "read $name ($(grep -vcx '(contains no files)' "$listing" || true) files)"
+        # shellcheck disable=SC2034  # transitional_list is read by no check yet (as at 7824444); kept as it was
         case "$name" in
             pliwee-gui) gui_list="$listing" ;;
             pliwee)     core_list="$listing" ;;
@@ -1037,7 +1038,8 @@ done
 # to remember all of them in prose.
 printf '\n== H2: the guest harnesses load lib/assert.sh ==\n'
 h2_bad=0
-for h in lifecycle-gates.sh lifecycle-peer-gates.sh security-log-evidence.sh upgrade-gates.sh pre-g8-manual-gates.sh; do
+for h in lifecycle-gates.sh lifecycle-peer-gates.sh security-log-evidence.sh upgrade-gates.sh pre-g8-manual-gates.sh \
+         u2-state-check.sh pre-g8-autopilot.sh; do
     f="$ROOT/packaging/tests/$h"
     [ -f "$f" ] || { fail "H2: $h is missing"; h2_bad=$((h2_bad + 1)); continue; }
     if grep -q 'lib/assert.sh' "$f"; then

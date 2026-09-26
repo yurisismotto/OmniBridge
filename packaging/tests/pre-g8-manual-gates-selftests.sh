@@ -95,6 +95,19 @@ STUB="$(dirname "$0")"; echo "lifecycle $*" >> "$STUB/calls"
 [ -e "$STUB/lc-sleep" ] && sleep 60
 echo "ok    L1: clean install"; exit 0
 EOF
+# U2 measured: prints what the real u2-state-check.sh prints after observing.
+# STUB/u2mode: (empty) every item ok; failN item N not ok; silent nothing at
+# all (exit 0); exit3 a precondition failure.
+cat > "$STUB/u2-state-check.sh" <<'EOF'
+#!/usr/bin/env bash
+STUB="$(dirname "$0")"; echo "u2-state-check $*" >> "$STUB/calls"
+m="$(cat "$STUB/u2mode" 2>/dev/null)"
+case "$m" in silent) exit 0 ;; exit3) echo "PRECONDITION FAILED: adb does not see the device"; exit 3 ;; esac
+for n in 1 2 3 4 5; do
+    if [ "$m" = "fail$n" ]; then echo "not ok  U2-$n: observed otherwise"; else echo "ok    U2-$n: observed"; fi
+done
+[ "${m#fail}" = "$m" ]
+EOF
 cat > "$STUB/android/signing/provision-signing-keys.sh" <<'EOF'
 #!/usr/bin/env bash
 R="$(dirname "$0")/record"
@@ -357,7 +370,9 @@ check "…is read-only" test "$(stat -c %A "$u2_ans" 2>/dev/null | tr -cd w)" = 
 check "…and its digest is in the record" test "$(sed -n 's/^answers_sha256=//p' <<<"$u2_rec")" = "${u2_sum%% *}"
 co --config "$WORK/config" --rerun --run G7UP-fedora44-U2 <<<$'y\ny\ny\ny\nn'
 check "a U2 rerun with one item not done is FAIL" test "$(gstate G7UP-fedora44-U2)" = FAIL
-u2_fail_ans="$(sed -n 's/^answers=//p' "$EV/state/G7UP-fedora44-U2")"; u2_fail_sum="$(sha256sum < "$u2_fail_ans" 2>/dev/null)"
+u2_fail_ans="$(sed -n 's/^answers=//p' "$EV/state/G7UP-fedora44-U2")"
+# shellcheck disable=SC2034  # u2_fail_sum: unused since it was written (7824444); kept as it was
+u2_fail_sum="$(sha256sum < "$u2_fail_ans" 2>/dev/null)"
 h="$(hist_with G7UP-fedora44-U2 PASS)"
 check "…the PASS it replaced is archived byte-identical" test -n "$h" -a "$(cat "$h" 2>/dev/null)" = "$u2_rec"
 check "…and still points at its own answers file" test "$(sed -n 's/^answers=//p' "$h")" = "$u2_ans"
@@ -699,6 +714,111 @@ check "LIFECYCLE-fedora44 (PASS), --rerun declined" declined LIFECYCLE-fedora44 
 rm -f "$STUB/android/signing/record"
 check "W6-SIGNING, not provisioned, declined" declined W6-SIGNING no --media-a "$WORK/A" --media-b "$WORK/B" --rerun
 check "G7UP-debian13-INSTALL, no record, declined" declined G7UP-debian13-INSTALL no --distro debian13 --old-pkgdir "$OLD"
+
+# ---------------------------------------------------------------------------
+section "The autopilot's grant: once per invocation, and only what it names"
+# ---------------------------------------------------------------------------
+# pre-g8-autopilot.sh reads `yes` at the terminal once and hands the coordinator
+# a grant instead of 28 separate answers. Every refusal below must fall back to
+# the question at the terminal (stdin is empty here, so: exit 5, nothing
+# changed), never to a silent yes.
+EVG="$WORK/ev-grant"; GR="$WORK/grant"
+cog() { # [ARGS...] — the coordinator on EVG, with the grant in the environment
+    OUT="$(PATH="$WORK/bin:$PATH" XDG_RUNTIME_DIR="$WORK" PRE_G8_GATES_DIR="$STUB" TMPDIR="$WORK/tmp" \
+             PRE_G8_AUTOPILOT_GRANT="$GR" PRE_G8_AUTOPILOT_SESSION="${GSESSION-s-1}" \
+             bash "$COORD" --evidence "$EVG" --config "$WORK/config" "$@" 2>&1)"; RC=$?
+}
+mkgrant() { # GUESTS FRESH [EXPIRES_EPOCH] [EVIDENCE] [SESSION]
+    printf 'id=g-test\nsession=%s\nevidence=%s\ntyped=yes\ntyped_utc=2026-09-25T00:00:00Z\nexpires_epoch=%s\nguest_domains=%s\nfresh_domains=%s\n' \
+        "${5:-s-1}" "${4:-$EVG}" "${3:-$(( $(date +%s) + 3600 ))}" "$1" "$2" > "$GR"; chmod 600 "$GR"
+}
+# What a refusal must leave exactly as it found: every state record and every
+# archived one (as snap does for EV).
+gsnap() { ( cd "$EVG/state" 2>/dev/null && find . -type f -print0 | sort -z | xargs -0 -r sha256sum ); }
+has_hist_in() { # EVIDENCE GATE STATE
+    local f
+    for f in "$1/state/history/$2".*; do [ -f "$f" ] && grep -qx "state=$3" "$f" && return 0; done
+    return 1
+}
+# gdeclined DESC GATE [ARGS...] — with the grant as it stands and nothing on
+# stdin, GATE asks, reads EOF, and nothing is recorded or run.
+gdeclined() {
+    local g="$1" before acts0; shift
+    before="$(gsnap)"; acts0="$(acts)"
+    cog "$@" --run "$g" </dev/null
+    [ "$RC" -eq 5 ] || { echo "exit $RC, not 5: $(tail -2 <<<"$OUT")" >&2; return 1; }
+    [ "$(gsnap)" = "$before" ] || { echo "the evidence changed" >&2; return 1; }
+    [ "$(acts)" = "$acts0" ] || { echo "something was invoked: $(tail -2 "$CALLS")" >&2; return 1; }
+}
+dbg=(--distro debian13 --old-pkgdir "$OLD")
+mkgrant "g7-d13" "g7-f44-fresh"
+GSESSION=s-other; check "a grant for another autopilot session is not accepted" gdeclined G7UP-debian13-INSTALL "${dbg[@]}"
+GSESSION=""; check "…nor one with no session exported" gdeclined G7UP-debian13-INSTALL "${dbg[@]}"; unset GSESSION
+mkgrant "g7-d13" "g7-f44-fresh" "$(( $(date +%s) - 5 ))"
+check "an expired grant is not accepted" gdeclined G7UP-debian13-INSTALL "${dbg[@]}"
+mkgrant "g7-d13" "g7-f44-fresh" "" "$WORK/some-other-evidence"
+check "a grant recorded for another evidence directory is not accepted" gdeclined G7UP-debian13-INSTALL "${dbg[@]}"
+mkgrant "g7-d13" "g7-f44-fresh"; sed -i 's/^typed=yes$/typed=no/' "$GR"
+check "a grant that does not record a typed answer is not accepted" gdeclined G7UP-debian13-INSTALL "${dbg[@]}"
+mkgrant "g7-d13" "g7-f44-fresh"; chmod 620 "$GR"
+check "a grant writable by its group is not accepted" gdeclined G7UP-debian13-INSTALL "${dbg[@]}"
+mkgrant "g7-other" "g7-f44-fresh"
+check "a grant that does not name the domain is not accepted" gdeclined G7UP-debian13-INSTALL "${dbg[@]}"
+mkgrant "g7-d13" "g7-f44-fresh"; mv "$GR" "$GR.real"; ln -s "$GR.real" "$GR"
+check "a grant reached through a symlink is not accepted" gdeclined G7UP-debian13-INSTALL "${dbg[@]}"
+rm -f "$GR"; mv "$GR.real" "$GR"
+cog "${dbg[@]}" --run G7UP-debian13-INSTALL </dev/null
+check "a grant naming the guest runs INSTALL with nothing typed, and it is PASS" test "$(gstate G7UP-debian13-INSTALL)" = PASS
+glog="$(sed -n 's/^log=//p' "$EVG/state/G7UP-debian13-INSTALL")"
+check "…the gate's log says the grant confirmed it, and which one" contains "$(cat "$glog" 2>/dev/null)" "# confirmed by: autopilot grant g-test, typed by the operator at 2026-09-25T00:00:00Z"
+check "…and the action lines were still printed" contains "$OUT" "AUTHORISED by autopilot grant g-test"
+check "U2 answered by the operator never consults the grant" gdeclined G7UP-debian13-U2
+check "W6-INSTRUMENTED never consults the grant" gdeclined W6-INSTRUMENTED
+mkgrant "g7-d13 g7-f44-fresh" ""
+check "a guest the grant names, but not as FRESH, is not designated fresh by it (U8)" gdeclined G7UP-fedora44-U8
+mkgrant "g7-d13" "g7-f44-fresh"
+cog --run G7UP-fedora44-U8 </dev/null
+check "a guest the grant names FRESH is designated with nothing typed, and U8 is PASS" test "$(gstate G7UP-fedora44-U8)" = PASS
+check "…and still on the U8 domain, not the upgrade guest" contains "$(tail -1 "$CALLS")" "--domain g7-f44-fresh"
+check "the grant's refusals and acceptances left G7UP-debian13-U2 untouched (still PENDING)" test "$(gstate G7UP-debian13-U2)" = PENDING
+
+# ---------------------------------------------------------------------------
+section "U2 measured (--u2-measured): observed, not answered"
+# ---------------------------------------------------------------------------
+: > "$STUB/u2mode"
+cog --u2-measured --run G7UP-debian13-U2 </dev/null
+check "U2 measured with every item observed is PASS, with nothing typed" test "$(gstate G7UP-debian13-U2)" = PASS
+m_rec="$(cat "$EVG/state/G7UP-debian13-U2")"; m_ans="$(sed -n 's/^answers=//p' <<<"$m_rec")"
+check "…recorded method=measured" contains "$m_rec" "method=measured"
+check "…with an answers file of the operator's shape, all five 'y'" test "$(grep -c '^y  ' "$m_ans" 2>/dev/null)" = 5
+check "…read-only" test ! -w "$m_ans"
+check "…and it ran u2-state-check.sh against the chain's guest and the configured device" \
+    contains "$(grep '^u2-state-check' "$CALLS" | tail -1)" "--domain g7-d13 --distro debian13 --adb-serial SERIAL01"
+echo fail3 > "$STUB/u2mode"
+cog --u2-measured --rerun --run G7UP-debian13-U2 </dev/null
+check "one item observed otherwise (the clipboard policy): FAIL" test "$(gstate G7UP-debian13-U2)" = FAIL
+check "…naming the item" contains "$(cat "$EVG/state/G7UP-debian13-U2")" "a clipboard policy is set for it"
+check "…and the earlier PASS is kept in the history" has_hist_in "$EVG" G7UP-debian13-U2 PASS
+echo silent > "$STUB/u2mode"
+cog --u2-measured --rerun --run G7UP-debian13-U2 </dev/null
+check "a checker that exits 0 having observed nothing: FAIL, every item 'n'" \
+    test "$(gstate G7UP-debian13-U2)" = FAIL -a "$(grep -c '^n  ' "$(sed -n 's/^answers=//p' "$EVG/state/G7UP-debian13-U2")")" = 5
+echo exit3 > "$STUB/u2mode"
+cog --u2-measured --rerun --run G7UP-debian13-U2 </dev/null
+check "a checker that stopped on a precondition: FAIL" test "$(gstate G7UP-debian13-U2)" = FAIL
+: > "$STUB/u2mode"
+cog --u2-measured --rerun --run G7UP-debian13-U2 </dev/null
+check "measured again with everything observed: PASS" test "$(gstate G7UP-debian13-U2)" = PASS
+m_ans="$(sed -n 's/^answers=//p' "$EVG/state/G7UP-debian13-U2")"; cp -p "$m_ans" "$WORK/m-ans"
+chmod u+w "$m_ans"; sed -i 's/^y  a clipboard/n  a clipboard/' "$m_ans"
+cog --status </dev/null
+check "measured answers altered after the PASS turn it into FAIL" test "$(gstate G7UP-debian13-U2)" = FAIL
+cp -p "$WORK/m-ans" "$m_ans"; m_log="$(sed -n 's/^log=//p' "$EVG/state/G7UP-debian13-U2")"; cp -p "$m_log" "$WORK/m-log"
+echo "ok    U2-3: forged afterwards" >> "$m_log"
+cog --status </dev/null
+check "…and so does its checker log altered after the PASS" test "$(gstate G7UP-debian13-U2)" = FAIL
+cp -p "$WORK/m-log" "$m_log"; cog --status </dev/null
+check "…PASS again once both are restored" test "$(gstate G7UP-debian13-U2)" = PASS
 
 printf '\n-----------------------------------------------\n'
 printf '%d passed, %d failed\n' "$PASS" "$FAIL"

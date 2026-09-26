@@ -199,17 +199,43 @@ missing="$(gx "for t in $guest_tools; do command -v \$t >/dev/null 2>&1 || echo 
 [ -z "${missing//[[:space:]]/}" ] || abort "U0: guest tools missing: $missing"
 ok "U0: guest tools present: $guest_tools"
 
-deliver() { # HOSTDIR GUESTDIR — every package plus SHA256SUMS, digest-verified in the guest
-    local dir="$1" to="$2" p n=0
-    [ -f "$dir/SHA256SUMS" ] || abort "$dir has no SHA256SUMS"
-    gx "rm -rf $to && mkdir -p $to" >/dev/null
-    for p in "$dir"/*."$PKGEXT" "$dir"/SHA256SUMS "$dir"/SHA256SUMS.asc; do
+# deliver HOSTDIR GUESTDIR — this distribution's packages plus SHA256SUMS(.asc),
+# digest-verified inside the guest, and left in GUESTDIR for the install
+# commands below. HOSTDIR is a flat set or the PUBLISHED signed layout
+# (g7up_pkg_subdir): in the layout the packages are delivered under
+# GUESTDIR/<distro>/, checked there against the very manifest the signature
+# covers, and only then hard-linked into GUESTDIR.
+#
+# Pre-G8 autopilot finding: this used to deliver only top-level packages. The
+# published 1.0.0 manifest names `<distro>/<file>`, so in the flat guest
+# directory every entry was "missing", `--ignore-missing` verified nothing, and
+# coreutils 9 exits 1 ("no file was verified"): the install stage could not
+# pass on the real release, and verify-release.sh (U1) cannot pass on anything
+# but the layout. The count is now exact in both shapes: every package
+# delivered must be one the manifest verified, not merely "at least one".
+deliver() {
+    local dir="$1" to="$2" sub p n=0 out vrc n_ok
+    sub="$(g7up_pkg_subdir "$dir" "$DISTRO" "$PKGEXT")" || abort "$dir is not a package set this stage can verify"
+    gx "rm -rf $to && mkdir -p $to/$sub" >/dev/null
+    for p in "$dir/$sub"*."$PKGEXT"; do
         [ -f "$p" ] || continue
-        ga_put "$DOMAIN" "$p" "$to/$(basename "$p")" || abort "could not deliver $(basename "$p")"
+        ga_put "$DOMAIN" "$p" "$to/$sub$(basename "$p")" || abort "could not deliver $(basename "$p")"
         n=$(( n + 1 ))
     done
-    gx "cd $to && sha256sum --ignore-missing -c SHA256SUMS" > "$EVIDENCE/deliver-$(basename "$to").txt" 2>&1 \
-        || abort "the packages in $to do not verify against SHA256SUMS inside the guest"
+    [ "$n" -gt 0 ] || abort "no *.$PKGEXT in $dir/$sub; there is nothing to deliver"
+    for p in "$dir"/SHA256SUMS "$dir"/SHA256SUMS.asc; do
+        [ -f "$p" ] || continue
+        ga_put "$DOMAIN" "$p" "$to/$(basename "$p")" || abort "could not deliver $(basename "$p")"
+    done
+    out="$(gx "cd $to && LC_ALL=C sha256sum --ignore-missing -c SHA256SUMS" 2>&1)"; vrc=$?
+    printf '%s\n' "$out" > "$EVIDENCE/deliver-$(basename "$to").txt"
+    [ "$vrc" -eq 0 ] || abort "the packages in $to do not verify against SHA256SUMS inside the guest"
+    n_ok="$(grep -cE ': OK$' <<<"$out" || true)"
+    need_exact_count "packages verified against SHA256SUMS in $to" "$n_ok" "$n" \
+        || abort "$n package(s) delivered to $to, but $n_ok verified against SHA256SUMS"
+    if [ -n "$sub" ]; then
+        gx "cd $to && ln -f ${sub}*.$PKGEXT ." >/dev/null || abort "could not link the verified packages into $to"
+    fi
     printf '%s' "$n"
 }
 

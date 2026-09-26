@@ -84,6 +84,27 @@ g7up_kv() {
 
 g7up_sha() { sha256sum "$1" 2>/dev/null | awk '{print $1}'; }
 
+# g7up_pkg_subdir DIR DISTRO EXT — where DISTRO's packages sit in a package
+# set: "" for a flat set (packages beside a SHA256SUMS that names them bare,
+# the shape of a locally built Pliwee set), "DISTRO/" for the PUBLISHED signed
+# layout (one SHA256SUMS for every distribution, naming `<distro>/<file>`, as
+# release-artifacts.yml writes it and verify-release.sh checks it). Fails, with
+# the reason, when DIR is neither: a set whose manifest names none of the
+# packages it holds would be delivered unverified.
+g7up_pkg_subdir() {
+    local dir="$1" distro="$2" ext="$3" sums="$1/SHA256SUMS" f n=0
+    [ -f "$sums" ] || { _af "$dir has no SHA256SUMS"; return 1; }
+    if [ -d "$dir/$distro" ] && grep -qE "^[0-9a-f]{64}  $distro/[^/]+\\.$ext\$" "$sums"; then
+        printf '%s/' "$distro"; return 0
+    fi
+    for f in "$dir"/*."$ext"; do
+        [ -f "$f" ] || continue
+        grep -qE "^[0-9a-f]{64}  $(basename "$f" | sed 's/[.[\*^$]/\\&/g')\$" "$sums" && n=$((n + 1))
+    done
+    [ "$n" -gt 0 ] || { _af "$dir is neither a flat set (no *.$ext named bare in its SHA256SUMS) nor the signed layout (no $distro/*.$ext in it)"; return 1; }
+    printf ''
+}
+
 # g7up_verify_checkpoint EVIDENCE DISTRO DOMAIN — the upgrade stage completed,
 # on this distro and this domain.
 g7up_verify_checkpoint() {

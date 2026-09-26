@@ -74,6 +74,19 @@
 #     --rerun                  allow --run on a gate that already has a result.
 #                              A new attempt: the previous record is moved to
 #                              EVIDENCE/state/history/, never overwritten
+#     --u2-measured            G7UP-D-U2's five items are MEASURED by
+#                              u2-state-check.sh (guest trust store, grants,
+#                              policies, gui.json, the adb-attached device)
+#                              instead of answered y/n. Each item is PASS only
+#                              where its `ok` line was observed
+#
+#   AUTOPILOT GRANT (pre-g8-autopilot.sh)
+#     PRE_G8_AUTOPILOT_GRANT=FILE and PRE_G8_AUTOPILOT_SESSION=ID, both set by
+#     pre-g8-autopilot.sh after the operator typed `yes` to its list of guest
+#     actions at the terminal. The grant stands in for the per-gate question
+#     only for a G7-UP or lifecycle gate's guest action, only on a domain it
+#     names (a fresh-guest designation only on a domain it names as fresh),
+#     and only while it verifies (see grant_ok). Everything else still asks.
 #
 #   CONFIG FILE (bash, sourced; per-distro keys carry the distro as a suffix)
 #     DOMAIN_fedora44=anyflow-f44   U8_DOMAIN_fedora44=...   LIFECYCLE_DOMAIN_fedora44=...
@@ -119,7 +132,7 @@ die()  { printf 'pre-g8: REFUSED: %s\n' "$*" >&2; exit 2; }
 note() { printf 'pre-g8: %s\n' "$*"; }
 
 # ---------------------------------------------------------------- arguments --
-EVIDENCE=""; CONFIG=""; CMD=""; GATE_ARG=""; REASON=""; RERUN=0; CUR_DISTRO=""
+EVIDENCE=""; CONFIG=""; CMD=""; GATE_ARG=""; REASON=""; RERUN=0; CUR_DISTRO=""; U2_MEASURED=0
 set_pd() { # KEY VALUE — a per-distro value, for the distro --distro named
     [ -n "$CUR_DISTRO" ] || die "$1 is per-distro: give --distro first"
     printf -v "${1}_${CUR_DISTRO}" '%s' "$2"
@@ -134,6 +147,7 @@ while [ $# -gt 0 ]; do
         --reset-distro) CMD=reset-distro; GATE_ARG="${2:?}"; shift 2 ;;
         --reason) REASON="${2-}"; shift 2 ;;
         --rerun) RERUN=1; shift ;;
+        --u2-measured) U2_MEASURED=1; shift ;;
         --distro) CUR_DISTRO="${2:?}"; shift 2
             case " ${DISTROS[*]} " in *" $CUR_DISTRO "*) : ;; *) die "unknown distro '$CUR_DISTRO' (${DISTROS[*]})" ;; esac ;;
         --domain) set_pd DOMAIN "${2:?}"; shift 2 ;;
@@ -437,12 +451,78 @@ confirm_action() { # TOKEN LINE... — print the exact action; require TOKEN typ
     fi
     exit 5
 }
-yn() { # QUESTION — y or n, asked until one is given
+# yn QUESTION — y or n, asked until one is given. Always called as
+# `a="$(yn …)" || exit 5`: its own `exit 5` on EOF ends only the command
+# substitution, and without the caller's the empty answer went on to be
+# recorded as a 'n' — a FAIL — under a note saying nothing was recorded (found
+# by the pre-G8 autopilot's grant self-tests).
+yn() {
     local a
     while :; do
         a="$(ask "$1 [y/n]")" || { note "no answer (EOF); nothing recorded"; exit 5; }
         case "$a" in y|n) printf '%s' "$a"; return ;; esac
     done
+}
+
+# The autopilot's grant. pre-g8-autopilot.sh creates its guests itself, from a
+# base image it verified, and before it runs any gate it prints every guest
+# action it may take and reads `yes` typed at the terminal — once per
+# invocation, instead of once per gate. That answer reaches this coordinator as
+# a grant record, and it is accepted only when ALL of these hold; otherwise the
+# question is asked at the terminal exactly as before (and with no terminal,
+# the action is refused):
+#   * it is a G7-UP or lifecycle gate's action — on the guest, and for U6 and
+#     the security-log gate the phone actions their confirmation lists, which
+#     the autopilot's list carries word for word. W2, W6 (the designated
+#     device, signing media) and U2's answers never consult it;
+#   * the grant names the domain: for `yes`, among its guests; for a
+#     fresh-guest designation (U8, lifecycle — the token is the domain's name),
+#     among the guests it names FRESH, which the autopilot does only for a
+#     guest it has just created or reverted to its never-used snapshot;
+#   * it is a regular file owned by this user and writable by nobody else,
+#     recorded for this evidence directory, typed at a terminal, unexpired, and
+#     carries the session id the autopilot exported to this invocation.
+# The action lines are printed either way, and the gate's log names what
+# confirmed them.
+AP_GRANT="${PRE_G8_AUTOPILOT_GRANT:-}"; AP_SESSION="${PRE_G8_AUTOPILOT_SESSION:-}"
+CONFIRMED_BY="the operator, at the terminal"
+grant_ok() { # DOMAIN KIND — KIND is guest or fresh. Prints why not.
+    local g="$AP_GRANT" dom="$1" kind="$2" v
+    [ -n "$g" ] || { echo "no autopilot grant was given"; return 1; }
+    [ -f "$g" ] && [ ! -L "$g" ] || { echo "the grant $g is not a regular file"; return 1; }
+    v="$(stat -c '%u %a' -- "$g" 2>/dev/null)" || { echo "the grant $g cannot be inspected"; return 1; }
+    [ "${v%% *}" = "$(id -u)" ] || { echo "the grant is not owned by this user"; return 1; }
+    [ $(( 8#${v#* } & 8#022 )) -eq 0 ] || { echo "the grant is writable by group or others"; return 1; }
+    [ -n "$AP_SESSION" ] && [ "$(g7up_kv "$g" session)" = "$AP_SESSION" ] \
+        || { echo "the grant is not for this autopilot session"; return 1; }
+    [ "$(g7up_kv "$g" evidence)" = "$EVIDENCE" ] || { echo "the grant was recorded for another evidence directory"; return 1; }
+    [ "$(g7up_kv "$g" typed)" = yes ] || { echo "the grant does not record an answer typed at the terminal"; return 1; }
+    v="$(g7up_kv "$g" expires_epoch)"
+    [[ "$v" =~ ^[0-9]+$ ]] && [ "$v" -gt "$(date +%s)" ] || { echo "the grant has expired"; return 1; }
+    grep -qxF -- "$dom" <<<"$(g7up_kv "$g" "${kind}_domains" | tr ' ' '\n')" \
+        || { echo "the grant does not name '$dom' as a $kind guest"; return 1; }
+}
+# confirm_guest DOMAIN TOKEN LINE... — confirm_action for a G7-UP or lifecycle
+# guest action, which the autopilot's grant may answer instead.
+confirm_guest() {
+    local dom="$1" tok="$2" kind=guest why
+    shift 2
+    [ "$tok" = "$dom" ] && kind=fresh
+    case "$GATE_RUN" in
+        G7UP-*-U2|W2-*|W6-*|"") confirm_action "$tok" "$@"; return ;;
+    esac
+    if why="$(grant_ok "$dom" "$kind")"; then
+        CONFIRMED_BY="autopilot grant $(g7up_kv "$AP_GRANT" id), typed by the operator at $(g7up_kv "$AP_GRANT" typed_utc)"
+        printf '\n=========================================================\n' >&2
+        printf 'ACTION — this changes something outside this host\n' >&2
+        printf '=========================================================\n' >&2
+        printf '  %s\n' "$@" >&2
+        printf '  AUTHORISED by %s\n' "$CONFIRMED_BY" >&2
+        printf '=========================================================\n' >&2
+        return 0
+    fi
+    [ -z "$AP_GRANT" ] || note "the autopilot grant does not cover this action ($why); asking at the terminal"
+    confirm_action "$tok" "$@"
 }
 
 # One VM at a time: no guest this coordinator knows about, other than the
@@ -471,7 +551,7 @@ run_logged() {
     STARTED="$(date -u +%FT%TZ)"
     LOG="$EVIDENCE/logs/$g.$(date -u +%Y%m%dT%H%M%SZ).log"
     state_write "$g" "gate=$g" state=RUNNING "started_utc=$STARTED" "log=$LOG"
-    { printf '# %s\n# started %s\n# command:' "$g" "$STARTED"; printf ' %q' "$@"; printf '\n'; } > "$LOG"
+    { printf '# %s\n# started %s\n# confirmed by: %s\n# command:' "$g" "$STARTED" "$CONFIRMED_BY"; printf ' %q' "$@"; printf '\n'; } > "$LOG"
     "$@" 2>&1 < /dev/null | tee -a "$LOG"
     RC="${PIPESTATUS[0]}"
 }
@@ -533,7 +613,7 @@ PROC
         || die "'$sess' does not name the session $g is for; record it from that session"
     STARTED="$(date -u +%FT%TZ)"; LOG=""; RC=0
     for i in "${steps[@]}"; do
-        a="$(yn "$i")"; items="$items$a  $i"$'\n'
+        a="$(yn "$i")" || exit 5; items="$items$a  $i"$'\n'
         [ "$a" = y ] || fails+=("$i")
     done
     files_ann="$(ask "Exactly what was announced for the Files switch:")" || files_ann=""
@@ -793,7 +873,7 @@ gate_component() {
         && need_exact_count "installed versionCode after the upgrade" "$v2" "$vn1" 2>>"$LOG" \
         || { record "$g" FAIL "the upgrade did not happen ($vn -> ${v2:-?})"; return; }
     why="$(comp_holds "$dir" after)" || { record "$g" FAIL "after the upgrade: $why"; return; }
-    a="$(yn "Look at the phone (and $dir/after-screen.png): is the SAME pinned shortcut still there, and does tapping it open Pliwee?")"
+    a="$(yn "Look at the phone (and $dir/after-screen.png): is the SAME pinned shortcut still there, and does tapping it open Pliwee?")" || exit 5
     echo "operator after upgrade: shortcut survives N -> N+1: $a" >> "$LOG"
     [ "$a" = y ] || { record "$g" FAIL "the operator reports the pinned shortcut did not survive the upgrade"; return; }
     record "$g" PASS "listener, QS tile and pinned shortcut survived versionCode $vn -> $vn1" "evidence_dir=$dir"
@@ -827,6 +907,46 @@ gate_instrumented() {
     record "$g" PASS "$t tests, 0 failures" "evidence_dir=$dir"
 }
 
+# U2's five items: the operator answers them (the default), or, with
+# --u2-measured, u2-state-check.sh observes them and prints `ok    U2-N:` or
+# `not ok  U2-N:` for item N, in this order.
+U2_ITEMS=("exactly ONE peer is paired with the guest, and it is the physical Android device used for U6 (not fake_phone)"
+          "clipboard.v1 and files.v1 are granted to it"
+          "a clipboard policy is set for it" "a notification lock policy is set for it"
+          "omnibridge-gui was opened and the peer selected (gui.json written)")
+
+# gate_u2_measured GATE DISTRO DOMAIN CHAIN_DIR — U2 from observation. It
+# changes nothing: the owning script only reads the guest's trust store,
+# grants, policies and gui.json, and asks adb which device is attached. An
+# item is `y` only when its own `ok` line is in the log and no `not ok` line
+# names it; anything the script did not print is `n`. The answers file has the
+# operator's shape, and is written once, read-only, per attempt.
+gate_u2_measured() {
+    local g="$1" d="$2" dom="$3" ev="$4" f t n a why fails=()
+    need_cfg "$ADB_SERIAL" --adb-serial "the physical Android peer's serial (U2 names the device)"
+    [ -x "$GATES_DIR/u2-state-check.sh" ] || die "$GATES_DIR/u2-state-check.sh is missing; U2 cannot be measured"
+    f="$ev/U2-measured.$ATTEMPT.txt"
+    [ ! -e "$f" ] && [ ! -e "$f.partial" ] || die "$f already exists; an earlier attempt's answers are never overwritten"
+    one_vm "$dom"
+    mkdir -p "$ev" || die "cannot create $ev"
+    run_logged "$g" "$GATES_DIR/u2-state-check.sh" --domain "$dom" --distro "$d" --adb-serial "$ADB_SERIAL"
+    t="$(cat "$LOG")"
+    { echo "attempt=$ATTEMPT"; echo "method=measured by u2-state-check.sh (log $LOG)"; } > "$f.partial" \
+        || die "cannot write $f.partial"
+    for n in 1 2 3 4 5; do
+        a=n
+        if contains_re "$t" "^ok    U2-$n: " && ! contains_re "$t" "^not ok  U2-$n: "; then a=y; fi
+        echo "$a  ${U2_ITEMS[$((n - 1))]}" >> "$f.partial"
+        [ "$a" = y ] || fails+=("${U2_ITEMS[$((n - 1))]}")
+    done
+    echo "recorded_utc=$(date -u +%FT%TZ)" >> "$f.partial"; chmod a-w "$f.partial"; mv -n "$f.partial" "$f"
+    [ ! -e "$f.partial" ] && [ -f "$f" ] || die "could not put the answers in place at $f"
+    [ "$RC" = 0 ] || fails+=("u2-state-check.sh exited $RC")
+    why="$(log_clean)" || fails+=("$why")
+    if [ "${#fails[@]}" -eq 0 ]; then record "$g" PASS "" "answers=$f" "answers_sha256=$(g7up_sha "$f")" method=measured
+    else record "$g" FAIL "$(printf '%s; ' "${fails[@]}")" "answers=$f" "answers_sha256=$(g7up_sha "$f")" method=measured; fi
+}
+
 gate_g7up() {
     local g="$1" d step dom old new ev ug binding
     d="$(gate_distro "$g")"; step="$(gate_step "$g")"
@@ -846,7 +966,7 @@ gate_g7up() {
             need_cfg "$FINGERPRINT" --fingerprint "the release signing fingerprint"
             [ ! -e "$ev/UPGRADE-CHECKPOINT" ] || die "$ev already holds an upgraded chain; --reset-distro $d first"
             one_vm "$dom"
-            confirm_action yes "$ug --stage install --domain $dom --distro $d --evidence $ev --old-pkgdir $old --keyring $KEYRING --fingerprint $FINGERPRINT" \
+            confirm_guest "$dom" yes "$ug --stage install --domain $dom --distro $d --evidence $ev --old-pkgdir $old --keyring $KEYRING --fingerprint $FINGERPRINT" \
                 "installs OmniBridge 1.0.0 in guest $dom, enables its user unit, adds a user '${IDLE_USER:-g7idle}'" \
                 "and (Fedora) the omnibridge firewalld service in zone 'work'"
             mkdir -p "$ev"; printf 'domain=%s\nold_pkgdir=%s\ndistro=%s\n' "$dom" "$old" "$d" > "$binding"
@@ -854,10 +974,8 @@ gate_g7up() {
                 --old-pkgdir "$old" --keyring "$KEYRING" --fingerprint "$FINGERPRINT"
             finish_gate "$g" '^ok    U1: omnibridge and omnibridge-gui are exactly 1\.0\.0-1$' '^ok    U2: omnibridged\.service is enabled$' ;;
         U2)
-            local items=("exactly ONE peer is paired with the guest, and it is the physical Android device used for U6 (not fake_phone)"
-                         "clipboard.v1 and files.v1 are granted to it"
-                         "a clipboard policy is set for it" "a notification lock policy is set for it"
-                         "omnibridge-gui was opened and the peer selected (gui.json written)") i a fails=() f
+            [ "$U2_MEASURED" = 1 ] && { gate_u2_measured "$g" "$d" "$dom" "$ev"; return; }
+            local items=("${U2_ITEMS[@]}") i a fails=() f
             # One answers file per attempt, written once and left read-only: a
             # rerun's record points at its own file, and an archived record
             # keeps pointing at the one it was made from, unchanged.
@@ -865,7 +983,7 @@ gate_g7up() {
             [ ! -e "$f" ] && [ ! -e "$f.partial" ] || die "$f already exists; an earlier attempt's answers are never overwritten"
             printf '\n%s — in guest %s, by hand (the upgrade stage then measures them in O1):\n' "$g" "$dom" >&2
             echo "attempt=$ATTEMPT" > "$f.partial" || die "cannot write $f.partial"
-            for i in "${items[@]}"; do a="$(yn "$i")"; echo "$a  $i" >> "$f.partial"; [ "$a" = y ] || fails+=("$i"); done
+            for i in "${items[@]}"; do a="$(yn "$i")" || exit 5; echo "$a  $i" >> "$f.partial"; [ "$a" = y ] || fails+=("$i"); done
             echo "recorded_utc=$(date -u +%FT%TZ)" >> "$f.partial"; chmod a-w "$f.partial"; mv -n "$f.partial" "$f"
             [ ! -e "$f.partial" ] && [ -f "$f" ] || die "could not put the answers in place at $f"
             if [ "${#fails[@]}" -eq 0 ]; then record "$g" PASS "" "answers=$f" "answers_sha256=$(g7up_sha "$f")"
@@ -875,7 +993,7 @@ gate_g7up() {
             need_cfg "$old" "--distro $d --old-pkgdir" "the published OmniBridge 1.0.0 set for $d (OLD_PKGDIR_$d)"
             [ "$(g7up_kv "$binding" old_pkgdir)" = "$old" ] || die "OLD_PKGDIR_$d is not the set the chain was installed from ($(g7up_kv "$binding" old_pkgdir))"
             one_vm "$dom"
-            confirm_action yes "$ug --stage upgrade --domain $dom --distro $d --evidence $ev --new-pkgdir $new --old-pkgdir $old" \
+            confirm_guest "$dom" yes "$ug --stage upgrade --domain $dom --distro $d --evidence $ev --new-pkgdir $new --old-pkgdir $old" \
                 "upgrades guest $dom to Pliwee with the distribution's own command, ends the user's session" \
                 "once, restarts pliweed, and STOPS with the guest on Pliwee (no downgrade)"
             run_logged "$g" "$ug" --stage upgrade --domain "$dom" --distro "$d" --evidence "$ev" --new-pkgdir "$new" --old-pkgdir "$old"
@@ -885,7 +1003,7 @@ gate_g7up() {
             need_cfg "$PHONE_IP" --phone-ip "the physical Android peer's LAN address"
             one_vm "$dom"
             printf '\nBefore confirming: copy some text on the phone. The phone -> guest half of the\nclipboard round-trip sends what is on the Android clipboard, and adb cannot put it there.\n' >&2
-            confirm_action yes "$ug --stage peer-u6 --domain $dom --distro $d --evidence $ev --phone-ip $PHONE_IP${ADB_SERIAL:+ --adb-serial $ADB_SERIAL}" \
+            confirm_guest "$dom" yes "$ug --stage peer-u6 --domain $dom --distro $d --evidence $ev --phone-ip $PHONE_IP${ADB_SERIAL:+ --adb-serial $ADB_SERIAL}" \
                 "runs lifecycle-peer-gates.sh against the UPGRADED guest $dom: it drives the Pliwee app on the" \
                 "phone over adb (force-stop, taps, grants, notification-source choice, the fixture) and sends a" \
                 "clipboard and a file between the phone and the guest"
@@ -897,7 +1015,7 @@ gate_g7up() {
         SECLOG)
             need_cfg "$PHONE_IP" --phone-ip "the physical Android peer's LAN address"
             one_vm "$dom"
-            confirm_action yes "$GATES_DIR/security-log-evidence.sh --domain $dom --distro $d --evidence $ev/seclog --phone-ip $PHONE_IP${ADB_SERIAL:+ --adb-serial $ADB_SERIAL}" \
+            confirm_guest "$dom" yes "$GATES_DIR/security-log-evidence.sh --domain $dom --distro $d --evidence $ev/seclog --phone-ip $PHONE_IP${ADB_SERIAL:+ --adb-serial $ADB_SERIAL}" \
                 "puts a TRACE drop-in on pliweed in the UPGRADED guest $dom (removed again at the end)," \
                 "restarts it, sends a file and posts a fixture notification from the phone"
             run_logged "$g" "$GATES_DIR/security-log-evidence.sh" --domain "$dom" --distro "$d" --evidence "$ev/seclog" \
@@ -909,7 +1027,7 @@ gate_g7up() {
             # from the evidence itself, not from a state file saying PASS.
             g7up_verify_u6 "$ev" "$d" "$dom" || die "U10 refused: no verified U6 PASS for $d on $dom in $ev"
             one_vm "$dom"
-            confirm_action yes "$ug --stage downgrade --domain $dom --distro $d --evidence $ev --old-pkgdir $old" \
+            confirm_guest "$dom" yes "$ug --stage downgrade --domain $dom --distro $d --evidence $ev --old-pkgdir $old" \
                 "REMOVES Pliwee from guest $dom and reinstalls OmniBridge 1.0.0; the upgraded guest is gone afterwards"
             run_logged "$g" "$ug" --stage downgrade --domain "$dom" --distro "$d" --evidence "$ev" --old-pkgdir "$old"
             finish_gate "$g" '^ok    U10: OmniBridge 1\.0\.0 starts on its pre-migration identity$' ;;
@@ -919,7 +1037,7 @@ gate_g7up() {
             need_cfg "$new" "--distro $d --new-pkgdir" "the Pliwee package set for $d (NEW_PKGDIR_$d)"
             [ "$u8" != "$dom" ] || die "U8 needs a FRESH guest; '$u8' is the $d upgrade guest"
             one_vm "$u8"
-            confirm_action "$u8" "$ug --stage negative-unreadable --domain $u8 --distro $d --evidence $EVIDENCE/g7up-u8/$d --new-pkgdir $new" \
+            confirm_guest "$u8" "$u8" "$ug --stage negative-unreadable --domain $u8 --distro $d --evidence $EVIDENCE/g7up-u8/$d --new-pkgdir $new" \
                 "plants an unreadable ~/.local/share/omnibridge in guest $u8 and installs Pliwee there." \
                 "$u8 must be a FRESH guest or snapshot with nothing of OmniBridge or Pliwee on it:" \
                 "type its name to designate it."
@@ -935,7 +1053,7 @@ gate_lifecycle() {
     need_cfg "$new" "--distro $d --new-pkgdir" "the Pliwee package set for $d (NEW_PKGDIR_$d)"
     [ "$lc" != "$(pd DOMAIN "$d")" ] || die "the lifecycle gates install, reboot, remove and purge: they need their own FRESH guest, not the $d upgrade guest"
     one_vm "$lc"
-    confirm_action "$lc" "$GATES_DIR/lifecycle-gates.sh --domain $lc --distro $d --pkgdir $new --evidence $EVIDENCE/lifecycle/$d${PHONE_IP:+ --phone $PHONE_IP}" \
+    confirm_guest "$lc" "$lc" "$GATES_DIR/lifecycle-gates.sh --domain $lc --distro $d --pkgdir $new --evidence $EVIDENCE/lifecycle/$d${PHONE_IP:+ --phone $PHONE_IP}" \
         "installs Pliwee in guest $lc, cycles the session, REBOOTS it, then removes, reinstalls and purges." \
         "type the guest's name to designate it."
     run_logged "$g" "$GATES_DIR/lifecycle-gates.sh" --domain "$lc" --distro "$d" --pkgdir "$new" \

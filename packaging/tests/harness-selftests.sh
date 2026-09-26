@@ -228,7 +228,7 @@ section "U10 before U6  (pre-G8 gate hardening: U6 recorded n/a, then U10 ran)"
 G7="$WORK/g7"; mkdir -p "$G7"
 g7up_fixture "$G7/base" fedora44 g7-f44
 u6case() { # NAME SHELL-EDIT — a copy of the good record with one thing broken ($E is the copy)
-    rm -rf "$G7/$1"; cp -a "$G7/base" "$G7/$1"
+    rm -rf "${G7:?}/$1"; cp -a "$G7/base" "$G7/$1"
     E="$G7/$1" bash -c ". '$HERE/lib/g7up-fixture.sh'; $2"
 }
 accepts "a real U6 PASS on the same distro, domain, run and guest" \
@@ -288,7 +288,7 @@ g7up_fixture "$G7/stage-ok" fedora44 g7-f44 "$WORK/old/SHA256SUMS"
 # Stage cases start from stage-ok, whose 1.0.0 set matches --old-pkgdir, so
 # each is refused for the ONE thing it breaks and not for the set's digest.
 stcase() { # NAME SHELL-EDIT
-    rm -rf "$G7/$1"; cp -a "$G7/stage-ok" "$G7/$1"
+    rm -rf "${G7:?}/$1"; cp -a "$G7/stage-ok" "$G7/$1"
     E="$G7/$1" bash -c ". '$HERE/lib/g7up-fixture.sh'; $2"
 }
 stcase st-no-u6 'rm -rf "$E/U6" "$E/U6-RESULT"'
@@ -355,6 +355,28 @@ if [ "$(grep -c . <<<"$up_block")" -ge 100 ] && contains "$up_block" 'section "U
 else
     notok "STATIC the upgrade stage still contains a U10 section, lacks the checkpoint, or could not be read"
 fi
+
+# ---------------------------------------------------------------------------
+section "The published signed layout  (pre-G8 autopilot: U1 and deliver() wanted different shapes)"
+# ---------------------------------------------------------------------------
+# verify-release.sh (U1) needs the release as signed: one SHA256SUMS naming
+# `<distro>/<file>`. deliver() copied only top-level packages and checked them
+# with --ignore-missing, which verified NOTHING in that layout and made
+# coreutils 9 exit 1. g7up_pkg_subdir now tells deliver() where the packages
+# are; a set whose manifest names none of them must be refused, not delivered.
+L="$WORK/layout"; mkdir -p "$L/signed/debian13" "$L/signed/fedora44" "$L/flat" "$L/unnamed" "$L/nosums"
+echo deb > "$L/signed/debian13/omnibridge_1.0.0-1_amd64.deb"; echo rpm > "$L/signed/fedora44/omnibridge-1.0.0-1.fc44.x86_64.rpm"
+( cd "$L/signed" && sha256sum debian13/omnibridge_1.0.0-1_amd64.deb fedora44/omnibridge-1.0.0-1.fc44.x86_64.rpm > SHA256SUMS )
+echo deb > "$L/flat/pliwee_1.1.0-1_amd64.deb"; ( cd "$L/flat" && sha256sum pliwee_1.1.0-1_amd64.deb > SHA256SUMS )
+echo deb > "$L/unnamed/pliwee_1.1.0-1_amd64.deb"; printf '%s  something-else.deb\n' "$(printf 'b%.0s' $(seq 1 64))" > "$L/unnamed/SHA256SUMS"
+echo deb > "$L/nosums/pliwee_1.1.0-1_amd64.deb"
+subdir_is() { [ "$(g7up_pkg_subdir "$1" "$2" "$3" 2>/dev/null)" = "$4" ]; }
+accepts "the published layout: debian13's packages are under debian13/" subdir_is "$L/signed" debian13 deb debian13/
+accepts "the published layout: fedora44's packages are under fedora44/" subdir_is "$L/signed" fedora44 rpm fedora44/
+accepts "a flat set whose SHA256SUMS names its packages bare" subdir_is "$L/flat" debian13 deb ""
+rejects "a set whose SHA256SUMS names none of its packages" g7up_pkg_subdir "$L/unnamed" debian13 deb
+rejects "a set with no SHA256SUMS" g7up_pkg_subdir "$L/nosums" debian13 deb
+rejects "the published layout asked for a distribution it does not carry" g7up_pkg_subdir "$L/signed" ubuntu2404 deb
 
 # ---------------------------------------------------------------------------
 section "The pre-G8 coordinator  (pre-g8-manual-gates-selftests.sh)"
