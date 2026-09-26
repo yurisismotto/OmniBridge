@@ -262,15 +262,22 @@ d = yaml.safe_load(open(sys.argv[1])); distro = sys.argv[2]
 u = d["users"][0]; files = {w["path"]: w["content"] for w in d["write_files"]}
 assert u["name"] == "anyflow" and str(u["uid"]) == "1000" and u["lock_passwd"] is False
 assert "qemu-guest-agent" in d["packages"]
-gdm = "/etc/gdm/custom.conf" if distro == "fedora44" else "/etc/gdm3/custom.conf"
-assert "AutomaticLogin=anyflow" in files[gdm]
+# The file each distribution's GDM reads (its packaged gdm-session-worker,
+# measured 2026-09-26). It is a conffile of the gdm package: never written
+# before the desktop is installed (dpkg's conffile prompt), always after it.
+gdm = {"fedora44": "/etc/gdm/custom.conf", "debian13": "/etc/gdm3/daemon.conf"}.get(distro, "/etc/gdm3/custom.conf")
+assert not any("gdm" in f for f in files), sorted(files)
 prep = files["/usr/local/sbin/pliwee-g8-prepare"]
+assert "gdmconf=" + gdm + "\n" in prep and "AutomaticLogin=anyflow" in prep
+assert prep.index("stage=desktop") < prep.index("gdmconf=") < prep.index("stage=session")
+assert "grep -aqF \"$gdmconf\" /usr/libexec/gdm-session-worker" in prep
+assert "trap failed EXIT" in prep and "template-failed" in prep
 assert "template-ready" in prep and "graphical.target" in prep and "qemu-ga" in prep
 assert ("set-default-zone=work" in prep) == (distro == "fedora44")
 assert d["runcmd"] == [["/usr/local/sbin/pliwee-g8-prepare"]]
 PY
 }
-for d in fedora44 ubuntu2404 ubuntu2604 debian13; do check "the $d template seed is valid cloud-config with anyflow/1000, the agent, GDM autologin, the marker" yaml_ok "$d"; done
+for d in fedora44 ubuntu2404 ubuntu2604 debian13; do check "the $d template seed is valid cloud-config with anyflow/1000, the agent, GDM autologin (after the desktop, in the file GDM reads), the marker" yaml_ok "$d"; done
 role_ok() {
     UNIT bash -c '. "$0/vm/cloud-init.sh"; ap_seed_userdata_role g8-f44-u8 0123abcd' "$HERE" > "$WORK/role.yaml" \
         && python3 -c 'import sys,yaml; d=yaml.safe_load(open(sys.argv[1])); assert d["users"]==[] and d["hostname"]=="g8-f44-u8" and d["write_files"][0]["content"]=="0123abcd"' "$WORK/role.yaml"
@@ -693,11 +700,13 @@ check "cloud-init disabled: 'guest booted but no datasource'" \
     contains "$(UNITG ap_probe_summary $'hostname=g8\ncloud_init=disabled\nkernel=k')" "guest booted but no datasource"
 check "cloud-init done without a datasource id: 'datasource missing'" \
     contains "$(UNITG ap_probe_summary $'hostname=g8\ncloud_init=done\nkernel=k\ndatasource=')" "datasource missing"
-GOOD=$'pkg_gnome_shell=49.1-1\npkg_gdm=49.0-1\npkg_qga=10.2.2-1\nautologin=anyflow\nno_lock=yes\ninitial_setup_done=yes\ndefault_target=graphical.target\nselinux=Enforcing\nqga_permissive=yes\nmarker=2026-09-26T00:00:00Z'
+GOOD=$'pkg_gnome_shell=49.1-1\npkg_gdm=49.0-1\npkg_qga=10.2.2-1\ngdm_conf=/etc/gdm/custom.conf\ngdm_conf_read_by_gdm=yes\nautologin=anyflow\nno_lock=yes\ninitial_setup_done=yes\ndefault_target=graphical.target\nselinux=Enforcing\nqga_permissive=yes\nmarker=2026-09-26T00:00:00Z'
 check "readiness: a complete Fedora template passes" UNITG ap_template_check_fn "$GOOD"
 check "readiness: no gnome-shell fails" is_false_g ap_template_check_fn "$(sed 's/^pkg_gnome_shell=.*/pkg_gnome_shell=/' <<<"$GOOD")"
 check "readiness: a system made Permissive fails (only the agent's domain may change)" is_false_g ap_template_check_fn "$(sed 's/^selinux=.*/selinux=Permissive/' <<<"$GOOD")"
 check "readiness: Enforcing without the agent-domain module fails" is_false_g ap_template_check_fn "$(sed 's/^qga_permissive=.*/qga_permissive=/' <<<"$GOOD")"
+check "readiness: autologin written to a file GDM does not read fails (Debian reads daemon.conf)" is_false_g ap_template_check_fn "$(sed 's/^gdm_conf_read_by_gdm=.*/gdm_conf_read_by_gdm=/' <<<"$GOOD")"
+check "readiness: no recorded GDM file fails" is_false_g ap_template_check_fn "$(sed 's/^gdm_conf=.*/gdm_conf=/' <<<"$GOOD")"
 check "readiness: autologin for someone else fails" is_false_g ap_template_check_fn "$(sed 's/^autologin=.*/autologin=root/' <<<"$GOOD")"
 check "readiness: no marker fails" is_false_g ap_template_check_fn "$(sed 's/^marker=.*/marker=/' <<<"$GOOD")"
 check "readiness: an empty check fails" is_false_g ap_template_check_fn ""
@@ -788,6 +797,76 @@ check "--template on a ready template verifies it and builds nothing" \
     test "$RC" -eq 0 -a "$(vcalls | grep -c '^define ')" = 1
 apx "" --template fedora45
 check "--template with an unknown distribution is refused (exit 2)" test "$RC" -eq 2
+
+# ---------------------------------------------------------------------------
+section "TEMPLATE-ubuntu2404: a terminal cloud-init error stops at once; a running one does not"
+# ---------------------------------------------------------------------------
+# The probe the first real TEMPLATE-ubuntu2404 would have answered from 960 s
+# on (templates/ubuntu2404/failure.20260926T101307Z: probe.txt, and cloud-init
+# status --long in guest-logs.txt): runcmd exited 100 because dpkg stopped at
+# the /etc/gdm3/custom.conf conffile prompt; nothing was left running.
+UBU_REAL=$'identity=\ntemplate_ready=\nmachine_id=188228fba496438f983fed3822f75250\nhostname=g8-u2404-tmpl\ncloud_init=error\nci_extended=error - done\nci_error=(\'scripts_user\', RuntimeError(\'Runparts: 1 failures (runcmd) in 1 attempted commands\'))\nuser_uid=1000\nsession_type=\ndefault_target=graphical.target\nos=Ubuntu 24.04.5 LTS\nkernel=6.8.0-139-generic\nsel_context=unconfined\nsel_enforce=\ndatasource=nocloud\npkg_procs=0\nnet_ipv4=192.168.68.80/22\nprepare_stage=stage: desktop\nprepare_running=0\nprepare_failed=\nprepare_error=dpkg: error processing package gdm3 (--configure):  end of file on stdin at conffile prompt \nuptime_s=5875'
+check "the real Ubuntu probe is terminal: cloud-init 'error - done', nothing running, no marker" \
+    contains "$(UNITG ap_probe_terminal "$UBU_REAL")" "cloud-init finished with an error and nothing running can still write the marker"
+check "…and its summary names the error and the module" \
+    contains "$(UNITG ap_probe_summary "$UBU_REAL")" "cloud-init error (error - done): ('scripts_user', RuntimeError('Runparts: 1 failures (runcmd)"
+check "the prepare script's own failure record is terminal by itself" \
+    contains "$(UNITG ap_probe_terminal "$(sed 's/^prepare_failed=$/prepare_failed=exit=100 stage=desktop/; s/^cloud_init=.*/cloud_init=running/; s/^ci_extended=.*/ci_extended=running/' <<<"$UBU_REAL")")" "the prepare script failed (exit=100 stage=desktop)"
+not_term() { is_false_g ap_probe_terminal "$(sed "$1" <<<"$UBU_REAL")"; }
+check "NOT terminal: cloud-init error while cloud-init is still running ('error - running')" not_term 's/^ci_extended=.*/ci_extended=error - running/'
+check "NOT terminal: cloud-init error but the prepare script is still running" not_term 's/^prepare_running=.*/prepare_running=1/'
+check "NOT terminal: cloud-init error but a package transaction is active" not_term 's/^pkg_procs=.*/pkg_procs=2/'
+check "NOT terminal: whether anything still runs could not be read" not_term 's/^pkg_procs=.*/pkg_procs=/; s/^prepare_running=.*/prepare_running=/'
+check "NOT terminal: cloud-init running, package transaction active (the first 900 s of the real run)" \
+    not_term 's/^cloud_init=.*/cloud_init=running/; s/^ci_extended=.*/ci_extended=running/; s/^pkg_procs=.*/pkg_procs=2/; s/^prepare_running=.*/prepare_running=1/'
+check "NOT terminal: the marker is there, whatever cloud-init says" not_term 's/^template_ready=.*/template_ready=yes/'
+
+ubu_rec() { sed -n "s/^$1=//p" "$SC/ev/autopilot/records/template-ubuntu2404"; }
+scenario ubuterm
+before="$(evsnap)"
+FAKE_CONFFILE_FAIL=pliwee-g8-u2404-tmpl apx "" --template ubuntu2404
+check "a terminal cloud-init error: STOP (exit 3) as infrastructure, at once, not at the timeout" \
+    test "$RC" -eq 3 -a -n "$(grep '^\[STOP\] TEMPLATE-ubuntu2404 — infrastructure preparation FAILED: reached a terminal error after [0-9]*s: the prepare script failed (exit=100 stage=desktop)' <<<"$OUT")" \
+         -a -z "$(grep 'not ready after' <<<"$OUT")"
+check "…naming the failing module, the stage, the package manager and the dpkg error" \
+    test -n "$(grep "failing module:  ('scripts_user', RuntimeError('Runparts: 1 failures (runcmd)" <<<"$OUT")" \
+         -a -n "$(grep 'package manager: inactive' <<<"$OUT")" -a -n "$(grep 'prepare:         stage: desktop; exit=100 stage=desktop' <<<"$OUT")" \
+         -a -n "$(grep 'reason:          dpkg: error processing package gdm3 (--configure):  end of file on stdin at conffile prompt' <<<"$OUT")"
+check "…the template recorded failed, its diagnostics kept, the paths printed" \
+    test "$(ubu_rec state)" = failed -a -s "$(ubu_rec failure_dir)/summary.txt" -a -s "$(ubu_rec failure_dir)/guest-logs.txt" \
+         -a -n "$(grep "diagnosis:     $(ubu_rec failure_dir)/summary.txt" <<<"$OUT")"
+check "…the guest shut down cleanly (not destroyed)" \
+    test "$(cat "$SC/libvirt/doms/pliwee-g8-u2404-tmpl/state")" = "shut off" -a -z "$(vcalls | grep '^destroy pliwee-g8-u2404-tmpl')"
+check "…no gate ran or was recorded: nothing became LIFECYCLE-ubuntu2404 FAIL" \
+    test ! -s "$STUB/calls" -a -z "$(find "$SC/ev/state" -maxdepth 1 \( -name 'G7UP-*' -o -name 'LIFECYCLE-*' \))" -a "$(cstate LIFECYCLE-ubuntu2404)" = PENDING
+check "…and the evidence is byte-identical" test "$(evsnap)" = "$before"
+apx "" --template ubuntu2404
+check "resume: the failed template is discarded and built again from the base image, and is ready" \
+    test "$RC" -eq 0 -a -n "$(grep 'TEMPLATE-ubuntu2404 — an unfinished build (failed) is discarded' <<<"$OUT")" -a "$(ubu_rec state)" = ready \
+         -a -n "$(vcalls | grep '^vol-delete --pool default pliwee-g8-u2404-tmpl.qcow2')"
+RDY="$SC/ev/autopilot/templates/ubuntu2404/readiness.txt"
+check "…its autologin is in /etc/gdm3/custom.conf, the file Ubuntu's GDM reads" \
+    test -n "$(grep -x 'gdm_conf=/etc/gdm3/custom.conf' "$RDY")" -a -n "$(grep -x 'gdm_conf_read_by_gdm=yes' "$RDY")" -a -n "$(grep -x 'autologin=anyflow' "$RDY")"
+check "…and the failure's diagnostics are still there" test -s "$(sed -n 's/^failure_dir=//p' "$SC/ev/autopilot/records/history"/template-ubuntu2404.* | tail -1)/summary.txt"
+
+scenario ubuslow
+FAKE_SLOW_PREPARE=pliwee-g8-u2404-tmpl FAKE_SLOW_PROBES=4 apx "" --template ubuntu2404
+check "a package transaction still running is waited for, not stopped: the template is ready" \
+    test "$RC" -eq 0 -a -n "$(grep 'TEMPLATE-ubuntu2404 — observed at 0s .*package transaction active (2 processes)' "$SC/ev/autopilot/journal.log")"
+scenario ubuciwarn
+FAKE_SLOW_PREPARE=pliwee-g8-u2404-tmpl FAKE_CI_ERROR_RUNNING=pliwee-g8-u2404-tmpl FAKE_SLOW_PROBES=4 apx "" --template ubuntu2404
+check "a cloud-init error while cloud-init still runs ('error - running') is waited through: ready" \
+    test "$RC" -eq 0 -a -n "$(grep 'TEMPLATE-ubuntu2404 — observed at 0s .*cloud-init error (error - running)' "$SC/ev/autopilot/journal.log")"
+
+scenario debgdm
+apx "" --template debian13
+RDY="$SC/ev/autopilot/templates/debian13/readiness.txt"
+check "Debian 13: autologin goes into /etc/gdm3/daemon.conf, the only file its GDM reads, and a session comes up" \
+    test "$RC" -eq 0 -a -n "$(grep -x 'gdm_conf=/etc/gdm3/daemon.conf' "$RDY")" -a -n "$(grep -x 'gdm_conf_read_by_gdm=yes' "$RDY")"
+scenario u2604gdm
+apx "" --template ubuntu2604
+check "Ubuntu 26.04: the same fix (custom.conf written after the desktop), ready" \
+    test "$RC" -eq 0 -a -n "$(grep -x 'gdm_conf=/etc/gdm3/custom.conf' "$SC/ev/autopilot/templates/ubuntu2604/readiness.txt")"
 
 # ---------------------------------------------------------------------------
 section "Nothing in the autopilot touches signing, releases, history or the phone's data"

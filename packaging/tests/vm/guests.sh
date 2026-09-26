@@ -39,6 +39,7 @@ AP_TEMPLATE_TIMEOUT="${AP_TEMPLATE_TIMEOUT:-5400}"
 # How long guest-exec may stay confined by SELinux before the template gives
 # up: the prepare script lifts it a minute or two after boot (cloud-init.sh).
 AP_CONFINED_LIMIT="${AP_CONFINED_LIMIT:-1800}"
+AP_FAIL_DETAIL=()
 AP_SHUTDOWN_TIMEOUT="${AP_SHUTDOWN_TIMEOUT:-300}"
 AP_META_NS="https://github.com/yurisismotto/OmniBridge/pre-g8-autopilot"
 
@@ -134,7 +135,10 @@ echo "identity=$(cat /var/lib/pliwee-g8/identity 2>/dev/null)"
 echo "template_ready=$(test -e /var/lib/pliwee-g8/template-ready && echo yes)"
 echo "machine_id=$(cat /etc/machine-id 2>/dev/null)"
 echo "hostname=$(hostname 2>/dev/null)"
-echo "cloud_init=$(cloud-init status 2>/dev/null | sed -n "s/^status: //p")"
+cis="$(cloud-init status --long 2>/dev/null)"
+echo "cloud_init=$(printf "%s\n" "$cis" | sed -n "s/^status: //p")"
+echo "ci_extended=$(printf "%s\n" "$cis" | sed -n "s/^extended_status: //p")"
+echo "ci_error=$(printf "%s\n" "$cis" | sed -n "/^errors:/{n;p;}" | sed "s/^[[:space:]]*- //" | cut -c1-160)"
 echo "user_uid=$(id -u '"$AP_GUEST_USER"' 2>/dev/null)"
 s="$(loginctl show-user '"$AP_GUEST_USER"' -p Display --value 2>/dev/null)"
 echo "session_type=$([ -n "$s" ] && loginctl show-session "$s" -p Type --value 2>/dev/null)"
@@ -147,6 +151,9 @@ echo "datasource=$(cat /run/cloud-init/cloud-id 2>/dev/null)"
 echo "pkg_procs=$(pgrep -c -x "dnf|dnf5|dnf-3|rpm|apt-get|apt|dpkg" 2>/dev/null)"
 echo "net_ipv4=$(ip -4 -o addr show scope global 2>/dev/null | awk "{print \$4}" | head -1)"
 echo "prepare_stage=$(grep "^== " /var/log/pliwee-g8-prepare.log 2>/dev/null | tail -1 | cut -c4-80)"
+echo "prepare_running=$(pgrep -c -f "^/bin/sh /usr/local/sbin/pliwee-g8-prepare" 2>/dev/null)"
+echo "prepare_failed=$(cat /var/lib/pliwee-g8/template-failed 2>/dev/null)"
+echo "prepare_error=$(grep -m1 -A1 -E "dpkg: error processing|^E: |^Error: " /var/log/pliwee-g8-prepare.log 2>/dev/null | tr "\n" " " | cut -c1-200)"
 echo "uptime_s=$(cut -d. -f1 /proc/uptime 2>/dev/null)"' 2>&1)"; rc=$?
     grep -E '^[a-z_0-9]+=' <<<"$out"
     [ "$rc" = 0 ] || printf 'probe_error=%s\n' "$(grep -vE '^[a-z_0-9]+=' <<<"$out" | tr '\n' ' ' | cut -c1-240)"
@@ -168,7 +175,8 @@ ap_probe_confined() {
 # ap_probe_summary PROBE — one line saying what the guest is doing, as far as
 # the host can observe it. Every clause is a measurement or says it is missing.
 ap_probe_summary() {
-    local p="$1" ci s=() sel_ctx sel_enf
+    local p="$1" ci s=() sel_ctx sel_enf ci_ext ci_err
+    ci_ext="$(ap_kv "$p" ci_extended)"; ci_err="$(ap_kv "$p" ci_error)"
     sel_ctx="$(ap_kv "$p" sel_context)"; sel_enf="$(ap_kv "$p" sel_enforce)"
     if [ -n "$(ap_kv "$p" probe_error)" ] && [ -z "$(ap_kv "$p" kernel)" ]; then
         printf 'QGA unavailable or guest-exec failed: %s' "$(ap_kv "$p" probe_error)"; return
@@ -181,10 +189,13 @@ ap_probe_summary() {
         case "$ci" in
             "") s+=("cloud-init status unreadable") ;;
             disabled) s+=("cloud-init disabled: guest booted but no datasource") ;;
+            error) s+=("cloud-init error${ci_ext:+ ($ci_ext)}${ci_err:+: $ci_err}")
+               [ -n "$(ap_kv "$p" datasource)" ] || s+=("datasource missing") ;;
             *) s+=("cloud-init ${ci}")
                [ -n "$(ap_kv "$p" datasource)" ] || s+=("datasource missing") ;;
         esac
     fi
+    [ -z "$(ap_kv "$p" prepare_failed)" ] || s+=("prepare FAILED ($(ap_kv "$p" prepare_failed))")
     case "$(ap_kv "$p" pkg_procs)" in
         ""|0) : ;; *) s+=("package transaction active ($(ap_kv "$p" pkg_procs) processes)") ;;
     esac
@@ -194,14 +205,41 @@ ap_probe_summary() {
     local IFS=';'; printf '%s' "${s[*]}" | sed 's/;/; /g'
 }
 
-# ap_wait_probe DOM TIMEOUT WHAT CONDITION_FN — poll the probe until
-# CONDITION_FN (given the probe text) succeeds. Sets PROBE, and WAIT_WHY to
-# why it gave up: timeout, not-running, or confined (guest-exec stayed confined
-# by SELinux for AP_CONFINED_LIMIT seconds — waiting longer cannot help).
+# ap_probe_terminal PROBE — the template's preparation has ended without its
+# marker, and nothing left in the guest can still write it. Prints why. Only
+# two observations count, because only they are final:
+#   * the prepare script recorded its own failure (template-failed: it exited
+#     non-zero and wrote no marker);
+#   * cloud-init has finished every stage with an error ("error - done"), and
+#     neither the prepare script nor a package manager is running.
+# A cloud-init error while it is still running, a package transaction in
+# progress, or anything the probe could not read is NOT terminal: waiting goes
+# on. (The first real TEMPLATE-ubuntu2404 reached "error - done" at 960 s,
+# runcmd exit 100, and was then waited on until 5400 s.)
+ap_probe_terminal() {
+    local p="$1" pf
+    [ "$(ap_kv "$p" template_ready)" = yes ] && return 1
+    pf="$(ap_kv "$p" prepare_failed)"
+    if [ -n "$pf" ]; then
+        printf 'the prepare script failed (%s)' "$pf"; return 0
+    fi
+    if [ "$(ap_kv "$p" cloud_init)" = error ] && [[ "$(ap_kv "$p" ci_extended)" == *done* ]] \
+        && [ "$(ap_kv "$p" prepare_running)" = 0 ] && [ "$(ap_kv "$p" pkg_procs)" = 0 ]; then
+        printf 'cloud-init finished with an error and nothing running can still write the marker'; return 0
+    fi
+    return 1
+}
+
+# ap_wait_probe DOM TIMEOUT WHAT CONDITION_FN [TERMINAL_FN] — poll the probe
+# until CONDITION_FN (given the probe text) succeeds. Sets PROBE, and WAIT_WHY
+# to why it gave up: timeout, not-running, confined (guest-exec stayed confined
+# by SELinux for AP_CONFINED_LIMIT seconds — waiting longer cannot help), or
+# terminal (TERMINAL_FN said the work has ended without success; its words are
+# in WAIT_DETAIL).
 ap_wait_probe() {
-    local dom="$1" limit="$2" what="$3" fn="$4" waited=0 poll="${AP_POLL:-30}" next_say="${AP_SAY_EVERY:-300}" confined=0
+    local dom="$1" limit="$2" what="$3" fn="$4" term="${5:-}" waited=0 poll="${AP_POLL:-30}" next_say="${AP_SAY_EVERY:-300}" confined=0
     local seen="" now
-    PROBE=""; WAIT_WHY=""
+    PROBE=""; WAIT_WHY=""; WAIT_DETAIL=""
     while [ "$waited" -lt "$limit" ]; do
         PROBE="$(ap_probe "$dom")"
         # The journal keeps every change in what the guest was observed doing.
@@ -209,6 +247,10 @@ ap_wait_probe() {
         [ "$now" = "$seen" ] || { ap_log "$what — observed at ${waited}s (up $(ap_kv "$PROBE" uptime_s)s): $now"; seen="$now"; }
         "$fn" "$PROBE" && return 0
         ap_dom_running "$dom" || { WAIT_WHY=not-running; return 1; }
+        if [ -n "$term" ] && WAIT_DETAIL="$("$term" "$PROBE")"; then
+            WAIT_WHY=terminal; WAIT_WAITED="$waited"; return 1
+        fi
+        WAIT_DETAIL=""
         if ap_probe_confined "$PROBE"; then
             confined=$(( confined + poll ))
             [ "$confined" -lt "$AP_CONFINED_LIMIT" ] || { WAIT_WHY=confined; return 1; }
@@ -285,7 +327,10 @@ q() { for n in "$@"; do
 echo "pkg_gnome_shell=$(q gnome-shell)"
 echo "pkg_gdm=$(q gdm gdm3)"
 echo "pkg_qga=$(q qemu-guest-agent)"
-echo "autologin=$(sed -n "s/^AutomaticLogin=//p" /etc/gdm/custom.conf /etc/gdm3/custom.conf 2>/dev/null | head -1)"
+c="$(cat /var/lib/pliwee-g8/gdm-conf 2>/dev/null)"
+echo "gdm_conf=$c"
+echo "gdm_conf_read_by_gdm=$([ -n "$c" ] && grep -aqF "$c" /usr/libexec/gdm-session-worker 2>/dev/null && echo yes)"
+echo "autologin=$([ -n "$c" ] && grep -qx "AutomaticLoginEnable=True" "$c" 2>/dev/null && sed -n "s/^AutomaticLogin=//p" "$c" | head -1)"
 echo "no_lock=$(grep -qx "lock-enabled=false" /etc/dconf/db/local.d/00-pliwee-g8 2>/dev/null && echo yes)"
 echo "initial_setup_done=$(test -e /home/'"$AP_GUEST_USER"'/.config/gnome-initial-setup-done && echo yes)"
 echo "default_target=$(systemctl get-default 2>/dev/null)"
@@ -297,7 +342,8 @@ echo "marker=$(cat /var/lib/pliwee-g8/template-ready 2>/dev/null)"' 2>&1
 # guest the system must still be Enforcing: only the agent's domain was changed.
 ap_template_check_fn() {
     local c="$1" k
-    for k in pkg_gnome_shell pkg_gdm pkg_qga marker; do [ -n "$(ap_kv "$c" "$k")" ] || return 1; done
+    for k in pkg_gnome_shell pkg_gdm pkg_qga marker gdm_conf; do [ -n "$(ap_kv "$c" "$k")" ] || return 1; done
+    [ "$(ap_kv "$c" gdm_conf_read_by_gdm)" = yes ] || return 1
     [ "$(ap_kv "$c" autologin)" = "$AP_GUEST_USER" ] && [ "$(ap_kv "$c" no_lock)" = yes ] \
         && [ "$(ap_kv "$c" initial_setup_done)" = yes ] && [ "$(ap_kv "$c" default_target)" = graphical.target ] || return 1
     case "$(ap_kv "$c" selinux)" in
@@ -360,6 +406,7 @@ ap_template_fail() {
     ap_rec_set "template-$d" "state=failed" "failed_utc=$(ap_utc)" "failed_why=$(tr '\n' ' ' <<<"$why")" "failure_dir=$dir" \
         || ap_say WARN "cannot record the $d template's failure"
     ap_stop "TEMPLATE-$d — infrastructure preparation FAILED: $why (no gate was run or recorded)" \
+        "${AP_FAIL_DETAIL[@]}" \
         "last observed: $(ap_probe_summary "$PROBE")" \
         "diagnosis:     $dir/summary.txt" \
         "guest logs:    $dir/guest-logs.txt" \
@@ -410,8 +457,16 @@ ap_template_ensure() {
     PROBE=""
     ga_ping "$dom" "$AP_TEMPLATE_TIMEOUT" >/dev/null 2>&1 \
         || ap_template_fail "$d" "$dom" "QGA unavailable: the guest agent did not answer within ${AP_TEMPLATE_TIMEOUT}s of boot"
-    if ! ap_wait_probe "$dom" "$AP_TEMPLATE_TIMEOUT" "TEMPLATE-$d" ap_tmpl_ready_fn; then
+    if ! ap_wait_probe "$dom" "$AP_TEMPLATE_TIMEOUT" "TEMPLATE-$d" ap_tmpl_ready_fn ap_probe_terminal; then
         case "$WAIT_WHY" in
+            terminal)
+                AP_FAIL_DETAIL=(
+                    "cloud-init:      $(ap_kv "$PROBE" cloud_init)${PROBE:+ ($(ap_kv "$PROBE" ci_extended))}"
+                    "failing module:  $(ap_kv "$PROBE" ci_error)"
+                    "prepare:         $(ap_kv "$PROBE" prepare_stage)${PROBE:+; $(ap_kv "$PROBE" prepare_failed)}"
+                    "package manager: $([ "$(ap_kv "$PROBE" pkg_procs)" = 0 ] && echo inactive || echo "$(ap_kv "$PROBE" pkg_procs) process(es)")"
+                    "reason:          $(ap_kv "$PROBE" prepare_error)")
+                ap_template_fail "$d" "$dom" "reached a terminal error after ${WAIT_WAITED}s: $WAIT_DETAIL" ;;
             confined) ap_template_fail "$d" "$dom" "guest-exec stayed confined by SELinux for ${AP_CONFINED_LIMIT}s; the template's readiness cannot be observed" ;;
             not-running) ap_template_fail "$d" "$dom" "the guest stopped running during preparation" ;;
             *) ap_template_fail "$d" "$dom" "not ready after ${AP_TEMPLATE_TIMEOUT}s" ;;

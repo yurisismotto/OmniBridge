@@ -31,6 +31,16 @@
 #     graphical logind session for the user (lifecycle-gates.sh preconditions;
 #     it restarts the display manager after terminate-user because "there is no
 #     account password available to type into that greeter");
+#     Autologin is written AFTER the desktop is installed, into the file the
+#     installed GDM reads, and that file is checked against GDM's own
+#     session worker. The GDM config is a conffile of the gdm package. Writing
+#     it first (write_files, as until 2026-09-26) made dpkg stop at a conffile
+#     prompt with no terminal on Ubuntu ("end of file on stdin at conffile
+#     prompt"), so gdm3 and ubuntu-desktop-minimal were left unconfigured and
+#     the first real TEMPLATE-ubuntu2404 failed. Fedora's rpm marks it
+#     %config(noreplace) and never asked. Debian's GDM does not read custom.conf
+#     at all: its conffile, and the only file its binaries name, is
+#     /etc/gdm3/daemon.conf;
 #   * no automatic screen lock or blanking, and no first-login tour, so the
 #     one GUI step (selecting the peer in omnibridge-gui at U2) can be done;
 #   * the tools the harnesses call in the guest (upgrade-gates.sh U0: dnf/rpm or
@@ -46,6 +56,9 @@
 # ap_seed_userdata_template DISTRO HOSTNAME PASSWORD_HASH — the template's user-data.
 ap_seed_userdata_template() {
     local d="$1" host="$2" hash="$3" gdm pkgs desktop fw=""
+    # gdm: the configuration file THIS distribution's GDM reads (measured in
+    # its packaged gdm-session-worker, 2026-09-26: Fedora 44 /etc/gdm/custom.conf,
+    # Ubuntu 24.04 and 26.04 /etc/gdm3/custom.conf, Debian 13 /etc/gdm3/daemon.conf).
     case "$d" in
         fedora44)
             gdm=/etc/gdm/custom.conf
@@ -59,7 +72,7 @@ ap_seed_userdata_template() {
             desktop="DEBIAN_FRONTEND=noninteractive apt-get install -y ubuntu-desktop-minimal apt-utils iputils-ping"
             ;;
         debian13)
-            gdm=/etc/gdm3/custom.conf
+            gdm=/etc/gdm3/daemon.conf
             pkgs="qemu-guest-agent"
             desktop="DEBIAN_FRONTEND=noninteractive apt-get install -y gnome-core gdm3 apt-utils iputils-ping"
             ;;
@@ -83,13 +96,6 @@ package_update: true
 package_upgrade: false
 packages: [$pkgs]
 write_files:
-  - path: $gdm
-    permissions: "0644"
-    content: |
-      # pre-g8-autopilot: a graphical session for $AP_GUEST_USER at every boot
-      [daemon]
-      AutomaticLoginEnable=True
-      AutomaticLogin=$AP_GUEST_USER
   - path: /etc/dconf/profile/user
     permissions: "0644"
     content: |
@@ -108,11 +114,22 @@ write_files:
     content: |
       #!/bin/sh
       # pre-g8-autopilot template preparation. The marker is written last,
-      # and only if every step succeeded.
+      # and only if every step succeeded. A step that fails ends the script and
+      # says so, in the log and in /var/lib/pliwee-g8/template-failed: the
+      # autopilot reads that as final, not as "still preparing".
       set -eu
       exec >>/var/log/pliwee-g8-prepare.log 2>&1
+      stage=start
+      failed() {
+          rc=\$?
+          [ "\$rc" = 0 ] && return 0
+          echo "== \$(date -u) FAILED: exit \$rc at stage \$stage"
+          mkdir -p /var/lib/pliwee-g8
+          echo "exit=\$rc stage=\$stage" > /var/lib/pliwee-g8/template-failed
+      }
+      trap failed EXIT
       echo "== \$(date -u) start"
-      echo "== stage: agent"
+      stage=agent; echo "== stage: \$stage"
       qga="\$(command -v qemu-ga)"
       mkdir -p /etc/systemd/system/qemu-guest-agent.service.d
       printf '[Service]\\nExecStart=\\nExecStart=%s --method=virtio-serial --path=/dev/virtio-ports/org.qemu.guest_agent.0\\n' "\$qga" \\
@@ -120,16 +137,27 @@ write_files:
       systemctl daemon-reload
       systemctl restart qemu-guest-agent || systemctl start qemu-guest-agent
       if command -v selinuxenabled >/dev/null && selinuxenabled; then
-          echo "== stage: selinux"
+          stage=selinux; echo "== stage: \$stage"
           mkdir -p /var/lib/pliwee-g8
           echo '(typepermissive virt_qemu_ga_t)' > /var/lib/pliwee-g8/pliwee-g8-qga.cil
           semodule -i /var/lib/pliwee-g8/pliwee-g8-qga.cil
           semodule -l > /var/lib/pliwee-g8/semodules.txt
           grep -qx pliwee-g8-qga /var/lib/pliwee-g8/semodules.txt
       fi
-      echo "== stage: desktop"
+      stage=desktop; echo "== stage: \$stage"
       $desktop
-      echo "== stage: session"
+      stage=autologin; echo "== stage: \$stage"
+      # After the desktop: the file belongs to the gdm package (see above).
+      gdmconf=$gdm
+      grep -aqF "\$gdmconf" /usr/libexec/gdm-session-worker
+      [ -f "\$gdmconf" ] || printf '[daemon]\n' > "\$gdmconf"
+      grep -q '^\[daemon\]' "\$gdmconf" || printf '\n[daemon]\n' >> "\$gdmconf"
+      sed -i '/^AutomaticLogin\(Enable\)\?[[:space:]]*=/d' "\$gdmconf"
+      sed -i '/^\[daemon\]/a AutomaticLoginEnable=True\nAutomaticLogin=$AP_GUEST_USER' "\$gdmconf"
+      [ "\$(grep -c '^AutomaticLogin=$AP_GUEST_USER\$' "\$gdmconf")" = 1 ]
+      mkdir -p /var/lib/pliwee-g8
+      echo "\$gdmconf" > /var/lib/pliwee-g8/gdm-conf
+      stage=session; echo "== stage: \$stage"
       ${fw:-true}
       systemctl set-default graphical.target
       dconf update
@@ -143,7 +171,7 @@ write_files:
           systemctl stop "\$u" 2>/dev/null || true
           systemctl mask "\$u" 2>/dev/null || true
       done
-      echo "== stage: verify"
+      stage=verify; echo "== stage: \$stage"
       for t in systemctl sha256sum runuser journalctl loginctl ping; do command -v "\$t" >/dev/null; done
       if command -v dnf >/dev/null; then command -v rpm >/dev/null; command -v firewall-cmd >/dev/null
       else command -v apt-get >/dev/null; command -v dpkg >/dev/null; command -v apt-ftparchive >/dev/null; fi

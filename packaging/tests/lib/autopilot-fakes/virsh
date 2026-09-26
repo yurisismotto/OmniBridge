@@ -21,7 +21,21 @@ it did for real. Per-run knobs, each naming the domain it applies to:
   FAKE_STAY_CONFINED  the fix is in the seed but does not take effect;
   FAKE_AGENT_DEAD     the agent never answers;
   FAKE_NO_GNOME       the desktop is missing from the prepared template;
-  FAKE_PREPARE_NEVER  the prepare script never finishes (no marker).
+  FAKE_PREPARE_NEVER  the prepare script never finishes (no marker);
+  FAKE_SLOW_PREPARE   the first FAKE_SLOW_PROBES (default 3) probes see the
+                      preparation still running (a package transaction);
+  FAKE_CI_ERROR_RUNNING  …and during them cloud-init reports a recoverable
+                      error while still running ("error - running");
+  FAKE_CONFFILE_FAIL  the guest ends exactly as the real Ubuntu template did
+                      (below), whatever the seed.
+
+GDM, as the first real TEMPLATE-ubuntu2404 met it (2026-09-26): each
+distribution's GDM reads one file, which its gdm package ships as a conffile
+(GDM_READS). A Debian-family seed that writes that file BEFORE the desktop is
+installed (write_files) makes dpkg stop at a conffile prompt with no terminal:
+the prepare script exits 100 at stage desktop, cloud-init ends "error - done",
+and there is no marker. Fedora's rpm keeps the file (noreplace). Autologin, and
+so the graphical session, works only if it was written into GDM_READS.
 """
 import base64, json, os, random, re, shlex, shutil, sys, time
 
@@ -84,6 +98,11 @@ def knob(name, d): return d in os.environ.get(name, "").split(",")
 def confined(d, s):
     return distro_of(d) == "fedora44" and s.get("qga_permissive") != "yes"
 
+GDM_READS = {"fedora44": "/etc/gdm/custom.conf", "ubuntu2404": "/etc/gdm3/custom.conf",
+             "ubuntu2604": "/etc/gdm3/custom.conf", "debian13": "/etc/gdm3/daemon.conf"}
+RUNCMD_ERR = "('scripts_user', RuntimeError('Runparts: 1 failures (runcmd) in 1 attempted commands'))"
+DPKG_ERR = "dpkg: error processing package gdm3 (--configure):  end of file on stdin at conffile prompt "
+
 def cloud_init(d):
     disk, seed = disk_of(d), disk_of(d, "cdrom")
     s = gstate(disk)
@@ -95,6 +114,22 @@ def cloud_init(d):
             h = re.search(r"^hostname: (\S+)", text, re.M)
             if h: s["hostname"] = h.group(1)
             prep = "pliwee-g8-prepare" in text
+            dist = distro_of(d); reads = GDM_READS.get(dist, "")
+            pre_written = re.findall(r"^  - path: (\S+)", text, re.M)
+            m = re.search(r"^\s*gdmconf=(\S+)", text, re.M)
+            if prep:
+                s["gdm_conf"] = m.group(1) if m else ""
+                s["autologin_ok"] = "yes" if (reads and (s["gdm_conf"] == reads or reads in pre_written)) else ""
+            if prep and ((dist != "fedora44" and reads in pre_written) or knob("FAKE_CONFFILE_FAIL", d)):
+                # dpkg's conffile prompt, answered by EOF: the real failure.
+                s.update(cloud_init="error", ci_extended="error - done", ci_error=RUNCMD_ERR,
+                         prepare_error=DPKG_ERR, default_target="graphical.target", user_uid="1000")
+                if "trap failed EXIT" in text: s["prepare_failed"] = "exit=100 stage=desktop"
+                s["boots"] = s.get("boots", 0) + 1
+                if not s.get("machine_id"): s["machine_id"] = "%032x" % random.getrandbits(128)
+                s["instance_id"] = iid; gput(disk, s); return
+            if prep and knob("FAKE_SLOW_PREPARE", d):
+                s["slow_left"] = int(os.environ.get("FAKE_SLOW_PROBES", "3"))
             if prep and "(typepermissive virt_qemu_ga_t)" in text and "semodule -i" in text and not knob("FAKE_STAY_CONFINED", d):
                 s["qga_permissive"] = "yes"
             if prep and not os.path.exists(P("doms", d, "prepare-fails")) and not knob("FAKE_PREPARE_NEVER", d):
@@ -103,6 +138,7 @@ def cloud_init(d):
             t = re.search(r'/var/lib/pliwee-g8/identity\n.*?content: "([0-9a-f]+)"', text, re.S)
             if t: s["identity"] = t.group(1)
             s["cloud_init"] = "running" if knob("FAKE_PREPARE_NEVER", d) else "done"
+            s["ci_extended"] = s["cloud_init"]
     if not s.get("machine_id"):
         s["machine_id"] = "%032x" % random.getrandbits(128)
     s["boots"] = s.get("boots", 0) + 1
@@ -117,12 +153,23 @@ def guest(d, c):
         except ValueError: pass
     if "# ap-probe" in c:
         running = dstate(d) == "running"
-        sess = "wayland" if running and s.get("template_ready") == "yes" and not os.path.exists(P("doms", d, "no-session")) else ""
+        sess = "wayland" if running and s.get("template_ready") == "yes" and s.get("autologin_ok", "yes") == "yes" \
+            and not os.path.exists(P("doms", d, "no-session")) else ""
         sel = ["sel_context=system_u:system_r:virt_qemu_ga_t:s0", "sel_enforce=1"] if distro_of(d) == "fedora44" else \
               ["sel_context=", "sel_enforce="]
-        diag = sel + ["datasource=nocloud", "pkg_procs=0", "net_ipv4=192.168.68.200/22",
-                      "prepare_stage=stage: verify" if s.get("template_ready") == "yes" else "prepare_stage=stage: desktop",
-                      "uptime_s=%d" % (60 * s.get("boots", 1))]
+        slow = s.get("slow_left", 0) > 0
+        if slow:
+            s["slow_left"] -= 1; gput(disk, s)
+        diag = sel + ["datasource=nocloud", "pkg_procs=%d" % (2 if slow else 0), "net_ipv4=192.168.68.200/22",
+                      "prepare_stage=stage: verify" if s.get("template_ready") == "yes" and not slow else "prepare_stage=stage: desktop",
+                      "uptime_s=%d" % (60 * s.get("boots", 1)),
+                      "prepare_running=%d" % (1 if slow or (knob("FAKE_PREPARE_NEVER", d) and s.get("cloud_init") == "running") else 0),
+                      "prepare_failed=" + s.get("prepare_failed", ""), "prepare_error=" + s.get("prepare_error", "")]
+        ci, cie, cierr = s.get("cloud_init", "running"), s.get("ci_extended", s.get("cloud_init", "running")), s.get("ci_error", "")
+        if slow:
+            ci, cie = ("error", "error - running") if knob("FAKE_CI_ERROR_RUNNING", d) else ("running", "running")
+            cierr = "('apt_configure', 'a recoverable warning')" if knob("FAKE_CI_ERROR_RUNNING", d) else ""
+        diag += ["ci_extended=" + cie, "ci_error=" + cierr]
         if confined(d, s):
             # What the real probe printed under virt_qemu_ga_t: every read that
             # SELinux denied is an empty value.
@@ -133,14 +180,18 @@ def guest(d, c):
         out = "\n".join([
             "identity=" + s.get("identity", ""), "template_ready=" + s.get("template_ready", ""),
             "machine_id=" + s.get("machine_id", ""), "hostname=" + s.get("hostname", "localhost"),
-            "cloud_init=" + s.get("cloud_init", "running"), "user_uid=" + s.get("user_uid", ""),
+            "cloud_init=" + ci, "user_uid=" + s.get("user_uid", ""),
             "session_type=" + sess, "default_target=" + s.get("default_target", "multi-user.target"),
             "os=FakeOS " + d, "kernel=6.99.0-fake"] + diag) + "\n"
+        if slow:
+            out = out.replace("template_ready=yes", "template_ready=")
     elif "# ap-template-check" in c:
         fed = distro_of(d) == "fedora44"
         out = "\n".join([
             "pkg_gnome_shell=" + ("" if s.get("no_gnome") else "49.1-1"), "pkg_gdm=49.0-1", "pkg_qga=10.2.2-1",
-            "autologin=anyflow", "no_lock=yes", "initial_setup_done=yes",
+            "gdm_conf=" + s.get("gdm_conf", ""),
+            "gdm_conf_read_by_gdm=" + ("yes" if s.get("gdm_conf") and s.get("gdm_conf") == GDM_READS.get(distro_of(d)) else ""),
+            "autologin=" + ("anyflow" if s.get("autologin_ok") == "yes" else ""), "no_lock=yes", "initial_setup_done=yes",
             "default_target=" + s.get("default_target", ""), "selinux=" + ("Enforcing" if fed else ""),
             "qga_permissive=" + (s.get("qga_permissive", "") if fed else ""),
             "marker=2026-09-26T00:00:00Z" if s.get("template_ready") == "yes" else "marker="]) + "\n"
