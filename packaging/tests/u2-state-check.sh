@@ -6,10 +6,10 @@
 # phone: pair the PHYSICAL Android peer (U6 later measures "reconnects without
 # re-pairing" with this pairing, so fake_phone cannot stand in), grant
 # clipboard.v1 and files.v1, set a clipboard policy and a notification lock
-# policy, and select the peer in omnibridge-gui. pre-g8-manual-gates.sh
-# records that as five items. By default the operator answers them y/n; with
-# --u2-measured the coordinator runs this script and takes each item from the
-# line printed here for it:
+# policy, and put the legacy GUI's device choice in place as migration input
+# (u2-gui-fixture.sh). pre-g8-manual-gates.sh records that as five items. By
+# default the operator answers them y/n; with --u2-measured the coordinator
+# runs this script and takes each item from the line printed here for it:
 #
 #   U2-1  exactly ONE peer is paired, it reports platform android, and it is
 #         the device adb has attached under --adb-serial (its model is the
@@ -19,14 +19,22 @@
 #         for THAT peer carries --expect-clipboard (default send=on receive=on)
 #   U2-4  a notification lock policy is set for it: the daemon reports
 #         `when locked` --expect-when-locked (default full) for THAT peer
-#   U2-5  omnibridge-gui wrote gui.json, and its selected_peer is that peer's
-#         fingerprint: the 16 hex digits the daemon shows are the start of the
-#         64 the GUI stored. The GUI writes this file only when a person
-#         selects the peer; nothing here writes it
+#   U2-5  the legacy GUI selected-peer state exists in the published
+#         OmniBridge 1.0.0 format and selects the real paired peer
+#         (deterministic migration fixture, method=fixture): gui.json is a
+#         regular file, byte for byte the 1.0.0 serialization
+#         (lib/legacy-gui-state.sh) whose selected_peer is the FULL 64-hex
+#         fingerprint of the one trusted peer in the 1.0.0 trust store
+#         (state.json) — the same peer U2-1 found, by device id and short
+#         fingerprint. Malformed JSON, a foreign shape, an abbreviated or other
+#         fingerprint, another owner than the guest user, a file mode other
+#         than 0666 & ~session umask, a directory other than 0700, a moved
+#         XDG_CONFIG_HOME and an existing ~/.config/pliwee are each not ok.
+#         This says nothing about omnibridge-gui, which G7-UP does not certify
 #
 # IT CHANGES NOTHING. Guest reads go through qemu-guest-agent (the CLI's
-# status output and one `cat`); on the phone it asks adb only which device is
-# attached and its model. Every capture is required non-empty before anything
+# status output, and the bytes and metadata of state.json and gui.json); on
+# the phone it asks adb only which device is attached and its model. Every capture is required non-empty before anything
 # is concluded from it, and every observation is about the one peer U2-1
 # identified, by its device id.
 #
@@ -44,6 +52,8 @@ HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib/assert.sh"
 # shellcheck source=lib/cli-report.sh
 . "$HERE/lib/cli-report.sh"
+# shellcheck source=lib/legacy-gui-state.sh
+. "$HERE/lib/legacy-gui-state.sh"
 
 DOMAIN=""; DISTRO=""; ADB_SERIAL=""; EXPECT_CLIP="send=on receive=on"; EXPECT_LOCKED="full"
 GUEST_USER="${GUEST_USER:-anyflow}"; GUEST_UID="${GUEST_UID:-1000}"
@@ -72,7 +82,7 @@ gu() {
 
 
 section "Preconditions"
-need_tool virsh jq adb || abort "a host tool this check depends on is missing"
+need_tool virsh jq adb sha256sum base64 cmp || abort "a host tool this check depends on is missing"
 ga_ping "$DOMAIN" 300 || abort "the guest agent in '$DOMAIN' does not answer"
 ok "the guest agent in $DOMAIN answers"
 adb_list="$(adb devices 2>/dev/null | tr -d '\r')"
@@ -146,19 +156,45 @@ else
     else notok "U2-4: '$peer_name' shows 'when locked ${wl:-<none reported>}', not '$EXPECT_LOCKED'"; fi
 fi
 
-section "U2-5 — omnibridge-gui selected that peer (gui.json)"
-gj="$(ga_exec "$DOMAIN" "cat /home/$GUEST_USER/.config/omnibridge/gui.json" 2>/dev/null)"
-printf '%s\n' "$gj" | shown
-sel="$(sed -n 's/.*"selected_peer" *: *"\([0-9a-fA-F]*\)".*/\1/p' <<<"$gj" | head -1 | tr '[:upper:]' '[:lower:]')"
-want="$(tr -d ' ' <<<"$peer_fpr" | tr '[:upper:]' '[:lower:]')"
-if [ -z "$peer_id" ]; then
-    notok "U2-5: no single paired peer to compare the GUI's selection with"
-elif [ -z "${gj//[[:space:]]/}" ]; then
-    notok "U2-5: /home/$GUEST_USER/.config/omnibridge/gui.json does not exist or is empty: the peer was not selected in omnibridge-gui"
-elif [[ "$want" =~ ^[0-9a-f]{16}$ ]] && [[ "$sel" =~ ^[0-9a-f]{64}$ ]] && [ "${sel:0:16}" = "$want" ]; then
-    ok "U2-5: gui.json selects '$peer_name' (selected_peer ${sel:0:16}…, the daemon's $peer_fpr)"
+section "U2-5 — the legacy GUI selected-peer state: published 1.0.0 format, the real paired peer (migration fixture)"
+H="/home/$GUEST_USER"; GDIR="$H/.config/omnibridge"; GUI="$GDIR/gui.json"
+TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+u25() { # the first rule U2-5 breaks, in LGS_WHY; FPR is set once the store is read
+    FPR=""
+    [ -n "$peer_id" ] || { LGS_WHY="no single paired peer to compare the selection with"; return 1; }
+    lgs_guest_fetch "$DOMAIN" "$H/.local/share/omnibridge/state.json" "$TMP/state.json" || return 1
+    local id
+    lgs_one_trusted "$TMP/state.json" || return 1
+    IFS=$'\t' read -r FPR id _ <<<"$LGS_PEER"
+    [ "$id" = "$peer_id" ] && [ "$(lgs_short "$FPR")" = "$peer_fpr" ] \
+        || { LGS_WHY="the trust store's trusted peer ($id, $(lgs_short "$FPR")) is not the daemon's ($peer_id, $peer_fpr)"; return 1; }
+    lgs_config_home_default "$DOMAIN" "$GUEST_USER" "$GUEST_UID" || return 1
+    [ "$(lgs_guest_stat "$DOMAIN" "$H/.config/pliwee")" = absent ] \
+        || { LGS_WHY="$H/.config/pliwee exists before the upgrade: it would shadow the migration"; return 1; }
+    local st typ uid gid mode umask gid_want dmode
+    st="$(lgs_guest_stat "$DOMAIN" "$GUI")"
+    [ -n "$st" ] || { LGS_WHY="could not stat $GUI"; return 1; }
+    [ "$st" != absent ] || { LGS_WHY="$GUI does not exist: the migration input is missing (u2-gui-fixture.sh puts it in place)"; return 1; }
+    IFS='|' read -r typ uid gid mode _ <<<"$st"
+    [ "$typ" = "regular file" ] || { LGS_WHY="$GUI is a $typ, not a regular file"; return 1; }
+    lgs_guest_fetch "$DOMAIN" "$GUI" "$TMP/gui.json" || return 1
+    # awk, not sed: a file with no final newline must not glue the verdict
+    # line below onto the quoted capture, where no `^not ok` would find it.
+    awk '{ print "    | " $0 }' "$TMP/gui.json"
+    lgs_check_gui "$TMP/gui.json" "$FPR" || return 1
+    gid_want="$(ga_exec "$DOMAIN" "id -g $GUEST_USER" 2>/dev/null | tr -d '[:space:]')"
+    [ "$uid:$gid" = "$GUEST_UID:$gid_want" ] || { LGS_WHY="$GUI is owned $uid:$gid, not $GUEST_UID:${gid_want:-?} ($GUEST_USER)"; return 1; }
+    lgs_session_umask "$DOMAIN" "$GUEST_UID" || return 1; umask="$LGS_UMASK"
+    [ "$mode" = "$(lgs_file_mode "$umask")" ] \
+        || { LGS_WHY="$GUI has mode $mode; the 1.0.0 GUI creates it $(lgs_file_mode "$umask") under the session umask $umask"; return 1; }
+    dmode="$(lgs_guest_stat "$DOMAIN" "$GDIR" | cut -d'|' -f4)"
+    [ "$dmode" = "$LGS_GUI_DIR_MODE" ] || { LGS_WHY="$GDIR has mode ${dmode:-?}, not $LGS_GUI_DIR_MODE"; return 1; }
+    U25_DETAIL="sha256 $(sha256sum < "$TMP/gui.json" | cut -d' ' -f1), $uid:$gid, mode $mode, directory $dmode"
+}
+if u25; then
+    ok "U2-5: the legacy GUI selected-peer state exists in the published OmniBridge 1.0.0 format and selects the real paired peer '$peer_name' ($FPR; $U25_DETAIL) — method=fixture, deterministic migration input; omnibridge-gui not exercised"
 else
-    notok "U2-5: gui.json selects '${sel:-nothing}', not '$peer_name' ($peer_fpr)"
+    notok "U2-5: $LGS_WHY"
 fi
 
 printf '\n%s\n' "-----------------------------------------------"

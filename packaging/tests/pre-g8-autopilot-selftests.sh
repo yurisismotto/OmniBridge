@@ -100,6 +100,19 @@ case "$(cat "$STUB/mode/lifecycle-$D" 2>/dev/null)" in
 esac
 echo "ok    L1: clean install"
 EOF
+# The legacy gui.json fixture: its own behaviour is proved against a real
+# script run on a local-exec guest (g7up-gui-migration-selftests.sh, below);
+# here, only that the autopilot runs it, when, and what it does on a refusal.
+cat > "$STUB/u2-gui-fixture.sh" <<'EOF'
+#!/usr/bin/env bash
+STUB="$(dirname "$0")"; echo "u2-gui-fixture $*" >> "$STUB/calls"
+while [ $# -gt 0 ]; do case "$1" in --distro) D="$2"; shift 2 ;; --record) REC="$2"; shift 2 ;; *) shift ;; esac; done
+if [ "$(cat "$STUB/mode/gui-fixture-$D" 2>/dev/null)" = fail ]; then
+    printf 'not ok  /home/anyflow/.config/omnibridge/gui.json: gui.json selects ab12, an ABBREVIATED fingerprint\n\nREFUSED: nothing was written in the guest.\n'; exit 1
+fi
+printf 'method=fixture\nomnibridge_gui_exercised=no\n' > "$REC"
+echo "FIXTURE created method=fixture selected_peer=$(printf 'ab%.0s' {1..32}) sha256=$(printf '0%.0s' {1..64}) (record $REC)"
+EOF
 cat > "$STUB/u2-state-check.sh" <<'EOF'
 #!/usr/bin/env bash
 STUB="$(dirname "$0")"; echo "u2-state-check $*" >> "$STUB/calls"
@@ -418,6 +431,8 @@ check "--plan lists the 32 autopilot gates, U8/lifecycle first" \
     test "$(grep -cE '^ *[0-9]+\. \[(AUTO|WAIT|DONE)\]' <<<"$OUT")" = 32 -a -n "$(grep -E '^ 1\. \[AUTO\] G7UP-fedora44-U8' <<<"$OUT")"
 check "…U2 and U6 marked as needing the operator, and nothing else" \
     test "$(grep -c '\[WAIT\]' <<<"$OUT")" = 8
+check "…U2's one human step is the QR scan: nobody is asked to select or click in OmniBridge" \
+    test -n "$(grep -F '[WAIT] G7UP-fedora44-U2 — you: scan the pairing QR with the tablet' <<<"$OUT")" -a -z "$(grep -iE "OmniBridge's window|select the tablet|click" <<<"$OUT")"
 check "…with what must be built first" contains "$OUT" "first: image+template(fedora44) pliwee-build(fedora44) guest(pliwee-g8-f44-u8)"
 check "…and W2/W6 listed as manual, never run by it" contains_re "$OUT" '^ +W2-GNOME +FAIL$'
 check "--plan created no guest and downloaded nothing" test -z "$(vcalls | grep -vE '^(uri|pool-info)')" -a ! -s "$WEB.calls"
@@ -525,6 +540,17 @@ check "…and it is still there, untouched" test -e "$SC/libvirt/doms/pliwee-g8-
 section "Resume: U2 (measured), the upgrade, and a U6 FAIL that stops everything"
 # ---------------------------------------------------------------------------
 SC="$WORK/sc-main"; cp "$SC.saved.calls" "$STUB/calls"
+# First, a legacy gui.json that must not be written over: U2 stops, records
+# nothing, and measures nothing.
+echo fail > "$STUB/mode/gui-fixture-fedora44"
+apx "$(enters 6)"
+check "a refused legacy gui.json fixture: STOP (exit 3), resumable" test "$RC" -eq 3
+check "…naming the refusal, and saying nothing was written over" \
+    test -n "$(grep -F 'the legacy gui.json for G7UP-fedora44-U2 was not put in place (u2-gui-fixture.sh exit 1)' <<<"$OUT")" \
+         -a -n "$(grep -F 'an ABBREVIATED fingerprint' <<<"$OUT")" -a -n "$(grep -F 'Nothing was written over; nothing was recorded.' <<<"$OUT")"
+check "…U2 was neither measured nor recorded" \
+    test ! -e "$SC/ev/state/G7UP-fedora44-U2" -a "$(nlines '^u2-state-check' "$STUB/calls")" = 0
+restore_scenario; rm -f "$STUB/mode/gui-fixture-fedora44"
 echo fail > "$STUB/mode/peer-u6-fedora44"
 apx "$(enters 6)"
 check "the resume ran U2 for all four and the fedora44 upgrade, then stopped on the U6 FAIL (exit 1)" \
@@ -532,8 +558,17 @@ check "the resume ran U2 for all four and the fedora44 upgrade, then stopped on 
 check "U2 was paired through the product (omnibridge pair) and the QR shown" \
     test -n "$(grep 'omnibridge1:' "$SC/ev/autopilot/runs"/*/U2-fedora44-pair-qr.png 2>/dev/null)"
 check "U2 grants and policies went through the 1.0.0 CLI" \
-    test -z "$(grep -c '^\$ omnibridge ' "$SC/ev/autopilot/runs"/*/U2-fedora44-cli.txt | grep -v ':5$')"
+    test -z "$(grep -Hc '^\$ omnibridge ' "$SC/ev/autopilot/runs"/*/U2-fedora44-cli.txt | grep -v ':5$')"
 check "U2 was recorded by the coordinator as MEASURED" contains "$(cat "$SC/ev/state/G7UP-fedora44-U2")" "method=measured"
+check "U2's legacy gui.json was put in place by u2-gui-fixture.sh, once per distribution" \
+    test "$(grep -cE '^u2-gui-fixture --domain pliwee-g8-(f44|u2404|u2604|d13)-chain --distro [a-z0-9]+ --record .*/U2-[a-z0-9]+-gui-fixture\.record$' "$STUB/calls")" = 4
+check "…before U2 was measured" \
+    test "$(line_of '^u2-gui-fixture --domain pliwee-g8-f44-chain' "$STUB/calls")" -lt "$(line_of '^u2-state-check --domain pliwee-g8-f44-chain' "$STUB/calls")"
+check "…and reported as method=fixture, not as a GUI result" \
+    test -n "$(grep -F '[PASS] G7UP-fedora44-U2 — created method=fixture selected_peer=' <<<"$OUT")" -a -n "$(grep -F '(omnibridge-gui not used)' <<<"$OUT")"
+check "U2 never launched omnibridge-gui in a guest, nor virt-viewer on this host" \
+    test -z "$(grep -F 'omnibridge-gui' "$SC/libvirt/guest-commands")" -a -z "$(grep -F virt-viewer "$WORK/gui-launches" 2>/dev/null)"
+check "…and no operator step asked for a selection or a click" test -z "$(grep -iE 'select the tablet|click' <<<"$OUT")"
 check "U2 was measured before the coordinator recorded it (the autopilot's pre-check), then by the coordinator" \
     test "$(grep -c '^u2-state-check --domain pliwee-g8-f44-chain' "$STUB/calls")" = 2
 check "the upgrade stage ran on a guest snapshotted ap-pre-upgrade first" \
@@ -892,7 +927,7 @@ check "Ubuntu 26.04: the same fix (custom.conf written after the desktop), ready
 # ---------------------------------------------------------------------------
 section "Nothing in the autopilot touches signing, releases, history or the phone's data"
 # ---------------------------------------------------------------------------
-SRC=("$AP" "$HERE"/lib/autopilot-*.sh "$HERE"/vm/*.sh "$HERE/u2-state-check.sh")
+SRC=("$AP" "$HERE"/lib/autopilot-*.sh "$HERE"/vm/*.sh "$HERE/u2-state-check.sh" "$HERE/u2-gui-fixture.sh")
 forbid() { # PATTERN — no code line (comments and quoted messages aside) matches
     local hits
     hits="$(grep -nE -e "$1" "${SRC[@]}" | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' | grep -vE -e "\"[^\"]*($1)[^\"]*\"")"
@@ -903,6 +938,14 @@ check "no --run of a W2/W6 gate, and no --next (which would pick W2-KDE)" forbid
 check "no release publication, repository creation, push or merge" forbid 'gh (release|repo)|git (push|merge|commit|rebase)'
 check "no sudo and no host reboot, as a command" forbid '^[[:space:]]*(sudo|reboot|shutdown|systemctl reboot)( |$)'
 check "no install, uninstall or data wipe on the phone" forbid 'adb[^|]* (install|uninstall)|pm clear'
+
+# ---------------------------------------------------------------------------
+section "The real U2 fixture -> UPGRADE O2, on a local-exec guest (g7up-gui-migration-selftests.sh)"
+# ---------------------------------------------------------------------------
+gm="$(bash "$HERE/g7up-gui-migration-selftests.sh" 2>&1)"; gmrc=$?
+check "u2-gui-fixture.sh, u2-state-check.sh U2-5 and the upgrade stage's O1/O2: $(tail -n 1 <<<"$gm")" \
+    test "$gmrc" -eq 0 -a -n "$(grep -E '^[0-9]+ passed, 0 failed$' <<<"$gm")" -a -z "$(grep '^not ok' <<<"$gm")"
+[ "$gmrc" -eq 0 ] || grep '^not ok' <<<"$gm" | sed 's/^/        /'
 
 # ---------------------------------------------------------------------------
 section "Records across every scenario, and the real evidence"

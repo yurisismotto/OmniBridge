@@ -1167,6 +1167,69 @@ else
     fail "H4: packaging/tests/pre-g8-manual-gates.sh is missing or not executable"
 fi
 
+# ---------------------------------------------------------------------------
+# H5 — G7-UP certifies Pliwee migrating FROM 1.0.0, not the retired 1.0.0 GUI
+# ---------------------------------------------------------------------------
+# U2 used to open omnibridge-gui in the guest, open the guest's screen here
+# with virt-viewer, and wait for an operator to click the peer, recording the
+# result as a GUI selection. That certified nothing about Pliwee. The legacy
+# gui.json is now migration input built in the published 1.0.0 format
+# (u2-gui-fixture.sh, method=fixture), and O2 measures pliwee-gui's own
+# migration of it. This pins both halves so neither can quietly come back.
+printf '\n== H5: the legacy GUI is migration input, and the migration is measured ==\n'
+# The harnesses and their libraries; not this file, and not the self-tests,
+# which name these patterns precisely to assert that they are absent.
+h5=()
+for f in "$ROOT"/packaging/tests/*.sh "$ROOT"/packaging/tests/lib/*.sh; do
+    case "$f" in */packaging-checks.sh|*-selftests.sh) continue ;; esac
+    h5+=("$f")
+done
+[ "${#h5[@]}" -ge 15 ] || fail "H5: only ${#h5[@]} harness files to scan; the scan would prove nothing"
+h5_code() { # PATTERN — matching lines that are not comments
+    grep -nE -- "$1" "${h5[@]}" 2>/dev/null | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true
+}
+hits="$(h5_code 'setsid[^|]*omnibridge-gui|omnibridge-gui[^|]*--page|virt-viewer|exec omnibridge-gui')"
+[ -z "$hits" ] && pass "H5: no harness launches omnibridge-gui or opens a guest's screen with virt-viewer" \
+    || fail "H5: the retired GUI is still driven: $(sed "s|^$ROOT/||" <<<"$hits" | head -3 | tr '\n' ' ')"
+hits="$(h5_code "(open|opened|start|launch)[^\"]* omnibridge-gui|select(ed)? (the (peer|tablet|device)|\\\$name) in|[Cc]lick \\\$name|OmniBridge's window")"
+[ -z "$hits" ] && pass "H5: no operator instruction asks to open omnibridge-gui or to select/click a peer in it" \
+    || fail "H5: an instruction still sends the operator to the old GUI: $(sed "s|^$ROOT/||" <<<"$hits" | head -3 | tr '\n' ' ')"
+hits="$(h5_code 'omnibridge-gui was opened|GUI selection|GUI PASS|old GUI (tested|certified)|selected in omnibridge-gui')"
+[ -z "$hits" ] && pass "H5: no G7-UP code or record text claims the old GUI was tested" \
+    || fail "H5: G7-UP text still claims a GUI result: $(sed "s|^$ROOT/||" <<<"$hits" | head -3 | tr '\n' ' ')"
+fx="$ROOT/packaging/tests/u2-gui-fixture.sh"; lg="$ROOT/packaging/tests/lib/legacy-gui-state.sh"
+if [ -x "$fx" ] && grep -qF 'echo "method=fixture"' "$fx" && grep -qF 'echo "omnibridge_gui_exercised=no"' "$fx" \
+        && grep -qF 'set -C' "$fx" && grep -qF 'runuser -u $GUEST_USER -- sh -c' "$fx" && grep -qF 'lgs_one_trusted "$TMP/state.json"' "$fx"; then
+    pass "H5: the fixture records method=fixture, reads the peer from state.json, writes as the user and never over a file"
+else
+    fail "H5: u2-gui-fixture.sh lost method=fixture, the state.json source, the user write or noclobber"
+fi
+grep -qF '"legacy GUI selected-peer state exists in the published OmniBridge 1.0.0 format and selects the real paired peer (deterministic migration fixture)"' "$co" \
+    && pass "H5: the coordinator's U2 item says what is measured: the 1.0.0-format migration fixture" \
+    || fail "H5: the coordinator's fifth U2 item is not the migration-fixture wording"
+h5_bad=0
+for a in 'O1_GUI="$EVIDENCE/O1-gui.txt"; O1_GUI_BYTES="$EVIDENCE/O1-legacy-gui.json"' \
+         'need_exact_count "O2: migration lines from the first pliwee-gui start" "$n_mig" 1' \
+         'need_exact_count "O2: migration lines from the second pliwee-gui start" "$n_mig" 0' \
+         'cmp -s "$EVIDENCE/O2-pliwee-gui.json" "$O1_GUI_BYTES"' \
+         '[ "$c_sha" = "$o1sha" ]' \
+         'lgs_check_gui "$EVIDENCE/O2-pliwee-gui.json" "$o1fpr"' \
+         '[ "$c_mode" = "$LGS_PLIWEE_FILE_MODE" ] && [ "$c_dmode" = "$LGS_PLIWEE_DIR_MODE" ]' \
+         '[ "$leg1" = "$o1sha"$'"'"'\t'"'"'"$legacy_o1" ]' \
+         '[ "$canon_after" != absent ] && [ "$canon_after" = "$canon_before" ]' \
+         'exec pliwee-gui'; do
+    grep -qF -- "$a" "$ug" || { fail "H5: the upgrade stage lost the GUI-migration assertion: $a"; h5_bad=$((h5_bad + 1)); }
+done
+[ "$h5_bad" -eq 0 ] && pass "H5: O2 starts pliwee-gui and compares its gui.json with the O1 bytes, digest, fingerprint and modes, twice"
+lm="$ROOT/desktop/platform-linux/src/legacy_migration.rs"; sel="$ROOT/desktop/gui/src/selection.rs"
+if grep -qF 'pliwee_linux::migrate_config_file(&files)?' "$sel" && grep -qF 'const DIR_MODE: u32 = 0o700;' "$lm" \
+        && grep -qF 'const FILE_MODE: u32 = 0o600;' "$lm" && grep -qF 'LGS_PLIWEE_DIR_MODE=700' "$lg" && grep -qF 'LGS_PLIWEE_FILE_MODE=600' "$lg" \
+        && grep -qF 'fn a_published_1_0_0_choice_migrates_byte_for_byte' "$sel"; then
+    pass "H5: Selection::load still owns the migration (0700/0600), the harness expects the same modes, and the Rust test pins the 1.0.0 bytes"
+else
+    fail "H5: the gui.json migration contract and what the harness measures have drifted apart"
+fi
+
 printf '\n%s\n' "-----------------------------------------------"
 printf '%d passed, %d failed\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

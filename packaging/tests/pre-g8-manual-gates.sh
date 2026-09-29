@@ -76,7 +76,8 @@
 #                              EVIDENCE/state/history/, never overwritten
 #     --u2-measured            G7UP-D-U2's five items are MEASURED by
 #                              u2-state-check.sh (guest trust store, grants,
-#                              policies, gui.json, the adb-attached device)
+#                              policies, the legacy gui.json migration
+#                              fixture, the adb-attached device)
 #                              instead of answered y/n. Each item is PASS only
 #                              where its `ok` line was observed
 #
@@ -222,7 +223,7 @@ describe() {
         W6-COMPONENT-UPGRADE) echo "Wave 6 Pliwee N -> N+1: listener grant, QS tile, pinned shortcut survive (device)" ;;
         W6-INSTRUMENTED) echo "Wave 6 :app:connectedDebugAndroidTest on the designated device" ;;
         G7UP-*-INSTALL) echo "G7-UP U0 U1 U2(auto): OmniBridge 1.0.0 installed on $(gate_distro "$1")" ;;
-        G7UP-*-U2) echo "G7-UP U2 (operator): the physical phone paired, grants, policies, GUI selection" ;;
+        G7UP-*-U2) echo "G7-UP U2 (operator): the physical phone paired, grants, policies, legacy gui.json fixture" ;;
         G7UP-*-UPGRADE) echo "G7-UP O1 U3 U4 O2 U5 U7 U9, stop on Pliwee (checkpoint)" ;;
         G7UP-*-U6) echo "G7-UP U6: lifecycle-peer-gates.sh against the upgraded guest" ;;
         G7UP-*-SECLOG) echo "security-log-evidence.sh on the upgraded guest, before U10" ;;
@@ -913,7 +914,7 @@ gate_instrumented() {
 U2_ITEMS=("exactly ONE peer is paired with the guest, and it is the physical Android device used for U6 (not fake_phone)"
           "clipboard.v1 and files.v1 are granted to it"
           "a clipboard policy is set for it" "a notification lock policy is set for it"
-          "omnibridge-gui was opened and the peer selected (gui.json written)")
+          "legacy GUI selected-peer state exists in the published OmniBridge 1.0.0 format and selects the real paired peer (deterministic migration fixture)")
 
 # gate_u2_measured GATE DISTRO DOMAIN CHAIN_DIR — U2 from observation. It
 # changes nothing: the owning script only reads the guest's trust store,
@@ -995,7 +996,8 @@ gate_g7up() {
             one_vm "$dom"
             confirm_guest "$dom" yes "$ug --stage upgrade --domain $dom --distro $d --evidence $ev --new-pkgdir $new --old-pkgdir $old" \
                 "upgrades guest $dom to Pliwee with the distribution's own command, ends the user's session" \
-                "once, restarts pliweed, and STOPS with the guest on Pliwee (no downgrade)"
+                "once, restarts the display manager for one graphical autologin, starts pliwee-gui twice" \
+                "(its gui.json migration) and stops it, restarts pliweed, and STOPS with the guest on Pliwee (no downgrade)"
             run_logged "$g" "$ug" --stage upgrade --domain "$dom" --distro "$d" --evidence "$ev" --new-pkgdir "$new" --old-pkgdir "$old"
             [ "$RC" = 0 ] && ! g7up_verify_checkpoint "$ev" "$d" "$dom" >/dev/null 2>&1 && RC=97
             finish_gate "$g" '^ok    Checkpoint: UPGRADE-CHECKPOINT written for run ' ;;

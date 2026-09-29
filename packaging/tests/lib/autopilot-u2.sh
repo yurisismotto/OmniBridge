@@ -1,30 +1,33 @@
 #!/usr/bin/env bash
 # autopilot-u2.sh — the steps a person is still needed for, reduced to what a
 # person actually has to do, and checked afterwards: the one-time grant, the
-# U2 pairing and GUI selection, and the phone before U6 and the security-log gate.
+# U2 pairing, and the phone before U6 and the security-log gate.
 #
 # WHAT IS AUTOMATED IN U2, AND WHY IT STILL MEANS U2
 # ---------------------------------------------------
 # U2 (upgrade-gates.sh --stage install, "the half that needs the other device")
 # is: pair the PHYSICAL phone with the OmniBridge 1.0.0 guest, grant
 # clipboard.v1 and files.v1, set a clipboard policy and a notification lock
-# policy, and select the peer in omnibridge-gui. The autopilot does, through
-# the product's own interfaces, the parts that have one:
+# policy, and have the legacy GUI's device choice (gui.json) in the state the
+# upgrade migrates. The autopilot does, through the product's own interfaces,
+# the parts that have one:
 #   * `omnibridge pair` in the guest (answering its prompt once, bounded, as
 #     lifecycle-peer-gates.sh does), the QR on this screen, and the tablet's
 #     Pliwee scanner opened by a tap found in its live view hierarchy. The
 #     QR is scanned by the operator: pairing is by camera, and the app has no
-#     other path (lifecycle-peer-gates.sh);
+#     other path (lifecycle-peer-gates.sh). The pairing stays REAL;
 #   * `omnibridge grant`, `omnibridge clipboard allow … send|receive on` and
 #     `omnibridge notifications when-locked … full` — the CLI commands the
 #     install stage itself tells the operator to type;
-#   * omnibridge-gui opened on its Devices page in the guest's session, and the
-#     guest's screen opened here. The SELECTION is the operator's click:
-#     gui.json is written only by the GUI (desktop/gui/src/selection.rs) and
-#     nothing here writes it.
-# Pressing ENTER proves nothing. After it, u2-state-check.sh measures all five
+#   * the legacy gui.json, by u2-gui-fixture.sh: the published 1.0.0 on-disk
+#     format, selecting the FULL fingerprint of the peer the real 1.0.0 trust
+#     store holds, written as the guest user and never over an existing file.
+#     It is migration INPUT (method=fixture). G7-UP certifies Pliwee migrating
+#     from a valid 1.0.0 state, not the retired omnibridge-gui, so that GUI is
+#     not opened and nobody is asked to click in it.
+# Nothing is typed as evidence. u2-state-check.sh then measures all five
 # items; only when every one holds does the coordinator run G7UP-D-U2 — with
-# --u2-measured, so the record is what was observed, not what was typed.
+# --u2-measured, so the record is what was observed.
 
 # shellcheck disable=SC2034
 
@@ -50,13 +53,17 @@ asking again until $1:
              'g7idle' and (Fedora) the omnibridge firewalld service in zone 'work';
   * U2       in the chain guest: 'omnibridge pair', 'omnibridge grant' of
              clipboard.v1 and files.v1, 'clipboard allow send on' / 'receive on'
-             and 'notifications when-locked $AP_U2_WHEN_LOCKED' for the paired tablet, and opens
-             omnibridge-gui; on the tablet: opens the Pliwee pairing scanner
-             (start the app, one tap). YOU scan the QR and select the tablet in
-             the GUI; both are then measured;
+             and 'notifications when-locked $AP_U2_WHEN_LOCKED' for the paired tablet, and
+             (u2-gui-fixture.sh, as the guest user) the legacy
+             ~/.config/omnibridge/gui.json in the published 1.0.0 format naming
+             that tablet — never over an existing file; on the tablet: opens the
+             Pliwee pairing scanner (start the app, one tap). YOU scan the QR;
+             everything is then measured;
   * UPGRADE  upgrade-gates.sh --stage upgrade: upgrades the chain guest to
-             Pliwee, ends the user's session once, restarts pliweed, and stops
-             with the guest on Pliwee (no downgrade);
+             Pliwee, ends the user's session once, restarts pliweed, restarts
+             the display manager for one graphical autologin, starts pliwee-gui
+             twice (its gui.json migration, then its idempotence) and stops it
+             each time, and stops with the guest on Pliwee (no downgrade);
   * U6       upgrade-gates.sh --stage peer-u6 (lifecycle-peer-gates.sh) against
              the UPGRADED guest: drives the Pliwee app on the tablet over adb
              (force-stop, taps, grants, notification-source choice, the fixture)
@@ -196,6 +203,13 @@ ap_u2_pair() {
     while :; do
         n="$(ap_u2_npaired "$dom")"
         [ "$n" = 0 ] || break
+        # Scanning the QR is a person's step; --no-wait stops before it rather
+        # than showing a code nobody is there to scan.
+        if ! ap_have_tty || [ "${AP_NO_WAIT:-0}" = 1 ]; then
+            ap_finish WAIT "G7UP-$d-U2 — physical Android pairing required" \
+                "Guest:   $d ($dom), OmniBridge 1.0.0 installed; no peer is paired yet." \
+                "Run pre-g8-autopilot.sh --resume at a terminal, with the tablet ($AP_PHONE_MODEL) at hand, to scan the pairing QR."
+        fi
         ap_phone_ready "pairing"
         ap_gu "$dom" "printf 'y\\n' | nohup omnibridge pair --ttl $AP_U2_TTL > /tmp/g8-pair.txt 2>&1 &" >/dev/null 2>&1
         sleep "${AP_UI_SLEEP:-6}"
@@ -228,9 +242,10 @@ ap_u2_pair() {
 }
 
 # ap_u2_assist D DOM — bring the chain guest to U2 and verify it. Returns when
-# u2-state-check.sh observes all five items.
+# u2-state-check.sh observes all five items; stops (resumable, nothing
+# recorded) when it does not.
 ap_u2_assist() {
-    local d="$1" dom="$2" peer id name plat fpr out gj notok
+    local d="$1" dom="$2" peer id name plat fpr out notok rc
     ap_phone_detect
     ap_u2_pair "$d" "$dom"
     peer="$(ap_u2_peer "$dom")" || ap_stop "cannot read the one paired peer in $dom"
@@ -248,28 +263,22 @@ ap_u2_assist() {
     } > "$out"
     grep -q '^(exit [1-9]' "$out" && ap_stop "a U2 CLI step failed in $dom" "See $out."
     ap_say PASS "G7UP-$d-U2 — clipboard.v1 and files.v1 granted, clipboard and lock policies set (CLI; $out)"
-    while :; do
-        gj="$(ga_exec "$dom" "cat /home/$AP_GUEST_USER/.config/omnibridge/gui.json" 2>/dev/null)"
-        if ! grep -qi "\"selected_peer\" *: *\"$(tr -d ' ' <<<"$fpr" | tr '[:upper:]' '[:lower:]')" <<<"${gj,,}"; then
-            ga_exec "$dom" "runuser -u $AP_GUEST_USER -- env XDG_RUNTIME_DIR=/run/user/$AP_GUEST_UID DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$AP_GUEST_UID/bus WAYLAND_DISPLAY=wayland-0 DISPLAY=:0 setsid -f omnibridge-gui --page=peers >/dev/null 2>&1" >/dev/null 2>&1 || true
-            [ "${AP_SELFTEST:-0}" = 1 ] || { ( setsid virt-viewer -c "$AP_CONNECT" --attach "$dom" >/dev/null 2>&1 & ) || true; }
-            ap_wait_person "select the tablet in OmniBridge (G7UP-$d-U2)" \
-                "Guest:   $d ($dom) — its screen is open on this host (virt-viewer)" \
-                "Device:  $AP_PHONE_MODEL / $AP_PHONE_SERIAL, fingerprint $fpr" "" \
-                "In the guest, OmniBridge is open on its Devices page (if not, open 'OmniBridge'" \
-                "from its applications). Click $name so it is the selected device." \
-                "This writes the GUI's own gui.json; the autopilot never writes it."
-        fi
-        out="$AP_RUN/U2-$d-precheck.$(ap_stamp).log"
-        "$GATES_DIR/u2-state-check.sh" --domain "$dom" --distro "$d" --adb-serial "$AP_PHONE_SERIAL" \
-            --expect-clipboard "send=$AP_U2_CLIP_SEND receive=$AP_U2_CLIP_RECEIVE" \
-            --expect-when-locked "$AP_U2_WHEN_LOCKED" > "$out" 2>&1 && return 0
-        notok="$(grep -E '^(not ok|PRECONDITION FAILED)' "$out")"
-        ap_say INFO "G7UP-$d-U2 — not all five U2 items are observed yet (nothing recorded):"
-        ap_detail "${notok:-see $out}"
-        ap_wait_person "U2 is not complete yet (G7UP-$d-U2)" "What is still missing:" "$notok" "" \
-            "Fix it in the guest, then press ENTER to measure again."
-    done
+    # The legacy GUI's device choice, as migration input. Refused (and left
+    # alone) when a gui.json exists that is not the 1.0.0 file for this peer.
+    out="$AP_RUN/U2-$d-gui-fixture.txt"
+    GUEST_USER="$AP_GUEST_USER" GUEST_UID="$AP_GUEST_UID" "$GATES_DIR/u2-gui-fixture.sh" --domain "$dom" --distro "$d" --record "$AP_RUN/U2-$d-gui-fixture.record" > "$out" 2>&1; rc=$?
+    [ "$rc" = 0 ] || ap_stop "the legacy gui.json for G7UP-$d-U2 was not put in place (u2-gui-fixture.sh exit $rc)" \
+        "$(grep -E '^(not ok|PRECONDITION FAILED)' "$out")" \
+        "Nothing was written over; nothing was recorded. See $out."
+    ap_say PASS "G7UP-$d-U2 — $(sed -n 's/^FIXTURE //p' "$out" | cut -d'(' -f1)(omnibridge-gui not used)"
+    ap_detail "record: $AP_RUN/U2-$d-gui-fixture.record"
+    out="$AP_RUN/U2-$d-precheck.$(ap_stamp).log"
+    GUEST_USER="$AP_GUEST_USER" GUEST_UID="$AP_GUEST_UID" "$GATES_DIR/u2-state-check.sh" --domain "$dom" --distro "$d" --adb-serial "$AP_PHONE_SERIAL" \
+        --expect-clipboard "send=$AP_U2_CLIP_SEND receive=$AP_U2_CLIP_RECEIVE" \
+        --expect-when-locked "$AP_U2_WHEN_LOCKED" > "$out" 2>&1 && return 0
+    notok="$(grep -E '^(not ok|PRECONDITION FAILED)' "$out")"
+    ap_stop "G7UP-$d-U2 — not all five U2 items are observed (nothing recorded)" "${notok:-see $out}" \
+        "Inspect $dom, then resume: pre-g8-autopilot.sh --resume"
 }
 
 # ap_u6_checkpoint D DOM — the clipboard text adb cannot provide.

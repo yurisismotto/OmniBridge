@@ -301,6 +301,109 @@ mod tests {
         assert!(files.legacy.exists());
     }
 
+    /// A full SPKI fingerprint, as `Fingerprint::to_hex()` renders it and as
+    /// OmniBridge 1.0.0 stored the choice: 64 lowercase hex digits.
+    const FULL_FPR: &str = "3f9a0c7be1d24a6f8b05c3e9d17a2b4c6e8f0a1b2c3d4e5f60718293a4b5c6d7";
+
+    /// The bytes OmniBridge 1.0.0 wrote for a choice, built the way its
+    /// `Selection::persist` built them (desktop/gui/src/selection.rs at tag
+    /// v1.0.0, f72d30e): a `serde_json::Map` of `schema` and
+    /// `selected_peer`, `to_string_pretty`, and a trailing newline. The G7-UP
+    /// migration fixture (packaging/tests/lib/legacy-gui-state.sh,
+    /// `lgs_bytes`) writes the literal below; the assertion ties the two.
+    fn published_1_0_0_bytes(fingerprint: &str) -> String {
+        let mut doc = serde_json::Map::new();
+        doc.insert("schema".into(), 1u32.into());
+        doc.insert("selected_peer".into(), fingerprint.into());
+        let bytes = serde_json::to_string_pretty(&doc).expect("serialize") + "\n";
+        assert_eq!(
+            bytes,
+            format!("{{\n  \"schema\": 1,\n  \"selected_peer\": \"{fingerprint}\"\n}}\n"),
+            "the 1.0.0 serialization is the literal the G7-UP fixture writes"
+        );
+        bytes
+    }
+
+    fn mode_of(path: &Path) -> u32 {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::metadata(path).expect("stat").permissions().mode() & 0o777
+    }
+
+    /// ADR-0020 D9 over the exact file OmniBridge 1.0.0 leaves behind: the
+    /// real `Selection::load` path carries it over byte for byte, selects the
+    /// full fingerprint, leaves the source alone, and does nothing the second
+    /// time. G7-UP measures the same thing in a guest (upgrade-gates.sh O2).
+    #[test]
+    fn a_published_1_0_0_choice_migrates_byte_for_byte() {
+        use std::os::unix::fs::{MetadataExt, PermissionsExt};
+        let files = config_files("published-1.0.0");
+        let legacy_dir = files.legacy.parent().expect("parent");
+        std::fs::create_dir_all(legacy_dir).expect("mkdir");
+        std::fs::set_permissions(legacy_dir, std::fs::Permissions::from_mode(0o700))
+            .expect("chmod");
+        let source = published_1_0_0_bytes(FULL_FPR);
+        std::fs::write(&files.legacy, &source).expect("write");
+        let legacy_before = std::fs::metadata(&files.legacy).expect("stat");
+
+        let first = Selection::load_from(files.clone()).expect("load");
+        assert_eq!(first.current().as_deref(), Some(FULL_FPR));
+        assert_eq!(first.path(), files.canonical.as_path());
+        assert_eq!(
+            std::fs::read(&files.canonical).expect("migrated"),
+            source.as_bytes(),
+            "destination bytes are the source bytes"
+        );
+        assert_eq!(mode_of(&files.canonical), 0o600);
+        assert_eq!(mode_of(files.canonical.parent().expect("parent")), 0o700);
+
+        let unchanged = |label: &str| {
+            let now = std::fs::metadata(&files.legacy).expect("stat");
+            assert_eq!(
+                std::fs::read(&files.legacy).expect("legacy"),
+                source.as_bytes(),
+                "{label}: legacy bytes"
+            );
+            assert_eq!(now.ino(), legacy_before.ino(), "{label}: legacy inode");
+            assert_eq!(
+                now.mtime_nsec(),
+                legacy_before.mtime_nsec(),
+                "{label}: legacy mtime"
+            );
+            assert_eq!(now.mode(), legacy_before.mode(), "{label}: legacy mode");
+        };
+        unchanged("after the first load");
+
+        let canonical_before = std::fs::metadata(&files.canonical).expect("stat");
+        let second = Selection::load_from(files.clone()).expect("second load");
+        assert_eq!(second.current().as_deref(), Some(FULL_FPR));
+        let canonical_after = std::fs::metadata(&files.canonical).expect("stat");
+        assert_eq!(
+            canonical_after.ino(),
+            canonical_before.ino(),
+            "not rewritten"
+        );
+        assert_eq!(canonical_after.mtime_nsec(), canonical_before.mtime_nsec());
+        assert_eq!(
+            std::fs::read(&files.canonical).expect("canonical"),
+            source.as_bytes()
+        );
+        unchanged("after the second load");
+    }
+
+    /// The fixture's bytes are not a guess about an old program: Pliwee writes
+    /// the very same bytes for the same choice, so the format G7-UP feeds the
+    /// migration is the one this module still reads and writes.
+    #[test]
+    fn pliwee_still_writes_the_1_0_0_bytes_for_a_choice() {
+        let path = temp("same-format");
+        Selection::at(path.clone()).choose(&FULL_FPR.to_ascii_uppercase());
+        assert_eq!(
+            std::fs::read_to_string(&path).expect("written"),
+            published_1_0_0_bytes(FULL_FPR)
+        );
+        let _ = std::fs::remove_file(&path);
+    }
+
     #[test]
     fn nothing_is_chosen_before_anyone_chooses() {
         let selection = Selection::at(temp("fresh"));

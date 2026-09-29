@@ -405,7 +405,10 @@ if [ -n "$l4_ps" ] && pgrep -x pliweed >/dev/null 2>&1; then
     else
         notok "REGRESSION: L4_PS did not capture the running pliweed (pid $l4_pid): '$cap'"
     fi
-    old="$(sh -c 'ps -eo user,pid,cmd | grep "[o]mnibridged"' 2>/dev/null)"
+    # Scoped to the process this test started: a workstation that runs its own
+    # OmniBridge 1.0.0 daemon made the host-wide match non-empty and this line
+    # red for a process the claim is not about (2026-09-28, pid 3634).
+    old="$(sh -c 'ps -eo user,pid,cmd | grep "[o]mnibridged"' 2>/dev/null | awk -v p="$l4_pid" '$2 == p')"
     [ -z "$old" ] && ok "MEASURED: the old '[o]mnibridged' match finds nothing for that same process (the observed abort)" \
                   || notok "MEASURED: the old match unexpectedly found: $old"
 else

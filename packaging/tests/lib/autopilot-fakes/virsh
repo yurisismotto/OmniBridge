@@ -220,13 +220,6 @@ def guest(d, c):
         s.setdefault("grants", []); cap in s["grants"] or s["grants"].append(cap); gput(disk, s)
     elif "omnibridge clipboard allow" in c or "notifications when-locked" in c:
         s.setdefault("cli", []).append(c[-120:]); gput(disk, s)
-    elif "omnibridge-gui" in c:
-        if not os.path.exists(P("doms", d, "no-gui-click")): s["gui_selected"] = 1; gput(disk, s)
-    elif "gui.json" in c:
-        if s.get("gui_selected"):
-            out = '{\n  "schema": 1,\n  "selected_peer": "%s"\n}\n' % (PEER_FPR.replace(" ", "").lower() + "0" * 48)
-        else:
-            code = 1
     elif "rpm -qa" in c:
         out = "fake-desktop-1.0\nqemu-guest-agent-10\n"
     return out, code

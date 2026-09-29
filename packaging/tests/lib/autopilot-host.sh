@@ -15,7 +15,7 @@ ap_virsh() { LC_ALL=C virsh -c "$AP_CONNECT" "$@"; }
 
 # tool:package — the Fedora package that provides each host tool.
 AP_HOST_TOOLS=(
-    virsh:libvirt-client virt-install:virt-install virt-viewer:virt-viewer qemu-img:qemu-img
+    virsh:libvirt-client virt-install:virt-install qemu-img:qemu-img
     jq:jq curl:curl gpg:gnupg2 sha256sum:coreutils flock:util-linux taskset:util-linux
     setsid:util-linux ionice:util-linux xz:xz tar:tar git:git adb:android-tools
     qrencode:qrencode python3:python3 podman:podman cargo:cargo

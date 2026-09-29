@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""TEST ONLY — a guest agent that runs the harness's guest commands for real,
+on this host, inside a directory that stands for the guest's root.
+
+Used by g7up-gui-migration-selftests.sh to run the REAL u2-gui-fixture.sh,
+u2-state-check.sh and upgrade-gates.sh --stage upgrade end to end, where the
+autopilot's own fake (lib/autopilot-fakes/virsh) only pattern-matches
+commands. Nothing outside the self-tests puts it on PATH.
+
+How: every guest-exec runs `/bin/sh -c COMMAND` here, with the guest's
+absolute paths (/home, /root, /etc/os-release, /etc/machine-id,
+/usr/lib/systemd/user, /proc, /run/user) rewritten under $FAKE_GUEST_ROOT and
+the guest's programs (rpm, dnf, systemctl, loginctl, journalctl, pgrep, id,
+runuser, the CLIs, systemd-run, busctl) taken from $FAKE_GUEST_BIN, the
+stateful stubs in ./fakeguest. Output is rewritten back, so the harness sees
+guest paths. Files are really created, with real modes and owners: the guest
+user is this host's own uid, so ownership assertions are real assertions.
+
+Every command is appended to $FAKE_GUEST_ROOT/.commands.
+"""
+import base64, json, os, random, re, subprocess, sys
+
+ROOT = os.environ["FAKE_GUEST_ROOT"].rstrip("/")
+BIN = os.environ["FAKE_GUEST_BIN"]
+GUEST_PATHS = re.compile(r"(?<![\w.~/-])/(home|root|etc/os-release|etc/machine-id|usr/lib/systemd/user|proc|run/user)(?=[/\s'\"`;)|&]|$)")
+
+def into(text): return GUEST_PATHS.sub(lambda m: ROOT + m.group(0), text)
+def back(text): return text.replace(ROOT, "")
+
+args = sys.argv[1:]
+while args and args[0] in ("-c", "--connect"):
+    args = args[2:]
+cmd, rest = (args[0], args[1:]) if args else ("", [])
+running = not os.path.exists(os.path.join(ROOT, ".off"))
+
+def die(msg): sys.stderr.write("error: " + msg + "\n"); sys.exit(1)
+
+if cmd == "dominfo":
+    print("Name: %s\nState: %s" % (rest[0], "running" if running else "shut off"))
+elif cmd == "domstate":
+    print("running" if running else "shut off")
+elif cmd == "dumpxml":
+    print("<domain><name>%s</name><channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel></domain>" % rest[-1])
+elif cmd == "list":
+    if running: print(os.environ.get("FAKE_GUEST_DOMAIN", "fake-guest"))
+elif cmd == "qemu-agent-command":
+    if not running: die("domain is not running")
+    req = json.loads(rest[1]); ex = req["execute"]; a = req.get("arguments", {})
+    exdir = os.path.join(ROOT, ".exec"); os.makedirs(exdir, exist_ok=True)
+    if ex == "guest-ping":
+        print('{"return":{}}')
+    elif ex == "guest-exec":
+        c = a["arg"][-1]
+        with open(os.path.join(ROOT, ".commands"), "a") as f: f.write(c.replace("\n", " ; ") + "\n")
+        env = {"PATH": BIN + ":/usr/bin:/bin", "FAKE_GUEST_ROOT": ROOT, "HOME": ROOT + "/root", "LC_ALL": "C"}
+        for k, v in os.environ.items():
+            if k.startswith("FAKE_GUEST_"): env[k] = v
+        p = subprocess.run(["/bin/sh", "-c", into(c)], capture_output=True, env=env, cwd=ROOT + "/root")
+        pid = random.randint(1000, 999999)
+        with open(os.path.join(exdir, str(pid)), "w") as f:
+            json.dump({"exitcode": p.returncode,
+                       "out": base64.b64encode(back(p.stdout.decode("utf-8", "surrogateescape")).encode("utf-8", "surrogateescape")).decode(),
+                       "err": base64.b64encode(back(p.stderr.decode("utf-8", "surrogateescape")).encode("utf-8", "surrogateescape")).decode()}, f)
+        print(json.dumps({"return": {"pid": pid}}))
+    elif ex == "guest-exec-status":
+        r = json.load(open(os.path.join(exdir, str(a["pid"]))))
+        ret = {"exited": True, "exitcode": r["exitcode"]}
+        if r["out"]: ret["out-data"] = r["out"]
+        if r["err"]: ret["err-data"] = r["err"]
+        print(json.dumps({"return": ret}))
+    elif ex == "guest-file-open":
+        h = random.randint(1, 1 << 30)
+        open(into(a["path"]), "wb").close()
+        with open(os.path.join(exdir, "h%d" % h), "w") as f: f.write(into(a["path"]))
+        print(json.dumps({"return": h}))
+    elif ex == "guest-file-write":
+        path = open(os.path.join(exdir, "h%d" % a["handle"])).read()
+        with open(path, "ab") as f: f.write(base64.b64decode(a["buf-b64"]))
+        print('{"return":{}}')
+    elif ex == "guest-file-close":
+        print('{"return":{}}')
+    else:
+        die("unsupported agent command " + ex)
+else:
+    die("fake-guest virsh: unsupported command '%s'" % cmd)

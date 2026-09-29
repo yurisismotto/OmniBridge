@@ -15,7 +15,9 @@
 #   pre-g8-autopilot.sh --template D    prepare (or verify) only distribution D's
 #                                       template, then stop: no gate, no coordinator
 #   options: --no-wait (stop at the first human step instead of waiting at it),
-#            --nic IF (the wired NIC for macvtap), --evidence DIR, --grant-hours N
+#            --nic IF (the wired NIC for macvtap), --evidence DIR, --grant-hours N,
+#            --distro D (take only distribution D's gates; the others are left
+#            as they are, neither run nor recorded)
 #
 # WHAT IT IS
 # ----------
@@ -36,14 +38,15 @@
 #   * the phone's current address, read over adb;
 #   * the confirmations: ONE authorisation typed at the terminal per 16 hours
 #     (the coordinator's grant) instead of one per gate;
-#   * U2 through the product's own CLI, with the two things only a person can
-#     do — scanning the QR, clicking the peer — measured afterwards.
+#   * U2 through the product's own CLI, the one thing only a person can do —
+#     scanning the QR — measured afterwards, and the legacy gui.json as a
+#     deterministic 1.0.0-format migration fixture (u2-gui-fixture.sh).
 #
 # ORDER. Unattended work first, then the human steps back to back:
 #   1. per distribution: U8 and LIFECYCLE on fresh guests (building the image,
 #      template and packages each needs first);
 #   2. per distribution: INSTALL on the chain guest;
-#   3. per distribution: U2 — scan a QR, click the peer;
+#   3. per distribution: U2 — scan a QR;
 #   4. per distribution: UPGRADE, U6 (copy a text on the tablet first), SECLOG,
 #      U10 — back to back on the same running guest.
 # The coordinator's prerequisite graph is not duplicated: it refuses anything
@@ -111,7 +114,7 @@ else
 fi
 
 # ---------------------------------------------------------------- arguments --
-CMD=run; EVIDENCE=""; RETRY_GATE=""; AP_NO_WAIT=0; TEMPLATE_DISTRO=""; RETRY_ONLY=0
+CMD=run; EVIDENCE=""; RETRY_GATE=""; AP_NO_WAIT=0; TEMPLATE_DISTRO=""; RETRY_ONLY=0; PLAN_DISTRO=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --resume) CMD=run; shift ;;
@@ -124,6 +127,9 @@ while [ $# -gt 0 ]; do
         --retry) CMD=run; RETRY_GATE="${2:?--retry needs a gate}"; shift 2 ;;
         --no-wait) AP_NO_WAIT=1; shift ;;
         --only) RETRY_ONLY=1; shift ;;
+        --distro) PLAN_DISTRO="${2:?--distro needs a distribution}"; shift 2
+            ap_abbr "$PLAN_DISTRO" >/dev/null \
+                || { echo "pre-g8-autopilot: --distro takes one of: ${AP_DISTROS[*]}" >&2; exit 2; } ;;
         --nic) export AP_NIC="${2:?}"; shift 2 ;;
         --evidence) EVIDENCE="${2:?}"; shift 2 ;;
         --grant-hours) AP_GRANT_HOURS="${2:?}"; shift 2
@@ -172,7 +178,7 @@ ap_gate_own()    { g7up_kv "$EVIDENCE/state/$1" state 2>/dev/null; }   # the rec
 ap_gate_log()    { g7up_kv "$EVIDENCE/state/$1" log 2>/dev/null; }
 ap_describe() {
     case "$1" in
-        *-INSTALL) echo "OmniBridge 1.0.0 installed on the chain guest" ;; *-U2) echo "the physical peer paired, granted, policies, GUI selection (measured)" ;;
+        *-INSTALL) echo "OmniBridge 1.0.0 installed on the chain guest" ;; *-U2) echo "the physical peer paired, granted, policies, legacy gui.json fixture (measured)" ;;
         *-UPGRADE) echo "upgrade to Pliwee, stop on Pliwee" ;; *-U6) echo "lifecycle-peer-gates.sh against the upgraded guest" ;;
         *-SECLOG) echo "security-log evidence on the upgraded guest" ;; *-U10) echo "downgrade to OmniBridge 1.0.0" ;;
         *-U8) echo "unreadable legacy directory on a fresh guest" ;; LIFECYCLE-*) echo "lifecycle-gates.sh L1-L26 on a fresh guest" ;;
@@ -182,15 +188,16 @@ ap_describe() {
 # ----------------------------------------------------------------- the plan --
 # ap_plan — the autopilot's gates, in the order it takes them.
 ap_plan() {
-    local d s
-    for d in "${AP_DISTROS[@]}"; do printf '%s\n' "G7UP-$d-U8" "LIFECYCLE-$d"; done
-    for d in "${AP_DISTROS[@]}"; do printf '%s\n' "G7UP-$d-INSTALL"; done
-    for d in "${AP_DISTROS[@]}"; do printf '%s\n' "G7UP-$d-U2"; done
-    for d in "${AP_DISTROS[@]}"; do for s in UPGRADE U6 SECLOG U10; do printf '%s\n' "G7UP-$d-$s"; done; done
+    local d s ds=("${AP_DISTROS[@]}")
+    [ -z "$PLAN_DISTRO" ] || ds=("$PLAN_DISTRO")
+    for d in "${ds[@]}"; do printf '%s\n' "G7UP-$d-U8" "LIFECYCLE-$d"; done
+    for d in "${ds[@]}"; do printf '%s\n' "G7UP-$d-INSTALL"; done
+    for d in "${ds[@]}"; do printf '%s\n' "G7UP-$d-U2"; done
+    for d in "${ds[@]}"; do for s in UPGRADE U6 SECLOG U10; do printf '%s\n' "G7UP-$d-$s"; done; done
 }
 ap_human_step() {
     case "$1" in
-        *-U2) echo "scan the pairing QR with the tablet; select the tablet in OmniBridge's window" ;;
+        *-U2) echo "scan the pairing QR with the tablet" ;;
         *-U6) echo "copy a short text on the tablet (adb cannot)" ;;
         *) return 1 ;;
     esac

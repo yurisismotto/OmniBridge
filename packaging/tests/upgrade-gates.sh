@@ -15,12 +15,17 @@
 #       The operator pairs the PHYSICAL ANDROID PEER (U6 is measured with it,
 #       and "without re-pairing" means this pairing), grants clipboard.v1 and
 #       files.v1, sets a clipboard policy and a notification lock policy, and
-#       selects the peer in the GUI — the rest of U2, which needs the device.
+#       puts the legacy gui.json in place with u2-gui-fixture.sh (the published
+#       1.0.0 format, naming that peer: migration input, not a GUI test) — the
+#       rest of U2, which needs the device.
 #
 #   --stage upgrade    O1 U3 U4 O2 U5 U7 U9, then STOP
 #       Refuses to start unless at least --min-peers peers are paired. Records
-#       O1, upgrades with the distribution's normal command, cycles the
-#       session, records O2 and asserts it equal to O1 field by field, then
+#       O1 (with the exact bytes of the legacy gui.json), upgrades with the
+#       distribution's normal command, cycles the session, records O2 and
+#       asserts it equal to O1 field by field, starts pliwee-gui in the
+#       graphical session twice and measures its gui.json migration against
+#       the O1 bytes (ADR-0020 D9) and its idempotence, then
 #       the restart (U7) and the never-enabled account (U9, a second user
 #       created for it before the upgrade — see below). It then writes
 #       UPGRADE-CHECKPOINT (lib/g7up-evidence.sh) and STOPS with the guest
@@ -77,6 +82,8 @@ HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib/assert.sh"
 # shellcheck source=lib/g7up-evidence.sh
 . "$HERE/lib/g7up-evidence.sh"
+# shellcheck source=lib/legacy-gui-state.sh
+. "$HERE/lib/legacy-gui-state.sh"
 
 STAGE=""; DOMAIN=""; DISTRO=""; OLD_PKGDIR=""; NEW_PKGDIR=""; EVIDENCE=""
 KEYRING=""; FINGERPRINT=""; MIN_PEERS=1; PHONE_IP=""; ADB_SERIAL=""
@@ -132,6 +139,10 @@ gu_as() { # USER UID COMMAND — as that user, inside their session bus
         DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$2/bus sh -c $(printf '%q' "$3")"
 }
 gu() { gu_as "$GUEST_USER" "$GUEST_UID" "$*"; }
+gu_cmd() { # COMMAND — the guest command gu would run, for ga_wait_for
+    printf 'runuser -u %s -- env XDG_RUNTIME_DIR=/run/user/%s DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%s/bus sh -c %q' \
+        "$GUEST_USER" "$GUEST_UID" "$GUEST_UID" "$1"
+}
 
 case "$DISTRO" in
     fedora44)   PKGEXT=rpm; expect_os="Fedora Linux 44" ;;
@@ -186,7 +197,7 @@ esac
 # ---------------------------------------------------------------------------
 section "U0 — preconditions and tools"
 # ---------------------------------------------------------------------------
-need_tool virsh jq sha256sum || abort "a host tool this harness depends on is missing"
+need_tool virsh jq sha256sum base64 cmp || abort "a host tool this harness depends on is missing"
 ga_ping "$DOMAIN" 300 || abort "guest agent in '$DOMAIN' does not answer"
 guest_os="$(gx 'sed -n "s/^PRETTY_NAME=//p" /etc/os-release | tr -d \"')"
 contains "$guest_os" "$expect_os" || abort "--distro $DISTRO expects '$expect_os'; the guest is '${guest_os:-<unreadable>}'"
@@ -311,7 +322,10 @@ Stage 'install' done. Now, by hand (U2, the half that needs the other device):
     device and this pairing, so fake_phone cannot stand in for it here;
   * omnibridge grant <peer> clipboard.v1 ; omnibridge grant <peer> files.v1
   * set a clipboard policy and a notification lock policy for it;
-  * open omnibridge-gui once and select the peer (this writes gui.json).
+  * put the legacy GUI's device choice in place as migration input, in the
+    published 1.0.0 format and naming that peer's full fingerprint (the
+    retired omnibridge-gui is not part of what G7-UP certifies):
+      $HERE/u2-gui-fixture.sh --domain $DOMAIN --distro $DISTRO --record FILE
 Then run:  $0 --stage upgrade --domain $DOMAIN --distro $DISTRO --new-pkgdir DIR --old-pkgdir DIR --evidence $EVIDENCE
 NEXT
 finish
@@ -362,11 +376,48 @@ ok "O1: $peers paired peer(s), identity '$(sed -n 's/^device //p' <<<"$o1")'"
 d1="$(digests)"; printf '%s\n' "$d1" | save O1-digests.txt
 need_exact_count "O1: legacy files digested" "$(grep -cE '^[0-9a-f]{64} ' <<<"$d1")" 3 \
     && ok "O1: identity.key, state.json and gui.json digested" \
-    || notok "O1: not every legacy file exists (gui.json is written by selecting the peer in the GUI)"
+    || notok "O1: not every legacy file exists (gui.json is U2's migration fixture: u2-gui-fixture.sh)"
 en1="$(gu 'systemctl --user is-enabled omnibridged.service' | tr -d '[:space:]')"
 pids1="$(gx 'pgrep -c -x omnibridged || true' | tr -d '[:space:]')"
 [ "$en1" = enabled ] || abort "O1: omnibridged.service is '$en1'; U9 is the never-enabled case, this is not"
 need_exact_count "O1: daemon processes" "$pids1" 1 && ok "O1: exactly one omnibridged, enabled"
+# The legacy GUI's device choice: ADR-0020 D9's input, bound to THIS run. Its
+# exact bytes and metadata are archived here, and O2 compares the file
+# pliwee-gui produces with them — not with anything read after the upgrade.
+O1_GUI="$EVIDENCE/O1-gui.txt"; O1_GUI_BYTES="$EVIDENCE/O1-legacy-gui.json"
+o1_gui() {
+    local tmp fprs st typ uid gid mode size mtime ino sel want dmode
+    tmp="$(mktemp)"
+    lgs_guest_fetch "$DOMAIN" "$LEGACY/state.json" "$tmp" && lgs_store_ok "$tmp" || { rm -f "$tmp"; return 1; }
+    fprs="$(lgs_trusted_fprs "$tmp")"
+    rm -f "$tmp"
+    st="$(lgs_guest_stat "$DOMAIN" "$LEGACY_CFG")"
+    [ -n "$st" ] && [ "$st" != absent ] || { LGS_WHY="$LEGACY_CFG does not exist: U2's migration input is missing"; return 1; }
+    IFS='|' read -r typ uid gid mode size mtime ino <<<"$st"
+    [ "$typ" = "regular file" ] || { LGS_WHY="$LEGACY_CFG is a $typ, not a regular file"; return 1; }
+    lgs_guest_fetch "$DOMAIN" "$LEGACY_CFG" "$O1_GUI_BYTES" || return 1
+    sel="$(jq -r 'if type == "object" and (.selected_peer | type) == "string" then .selected_peer else "" end' "$O1_GUI_BYTES" 2>/dev/null)"
+    # The peer it must name: the trusted one it names, or else the first, so
+    # that the refusal below says what is wrong with the file.
+    want="$(awk -F'\t' -v s="$sel" '$1 == s { print $1; exit }' <<<"$fprs")"
+    [ -n "$want" ] || want="$(head -1 <<<"$fprs" | cut -f1)"
+    lgs_check_gui "$O1_GUI_BYTES" "$want" || return 1
+    dmode="$(lgs_guest_stat "$DOMAIN" "$(dirname "$LEGACY_CFG")" | cut -d'|' -f4)"
+    [ "$uid" = "$GUEST_UID" ] || { LGS_WHY="$LEGACY_CFG is owned by uid $uid, not $GUEST_USER ($GUEST_UID)"; return 1; }
+    [ "$dmode" = "$LGS_GUI_DIR_MODE" ] || { LGS_WHY="$(dirname "$LEGACY_CFG") has mode ${dmode:-?}, not $LGS_GUI_DIR_MODE"; return 1; }
+    printf '%s\n' "legacy_path=$LEGACY_CFG" "selected_peer=$want" \
+        "fingerprint_source=$LEGACY/state.json: a non-revoked peer's fingerprint (sha256 $(awk -v f="$LEGACY/state.json" '$2 == f { print $1 }' <<<"$d1"))" \
+        "sha256=$(g7up_sha "$O1_GUI_BYTES")" "size=$size" "uid=$uid" "gid=$gid" "mode=$mode" "dir_mode=$dmode" \
+        "mtime=$mtime" "inode=$ino" "bytes_file=$O1_GUI_BYTES" "format=$LGS_FORMAT" "recorded_utc=$(date -u +%FT%TZ)" > "$O1_GUI"
+}
+if o1_gui; then
+    ok "O1: the legacy gui.json is the 1.0.0 file selecting $(g7up_kv "$O1_GUI" selected_peer) (sha256 $(g7up_kv "$O1_GUI" sha256), mode $(g7up_kv "$O1_GUI" mode)); bytes and metadata archived for O2"
+else
+    rm -f "$O1_GUI"; notok "O1: the legacy GUI device choice is not usable migration input: $LGS_WHY"
+fi
+[ "$(lgs_guest_stat "$DOMAIN" "$CANON_CFG")" = absent ] \
+    && ok "O1: there is no $CANON_CFG yet: whatever appears there after the upgrade was migrated" \
+    || notok "O1: $CANON_CFG exists before the upgrade; the GUI migration could not be measured"
 cursor="$(gu 'journalctl --user -n0 --show-cursor 2>/dev/null' | sed -n 's/^-- cursor: //p' | tr -d '\r\n')"
 [ -n "$cursor" ] || abort "no journal cursor before the upgrade; the U4 anchor could not be windowed"
 
@@ -426,10 +477,148 @@ for f in identity.key state.json; do
     contains "$rec" "sha256.$f=$want" && [ -n "$want" ] \
         && ok "O2: MIGRATED_FROM records the O1 digest of $f" || notok "O2: MIGRATED_FROM does not carry the O1 digest of $f"
 done
-gx "test -f $CANON_CFG" && ok "O2: gui.json exists under ~/.config/pliwee" || notok "O2: no ~/.config/pliwee/gui.json"
 pids2="$(gx 'pgrep -c -x pliweed || true' | tr -d '[:space:]'; )"; old2="$(gx 'pgrep -c -x omnibridged || true' | tr -d '[:space:]')"
 need_exact_count "O2: pliweed processes" "$pids2" 1 && need_exact_count "O2: omnibridged processes" "$old2" 0 \
     && ok "O2: exactly one daemon, and it is pliweed"
+
+section "O2 — the device choice, migrated by pliwee-gui's first start (ADR-0020 D9)"
+# Selection::load() (desktop/gui/src/selection.rs) owns this migration and
+# runs when the GUI starts, so it is triggered the way it happens for a
+# person: pliwee-gui started in the user's graphical session. U4 ended that
+# session, and GDM does not autologin a second time (lifecycle-gates.sh L19
+# measured the seat holding only its greeter), so the display manager is
+# restarted for one autologin first, as L19 does.
+#
+# The GUI runs as a transient user unit named for this run, so its stderr —
+# where Selection::load reports a migration — is in the user journal under a
+# name nothing else uses. "It ran" is measured, not assumed: the application
+# id is owned on the session bus by that unit's main process, which happens
+# only after Selection::load has returned. It has no quit action, so it is
+# closed by stopping its unit, and it must then be gone.
+read -r -d '' GUI_SESSION_SH <<'SH'
+for s in $(loginctl list-sessions --no-legend 2>/dev/null | awk -v u="$U" '$3 == u { print $1 }'); do
+    [ "$(loginctl show-session "$s" -p Active --value 2>/dev/null)" = yes ] || continue
+    t="$(loginctl show-session "$s" -p Type --value 2>/dev/null)"
+    case "$t" in wayland|x11) echo "$s $t"; exit 0 ;; esac
+done
+exit 1
+SH
+gui_session() { gx "U=$GUEST_USER; $GUI_SESSION_SH" 2>/dev/null; }
+GUI_MIGRATED_LINE="pliwee: migrated from $LEGACY_CFG: device choice copied to $CANON_CFG; the source was not modified"
+gui_tag="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+# gui_run N — start pliwee-gui once, wait until it is up, close it. Sets
+# GUI_UNIT, GUI_PID, GUI_UP (yes/no), GUI_GONE (yes/no) and GUI_JNL (its
+# journal, saved as O2-gui-N-journal.txt).
+gui_run() {
+    GUI_UNIT="g7up-pliwee-gui-$1-$gui_tag"; GUI_PID=""; GUI_UP=no; GUI_GONE=no
+    gu "systemd-run --user --quiet --unit=$GUI_UNIT sh -c 'echo \"g7up: starting pliwee-gui ($GUI_UNIT)\"; exec pliwee-gui'" >/dev/null 2>&1
+    if ga_wait_for "$DOMAIN" 90 "$(gu_cmd "p=\$(systemctl --user show -p MainPID --value $GUI_UNIT); [ -n \"\$p\" ] && [ \"\$p\" != 0 ] && [ \"\$(busctl --user status $LGS_APP_ID 2>/dev/null | sed -n 's/^PID=//p')\" = \"\$p\" ]")"; then
+        GUI_UP=yes
+        GUI_PID="$(gu "systemctl --user show -p MainPID --value $GUI_UNIT" | tr -d '[:space:]')"
+    fi
+    gu "systemctl --user stop $GUI_UNIT" >/dev/null 2>&1
+    if [ -n "$GUI_PID" ] && ga_wait_for "$DOMAIN" 30 "! kill -0 $GUI_PID 2>/dev/null && [ \"\$($(gu_cmd "systemctl --user is-active $GUI_UNIT"))\" != active ]"; then
+        GUI_GONE=yes
+    fi
+    GUI_JNL="$(gu "journalctl --user -u $GUI_UNIT -o cat --no-pager 2>/dev/null")"
+    printf '%s\n' "$GUI_JNL" | save "O2-gui-$1-journal.txt"
+}
+# snap PATH — "sha256|type|uid|gid|mode|size|mtime|inode", or "absent".
+snap() {
+    local st; st="$(lgs_guest_stat "$DOMAIN" "$1")"
+    [ "$st" = absent ] && { echo absent; return; }
+    printf '%s|%s' "$(gx "sha256sum -- '$1'" 2>/dev/null | cut -d' ' -f1)" "$st"
+}
+
+if [ ! -f "$O1_GUI" ]; then
+    notok "O2: no O1 record of the legacy gui.json in this run; the GUI migration has nothing to be compared with"
+else
+    o1sha="$(g7up_kv "$O1_GUI" sha256)"; o1fpr="$(g7up_kv "$O1_GUI" selected_peer)"
+    legacy_o1="$(g7up_kv "$O1_GUI" uid)|$(g7up_kv "$O1_GUI" gid)|$(g7up_kv "$O1_GUI" mode)|$(g7up_kv "$O1_GUI" size)|$(g7up_kv "$O1_GUI" mtime)"
+    legacy_now() { snap "$LEGACY_CFG" | awk -F'|' '{ print $1 "\t" $3 "|" $4 "|" $5 "|" $6 "|" $7 }'; }
+    # First observation, before the GUI: nothing has migrated the file yet.
+    [ "$(snap "$CANON_CFG")" = absent ] \
+        && ok "O2: before pliwee-gui starts there is no $CANON_CFG (the daemon and the upgrade did not write it)" \
+        || notok "O2: $CANON_CFG exists before pliwee-gui ever started; the GUI's migration cannot be attributed"
+    if ! sess="$(gui_session)"; then
+        gx "loginctl list-sessions --no-legend 2>/dev/null" | save O2-gui-seat-before.txt
+        gx 'systemctl restart gdm3 2>/dev/null || systemctl restart gdm 2>/dev/null' >/dev/null 2>&1
+        ga_wait_for "$DOMAIN" 240 "U=$GUEST_USER; $GUI_SESSION_SH" \
+            || abort "no graphical session for $GUEST_USER came back after restarting the display manager; pliwee-gui cannot be started where a person starts it"
+        sess="$(gui_session)"
+        ok "O2: no graphical session after U4 (seat: $(tr '\n' ';' < "$EVIDENCE/O2-gui-seat-before.txt")); the display manager was restarted for one autologin: session $sess"
+    else
+        ok "O2: $GUEST_USER has a graphical session: $sess"
+    fi
+    ga_wait_for "$DOMAIN" 120 "$(gu_cmd "systemctl --user show-environment 2>/dev/null | grep -E '^(WAYLAND_DISPLAY|DISPLAY)=' >/dev/null")" \
+        || abort "the user manager never received the session's display; pliwee-gui would not start in the graphical session"
+    ok "O2: the user manager carries the session's display ($(gu 'systemctl --user show-environment' | grep -E '^(WAYLAND_DISPLAY|DISPLAY)=' | tr '\n' ' '))"
+
+    gui_run 1
+    [ "$GUI_UP" = yes ] \
+        && ok "O2: pliwee-gui started in the graphical session ($GUI_UNIT) and came up: $LGS_APP_ID is owned by its process $GUI_PID" \
+        || notok "O2: pliwee-gui did not come up ($GUI_UNIT; see O2-gui-1-journal.txt: $(tail -n 3 <<<"$GUI_JNL" | tr '\n' ' '))"
+    [ "$GUI_GONE" = yes ] && ok "O2: … and was closed (its unit stopped, process $GUI_PID gone)" \
+        || notok "O2: pliwee-gui (${GUI_PID:-no pid}) did not go away when its unit was stopped"
+    if need_window_covers "O2 first pliwee-gui start" "$GUI_JNL" "g7up: starting pliwee-gui ($GUI_UNIT)"; then
+        n_mig="$(grep -cxF -- "$GUI_MIGRATED_LINE" <<<"$GUI_JNL" || true)"
+        need_exact_count "O2: migration lines from the first pliwee-gui start" "$n_mig" 1 \
+            && ok "O2: pliwee-gui logged the migration once: '$GUI_MIGRATED_LINE'" \
+            || notok "O2: the first pliwee-gui start logged the legacy -> Pliwee gui.json migration $n_mig time(s), not once"
+    else notok "O2: the first pliwee-gui start is not in its own journal; nothing it logged can be concluded from"; fi
+    canon1="$(snap "$CANON_CFG")"; printf '%s\n' "$canon1" | save O2-gui-canonical-stat.txt
+    IFS='|' read -r c_sha c_typ c_uid c_gid c_mode _ <<<"$canon1"
+    if [ "$canon1" = absent ]; then
+        notok "O2: pliwee-gui did not create $CANON_CFG"
+    else
+        [ "$c_typ" = "regular file" ] && [ "$c_uid:$c_gid" = "$(g7up_kv "$O1_GUI" uid):$(g7up_kv "$O1_GUI" gid)" ] \
+            && ok "O2: $CANON_CFG is a regular file owned by $GUEST_USER ($c_uid:$c_gid)" \
+            || notok "O2: $CANON_CFG is a '$c_typ' owned $c_uid:$c_gid"
+        c_dmode="$(lgs_guest_stat "$DOMAIN" "$(dirname "$CANON_CFG")" | cut -d'|' -f4)"
+        [ "$c_mode" = "$LGS_PLIWEE_FILE_MODE" ] && [ "$c_dmode" = "$LGS_PLIWEE_DIR_MODE" ] \
+            && ok "O2: modes are $LGS_PLIWEE_FILE_MODE (file) and $LGS_PLIWEE_DIR_MODE ($(dirname "$CANON_CFG"))" \
+            || notok "O2: modes are $c_mode (file) and ${c_dmode:-?} (directory), not $LGS_PLIWEE_FILE_MODE and $LGS_PLIWEE_DIR_MODE"
+        [ "$c_sha" = "$o1sha" ] \
+            && ok "O2: its SHA-256 is the O1 legacy gui.json's ($o1sha)" \
+            || notok "O2: its SHA-256 is $c_sha, not the O1 legacy gui.json's $o1sha"
+        if lgs_guest_fetch "$DOMAIN" "$CANON_CFG" "$EVIDENCE/O2-pliwee-gui.json" && cmp -s "$EVIDENCE/O2-pliwee-gui.json" "$O1_GUI_BYTES"; then
+            ok "O2: its bytes are the O1 bytes, unchanged ($(wc -c < "$O1_GUI_BYTES") bytes; O2-pliwee-gui.json = O1-legacy-gui.json)"
+        else notok "O2: its bytes differ from the O1 legacy bytes (O2-pliwee-gui.json vs O1-legacy-gui.json)"; fi
+        lgs_check_gui "$EVIDENCE/O2-pliwee-gui.json" "$o1fpr" \
+            && ok "O2: it selects the full fingerprint recorded in O1: $o1fpr" \
+            || notok "O2: the migrated choice is not O1's $o1fpr: $LGS_WHY"
+    fi
+    leg1="$(legacy_now)"
+    [ "$leg1" = "$o1sha"$'\t'"$legacy_o1" ] \
+        && ok "O2: the legacy $LEGACY_CFG is byte-identical to O1 and unmodified (sha256, owner, mode, size, mtime)" \
+        || notok "O2: THE LEGACY gui.json CHANGED: now '$leg1', at O1 '$o1sha $legacy_o1'"
+
+    # Idempotence: a second start migrates nothing and changes nothing.
+    canon_before="$(snap "$CANON_CFG")"; leg_before="$(legacy_now)"
+    gui_run 2
+    [ "$GUI_UP" = yes ] && [ "$GUI_GONE" = yes ] \
+        && ok "O2: pliwee-gui started a second time ($GUI_UNIT, process $GUI_PID), came up and was closed" \
+        || notok "O2: the second pliwee-gui start did not come up and close (up=$GUI_UP, closed=$GUI_GONE)"
+    # Silence counts only when both ends are anchored: the unit's own output
+    # reached its journal (the marker), and the product got past
+    # Selection::load in this very process (the bus name, GUI_UP).
+    if [ "$GUI_UP" = yes ] && need_window_covers "O2 second pliwee-gui start" "$GUI_JNL" "g7up: starting pliwee-gui ($GUI_UNIT)"; then
+        n_mig="$(grep -cF -- "migrated from" <<<"$GUI_JNL" || true)"; n_ref="$(grep -cF -- "refusing to start" <<<"$GUI_JNL" || true)"
+        need_exact_count "O2: migration lines from the second pliwee-gui start" "$n_mig" 0 && [ "$n_ref" = 0 ] \
+            && ok "O2: the second start logged no migration and no refusal" \
+            || notok "O2: the second start logged $n_mig migration and $n_ref refusal line(s)"
+    else notok "O2: the second pliwee-gui start is not anchored (up=$GUI_UP, marker in its journal or not); its silence proves nothing"; fi
+    canon_after="$(snap "$CANON_CFG")"; leg_after="$(legacy_now)"
+    [ "$canon_after" != absent ] && [ "$canon_after" = "$canon_before" ] && [ "${canon_after%%|*}" = "$o1sha" ] \
+        && ok "O2: $CANON_CFG is unchanged by the second start (sha256, inode, mtime, mode)" \
+        || notok "O2: the second start changed $CANON_CFG ('$canon_before' -> '$canon_after')"
+    [ "$leg_after" = "$leg_before" ] && [ "$leg_after" = "$o1sha"$'\t'"$legacy_o1" ] \
+        && ok "O2: the legacy gui.json is still the O1 file after the second start" \
+        || notok "O2: the second start changed the legacy gui.json ('$leg_before' -> '$leg_after')"
+    printf '%s\n' "method=pliwee-gui started twice in the graphical session ($sess)" "o1_record=$O1_GUI" \
+        "o1_sha256=$o1sha" "selected_peer=$o1fpr" "canonical=$canon_after" "legacy=$leg_after" \
+        "migrated_line=$GUI_MIGRATED_LINE" | save O2-gui.txt
+fi
 
 if [ "$PKGEXT" = rpm ]; then
 section "U5 — firewalld reload"
