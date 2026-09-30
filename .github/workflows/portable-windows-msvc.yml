@@ -184,9 +184,15 @@ jobs:
       # lives in `capabilities/files/tests/filename_fuzz.rs` with the crate
       # that owns the sanitiser, rather than in `pliwee-core`, which does
       # not depend on a capability and must not start.
+      # `frozen_vectors.rs` (Pliwee Wave 5) is **portable**: it hashes the
+      # committed DER fixtures in protocol/testdata and checks the frozen
+      # fingerprints and subjects, with no store and no unix-fs. Measured:
+      # `cargo test --no-default-features -p pliwee-core --test frozen_vectors`
+      # passes. The fixtures are binary, so a CRLF checkout cannot alter them.
       - name: Core test files unchanged (guard for the exclusion below)
         run: |
           $expected = @(
+            'frozen_vectors.rs',
             'identity_and_store.rs',
             'identity_seam.rs',
             'identity_states.rs',
@@ -258,6 +264,7 @@ jobs:
             --target x86_64-pc-windows-msvc `
             -p pliwee-core `
             --lib `
+            --test frozen_vectors `
             --test identity_seam `
             --test notifications_protocol `
             --test pairing `
