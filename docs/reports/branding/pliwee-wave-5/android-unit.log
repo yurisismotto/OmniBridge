@@ -1,0 +1,100 @@
+start=2026-09-24T23:32:28-03:00
+Picked up JAVA_TOOL_OPTIONS:  -Xmx2g
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:extractDebugProto UP-TO-DATE
+> Task :app:extractIncludeDebugProto UP-TO-DATE
+> Task :app:extractProto UP-TO-DATE
+> Task :app:generateDebugProto UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:extractTestDebugProto UP-TO-DATE
+> Task :app:extractTestProto UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:extractAndroidTestDebugProto UP-TO-DATE
+> Task :app:extractAndroidTestProto UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:checkDebugAndroidTestAarMetadata UP-TO-DATE
+> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :app:mapDebugAndroidTestSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugAndroidTestResources UP-TO-DATE
+> Task :app:mergeDebugAndroidTestResources UP-TO-DATE
+> Task :app:processDebugAndroidTestManifest UP-TO-DATE
+> Task :app:processDebugAndroidTestResources UP-TO-DATE
+> Task :fixture:preBuild UP-TO-DATE
+> Task :fixture:preDebugBuild UP-TO-DATE
+> Task :fixture:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :fixture:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :fixture:checkDebugAarMetadata UP-TO-DATE
+> Task :fixture:generateDebugResValues UP-TO-DATE
+> Task :fixture:mapDebugSourceSetPaths UP-TO-DATE
+> Task :fixture:generateDebugResources UP-TO-DATE
+> Task :fixture:mergeDebugResources UP-TO-DATE
+> Task :fixture:packageDebugResources UP-TO-DATE
+> Task :fixture:parseDebugLocalResources UP-TO-DATE
+> Task :fixture:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :fixture:extractDeepLinksDebug UP-TO-DATE
+> Task :fixture:processDebugMainManifest UP-TO-DATE
+> Task :fixture:processDebugManifest UP-TO-DATE
+> Task :fixture:processDebugManifestForPackage UP-TO-DATE
+> Task :fixture:processDebugResources UP-TO-DATE
+> Task :fixture:compileDebugKotlin UP-TO-DATE
+> Task :fixture:javaPreCompileDebug UP-TO-DATE
+> Task :fixture:compileDebugJavaWithJavac NO-SOURCE
+> Task :fixture:mergeDebugShaders UP-TO-DATE
+> Task :fixture:compileDebugShaders NO-SOURCE
+> Task :fixture:generateDebugAssets UP-TO-DATE
+> Task :fixture:mergeDebugAssets UP-TO-DATE
+> Task :fixture:compressDebugAssets UP-TO-DATE
+> Task :fixture:desugarDebugFileDependencies UP-TO-DATE
+> Task :fixture:dexBuilderDebug UP-TO-DATE
+> Task :fixture:mergeDebugGlobalSynthetics UP-TO-DATE
+> Task :fixture:processDebugJavaRes UP-TO-DATE
+> Task :fixture:mergeDebugJavaResource UP-TO-DATE
+> Task :fixture:checkDebugDuplicateClasses UP-TO-DATE
+> Task :fixture:mergeExtDexDebug UP-TO-DATE
+> Task :fixture:mergeLibDexDebug UP-TO-DATE
+> Task :fixture:mergeProjectDexDebug UP-TO-DATE
+> Task :fixture:mergeDebugJniLibFolders UP-TO-DATE
+> Task :fixture:mergeDebugNativeLibs NO-SOURCE
+> Task :fixture:stripDebugDebugSymbols NO-SOURCE
+> Task :fixture:validateSigningDebug UP-TO-DATE
+> Task :fixture:writeDebugAppMetadata UP-TO-DATE
+> Task :fixture:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :fixture:packageDebug UP-TO-DATE
+> Task :fixture:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :fixture:assembleDebug UP-TO-DATE
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:extractIncludeDebugUnitTestProto
+> Task :app:generateDebugUnitTestProto NO-SOURCE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:extractIncludeDebugAndroidTestProto
+> Task :app:generateDebugAndroidTestProto NO-SOURCE
+> Task :app:compileDebugAndroidTestKotlin
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :app:testDebugUnitTest
+Picked up JAVA_TOOL_OPTIONS:  -Xmx2g
+
+BUILD SUCCESSFUL in 18s
+74 actionable tasks: 9 executed, 65 up-to-date
+gradle exit=0

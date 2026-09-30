@@ -25,12 +25,20 @@
 //! `store/PeerTarget.kt`: trust is the *set* of peers, the selection is the
 //! person's *choice*, and a destination is a function of the two. Nothing
 //! downstream can see list position. Keeping the two platforms' rules the
-//! same is itself a safety property — a person who learns "OmniBridge asks when
+//! same is itself a safety property — a person who learns "Pliwee asks when
 //! it is ambiguous" on the phone should not find the desktop guessing.
 //!
 //! # Where it is stored, and why not in the daemon
 //!
-//! `$XDG_CONFIG_HOME/omnibridge/gui.json`, as an application preference.
+//! `$XDG_CONFIG_HOME/pliwee/gui.json`, as an application preference.
+//!
+//! On the first start after an upgrade from OmniBridge, a
+//! `$XDG_CONFIG_HOME/omnibridge/gui.json` is copied across first and left in
+//! place (ADR-0020 D9), so the person's choice of device survives the rename.
+//! One that exists and cannot be read stops the GUI, naming the file, and
+//! nothing is written (D9: "same rules" as the data directory). Treating it as
+//! "nobody has chosen" would let a new `pliwee/gui.json` shadow the old choice
+//! forever.
 //!
 //! The daemon would be the better long-term owner: the CLI, the GUI and a
 //! future tray would then agree without any of them writing a file. That
@@ -38,7 +46,7 @@
 //! choice lives with the application that has the windows, is shared by both
 //! of them, and is recorded as a debt rather than smuggled into the socket.
 //!
-//! Deliberately **not** `$XDG_DATA_HOME/omnibridge`: that is the trust store,
+//! Deliberately **not** `$XDG_DATA_HOME/pliwee`: that is the trust store,
 //! whose 0700/0600 modes are verified on load, and a GUI preference has no
 //! business inside a directory with that contract.
 //!
@@ -70,10 +78,38 @@ pub struct Selection {
     current: RefCell<Option<String>>,
 }
 
+/// The preference file's name, in both the Pliwee and the legacy directory.
+const FILE_NAME: &str = "gui.json";
+
 impl Selection {
-    /// Loads the choice from the default location.
-    pub fn load() -> Self {
-        Self::at(default_path())
+    /// Loads the choice from the default location, carrying an OmniBridge
+    /// `gui.json` over first if there is one.
+    ///
+    /// An OmniBridge `gui.json` that exists and cannot be carried over is an
+    /// error naming it; the caller must not start.
+    pub fn load() -> Result<Self, pliwee_linux::MigrationError> {
+        Self::load_from(pliwee_linux::ConfigFiles::from_env(FILE_NAME))
+    }
+
+    fn load_from(files: pliwee_linux::ConfigFiles) -> Result<Self, pliwee_linux::MigrationError> {
+        if let pliwee_linux::ConfigOrigin::Migrated { source } =
+            pliwee_linux::migrate_config_file(&files)?
+        {
+            eprintln!(
+                "pliwee: migrated from {}: device choice copied to {}; the \
+                 source was not modified",
+                source.display(),
+                files.canonical.display()
+            );
+        }
+        Ok(Self::at(files.canonical))
+    }
+
+    /// The default location, read as it is, with no migration. For the
+    /// application tests, which must not copy a developer's real config.
+    #[cfg(test)]
+    pub(crate) fn unmigrated() -> Self {
+        Self::at(pliwee_linux::ConfigFiles::from_env(FILE_NAME).canonical)
     }
 
     /// Loads the choice from `path`. The seam the tests use.
@@ -151,7 +187,7 @@ impl Selection {
     ///
     /// A preference that cannot be written is not worth an error dialog: the
     /// choice still holds for this run, and the next run asks. Writing the
-    /// parent directory 0700 matches every other OmniBridge directory.
+    /// parent directory 0700 matches every other Pliwee directory.
     fn persist(&self) {
         if let Some(dir) = self.path.parent() {
             let _ = std::fs::create_dir_all(dir);
@@ -175,16 +211,6 @@ impl Selection {
     pub fn path(&self) -> &Path {
         &self.path
     }
-}
-
-/// `$XDG_CONFIG_HOME/omnibridge/gui.json`, else `~/.config/omnibridge/gui.json`.
-fn default_path() -> PathBuf {
-    let base = std::env::var_os("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .filter(|p| p.is_absolute())
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))
-        .unwrap_or_else(|| PathBuf::from("."));
-    base.join("omnibridge").join("gui.json")
 }
 
 /// Lowercases and checks that the value is fingerprint hex.
@@ -213,7 +239,7 @@ mod tests {
     fn temp(name: &str) -> PathBuf {
         let mut p = std::env::temp_dir();
         p.push(format!(
-            "omnibridge-selection-{}-{}-{name}",
+            "pliwee-selection-{}-{}-{name}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -222,6 +248,160 @@ mod tests {
         ));
         p.push("gui.json");
         p
+    }
+
+    fn config_files(name: &str) -> pliwee_linux::ConfigFiles {
+        let canonical = temp(name);
+        let root = canonical.parent().expect("parent").to_path_buf();
+        pliwee_linux::ConfigFiles {
+            canonical: root.join("pliwee").join(FILE_NAME),
+            legacy: root.join("omnibridge").join(FILE_NAME),
+        }
+    }
+
+    /// ADR-0020 D9, "same rules": an OmniBridge `gui.json` that exists and
+    /// cannot be read refuses the load, names the file, and creates no
+    /// Pliwee file that would shadow it.
+    #[test]
+    fn an_unreadable_legacy_choice_refuses_to_load_and_creates_nothing() {
+        use std::os::unix::fs::PermissionsExt;
+        let files = config_files("unreadable-legacy");
+        let legacy_dir = files.legacy.parent().expect("parent");
+        std::fs::create_dir_all(legacy_dir).expect("mkdir");
+        std::fs::write(&files.legacy, "{\"schema\":1,\"selected_peer\":\"ab12\"}\n")
+            .expect("write");
+        std::fs::set_permissions(legacy_dir, std::fs::Permissions::from_mode(0o000))
+            .expect("chmod");
+
+        let result = Selection::load_from(files.clone());
+        std::fs::set_permissions(legacy_dir, std::fs::Permissions::from_mode(0o700))
+            .expect("chmod");
+
+        let err = result.err().expect("an unreadable legacy file must refuse");
+        assert_eq!(err.path, files.legacy);
+        assert!(err
+            .to_string()
+            .contains(&files.legacy.display().to_string()));
+        assert!(!files.canonical.parent().expect("parent").exists());
+    }
+
+    #[test]
+    fn a_legacy_choice_is_carried_over_on_load() {
+        let files = config_files("legacy-choice");
+        std::fs::create_dir_all(files.legacy.parent().expect("parent")).expect("mkdir");
+        std::fs::write(
+            &files.legacy,
+            "{\"schema\":1,\"selected_peer\":\"ab12cd34\"}\n",
+        )
+        .expect("write");
+
+        let selection = Selection::load_from(files.clone()).expect("load");
+        assert_eq!(selection.current().as_deref(), Some("ab12cd34"));
+        assert!(files.canonical.exists());
+        assert!(files.legacy.exists());
+    }
+
+    /// A full SPKI fingerprint, as `Fingerprint::to_hex()` renders it and as
+    /// OmniBridge 1.0.0 stored the choice: 64 lowercase hex digits.
+    const FULL_FPR: &str = "3f9a0c7be1d24a6f8b05c3e9d17a2b4c6e8f0a1b2c3d4e5f60718293a4b5c6d7";
+
+    /// The bytes OmniBridge 1.0.0 wrote for a choice, built the way its
+    /// `Selection::persist` built them (desktop/gui/src/selection.rs at tag
+    /// v1.0.0, f72d30e): a `serde_json::Map` of `schema` and
+    /// `selected_peer`, `to_string_pretty`, and a trailing newline. The G7-UP
+    /// migration fixture (packaging/tests/lib/legacy-gui-state.sh,
+    /// `lgs_bytes`) writes the literal below; the assertion ties the two.
+    fn published_1_0_0_bytes(fingerprint: &str) -> String {
+        let mut doc = serde_json::Map::new();
+        doc.insert("schema".into(), 1u32.into());
+        doc.insert("selected_peer".into(), fingerprint.into());
+        let bytes = serde_json::to_string_pretty(&doc).expect("serialize") + "\n";
+        assert_eq!(
+            bytes,
+            format!("{{\n  \"schema\": 1,\n  \"selected_peer\": \"{fingerprint}\"\n}}\n"),
+            "the 1.0.0 serialization is the literal the G7-UP fixture writes"
+        );
+        bytes
+    }
+
+    fn mode_of(path: &Path) -> u32 {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::metadata(path).expect("stat").permissions().mode() & 0o777
+    }
+
+    /// ADR-0020 D9 over the exact file OmniBridge 1.0.0 leaves behind: the
+    /// real `Selection::load` path carries it over byte for byte, selects the
+    /// full fingerprint, leaves the source alone, and does nothing the second
+    /// time. G7-UP measures the same thing in a guest (upgrade-gates.sh O2).
+    #[test]
+    fn a_published_1_0_0_choice_migrates_byte_for_byte() {
+        use std::os::unix::fs::{MetadataExt, PermissionsExt};
+        let files = config_files("published-1.0.0");
+        let legacy_dir = files.legacy.parent().expect("parent");
+        std::fs::create_dir_all(legacy_dir).expect("mkdir");
+        std::fs::set_permissions(legacy_dir, std::fs::Permissions::from_mode(0o700))
+            .expect("chmod");
+        let source = published_1_0_0_bytes(FULL_FPR);
+        std::fs::write(&files.legacy, &source).expect("write");
+        let legacy_before = std::fs::metadata(&files.legacy).expect("stat");
+
+        let first = Selection::load_from(files.clone()).expect("load");
+        assert_eq!(first.current().as_deref(), Some(FULL_FPR));
+        assert_eq!(first.path(), files.canonical.as_path());
+        assert_eq!(
+            std::fs::read(&files.canonical).expect("migrated"),
+            source.as_bytes(),
+            "destination bytes are the source bytes"
+        );
+        assert_eq!(mode_of(&files.canonical), 0o600);
+        assert_eq!(mode_of(files.canonical.parent().expect("parent")), 0o700);
+
+        let unchanged = |label: &str| {
+            let now = std::fs::metadata(&files.legacy).expect("stat");
+            assert_eq!(
+                std::fs::read(&files.legacy).expect("legacy"),
+                source.as_bytes(),
+                "{label}: legacy bytes"
+            );
+            assert_eq!(now.ino(), legacy_before.ino(), "{label}: legacy inode");
+            assert_eq!(
+                now.mtime_nsec(),
+                legacy_before.mtime_nsec(),
+                "{label}: legacy mtime"
+            );
+            assert_eq!(now.mode(), legacy_before.mode(), "{label}: legacy mode");
+        };
+        unchanged("after the first load");
+
+        let canonical_before = std::fs::metadata(&files.canonical).expect("stat");
+        let second = Selection::load_from(files.clone()).expect("second load");
+        assert_eq!(second.current().as_deref(), Some(FULL_FPR));
+        let canonical_after = std::fs::metadata(&files.canonical).expect("stat");
+        assert_eq!(
+            canonical_after.ino(),
+            canonical_before.ino(),
+            "not rewritten"
+        );
+        assert_eq!(canonical_after.mtime_nsec(), canonical_before.mtime_nsec());
+        assert_eq!(
+            std::fs::read(&files.canonical).expect("canonical"),
+            source.as_bytes()
+        );
+        unchanged("after the second load");
+    }
+
+    /// The fixture's bytes are not a guess about an old program: Pliwee writes
+    /// the very same bytes for the same choice, so the format G7-UP feeds the
+    /// migration is the one this module still reads and writes.
+    #[test]
+    fn pliwee_still_writes_the_1_0_0_bytes_for_a_choice() {
+        let path = temp("same-format");
+        Selection::at(path.clone()).choose(&FULL_FPR.to_ascii_uppercase());
+        assert_eq!(
+            std::fs::read_to_string(&path).expect("written"),
+            published_1_0_0_bytes(FULL_FPR)
+        );
+        let _ = std::fs::remove_file(&path);
     }
 
     #[test]

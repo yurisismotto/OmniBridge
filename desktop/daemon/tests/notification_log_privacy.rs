@@ -47,7 +47,7 @@ mod common;
 use std::time::Duration;
 
 use common::*;
-use omnibridge_capability_notifications::CAPABILITY_ID;
+use pliwee_capability_notifications::CAPABILITY_ID;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -134,7 +134,7 @@ async fn the_mid_session_convergence_path_logs_no_notification_content() {
         let negotiated = desktop_negotiated(&server, client.fingerprint).await;
         assert!(!negotiated.contains(&CAPABILITY_ID.to_string()));
 
-        let response = omnibridge_runtime::server::do_grant(
+        let response = pliwee_runtime::server::do_grant(
             &server.state,
             &client.fingerprint.to_hex(),
             CAPABILITY_ID,
@@ -142,7 +142,7 @@ async fn the_mid_session_convergence_path_logs_no_notification_content() {
         )
         .await;
         match response {
-            omnibridge_runtime::control::Response::Ok { message } => assert!(
+            pliwee_runtime::control::Response::Ok { message } => assert!(
                 message.contains("reconnecting"),
                 "the convergence path was not taken, so this canaries nothing"
             ),
@@ -181,14 +181,14 @@ async fn the_mid_session_convergence_path_logs_no_notification_content() {
         // Now withdraw and re-grant with that notification live, so the
         // revocation, the mirror close and a second renegotiation decision
         // all run while there is content to leak.
-        omnibridge_runtime::server::do_grant(
+        pliwee_runtime::server::do_grant(
             &server.state,
             &client.fingerprint.to_hex(),
             CAPABILITY_ID,
             false,
         )
         .await;
-        omnibridge_runtime::server::do_grant(
+        pliwee_runtime::server::do_grant(
             &server.state,
             &client.fingerprint.to_hex(),
             CAPABILITY_ID,
@@ -212,7 +212,7 @@ see this file's header. If false, the subscriber never took effect at all."
     // rather than to an empty session that would make every assertion below
     // vacuously true.
     assert!(
-        text.contains("omnibridge_"),
+        text.contains("pliwee_"),
         "no daemon event reached the capture, so this test proves nothing:\n{text}"
     );
     for canary in [TITLE, BODY, APP_LABEL, APP_ID] {

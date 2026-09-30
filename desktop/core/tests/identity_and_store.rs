@@ -2,14 +2,14 @@
 
 use std::os::unix::fs::PermissionsExt;
 
-use omnibridge_core::clipboard_policy::ClipboardPolicy;
-use omnibridge_core::identity::LocalIdentity;
-use omnibridge_core::notification_policy::NotificationPolicy;
-use omnibridge_core::pairing::PairingToken;
-use omnibridge_core::qr::QrPayload;
-use omnibridge_core::store::{Store, TrustedPeer};
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::Platform;
+use pliwee_core::clipboard_policy::ClipboardPolicy;
+use pliwee_core::identity::LocalIdentity;
+use pliwee_core::notification_policy::NotificationPolicy;
+use pliwee_core::pairing::PairingToken;
+use pliwee_core::qr::QrPayload;
+use pliwee_core::store::{Settings, Store, TrustedPeer};
+use pliwee_core::{Fingerprint, Profile};
+use pliwee_proto::v1::Platform;
 
 fn identity() -> LocalIdentity {
     LocalIdentity::generate("Test Device", Platform::Linux).expect("generate identity")
@@ -115,6 +115,9 @@ fn qr_payload_round_trips() {
     let encoded = QrPayload::encode(&id.fingerprint(), &token, id.device_id(), &addrs);
     let parsed = QrPayload::parse(&encoded).expect("parse");
 
+    // The daemon emits the canonical scheme only (ADR-0020 §D4).
+    assert!(encoded.starts_with("pliwee1:"), "{encoded}");
+    assert_eq!(parsed.profile, Profile::Pliwee);
     assert_eq!(parsed.fingerprint, id.fingerprint());
     assert_eq!(parsed.device_id, id.device_id());
     assert_eq!(parsed.addresses, addrs);
@@ -138,13 +141,15 @@ fn qr_payload_handles_ipv6_addresses() {
 fn qr_payload_rejects_hostile_input() {
     assert!(QrPayload::parse("").is_err());
     assert!(QrPayload::parse("http://evil.example/").is_err());
-    // Right scheme, truncated.
+    // Right scheme, truncated — under either accepted scheme.
+    assert!(QrPayload::parse("pliwee1:").is_err());
     assert!(QrPayload::parse("omnibridge1:").is_err());
     // Wrong scheme version.
     let id = identity();
     let token = PairingToken::generate().expect("token");
     let good = QrPayload::encode(&id.fingerprint(), &token, id.device_id(), &[]);
-    assert!(QrPayload::parse(&good.replace("omnibridge1", "omnibridge9")).is_err());
+    assert!(QrPayload::parse(&good.replacen("pliwee1", "pliwee9", 1)).is_err());
+    assert!(QrPayload::parse(&good.replacen("pliwee1", "omnibridge9", 1)).is_err());
     // Oversized payload must be refused before parsing.
     assert!(QrPayload::parse(&"a".repeat(100_000)).is_err());
 }
@@ -164,7 +169,7 @@ fn qr_payload_drops_unparseable_addresses_but_keeps_the_rest() {
     let id = identity();
     let token = PairingToken::generate().expect("token");
     let encoded = format!(
-        "omnibridge1:{}:{}:{}:not-an-address,10.0.0.7:55432",
+        "pliwee1:{}:{}:{}:not-an-address,10.0.0.7:55432",
         id.fingerprint().to_hex(),
         token.to_base32(),
         id.device_id()
@@ -172,6 +177,62 @@ fn qr_payload_drops_unparseable_addresses_but_keeps_the_rest() {
     let parsed = QrPayload::parse(&encoded).expect("parse");
     assert_eq!(parsed.addresses.len(), 1);
     assert_eq!(parsed.addresses[0].to_string(), "10.0.0.7:55432");
+}
+
+/// The QR parse matrix of the Wave 5 plan: `pliwee1` and `omnibridge1` are
+/// accepted and each fixes its profile; `pliwee2` and `omnibridge2` are
+/// recognised as a newer format and rejected as such (ADR-0011's rule);
+/// `anyflow1` is not a pairing code at all.
+#[test]
+fn qr_scheme_matrix() {
+    let id = identity();
+    let token = PairingToken::generate().expect("token");
+    let body = format!(
+        "{}:{}:{}:10.0.0.7:55432",
+        id.fingerprint().to_hex(),
+        token.to_base32(),
+        id.device_id()
+    );
+    let parse = |scheme: &str| QrPayload::parse(&format!("{scheme}:{body}"));
+
+    let canonical = parse("pliwee1").expect("pliwee1 accepted");
+    assert_eq!(canonical.profile, Profile::Pliwee);
+    let legacy = parse("omnibridge1").expect("omnibridge1 accepted");
+    assert_eq!(legacy.profile, Profile::OmniBridge);
+    // Same payload body, same pinned identity: only the profile differs.
+    assert_eq!(canonical.fingerprint, legacy.fingerprint);
+
+    for newer in ["pliwee2", "omnibridge2"] {
+        let err = parse(newer).err().expect("a newer version is refused");
+        assert_eq!(
+            err.to_string(),
+            pliwee_core::Error::Protocol("unsupported QR payload version").to_string(),
+            "{newer}"
+        );
+    }
+    for foreign in ["anyflow1", "fedroid1", "PLIWEE1", "pliwee", "pliwee1x"] {
+        let err = parse(foreign).err().expect("not a pairing code");
+        assert_eq!(
+            err.to_string(),
+            pliwee_core::Error::Protocol("unknown QR scheme").to_string(),
+            "{foreign}"
+        );
+    }
+}
+
+/// Certificates of *new* identities carry `CN=pliwee:<device-id>`. Nothing
+/// parses the CN — trust is the SPKI pin — so this is a label, checked so it
+/// cannot drift silently.
+#[test]
+fn a_new_identity_certificate_names_pliwee() {
+    let id = identity();
+    let (_, cert) = x509_parser::parse_x509_certificate(id.certificate_der()).expect("x509");
+    let cn: Vec<&str> = cert
+        .subject()
+        .iter_common_name()
+        .map(|a| a.as_str().expect("utf8 CN"))
+        .collect();
+    assert_eq!(cn, vec![format!("pliwee:{}", id.device_id()).as_str()]);
 }
 
 // ---------------------------------------------------------------------------
@@ -273,6 +334,42 @@ fn peers_persist_across_restarts() {
     assert!(loaded.allows("battery.v1"));
 }
 
+/// The placeholder a hand-built `Settings` carries is the product's name.
+#[test]
+fn the_placeholder_device_name_is_the_product_name() {
+    assert_eq!(Settings::default().device_name, "Pliwee Device");
+}
+
+/// A default device name only ever applies to an identity created from now
+/// on. A name already in `state.json` — including an OmniBridge-era default —
+/// belongs to the user, and peers already store it: reopening must not
+/// rename the device.
+#[test]
+fn a_stored_device_name_survives_the_rename() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    {
+        let _store = Store::open(dir.path()).expect("open");
+    }
+
+    let path = dir.path().join("state.json");
+    let mut state: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&path).expect("read")).expect("parse");
+    let name = &mut state["settings"]["device_name"];
+    assert!(
+        name.is_string(),
+        "state.json must carry settings.device_name"
+    );
+    *name = "OmniBridge Desktop".into();
+    std::fs::write(
+        &path,
+        serde_json::to_string_pretty(&state).expect("serialize"),
+    )
+    .expect("write");
+
+    let store = Store::open(dir.path()).expect("reopen");
+    assert_eq!(store.settings().device_name, "OmniBridge Desktop");
+}
+
 #[test]
 fn revocation_survives_a_restart_and_hides_the_peer() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -348,10 +445,7 @@ fn a_newer_schema_version_is_refused_rather_than_misread() {
     // literal `1`, so that a future schema bump does not silently turn this
     // test into a no-op that passes because the replacement never happened.
     let bumped = raw.replace(
-        &format!(
-            "\"schema_version\": {}",
-            omnibridge_core::store::SCHEMA_VERSION
-        ),
+        &format!("\"schema_version\": {}", pliwee_core::store::SCHEMA_VERSION),
         "\"schema_version\": 99",
     );
     assert_ne!(raw, bumped, "schema_version must be present in state.json");
@@ -406,12 +500,13 @@ fn store_never_persists_message_or_clipboard_content() {
 // ---------------------------------------------------------------------------
 //
 // `protocol/testdata/identity-{a,b}.der` are real certificates emitted by
-// `cargo run -p omnibridge-core --example gen_test_vectors`. The Kotlin suite
+// `cargo run -p pliwee-core --example gen_test_vectors`. The Kotlin suite
 // reads the same two files and must derive the same fingerprints, which makes
 // "the identity is SHA-256 over the DER SubjectPublicKeyInfo" a checked
 // contract between the two implementations rather than a shared convention.
 //
-// Regenerating the fixtures changes these values; update both sides together.
+// The fixtures and these values are frozen (ADR-0020 D10; see
+// `frozen_vectors.rs`). They are never regenerated to remove a historical name.
 
 fn fixture(name: &str) -> Vec<u8> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))

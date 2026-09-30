@@ -1,0 +1,29 @@
+/bin/sh: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8): No such file or directory
+/bin/sh: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8): No such file or directory
+============================ rpmlint session starts ============================
+rpmlint: 2.8.0
+configuration:
+    /usr/lib/python3.14/site-packages/rpmlint/configdefaults.toml
+    /etc/xdg/rpmlint/fedora-spdx-licenses.toml
+    /etc/xdg/rpmlint/fedora.toml
+    /etc/xdg/rpmlint/scoring.toml
+    /etc/xdg/rpmlint/users-groups.toml
+    /etc/xdg/rpmlint/warn-on-functions.toml
+checks: 32, packages: 4
+
+pliwee.x86_64: W: unstripped-binary-or-object /usr/bin/pliwee
+pliwee.x86_64: W: unstripped-binary-or-object /usr/bin/pliweed
+pliwee-gui.x86_64: W: unstripped-binary-or-object /usr/bin/pliwee-gui
+pliwee.src: E: spelling-error ('systemd', '%description -l en_US systemd -> systems, system, system d')
+pliwee.src: E: spelling-error ('gui', '%description -l en_US gui -> GUI, goo')
+pliwee.x86_64: E: spelling-error ('gui', '%description -l en_US gui -> GUI, goo')
+pliwee.x86_64: W: no-manual-page-for-binary pliwee
+pliwee.x86_64: W: no-manual-page-for-binary pliweed
+pliwee-gui.x86_64: W: no-manual-page-for-binary pliwee-gui
+omnibridge.noarch: W: no-documentation
+pliwee-gui.x86_64: W: no-documentation
+omnibridge.noarch: W: name-repeated-in-summary OmniBridge
+pliwee.spec: W: invalid-url Source0: pliwee-1.1.0.tar.gz
+pliwee.spec: W: invalid-url Source1: pliwee-1.1.0-vendor.tar.xz
+pliwee.x86_64: W: empty-%postun
+ 4 packages and 0 specfiles checked; 3 errors, 12 warnings, 20 filtered, 3 badness; has taken 1.4 s 

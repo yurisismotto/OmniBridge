@@ -1,9 +1,46 @@
-//! This computer's own identity, and what OmniBridge is.
+//! This computer's own identity, and what Pliwee is.
 
 use gtk::prelude::*;
 
 use crate::widgets::{self, SPACING_SM};
 use crate::DaemonState;
+
+/// Everything this page shows, and nothing else from the status report.
+///
+/// The report also carries every device's session ages, which differ on each
+/// poll. Keyed on the whole report, this page — whose full fingerprint is a
+/// selectable, focusable label someone may be reading out — was rebuilt every
+/// `REFRESH_SECS`. See [`super::live`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Key {
+    device_name: String,
+    fingerprint: String,
+    device_id: String,
+    listen_port: u16,
+    listen_families: String,
+    protocol_version_min: u32,
+    protocol_version_max: u32,
+    capabilities: Vec<String>,
+    paired_devices: usize,
+    connections: usize,
+}
+
+impl Key {
+    pub(crate) fn of(state: &DaemonState) -> Option<Key> {
+        state.status.as_ref().map(|s| Key {
+            device_name: s.device_name.clone(),
+            fingerprint: s.fingerprint.clone(),
+            device_id: s.device_id.clone(),
+            listen_port: s.listen_port,
+            listen_families: s.listen_families.clone(),
+            protocol_version_min: s.protocol_version_min,
+            protocol_version_max: s.protocol_version_max,
+            capabilities: s.capabilities.clone(),
+            paired_devices: s.paired_devices,
+            connections: s.connections.len(),
+        })
+    }
+}
 
 pub fn render(container: &gtk::Box, state: &DaemonState) {
     widgets::clear(container);
@@ -11,7 +48,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState) {
 
     let Some(status) = &state.status else {
         container.append(&widgets::body_muted(
-            "The OmniBridge daemon is not reachable. Start it to see this computer's identity.",
+            "The Pliwee daemon is not reachable. Start it to see this computer's identity.",
         ));
         return;
     };
@@ -50,7 +87,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState) {
 
     container.append(&widgets::security_notice(
         "Private by design",
-        "OmniBridge has no account, no cloud service and no analytics. Devices talk \
+        "Pliwee has no account, no cloud service and no analytics. Devices talk \
          directly over your local network on a mutually authenticated TLS 1.3 session \
          pinned to the key you approved when pairing.",
         false,
@@ -62,10 +99,10 @@ pub fn render(container: &gtk::Box, state: &DaemonState) {
     about.set_halign(gtk::Align::Center);
     about.set_margin_top(SPACING_SM);
     about.append(&widgets::brand_mark(48));
-    let name = widgets::subtitle("OmniBridge");
+    let name = widgets::subtitle("Pliwee");
     name.set_halign(gtk::Align::Center);
     about.append(&name);
-    let tag = widgets::caption("One bridge. Any device.");
+    let tag = widgets::caption("One flow. Any device.");
     tag.set_halign(gtk::Align::Center);
     about.append(&tag);
     container.append(&about);

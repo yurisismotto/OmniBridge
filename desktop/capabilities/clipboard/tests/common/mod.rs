@@ -10,14 +10,14 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use omnibridge_capability_clipboard::backend::MemoryBackend;
-use omnibridge_capability_clipboard::{
+use pliwee_capability_clipboard::backend::MemoryBackend;
+use pliwee_capability_clipboard::{
     ClipboardAuthorizer, ClipboardManager, ClipboardPolicy, CAPABILITY_ID,
 };
-use omnibridge_core::capability::OutboundMessage;
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::capabilities as pb;
-use omnibridge_proto::Message;
+use pliwee_core::capability::OutboundMessage;
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1::capabilities as pb;
+use pliwee_proto::Message;
 use tokio::sync::{mpsc, RwLock};
 
 /// A fingerprint made of one repeated byte, so tests can name peers by digit.
@@ -95,8 +95,7 @@ impl Device {
     pub async fn new(device_id: &str) -> Self {
         let backend = Arc::new(MemoryBackend::new());
         let manager = ClipboardManager::new(
-            Arc::clone(&backend)
-                as Arc<dyn omnibridge_capability_clipboard::backend::ClipboardBackend>,
+            Arc::clone(&backend) as Arc<dyn pliwee_capability_clipboard::backend::ClipboardBackend>,
             device_id,
         );
         let authorizer = TestAuthorizer::new();
@@ -131,7 +130,7 @@ pub fn update_payload(
         origin_device_id,
         text,
         sensitive,
-        omnibridge_capability_clipboard::text::content_hash(text).to_vec(),
+        pliwee_capability_clipboard::text::content_hash(text).to_vec(),
     )
 }
 

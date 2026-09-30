@@ -7,7 +7,7 @@
 //! hardware through the real D-Bus path.
 //!
 //! ```bash
-//! cargo test -p omnibridge-capability-battery --features upower \
+//! cargo test -p pliwee-capability-battery --features upower \
 //!     --test real_upower -- --ignored --nocapture
 //! ```
 //!
@@ -17,7 +17,7 @@
 
 #![cfg(feature = "upower")]
 
-use omnibridge_capability_battery::{LocalBattery, LocalBatterySource, UPowerReader};
+use pliwee_capability_battery::{LocalBattery, LocalBatterySource, UPowerReader};
 
 #[tokio::test]
 #[ignore = "needs a live system bus; run explicitly during a physical regression"]

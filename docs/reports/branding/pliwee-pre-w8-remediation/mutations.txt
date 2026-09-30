@@ -1,0 +1,115 @@
+# Mutation proofs, pre-W8 remediation, 2026-09-25. Each mutation was applied to the working tree
+# (or, for release-signing, staged in a throwaway 'git clone --shared' under /tmp), run, and reverted;
+# the file was compared byte-for-byte with its saved copy afterwards.
+
+=================== d1-d3-mutations
+## M-D1: the CLI command name reverted to "omnibridge"
+thread 'tests::the_command_identifies_itself_as_pliwee' (298815) panicked at cli/src/main.rs:1056:9:
+  left: "omnibridge"
+ right: "pliwee"
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+## M-D3: the daemon help reverted to `<XDG downloads>/OmniBridge`
+thread 'tests::help_states_the_real_download_folder' (298894) panicked at daemon/src/main.rs:532:9:
+missing "<XDG downloads>/Pliwee" in:
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+## restored
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+=================== d2-mutation
+## M-D2: the scanner prompt reverted to the W7 text (`omnibridge pair`)
+> Task :app:testDebugUnitTest FAILED
+HostCommandCopyTest > the scanner prompt and the empty state name pliwee pair FAILED
+HostCommandCopyTest > no shipped source names a retired desktop command FAILED
+3 tests completed, 2 failed
+BUILD FAILED in 3s
+
+=================== d4-mutation
+## M-D4: notifications id domain reverted to the W7 text
+thread 'the_schema_states_the_canonical_domains' (266197) panicked at proto/tests/schema_comments.rs:39:9:
+capabilities/notifications_v1.proto does not state the canonical "pliwee/notifications.v1/id/v1"
+thread 'a_legacy_value_is_named_only_as_legacy' (266196) panicked at proto/tests/schema_comments.rs:69:13:
+capabilities/notifications_v1.proto:175: names an OmniBridge value without calling it legacy:   //               "omnibridge/notifications.v1/id/v1" || len32(key) || key)[0..16]
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+=================== d8-mutations
+## M-D8a: a hand-drawn shadow data/pliwee-mark.svg (one coordinate changed)
+test the_compiled_in_centre_mark_is_the_frozen_master ... FAILED
+test the_pairing_qr_centre_is_the_compiled_in_master_not_a_drawing ... FAILED
+thread 'the_compiled_in_centre_mark_is_the_frozen_master' (264684) panicked at gui/tests/brand_assets.rs:1442:5:
+assertion `left == right` failed: the compiled-in pliwee-mark.svg is not the frozen master
+thread 'the_pairing_qr_centre_is_the_compiled_in_master_not_a_drawing' (264694) panicked at gui/tests/brand_assets.rs:1419:5:
+data/pliwee-mark.svg would shadow the frozen master in the gresource
+test result: FAILED. 28 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+## M-D8b: a Cairo curve re-appears in pairing.rs
+test the_pairing_qr_centre_is_the_compiled_in_master_not_a_drawing ... FAILED
+thread 'the_pairing_qr_centre_is_the_compiled_in_master_not_a_drawing' (265109) panicked at gui/tests/brand_assets.rs:1410:9:
+pairing.rs uses "curve_to": the centre mark must be the master, not a drawing of it
+test result: FAILED. 29 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+## restored; re-run
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+=================== alpn-mutation
+## M-ALPN: require_negotiated tolerates a server that selected no ALPN (the rustls default)
+thread 'a_client_refuses_a_server_that_negotiated_no_alpn' (277156) panicked at core/tests/wire_identity.rs:370:17:
+assertion `left == right` failed: pliwee Control, server ALPN none: Ok(())
+test result: FAILED. 18 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+=================== release-signing-mutations
+# release-signing-tests.sh (final version, sha256 7ecd0d3340cf9ed1…) run in a throwaway 'git clone --shared' of this repository;
+# each file is staged there with 'git add -f' (so 'git ls-files' lists it), never in the real repository, and unstaged afterwards.
+## M-RS1 private key committed as .pem
+exit=1
+not ok  a tracked .pem is not a public certificate: REJECT android/signing/certs/legacy-omnibridge/leaked-key.pem: private/secret key-shaped content
+not ok  tracked file(s) carry private key armour: android/signing/certs/legacy-omnibridge/leaked-key.pem 
+69 passed, 2 failed
+## M-RS2 certificate bundled with its private key
+exit=1
+not ok  a tracked .pem is not a public certificate: REJECT android/signing/certs/legacy-omnibridge/bundle.pem: private/secret key-shaped content
+not ok  tracked file(s) carry private key armour: android/signing/certs/legacy-omnibridge/bundle.pem 
+69 passed, 2 failed
+## M-RS3 private key committed under an innocent name
+exit=1
+not ok  tracked file(s) carry private key armour: docs/notes.txt 
+70 passed, 1 failed
+## M-RS4 a private key relabelled CERTIFICATE (no PRIVATE word), committed as .pem
+exit=1
+not ok  a tracked .pem is not a public certificate: REJECT android/signing/certs/legacy-omnibridge/relabelled.pem: a CERTIFICATE block does not parse as X.509
+70 passed, 1 failed
+## M-RS5 a file named .asc (the name rule is unchanged)
+exit=1
+not ok  a key-shaped file is committed to the repository: packaging/release/example.asc 
+70 passed, 1 failed
+## baseline in the clone (nothing staged)
+exit=0
+71 passed, 0 failed
+
+=================== install-smoke-l17-precondition
+## old_ver=[omnibridge 1.0.0-1.fc44 omnibridge-gui 1.0.0-1.fc44 ] gui-file=gui
+  ok    L17: the older build is OmniBridge 1.0.0 (the transition's expected starting point)
+  ok    L17: the older build includes omnibridge-gui 1.0.0
+## old_ver=[pliwee 1.1.0-1.fc44 ] gui-file=no
+  FAIL  L17: the older build is not OmniBridge 1.0.0 (installed: 'pliwee 1.1.0-1.fc44'); the transition cannot be measured
+## old_ver=[ ] gui-file=no
+  FAIL  L17: the older build is not OmniBridge 1.0.0 (installed: '<nothing>'); the transition cannot be measured
+## old_ver=[omnibridge 0.9.0-1 ] gui-file=no
+  FAIL  L17: the older build is not OmniBridge 1.0.0 (installed: 'omnibridge 0.9.0-1'); the transition cannot be measured
+## old_ver=[omnibridge 1.0.0-1 ] gui-file=gui
+  ok    L17: the older build is OmniBridge 1.0.0 (the transition's expected starting point)
+  FAIL  L17: an omnibridge-gui package was given but omnibridge-gui 1.0.0 is not installed ('omnibridge 1.0.0-1')
+
+=================== census-mutations
+## M1: D2 re-introduced: the empty-state hint names `omnibridge pair` again
+?  UNEXPLAINED                                                                 1      1      1
+  ?  UNEXPLAINED                                                               0
+   android/app/src/main/java/io/github/yurisismotto/pliwee/ui/DevicesScreen.kt:52: "Run `omnibridge pair` on your computer, then scan the code " +   []
+G8 remainder census: FAIL
+## M2: a new file named with the old name
+FAIL: unexplained file name: desktop/zz-omnibridge-probe.txt
+G8 remainder census: FAIL
+## M3: an explained legacy line reworded so its explicit rule matches nothing
+D  DEFECT: stale user-visible or normative text (blocking)                     0      0      0
+FAIL: explicit rule matched nothing (stale): packaging/tests/install-smoke.sh :: The older build is OmniBridge
+G8 remainder census: FAIL
+## baseline (restored)
+G8 remainder census: PASS (zero unexplained, zero defects)

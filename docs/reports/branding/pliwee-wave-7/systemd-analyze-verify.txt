@@ -1,0 +1,13 @@
+$ systemd-analyze --version
+systemd 259 (259.9-1.fc44)
+$ sha256sum pliweed.service
+50de9d32c0db4c453575adc3421cfde728cbce52380e3e77a4d51a93eff0c7cb  /usr/lib/systemd/user/pliweed.service
+$ systemd-analyze verify /usr/lib/systemd/user/pliweed.service   # the shipped unit, as CI runs it
+rc=0
+$ systemd-analyze verify /usr/lib/systemd/user/omnibridged.service   # the alias symlink
+rc=0
+$ readlink /usr/lib/systemd/user/omnibridged.service
+pliweed.service
+$ (negative control: ExecStart binary removed) systemd-analyze verify pliweed.service
+pliweed.service: Command /usr/bin/pliweed is not executable: No such file or directory
+rc=1

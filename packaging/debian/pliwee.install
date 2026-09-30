@@ -1,0 +1,4 @@
+usr/bin/pliwee
+usr/bin/pliweed
+usr/lib/systemd/user/pliweed.service
+usr/share/icons/hicolor/scalable/apps/io.github.yurisismotto.pliwee.svg

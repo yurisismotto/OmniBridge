@@ -31,7 +31,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use common::*;
-use omnibridge_core::Fingerprint;
+use pliwee_core::Fingerprint;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -414,7 +414,7 @@ async fn sec_auth_01_an_unpaired_peer_cannot_establish_a_session() {
 
 /// A peer that presents a *wrong* pinned server fingerprint is refused.
 ///
-/// The client half of the pinning: OmniBridge must not talk to a server whose
+/// The client half of the pinning: Pliwee must not talk to a server whose
 /// key it has not pinned, which is what stops a LAN impostor answering on the
 /// right port.
 #[tokio::test]

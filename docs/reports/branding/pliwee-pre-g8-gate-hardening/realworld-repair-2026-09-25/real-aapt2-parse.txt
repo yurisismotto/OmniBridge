@@ -1,0 +1,13 @@
+# Read-only: Android build-tools 35.0.0 aapt2 over the debug APK present in android/app/build/outputs at the time (its build date is not recorded here; no device, no build).
+# 2026-09-25T19:10:42Z  commit cba16616cb8d9f13c58080343c378e6e7d3cb3f0
+$ ~/Android/Sdk/build-tools/35.0.0/aapt2 dump badging android/app/build/outputs/apk/debug/app-debug.apk | grep "^package: "
+package: name='io.github.yurisismotto.pliwee' versionCode='1' versionName='1.0.0' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+$ apk_fact (the repaired coordinator function) for each key
+name -> io.github.yurisismotto.pliwee (exit 0)
+versionCode -> 1 (exit 0)
+versionName -> 1.0.0 (exit 0)
+compileSdkVersionCodename -> 16 (exit 0)
+Codename -> <nothing> (exit 1)
+VersionName -> <nothing> (exit 1)
+$ the old parser on the same line: sed -n "s/^package: .*name='\([^']*\)'.*/\1/p"
+16

@@ -1,0 +1,242 @@
+
+== APK facts: exact field names, on the line aapt2 printed on the real run ==
+ok    badging_field and bump_version_code were loaded from the coordinator
+ok    REGRESSION: the old parser, on the real line, reads name as '16' (the real refusal)
+ok    name        -> io.github.yurisismotto.pliwee
+ok    versionCode -> 1
+ok    versionName -> 1.0.0
+ok    compileSdkVersionCodename -> 16 (the field the old parser mistook for name)
+ok    the substring key 'Codename' matches no field
+ok    the substring key 'VersionName' matches no field
+ok    the substring key 'ame' matches no field
+ok    the substring key 'Name' matches no field
+ok    the substring key 'Version' matches no field
+ok    the substring key 'Code' matches no field
+ok    name present only inside compileSdkVersionCodename is not name
+ok    a field given twice gives nothing
+ok    a line that is not the package: line gives nothing
+ok    a line that does not parse to its end gives nothing
+
+== The N+1 source edit: exactly one versionCode assignment, in a scratch file ==
+ok    the stub's defaultConfig versionCode = 1 is raised to 2
+ok    …the file now says versionCode = 2, once
+ok    …and differs from before in that one line only
+expected exactly one versionCode line outside comments in /tmp/pliwee-pre-g8-selftest.afWOKwTY/bv/two.kts, found 2
+ok    two versionCode assignments are refused
+ok    …and the file is not edited
+the one versionCode line is '        versionCode = 10', not 'versionCode = 1' (N's APK)
+ok    versionCode = 10 is not 'versionCode = 1' (N=1): refused
+expected exactly one versionCode line outside comments in /tmp/pliwee-pre-g8-selftest.afWOKwTY/bv/none.kts, found 0
+ok    no versionCode assignment is refused
+versionCode (line 2) is not inside defaultConfig { } (lines 3-5)
+ok    a versionCode outside defaultConfig { } is refused
+the one versionCode line is '        versionCode = 1 + 0', not 'versionCode = 1' (N's APK)
+ok    an expression instead of the literal is refused
+
+== A fresh evidence directory: nothing is PASS ==
+ok    every gate is listed in the summary (37: 5 Wave 2/6 + 4 distros x 8)
+ok    no gate is PASS on an empty evidence directory
+ok    a stubbed run reports SELFTEST, never PASS
+ok    a real --status on an empty directory reports INCOMPLETE
+ok    the summary is also written to the evidence directory
+ok    an evidence directory inside the source tree is refused
+
+== Missing values are refused, not guessed ==
+ok    INSTALL without a configured domain is refused
+ok    …and nothing was run
+ok    INSTALL on a distro with no configuration is refused
+ok    a domain with no package directory is refused
+ok    …and still nothing was run
+ok    the instrumented suite without a designated device serial is refused
+
+== U10 cannot run before U6 ==
+ok    U10 on a fresh directory is refused
+ok    …and the downgrade stage was never invoked
+
+== Confirmation: declined means nothing changes ==
+ok    a declined INSTALL exits 5
+ok    …prints the exact command it would have run
+ok    …and did not run it
+ok    …and the gate is still PENDING
+ok    no answer at all (EOF) is not a yes
+
+== One VM at a time ==
+ok    INSTALL is refused while another configured guest is running
+
+== The G7-UP chain, in the order §3 requires ==
+ok    INSTALL runs after 'yes' and is PASS
+ok    U2 (operator attestation) is PASS on five 'y'
+ok    U2's answers file is named for its attempt
+ok    …is read-only
+ok    …and its digest is in the record
+ok    a U2 rerun with one item not done is FAIL
+ok    …the PASS it replaced is archived byte-identical
+ok    …and still points at its own answers file
+ok    …which the rerun left byte-identical
+ok    …the rerun's record points at a different file
+ok    a U2 FAIL stays FAIL whatever happens to its answers
+ok    a second U2 rerun is PASS
+ok    …the first attempt's answers are still byte-identical
+ok    …three attempts, three answers files
+ok    U2 answers altered after a PASS turn it into FAIL
+ok    …and PASS again once they are restored
+ok    UPGRADE is PASS and left a checkpoint
+ok    U10 is BLOCKED while U6 has not passed
+ok    U10 after the upgrade but before U6 is refused
+ok    …and the downgrade stage was never invoked
+ok    U6 declined with no record: nothing recorded, nothing run
+ok    …and U6 is still PENDING
+ok    U6 over an EMPTY U6-RESULT is FAIL, although the harness exited 0 and printed ok
+ok    …and the RECORD says FAIL too, not only the status re-check
+ok    …so U10 is still BLOCKED
+ok    a U6 FAIL, --rerun declined: the FAIL stays current and nothing is archived
+ok    …and no U6 history exists
+ok    U6 evidence recorded for another domain is FAIL
+ok    …and U10 is still refused
+ok    U6 with real, matching evidence is PASS
+ok    U10 now waits for the security-log gate, which only the upgraded guest can run
+ok    U10 can be recorded not-executed while SECLOG is undecided
+ok    BYPASS: a not-executed U10 is still refused while SECLOG is undecided
+ok    …and the downgrade stage was never invoked
+ok    …U10 shows its prerequisite, not its own record, as the reason
+ok    a not-executed U10 (nothing downgraded) leaves SECLOG runnable
+ok    SECLOG declined with no record: nothing recorded, nothing run
+ok    SECLOG is refused once upgrade-gates.sh's U10-STARTED marker exists
+ok    …and security-log-evidence.sh was never invoked
+ok    not-executed without a reason is refused
+ok    not-executed with a reason is BLOCKED, never PASS
+ok    …and U10's prerequisites now hold: its only block is its own not-executed record
+ok    U10 declined over its not-executed record: that record stays current, unarchived
+ok    U10 runs after a verified U6 PASS and is PASS
+ok    …and its earlier not-executed record was kept in state/history/, not overwritten
+ok    a second U10 (--rerun) is refused before the harness: the guest is already on 1.0.0
+ok    …the downgrade stage ran exactly once
+ok    the stages ran in the order peer-u6, then downgrade
+ok    the security-log gate can no longer be run (the upgraded guest is gone)
+ok    BYPASS: a not-executed SECLOG is refused after U10 destroyed the upgraded guest
+ok    …and with --rerun
+ok    …and an interrupted SECLOG is not resumed by --next after U10
+ok    …--next moves on to the first runnable gate instead (W2-GNOME)
+ok    …nor run directly
+ok    …security-log-evidence.sh was never invoked, by any route
+ok    a U6 log altered after its PASS turns the gate into FAIL
+ok    …and says why
+ok    a U6 retry after U10 is refused: its FAIL record does not waive the upgraded guest
+ok    …and peer-u6 was not invoked again
+
+== Fresh-guest gates ==
+ok    U8 on the upgrade guest itself is refused
+ok    U8 needs the fresh guest's NAME typed back; 'yes' is not enough
+ok    U8 runs on the designated fresh guest and is PASS
+
+== Interruption and resume ==
+ok    a gate killed mid-run is BLOCKED (interrupted), not PASS and not PENDING
+ok    …and the status says it was interrupted
+ok    an interrupted run cannot be recorded not-executed (it was executed, at least in part)
+ok    --next resumes the interrupted gate before any new one
+ok    …and it completes as PASS
+ok    …with the interrupted attempt's record kept in state/history/
+
+== Wave 6 signing: passwords reach the terminal and nothing else ==
+ok    signing without both media configured is refused
+ok    provisioning ran and is PASS once --status shows restore-verified backups
+ok    the password was shown on the operator's terminal
+ok    the password is in NO file under the evidence directory
+
+== Wave 6 instrumented suite ==
+ok    a run whose results hold zero tests is FAIL
+ok    a run with 5 tests and no failures is PASS
+
+== W6-COMPONENT-UPGRADE: no attempt before the first confirmation ==
+ok    (b) no record, declined: nothing recorded and no device action
+ok    …no record file exists
+ok    …and the gate is still PENDING
+ok    …with no history
+ok    (b) no record, EOF at the confirmation: the same
+ok    N+1 not above N is refused before the confirmation
+ok    …and recorded nothing
+ok    a run whose shortcut was not pinned is a measured FAIL
+ok    (a) FAIL, --rerun declined at the first confirmation: nothing moved
+ok    …the FAIL record is byte-identical and current
+ok    …and was not archived
+ok    …the operator is told the gate keeps its previous state
+ok    …the gate is still FAIL, with no history
+ok    …and the summary's FAIL count is unchanged
+ok    (a) REAL: FAIL, --rerun with no terminal to confirm at is refused (exit 2)
+ok    …at the confirmation, after the preparation
+ok    …the real FAIL record is byte-identical, and there is no history
+ok    …and the REAL overall result is still FAIL, not INCOMPLETE
+ok    …with W6-COMPONENT-UPGRADE still FAIL
+ok    no device action was taken by any decline
+ok    (c) --rerun, confirmed: the new attempt runs and is PASS
+ok    …N then N+1 were installed
+ok    …and the FAIL it replaced is in state/history/, byte-identical
+ok    …the summary names it
+ok    a later confirmation declined exits 5
+ok    …leaving THIS attempt's record open (RUNNING), and says so
+ok    …with the PASS it replaced archived, not lost
+
+== W6-COMPONENT-UPGRADE: N+1 from a scratch copy of the committed sources ==
+ok    prebuilt APKs of another package are refused before the confirmation
+ok    no APKs given: both built and verified, then the first confirmation declined moves nothing
+ok    …N was read as io.github.yurisismotto.pliwee versionCode 1
+ok    …N+1 as io.github.yurisismotto.pliwee versionCode 2
+ok    …only the two APKs, the list and the log are kept in the evidence directory
+ok    …from the checkout's commit
+ok    …two builds: N in the checkout, then N+1 in a scratch tree under TMPDIR
+ok    …with --max-workers=2, and no injected AGP property
+ok    …the scratch tree is gone
+ok    …the checkout is byte-identical and clean
+ok    …and the checkout's own build output is still N
+ok    REGRESSION: a build that ignores the raised versionCode (N+1 = 1) is refused
+ok    …before the confirmation: nothing recorded, nothing done to the device
+ok    …and the scratch tree is gone, the checkout clean
+ok    an N+1 that is higher but is not N+1 (not the edited source) is refused
+ok    …the scratch tree is gone
+ok    an N APK whose versionCode is not its source's is refused before the edit
+ok    …the scratch tree is gone
+ok    a committed source with two versionCode assignments is refused
+ok    …before the N+1 build (only N was built), recording nothing
+ok    …the scratch tree is gone, the checkout clean
+ok    uncommitted Android sources are refused: N+1 would differ from N in more than versionCode
+ok    …before anything is built
+ok    an untracked file among them is refused the same way
+ok    the checkout is clean again
+
+== Wave 2 real-session checks, GNOME and KDE separately ==
+ok    a KDE record made from a GNOME session is refused
+ok    GNOME, every item observed and both announcements recorded: PASS
+ok    KDE with one item not observed: FAIL
+ok    …naming the item
+
+== A measured FAIL is kept: FAIL -> --not-executed is refused ==
+ok    --not-executed over a measured FAIL is refused
+ok    …the FAIL record is byte-identical afterwards
+ok    …the gate is still FAIL
+ok    …and still counted as a FAIL in the summary (n_fail > 0 is what makes a real result FAIL)
+ok    running a FAIL again needs --rerun
+ok    a retry (--rerun) is a new attempt and may PASS
+ok    …the original FAIL record is preserved, byte-identical, in state/history/
+ok    …with its answers file still present and matching its digest
+ok    …and the summary names the earlier FAIL
+ok    the earlier instrumented-suite FAIL is kept the same way
+ok    a REAL --not-executed over a FAIL is refused (exit 2)
+ok    …naming why
+ok    …and the REAL overall result remains FAIL
+
+== No gate is silently skipped ==
+ok    all 37 gates still appear, each with a state
+ok    gates never run are PENDING or BLOCKED, e.g. G7UP-ubuntu2404-INSTALL (W6-COMPONENT-UPGRADE is run above)
+ok    …and the whole ubuntu2404 chain is present
+ok    a REAL --status over these self-test records counts none of them as PASS
+
+== Every other confirming gate: a declined --rerun moves nothing ==
+ok    W6-INSTRUMENTED (PASS), --rerun declined
+ok    G7UP-fedora44-UPGRADE (PASS), --rerun declined
+ok    G7UP-fedora44-U8 (PASS), --rerun with 'yes' instead of the guest's name
+ok    LIFECYCLE-fedora44 (PASS), --rerun declined
+ok    W6-SIGNING, not provisioned, declined
+ok    G7UP-debian13-INSTALL, no record, declined
+
+-----------------------------------------------
+198 passed, 0 failed

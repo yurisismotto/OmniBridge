@@ -1,0 +1,10 @@
+# negative control: a dummy 'omnibridge' 1.1.0 that carries one file and requires pliwee without a release
+  FAIL  the transitional omnibridge package carries 1 file(s)
+  ok    transitional omnibridge requires exactly pliwee = 1.1.0-1
+  ok    the spec builds exactly pliwee, pliwee-gui and the transitional omnibridge (rpmspec)
+  ok    the core package declares no Obsoletes: (the transitional package upgrades omnibridge instead)
+  ok    transitional %package -n omnibridge: noarch, Requires: pliwee = %{version}-%{release}
+  ok    the transitional omnibridge package has a %files section (and it is empty)
+  ok    debian transitional omnibridge: Architecture: all, Depends: pliwee (>= ${binary:Version})
+  ok    debian transitional omnibridge-gui: Architecture: all, Depends: pliwee-gui (>= ${binary:Version})
+133 passed, 1 failed

@@ -44,7 +44,7 @@ mod common;
 use std::time::Duration;
 
 use common::*;
-use omnibridge_capability_files::transfer::TransferState;
+use pliwee_capability_files::transfer::TransferState;
 
 const GRACE: Duration = Duration::from_secs(10);
 
@@ -163,7 +163,7 @@ async fn sec_log_03_file_content_never_reaches_the_log() {
          took effect at all. See this file's header."
     );
     assert!(
-        text.contains("omnibridge_"),
+        text.contains("pliwee_"),
         "no daemon event reached the capture, so this test proves nothing:\n{text}"
     );
     // The transfer's own log lines must be present, or the capture missed the

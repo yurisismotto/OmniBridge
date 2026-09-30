@@ -1,0 +1,326 @@
+#!/usr/bin/env python3
+"""TEST ONLY — a stateful stand-in for `virsh -c qemu:///system`, used by
+pre-g8-autopilot-selftests.sh. Nothing outside the self-tests puts it on PATH.
+
+It keeps domains, pool volumes and internal snapshots under $FAKE_LIBVIRT, and
+answers the qemu-guest-agent commands guest-agent.sh sends. A guest's "disk"
+is a JSON dictionary per volume; an overlay starts as a copy of its backing
+volume's, a snapshot is a copy of it, and cloud-init is emulated at start from
+the seed volume attached to the domain (the fake genisoimage's output).
+
+It also WATCHES the autopilot: starting a domain while another one runs is
+written to $FAKE_LIBVIRT/violations, which the self-tests require empty.
+
+SELinux, as the first real Fedora 44 template met it (2026-09-26): a fedora44
+guest's agent runs guest-exec in virt_qemu_ga_t, enforcing, and the probe can
+read neither cloud-init's status, nor the host name, nor the template marker,
+nor systemd's default target — until the template seed has made that domain
+permissive (typepermissive virt_qemu_ga_t, loaded by semodule in the prepare
+script). A seed without that fix leaves the guest confined forever, exactly as
+it did for real. Per-run knobs, each naming the domain it applies to:
+  FAKE_STAY_CONFINED  the fix is in the seed but does not take effect;
+  FAKE_AGENT_DEAD     the agent never answers;
+  FAKE_NO_GNOME       the desktop is missing from the prepared template;
+  FAKE_PREPARE_NEVER  the prepare script never finishes (no marker);
+  FAKE_SLOW_PREPARE   the first FAKE_SLOW_PROBES (default 3) probes see the
+                      preparation still running (a package transaction);
+  FAKE_CI_ERROR_RUNNING  …and during them cloud-init reports a recoverable
+                      error while still running ("error - running");
+  FAKE_CONFFILE_FAIL  the guest ends exactly as the real Ubuntu template did
+                      (below), whatever the seed.
+
+GDM, as the first real TEMPLATE-ubuntu2404 met it (2026-09-26): each
+distribution's GDM reads one file, which its gdm package ships as a conffile
+(GDM_READS). A Debian-family seed that writes that file BEFORE the desktop is
+installed (write_files) makes dpkg stop at a conffile prompt with no terminal:
+the prepare script exits 100 at stage desktop, cloud-init ends "error - done",
+and there is no marker. Fedora's rpm keeps the file (noreplace). Autologin, and
+so the graphical session, works only if it was written into GDM_READS.
+"""
+import base64, json, os, random, re, shlex, shutil, sys, time
+
+ST = os.environ["FAKE_LIBVIRT"]
+P = lambda *a: os.path.join(ST, *a)
+os.makedirs(P("doms"), exist_ok=True); os.makedirs(P("vols"), exist_ok=True)
+
+args = sys.argv[1:]
+while args and args[0] in ("-c", "--connect"):
+    args = args[2:]
+with open(P("calls"), "a") as f:
+    f.write(" ".join(args) + "\n")
+if not args:
+    sys.exit(1)
+cmd, rest = args[0], args[1:]
+VALUE_OPTS = {"pool", "name", "capacity", "format", "backing-vol", "backing-vol-format", "domain",
+              "snapshotname", "description", "mode", "allocation"}
+opts, flags, pos = {}, set(), []
+i = 0
+while i < len(rest):
+    t = rest[i]
+    if t.startswith("--"):
+        k = t[2:]
+        if k in VALUE_OPTS and i + 1 < len(rest):
+            opts[k] = rest[i + 1]; i += 2; continue
+        flags.add(k); i += 1; continue
+    pos.append(t); i += 1
+
+def die(msg, code=1):
+    sys.stderr.write("error: " + msg + "\n"); sys.exit(code)
+def rd(path, default=""):
+    try:
+        with open(path) as f: return f.read()
+    except OSError: return default
+def wr(path, text):
+    with open(path, "w") as f: f.write(text)
+def doms(): return sorted(os.listdir(P("doms")))
+def dstate(d): return rd(P("doms", d, "state"), "shut off").strip()
+def need_dom(d):
+    if not d or not os.path.isdir(P("doms", d)): die("failed to get domain '%s'" % d)
+def disk_of(d, device="disk"):
+    x = rd(P("doms", d, "xml"))
+    for m in re.finditer(r"<disk type='volume' device='(\w+)'>.*?<source pool='[^']*' volume='([^']*)'/>", x, re.S):
+        if m.group(1) == device: return m.group(2)
+    return None
+def vmeta(v): return json.loads(rd(P("vols", v + ".meta"), "{}") or "{}")
+def vput(v, m): wr(P("vols", v + ".meta"), json.dumps(m))
+def gstate(v): return json.loads(rd(P("vols", v + ".guest"), "{}") or "{}")
+def gput(v, s):
+    wr(P("vols", v + ".guest"), json.dumps(s))
+    m = vmeta(v); m["mtime"] = m.get("mtime", 0) + 1; vput(v, m)
+def vols(): return sorted(n[:-5] for n in os.listdir(P("vols")) if n.endswith(".meta"))
+
+PEER_FPR = "ABCD 1234 5678 9ABC"
+
+def distro_of(d):
+    m = re.search(r"<distro>([^<]+)</distro>", rd(P("doms", d, "xml")))
+    return m.group(1) if m else ""
+def knob(name, d): return d in os.environ.get(name, "").split(",")
+def confined(d, s):
+    return distro_of(d) == "fedora44" and s.get("qga_permissive") != "yes"
+
+GDM_READS = {"fedora44": "/etc/gdm/custom.conf", "ubuntu2404": "/etc/gdm3/custom.conf",
+             "ubuntu2604": "/etc/gdm3/custom.conf", "debian13": "/etc/gdm3/daemon.conf"}
+RUNCMD_ERR = "('scripts_user', RuntimeError('Runparts: 1 failures (runcmd) in 1 attempted commands'))"
+DPKG_ERR = "dpkg: error processing package gdm3 (--configure):  end of file on stdin at conffile prompt "
+
+def cloud_init(d):
+    disk, seed = disk_of(d), disk_of(d, "cdrom")
+    s = gstate(disk)
+    if seed and os.path.exists(P("vols", seed)):
+        text = rd(P("vols", seed))
+        iid = (re.search(r"instance-id: (\S+)", text) or [None, ""])[1]
+        if iid and iid != s.get("instance_id"):
+            s["instance_id"] = iid
+            h = re.search(r"^hostname: (\S+)", text, re.M)
+            if h: s["hostname"] = h.group(1)
+            prep = "pliwee-g8-prepare" in text
+            dist = distro_of(d); reads = GDM_READS.get(dist, "")
+            pre_written = re.findall(r"^  - path: (\S+)", text, re.M)
+            m = re.search(r"^\s*gdmconf=(\S+)", text, re.M)
+            if prep:
+                s["gdm_conf"] = m.group(1) if m else ""
+                s["autologin_ok"] = "yes" if (reads and (s["gdm_conf"] == reads or reads in pre_written)) else ""
+            if prep and ((dist != "fedora44" and reads in pre_written) or knob("FAKE_CONFFILE_FAIL", d)):
+                # dpkg's conffile prompt, answered by EOF: the real failure.
+                s.update(cloud_init="error", ci_extended="error - done", ci_error=RUNCMD_ERR,
+                         prepare_error=DPKG_ERR, default_target="graphical.target", user_uid="1000")
+                if "trap failed EXIT" in text: s["prepare_failed"] = "exit=100 stage=desktop"
+                s["boots"] = s.get("boots", 0) + 1
+                if not s.get("machine_id"): s["machine_id"] = "%032x" % random.getrandbits(128)
+                s["instance_id"] = iid; gput(disk, s); return
+            if prep and knob("FAKE_SLOW_PREPARE", d):
+                s["slow_left"] = int(os.environ.get("FAKE_SLOW_PROBES", "3"))
+            if prep and "(typepermissive virt_qemu_ga_t)" in text and "semodule -i" in text and not knob("FAKE_STAY_CONFINED", d):
+                s["qga_permissive"] = "yes"
+            if prep and not os.path.exists(P("doms", d, "prepare-fails")) and not knob("FAKE_PREPARE_NEVER", d):
+                s.update(template_ready="yes", user_uid="1000", default_target="graphical.target")
+                if knob("FAKE_NO_GNOME", d): s["no_gnome"] = "yes"
+            t = re.search(r'/var/lib/pliwee-g8/identity\n.*?content: "([0-9a-f]+)"', text, re.S)
+            if t: s["identity"] = t.group(1)
+            s["cloud_init"] = "running" if knob("FAKE_PREPARE_NEVER", d) else "done"
+            s["ci_extended"] = s["cloud_init"]
+    if not s.get("machine_id"):
+        s["machine_id"] = "%032x" % random.getrandbits(128)
+    s["boots"] = s.get("boots", 0) + 1
+    gput(disk, s)
+
+def guest(d, c):
+    """(stdout, exit code) of a guest command, by what it is."""
+    disk = disk_of(d); s = gstate(disk); out, code = "", 0
+    if c.startswith("runuser "):
+        # `runuser -u U -- env … sh -c <printf %q>`: unquote it as sh would.
+        try: c = shlex.split(c)[-1]
+        except ValueError: pass
+    if "# ap-probe" in c:
+        running = dstate(d) == "running"
+        sess = "wayland" if running and s.get("template_ready") == "yes" and s.get("autologin_ok", "yes") == "yes" \
+            and not os.path.exists(P("doms", d, "no-session")) else ""
+        sel = ["sel_context=system_u:system_r:virt_qemu_ga_t:s0", "sel_enforce=1"] if distro_of(d) == "fedora44" else \
+              ["sel_context=", "sel_enforce="]
+        slow = s.get("slow_left", 0) > 0
+        if slow:
+            s["slow_left"] -= 1; gput(disk, s)
+        diag = sel + ["datasource=nocloud", "pkg_procs=%d" % (2 if slow else 0), "net_ipv4=192.168.68.200/22",
+                      "prepare_stage=stage: verify" if s.get("template_ready") == "yes" and not slow else "prepare_stage=stage: desktop",
+                      "uptime_s=%d" % (60 * s.get("boots", 1)),
+                      "prepare_running=%d" % (1 if slow or (knob("FAKE_PREPARE_NEVER", d) and s.get("cloud_init") == "running") else 0),
+                      "prepare_failed=" + s.get("prepare_failed", ""), "prepare_error=" + s.get("prepare_error", "")]
+        ci, cie, cierr = s.get("cloud_init", "running"), s.get("ci_extended", s.get("cloud_init", "running")), s.get("ci_error", "")
+        if slow:
+            ci, cie = ("error", "error - running") if knob("FAKE_CI_ERROR_RUNNING", d) else ("running", "running")
+            cierr = "('apt_configure', 'a recoverable warning')" if knob("FAKE_CI_ERROR_RUNNING", d) else ""
+        diag += ["ci_extended=" + cie, "ci_error=" + cierr]
+        if confined(d, s):
+            # What the real probe printed under virt_qemu_ga_t: every read that
+            # SELinux denied is an empty value.
+            out = "\n".join(["identity=", "template_ready=", "machine_id=" + s.get("machine_id", ""), "hostname=",
+                             "cloud_init=", "user_uid=" + s.get("user_uid", ""), "session_type=", "default_target=",
+                             "os=FakeOS " + d, "kernel=6.99.0-fake"] + diag) + "\n"
+            return out, 0
+        out = "\n".join([
+            "identity=" + s.get("identity", ""), "template_ready=" + s.get("template_ready", ""),
+            "machine_id=" + s.get("machine_id", ""), "hostname=" + s.get("hostname", "localhost"),
+            "cloud_init=" + ci, "user_uid=" + s.get("user_uid", ""),
+            "session_type=" + sess, "default_target=" + s.get("default_target", "multi-user.target"),
+            "os=FakeOS " + d, "kernel=6.99.0-fake"] + diag) + "\n"
+        if slow:
+            out = out.replace("template_ready=yes", "template_ready=")
+    elif "# ap-template-check" in c:
+        fed = distro_of(d) == "fedora44"
+        out = "\n".join([
+            "pkg_gnome_shell=" + ("" if s.get("no_gnome") else "49.1-1"), "pkg_gdm=49.0-1", "pkg_qga=10.2.2-1",
+            "gdm_conf=" + s.get("gdm_conf", ""),
+            "gdm_conf_read_by_gdm=" + ("yes" if s.get("gdm_conf") and s.get("gdm_conf") == GDM_READS.get(distro_of(d)) else ""),
+            "autologin=" + ("anyflow" if s.get("autologin_ok") == "yes" else ""), "no_lock=yes", "initial_setup_done=yes",
+            "default_target=" + s.get("default_target", ""), "selinux=" + ("Enforcing" if fed else ""),
+            "qga_permissive=" + (s.get("qga_permissive", "") if fed else ""),
+            "marker=2026-09-26T00:00:00Z" if s.get("template_ready") == "yes" else "marker="]) + "\n"
+    elif "# ap-diagnose" in c:
+        out = "## tail /var/log/pliwee-g8-prepare.log\n== stage: desktop\n## AVC denials (last 40)\n%s\n" % (
+            "avc:  denied  { getattr } for comm=\"sh\" path=\"/usr/bin/cloud-init\" scontext=system_u:system_r:virt_qemu_ga_t:s0"
+            if confined(d, s) else "")
+    elif "# ap-generalize" in c:
+        s.pop("identity", None); s["machine_id"] = ""; gput(disk, s)
+        wr(P("doms", d, "state"), "shut off"); return "", 0
+    elif "omnibridge devices" in c:
+        if s.get("paired"):
+            g = ", ".join(s.get("grants", [])) or "-"
+            out = ("SM-X620  0123456789abcdef\n   platform    android\n   fingerprint %s\n"
+                   "   paired      yes\n   connected   yes\n   state       live\n   granted     %s\n") % (PEER_FPR, g)
+        else:
+            out = "no paired devices. Run: omnibridge pair\n"
+    elif "nohup omnibridge pair" in c:
+        s["pair_started"] = s.get("pair_started", 0) + 1
+        if not os.path.exists(P("doms", d, "no-auto-pair")): s["paired"] = 1
+        gput(disk, s)
+    elif "omnibridge1:" in c:
+        out = "omnibridge1:%s:FUPJRRCMFSG6KYYHR5ODB5BBLM7HVSCZ:0123456789abcdef:192.168.68.100:55432\n" % ("ab" * 32)
+    elif re.search(r"omnibridge grant \S+ (\S+)", c):
+        cap = re.search(r"omnibridge grant \S+ (\S+)", c).group(1)
+        s.setdefault("grants", []); cap in s["grants"] or s["grants"].append(cap); gput(disk, s)
+    elif "omnibridge clipboard allow" in c or "notifications when-locked" in c:
+        s.setdefault("cli", []).append(c[-120:]); gput(disk, s)
+    elif "rpm -qa" in c:
+        out = "fake-desktop-1.0\nqemu-guest-agent-10\n"
+    return out, code
+
+def vol_xml(v):
+    m = vmeta(v)
+    back = ("<backingStore><path>/fakepool/%s</path><format type='qcow2'/></backingStore>" % m["backing"]) if m.get("backing") else ""
+    return ("<volume type='file'><name>%s</name><capacity unit='bytes'>%s</capacity><allocation unit='bytes'>%d</allocation>"
+            "<target><path>/fakepool/%s</path><format type='%s'/><timestamps><mtime>%s</mtime></timestamps></target>%s</volume>"
+            % (v, m.get("capacity", 0), len(rd(P("vols", v))), v, m.get("format", "raw"), m.get("mtime", 0), back))
+
+if cmd == "uri": print("qemu:///system")
+elif cmd == "version": print("Compiled against library: libvirt 12.0.0\nUsing API: QEMU 12.0.0\nRunning hypervisor: QEMU 10.2.2")
+elif cmd == "pool-info":
+    free = os.environ.get("FAKE_POOL_FREE", str(100 * 1073741824))
+    print("Name:           default\nState:          running\nAvailable:      %s" % (free if "bytes" in flags else "100.00 GiB"))
+elif cmd == "pool-refresh": pass
+elif cmd == "list":
+    for d in doms():
+        if "all" in flags or dstate(d) == "running": print(d)
+elif cmd == "domstate": need_dom(pos[0] if pos else opts.get("domain")); print(dstate(pos[0]))
+elif cmd == "dominfo": need_dom(pos[0]); print("Name: %s\nState: %s" % (pos[0], dstate(pos[0])))
+elif cmd == "dumpxml": need_dom(pos[-1]); sys.stdout.write(rd(P("doms", pos[-1], "xml")))
+elif cmd == "define":
+    x = rd(pos[0]); name = re.search(r"<name>([^<]+)</name>", x).group(1)
+    os.makedirs(P("doms", name, "snaps"), exist_ok=True)
+    if "<uuid>" not in x:
+        old = re.search(r"<uuid>([^<]+)</uuid>", rd(P("doms", name, "xml")))
+        u = old.group(1) if old else "%08x-0000-4000-8000-%012x" % (random.getrandbits(32), random.getrandbits(48))
+        x = x.replace("</name>", "</name>\n  <uuid>%s</uuid>" % u, 1)
+    wr(P("doms", name, "xml"), x)
+    if not os.path.exists(P("doms", name, "state")): wr(P("doms", name, "state"), "shut off")
+    print("Domain '%s' defined" % name)
+elif cmd == "undefine":
+    need_dom(pos[0]); shutil.rmtree(P("doms", pos[0])); print("Domain '%s' has been undefined" % pos[0])
+elif cmd == "start":
+    d = pos[0]; need_dom(d)
+    if dstate(d) == "running": die("domain is already active")
+    others = [o for o in doms() if o != d and dstate(o) == "running"]
+    if others:
+        with open(P("violations"), "a") as f: f.write("started %s while %s running\n" % (d, ",".join(others)))
+    wr(P("doms", d, "state"), "running"); cloud_init(d); print("Domain '%s' started" % d)
+elif cmd in ("shutdown", "destroy"):
+    d = pos[-1]; need_dom(d)
+    if cmd == "shutdown" and os.path.exists(P("doms", d, "refuse-shutdown")): sys.exit(0)
+    wr(P("doms", d, "state"), "shut off")
+elif cmd == "detach-disk":
+    d = pos[0]; need_dom(d)
+    x = re.sub(r"\s*<disk type='volume' device='cdrom'>.*?</disk>", "", rd(P("doms", d, "xml")), flags=re.S)
+    wr(P("doms", d, "xml"), x)
+elif cmd == "snapshot-create-as":
+    d = opts.get("domain") or pos[0]; n = opts.get("name") or pos[1]; need_dom(d)
+    wr(P("doms", d, "snaps", n), json.dumps(gstate(disk_of(d))))
+elif cmd == "snapshot-list":
+    d = opts.get("domain") or pos[0]; need_dom(d)
+    for n in sorted(os.listdir(P("doms", d, "snaps"))): print(n)
+elif cmd == "snapshot-revert":
+    d = opts.get("domain") or pos[0]; n = opts.get("snapshotname") or pos[1]; need_dom(d)
+    if not os.path.exists(P("doms", d, "snaps", n)): die("snapshot not found")
+    v = disk_of(d); wr(P("vols", v + ".guest"), rd(P("doms", d, "snaps", n)))
+elif cmd == "vol-list":
+    print(" Name   Path\n--------------")
+    for v in vols(): print(" %s   /fakepool/%s" % (v, v))
+elif cmd == "vol-create-as":
+    v = opts.get("name") or pos[1]
+    if v in vols(): die("storage volume '%s' exists already" % v)
+    m = {"capacity": opts.get("capacity", "0"), "format": opts.get("format", "raw"), "mtime": 1}
+    b = opts.get("backing-vol")
+    if b:
+        if b not in vols(): die("no backing volume %s" % b)
+        m["backing"] = b; wr(P("vols", v + ".guest"), rd(P("vols", b + ".guest"), "{}"))
+    wr(P("vols", v), ""); vput(v, m)
+elif cmd == "vol-upload":
+    v = pos[0]; shutil.copyfile(pos[1], P("vols", v)); m = vmeta(v); m["mtime"] = m.get("mtime", 0) + 1; vput(v, m)
+elif cmd == "vol-download":
+    shutil.copyfile(P("vols", pos[0]), pos[1])
+elif cmd == "vol-delete":
+    v = pos[0]
+    for suf in ("", ".meta", ".guest"):
+        if os.path.exists(P("vols", v + suf)): os.remove(P("vols", v + suf))
+elif cmd == "vol-path":
+    if pos[0] not in vols(): die("no volume")
+    print("/fakepool/" + pos[0])
+elif cmd == "vol-dumpxml":
+    if pos[0] not in vols(): die("no volume")
+    print(vol_xml(pos[0]))
+elif cmd == "qemu-agent-command":
+    d = pos[0]; req = json.loads(pos[1]); ex = req["execute"]
+    if not os.path.isdir(P("doms", d)) or dstate(d) != "running": die("domain is not running")
+    if os.path.exists(P("doms", d, "agent-dead")) or knob("FAKE_AGENT_DEAD", d): die("Guest agent is not responding")
+    if ex == "guest-ping": print('{"return":{}}')
+    elif ex == "guest-exec":
+        c = req["arguments"]["arg"][-1]; pid = random.randint(1000, 999999)
+        os.makedirs(P("doms", d, "exec"), exist_ok=True); wr(P("doms", d, "exec", str(pid)), c)
+        print(json.dumps({"return": {"pid": pid}}))
+    elif ex == "guest-exec-status":
+        pid = str(req["arguments"]["pid"]); c = rd(P("doms", d, "exec", pid))
+        with open(P("guest-commands"), "a") as f: f.write("%s: %s\n" % (d, c.replace("\n", " ; ")[:300]))
+        out, code = guest(d, c)
+        print(json.dumps({"return": {"exited": True, "exitcode": code,
+                                     "out-data": base64.b64encode(out.encode()).decode()}}))
+    else: die("unsupported agent command " + ex)
+else:
+    die("fake virsh: unsupported command " + cmd, 2)

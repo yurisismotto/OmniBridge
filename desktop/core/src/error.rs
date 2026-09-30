@@ -40,7 +40,7 @@ pub enum Error {
     Closed,
 
     #[error("peer sent a fatal error: {0:?}")]
-    PeerError(omnibridge_proto::v1::ErrorCode),
+    PeerError(pliwee_proto::v1::ErrorCode),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

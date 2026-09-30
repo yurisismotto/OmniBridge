@@ -2,17 +2,24 @@
 #
 # What this produces, and from what
 # ---------------------------------
-# Every Linux artifact OmniBridge ships, built from **one immutable git
+# Every Linux artifact Pliwee ships, built from **one immutable git
 # revision**, in network-isolated builds, by a machine that is not a
 # developer's workstation:
 #
-#   omnibridge-<V>.tar.gz              the upstream source
-#   omnibridge-<V>-vendor.tar.xz       every crate in desktop/Cargo.lock
-#   omnibridge-<V>-*.src.rpm           the source package
-#   omnibridge-<V>-*.x86_64.rpm        Fedora 44, core + gui
-#   omnibridge_<V>-*_amd64.deb         Ubuntu 24.04, Ubuntu 26.04, Debian 13
-#   omnibridge-<V>-sbom.cdx.json       CycloneDX SBOM from the locked graph
+#   pliwee-<V>.tar.gz                  the upstream source
+#   pliwee-<V>-vendor.tar.xz           every crate in desktop/Cargo.lock
+#   pliwee-<V>-*.src.rpm               the source package
+#   pliwee-{,gui-}<V>-*.x86_64.rpm     Fedora 44, core + gui
+#   omnibridge-<V>-*.noarch.rpm        Fedora 44, transitional (upgrades OmniBridge)
+#   pliwee{,-gui}_<V>-*_amd64.deb      Ubuntu 24.04, Ubuntu 26.04, Debian 13
+#   omnibridge{,-gui}_<V>-*_all.deb    the same three, transitional
+#   pliwee-<V>-*.cdx.json              CycloneDX SBOMs from the locked graph
 #   SHA256SUMS                         over all of the above
+#
+# The two transitional names are the only `omnibridge` artifacts, and they are
+# what makes an OmniBridge 1.0.0 install upgrade in place: an empty
+# `omnibridge` 1.1.0 that depends on `pliwee`. The measurements behind that
+# are in packaging/common/README.md, "Upgrading from OmniBridge".
 #   (attestation)                      GitHub build provenance, Sigstore-backed
 #
 # The immutable input is the point
@@ -75,7 +82,7 @@ on:
     paths:
       - 'packaging/release/**'
       - 'packaging/fedora/build-rpm.sh'
-      - 'packaging/fedora/omnibridge.spec'
+      - 'packaging/fedora/pliwee.spec'
       - 'packaging/debian/build-deb.sh'
       - 'packaging/debian/rules'
       - 'packaging/debian/control'
@@ -183,11 +190,11 @@ jobs:
 
       - name: Inspect the built packages
         run: |
-          # Named precisely rather than globbed: `omnibridge-*.x86_64.rpm`
+          # Named precisely rather than globbed: `pliwee-*.x86_64.rpm`
           # matches the gui package too, and the second path would arrive as an
           # unrecognised argument.
-          core="$(find out -name 'omnibridge-[0-9]*.x86_64.rpm')"
-          gui="$(find out -name 'omnibridge-gui-*.x86_64.rpm')"
+          core="$(find out -name 'pliwee-[0-9]*.x86_64.rpm')"
+          gui="$(find out -name 'pliwee-gui-*.x86_64.rpm')"
           test -n "$core" || { echo "::error::no core RPM was produced"; exit 1; }
           test -n "$gui"  || { echo "::error::no gui RPM was produced";  exit 1; }
           ./packaging/tests/packaging-checks.sh --rpm "$core" --rpm "$gui"
@@ -255,7 +262,7 @@ jobs:
 
       # One SBOM per shipped binary rather than a single roll-up. That is what
       # `--describe binaries` produces, and it is the more useful shape: a
-      # consumer asking "what is in omnibridged" gets the daemon's closure
+      # consumer asking "what is in pliweed" gets the daemon's closure
       # without the GUI's GTK stack in it.
       #
       # MEASURED locally before this was written: `cargo cyclonedx` rejects
@@ -274,7 +281,7 @@ jobs:
           echo "cargo-cyclonedx wrote $found SBOM(s)"
           for f in $(find desktop -name '*.cdx.json' -not -path 'desktop/target/*'); do
             base="$(basename "$f" .cdx.json)"
-            cp "$f" "out/omnibridge-${{ needs.bundle.outputs.version }}-$base.cdx.json"
+            cp "$f" "out/pliwee-${{ needs.bundle.outputs.version }}-$base.cdx.json"
           done
           ls -l out/
 
@@ -362,17 +369,37 @@ jobs:
               echo "ok  $1/$2 -> $n"
             fi
           }
-          check release            '*.tar.*'    2
-          check release/fedora44   '*.rpm'      3
-          check release/ubuntu2404 '*.deb'      2
-          check release/ubuntu2604 '*.deb'      2
-          check release/debian13   '*.deb'      2
-          check release/sbom       '*.cdx.json' 3
+          # By name, not by extension: "four .rpm files" would also be true
+          # of four copies of the wrong one. Every line is an exact count.
+          V="${{ needs.bundle.outputs.version }}"
+          check release            "pliwee-$V.tar.gz"                   1
+          check release            "pliwee-$V-vendor.tar.xz"            1
+          check release            '*'                                  2
+          check release/fedora44   "pliwee-$V-*.src.rpm"                1
+          check release/fedora44   "pliwee-$V-*.x86_64.rpm"             1
+          check release/fedora44   "pliwee-gui-$V-*.x86_64.rpm"         1
+          check release/fedora44   "omnibridge-$V-*.noarch.rpm"         1
+          check release/fedora44   '*'                                  4
+          for d in ubuntu2404 ubuntu2604 debian13; do
+            check "release/$d" "pliwee_$V-*_amd64.deb"              1
+            check "release/$d" "pliwee-gui_$V-*_amd64.deb"          1
+            check "release/$d" "omnibridge_$V-*_all.deb"            1
+            check "release/$d" "omnibridge-gui_$V-*_all.deb"        1
+            check "release/$d" '*'                                  4
+          done
+          check release/sbom       '*.cdx.json'                         3
+          total=$(find release -type f | wc -l)
+          if [ "$total" -ne 21 ]; then
+            echo "::error::expected exactly 21 artifacts before SHA256SUMS, found $total"
+            fail=1
+          else
+            echo "ok  21 artifacts in total"
+          fi
           # And the three same-named .deb sets must genuinely differ: identical
           # bytes would mean one distribution's build was reused for another.
-          a=$(sha256sum release/ubuntu2404/omnibridge_*.deb | cut -d' ' -f1)
-          b=$(sha256sum release/ubuntu2604/omnibridge_*.deb | cut -d' ' -f1)
-          c=$(sha256sum release/debian13/omnibridge_*.deb   | cut -d' ' -f1)
+          a=$(sha256sum release/ubuntu2404/pliwee_*.deb | cut -d' ' -f1)
+          b=$(sha256sum release/ubuntu2604/pliwee_*.deb | cut -d' ' -f1)
+          c=$(sha256sum release/debian13/pliwee_*.deb   | cut -d' ' -f1)
           if [ "$a" = "$b" ] || [ "$a" = "$c" ] || [ "$b" = "$c" ]; then
             echo "::error::two distributions produced byte-identical packages"
             fail=1
@@ -415,7 +442,7 @@ jobs:
         if: steps.signing.outputs.configured == 'true'
         env:
           RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
-          OMNIBRIDGE_SIGNING_FPR: ${{ vars.RELEASE_SIGNING_FPR }}
+          PLIWEE_SIGNING_FPR: ${{ vars.RELEASE_SIGNING_FPR }}
         run: |
           set -euo pipefail
           # A keyring of our own, outside the runner's HOME, removed at the end
@@ -436,8 +463,8 @@ jobs:
           # If the repository declares which fingerprint is expected, the
           # imported key must be it. A secret rotated to the wrong key would
           # otherwise sign a release with an identity users do not trust.
-          if [ -n "${OMNIBRIDGE_SIGNING_FPR:-}" ]; then
-            want="$(printf '%s' "$OMNIBRIDGE_SIGNING_FPR" | tr -d '[:space:]' | tr 'a-f' 'A-F')"
+          if [ -n "${PLIWEE_SIGNING_FPR:-}" ]; then
+            want="$(printf '%s' "$PLIWEE_SIGNING_FPR" | tr -d '[:space:]' | tr 'a-f' 'A-F')"
             got="$(printf '%s' "$fpr" | tr -d '[:space:]' | tr 'a-f' 'A-F')"
             [ "$want" = "$got" ] || { echo "::error::RELEASE_SIGNING_KEY is $got but vars.RELEASE_SIGNING_FPR says $want"; exit 1; }
             echo "the imported key matches the declared fingerprint"
@@ -521,7 +548,7 @@ jobs:
       - name: Summary
         run: |
           {
-            echo "## OmniBridge ${{ needs.bundle.outputs.version }}"
+            echo "## Pliwee ${{ needs.bundle.outputs.version }}"
             echo
             echo "Built from \`${{ needs.bundle.outputs.rev }}\` — an immutable commit."
             echo

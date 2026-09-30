@@ -1,0 +1,17 @@
+ INFO omnibridged: using command-line port override port=55999
+ INFO omnibridged: local identity device=dfbdafa3505c934a21ba2abaa79c18ec name=fedora fingerprint=67A3 C2A7 709C 6DAB key_backing=software
+ INFO omnibridged: UPower available; this machine will report its own battery
+ INFO omnibridged: files.v1 ready download_dir=/tmp/w5-mdns-xkGz/dl max_file_bytes=17179869184
+ INFO pliwee_capability_clipboard::backend::wayland: wl-paste --watch is unavailable; falling back to the X11 bridge reason=wl-paste --watch exited with exit status: 1
+ INFO pliwee_capability_clipboard::backend::wayland: clipboard backend backend="wl-clipboard" available=true watch=XFIXES on the Xwayland CLIPBOARD selection sensitive="yes"
+ INFO omnibridged: clipboard.v1 ready backend=wl-clipboard; watch: XFIXES on the Xwayland CLIPBOARD selection; sensitive marking: yes
+ INFO pliwee_capability_notifications::backend::dbus: notification server server=gnome-shell vendor=GNOME version=50.5 spec=1.2 body_markup=true persistence=true dismiss_reporting=true
+ INFO pliwee_capability_notifications::backend::logind: lock state from logind LockedHint session=/org/freedesktop/login1/session/_32 locked=true
+ INFO omnibridged: notifications.v1 ready sink=org.freedesktop.Notifications — gnome-shell 50.5 (spec 1.2, GNOME) lock=org.freedesktop.login1.Session.LockedHint on /org/freedesktop/login1/session/_32 available=true
+ INFO omnibridged: capabilities registered capabilities=["battery.v1", "clipboard.v1", "files.v1", "notifications.v1"]
+ INFO omnibridged: listening port=55999 families=IPv4+IPv6 sockets=1
+ INFO omnibridged: control endpoint ready endpoint=/tmp/w5-mdns-xkGz/run/pliwee/control.sock
+ INFO pliwee_runtime::mdns: advertising _pliwee._tcp.local. port=55999 families=IPv4+IPv6 profile=pliwee
+ INFO pliwee_runtime::mdns: advertising _omnibridge._tcp.local. port=55999 families=IPv4+IPv6 profile=omnibridge
+ INFO pliwee_linux::tray: Pliwee tray item published on the session bus item=org.kde.StatusNotifierItem-167819-1
+ INFO pliwee_linux::tray::watcher: no desktop tray host on this session; the Pliwee tray item is published and will register itself if one appears

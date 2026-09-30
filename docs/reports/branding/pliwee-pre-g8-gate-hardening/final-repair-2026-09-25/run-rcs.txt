@@ -1,0 +1,6 @@
+# final run, 2026-09-25T17:20:04Z, HEAD e68f332 + working tree
+pre-g8 rc=0
+repair-mut rc=0
+harness rc=0
+ws-selftest rc=0
+# finished 2026-09-25T17:39:44Z

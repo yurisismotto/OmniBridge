@@ -21,16 +21,16 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use omnibridge_capability_notifications::backend::{
+use pliwee_capability_notifications::backend::{
     CloseReason, LockSource, MemoryLock, MemorySink, NotificationSink,
 };
-use omnibridge_capability_notifications::{
+use pliwee_capability_notifications::{
     NotificationAuthorizer, NotificationManager, NotificationPolicy, CAPABILITY_ID,
 };
-use omnibridge_core::capability::OutboundMessage;
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::capabilities as pb;
-use omnibridge_proto::Message;
+use pliwee_core::capability::OutboundMessage;
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1::capabilities as pb;
+use pliwee_proto::Message;
 use tokio::sync::{mpsc, RwLock};
 
 pub const TIMEOUT: Duration = Duration::from_secs(5);
@@ -512,7 +512,7 @@ impl Harness {
     }
 
     /// This peer's report, after everything queued has been handled.
-    pub async fn report(&mut self) -> omnibridge_capability_notifications::PeerReport {
+    pub async fn report(&mut self) -> pliwee_capability_notifications::PeerReport {
         self.barrier().await;
         self.manager
             .peer_reports()

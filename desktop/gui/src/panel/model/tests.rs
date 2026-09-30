@@ -9,12 +9,12 @@
 //! They deliberately do **not** re-test the layers below. Whether a grant is
 //! honoured, whether a fingerprint pins a certificate, whether a revoked
 //! device can open a session — all of that has its own tests in
-//! `omnibridge-core`, `omnibridge-runtime` and the capability crates, and is
+//! `pliwee-core`, `pliwee-runtime` and the capability crates, and is
 //! re-checked by the daemon on every request regardless of what this model
 //! decided two seconds earlier.
 
 use super::*;
-use omnibridge_control::{
+use pliwee_control::{
     BatteryReport, ClipboardPeerReport, ClipboardStatusReport, ConnectionReport, DeviceReport,
     DeviceState, NotificationPeerReport, NotificationsStatusReport, StatusReport,
 };
@@ -101,6 +101,8 @@ fn status(devices: &[DeviceReport]) -> StatusReport {
             .collect(),
         devices: devices.to_vec(),
         pairing_active: false,
+        migrated_from: None,
+        legacy_partial_files: Vec::new(),
     }
 }
 
@@ -524,7 +526,7 @@ fn a_display_name_collision_does_not_affect_routing() {
 fn an_unreachable_daemon_produces_a_safe_state() {
     let state = DaemonState {
         error: Some(
-            "could not reach the OmniBridge daemon at /run/user/1000/omnibridge/control.sock: \
+            "could not reach the Pliwee daemon at /run/user/1000/omnibridge/control.sock: \
              No such file or directory"
                 .into(),
         ),
@@ -534,7 +536,7 @@ fn an_unreachable_daemon_produces_a_safe_state() {
     assert_eq!(
         m.health,
         Health::Unavailable {
-            headline: "OmniBridge service is not available".into()
+            headline: "Pliwee service is not available".into()
         }
     );
     assert!(m.peers.is_empty());
@@ -1180,7 +1182,7 @@ fn a_row_announces_its_state_in_words() {
 // QP-POLISH-01 — recent transfers
 // ===========================================================================
 //
-// The vocabulary these build on is not invented here. `omnibridge-control` names
+// The vocabulary these build on is not invented here. `pliwee-control` names
 // every value `TransferReport::state`, `direction` and `failure_code` can
 // carry, and `desktop/runtime` pins those names to the capability crate that
 // produces them — so a test below that uses `transfer_state::COMPLETED` is

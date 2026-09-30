@@ -1,4 +1,4 @@
-//! `omnibridged` — the user-session daemon.
+//! `pliweed` — the user-session daemon.
 //!
 //! Runs unprivileged under `systemd --user`. It binds a high TCP port, a Unix
 //! socket in `XDG_RUNTIME_DIR`, and an mDNS responder. It needs no root, no
@@ -7,22 +7,26 @@
 use std::sync::Arc;
 
 use clap::Parser;
-use omnibridge_capability_battery::{BatteryCapability, BatteryState, LocalBattery, UPowerReader};
-use omnibridge_capability_clipboard::{ClipboardCapability, ClipboardManager};
-use omnibridge_capability_files::{
+use pliwee_capability_battery::{BatteryCapability, BatteryState, LocalBattery, UPowerReader};
+use pliwee_capability_clipboard::{ClipboardCapability, ClipboardManager};
+use pliwee_capability_files::{
     Destination, FilesCapability, FilesConfig, StreamRole, TransferApproval, TransferManager,
 };
-use omnibridge_capability_notifications::backend::{
+use pliwee_capability_notifications::backend::{
     dbus::DbusSink, logind::LogindLock, LockSource, NoSink, NotificationSink, UnknownLock,
 };
-use omnibridge_capability_notifications::{NotificationManager, NotificationsCapability};
-use omnibridge_control::transport::ControlTransport;
-use omnibridge_core::capability::CapabilityRegistry;
-use omnibridge_daemon::{approval::FileApproval, listener, mdns, server, state::DaemonState};
+use pliwee_capability_notifications::{NotificationManager, NotificationsCapability};
+use pliwee_control::transport::ControlTransport;
+use pliwee_core::capability::CapabilityRegistry;
+use pliwee_daemon::{
+    approval::FileApproval,
+    listener, mdns, server,
+    state::{DaemonState, LocalStateReport},
+};
 use tokio_rustls::TlsAcceptor;
 
 #[derive(Parser, Debug)]
-#[command(name = "omnibridged", about = "OmniBridge daemon", version)]
+#[command(name = "pliweed", about = "Pliwee daemon", version)]
 struct Args {
     /// Data directory (identity and trust store).
     #[arg(long)]
@@ -37,13 +41,13 @@ struct Args {
     #[arg(long)]
     no_mdns: bool,
 
-    /// Log filter, e.g. `info`, `omnibridge_core=debug`.
+    /// Log filter, e.g. `info`, `pliwee_core=debug`.
     #[arg(long, default_value = "info")]
     log: String,
 
     /// Directory for received files.
     ///
-    /// Defaults to `<XDG downloads>/OmniBridge`. Peers can never influence this:
+    /// Defaults to `<XDG downloads>/Pliwee`. Peers can never influence this:
     /// an offer carries a filename and no path at all.
     #[arg(long)]
     download_dir: Option<std::path::PathBuf>,
@@ -84,13 +88,68 @@ async fn main() -> anyhow::Result<()> {
         .install_default()
         .map_err(|_| anyhow::anyhow!("a rustls crypto provider was already installed"))?;
 
-    let data_dir = args
-        .data_dir
-        .unwrap_or_else(omnibridge_linux::default_data_dir);
+    // ---- local state: carry an OmniBridge identity over first -------------
+    // ADR-0020 D9/D12. Before the store is opened on `~/.local/share/pliwee`,
+    // an identity still under `~/.local/share/omnibridge` is copied across —
+    // or, if it exists and cannot be read, startup stops here and names it.
+    // Opening the new directory without asking would be a "first run" over a
+    // live identity: a new key, and every pairing silently gone.
+    //
+    // An explicit `--data-dir` is the operator's own choice of directory and
+    // is used exactly as given.
+    let (data_dir, migrated_from) = match args.data_dir {
+        Some(dir) => (dir, None),
+        None => {
+            let dirs = pliwee_linux::DataDirs::from_env();
+            let origin = pliwee_linux::migrate_data_dir(&dirs).map_err(|e| {
+                tracing::error!(path = %e.path.display(), "refusing to start: {e}");
+                anyhow::anyhow!("{e}")
+            })?;
+            let report = match &origin {
+                pliwee_linux::DataDirOrigin::Migrated(r) => {
+                    tracing::info!(
+                        source = %r.source.display(),
+                        destination = %dirs.canonical.display(),
+                        "migrated from {}: identity and trust store copied into {}; \
+                         the source directory was not modified",
+                        r.source.display(),
+                        dirs.canonical.display()
+                    );
+                    Some(migration_report(r, true))
+                }
+                pliwee_linux::DataDirOrigin::Existing {
+                    migrated_from: Some(r),
+                } => {
+                    tracing::info!(
+                        source = %r.source.display(),
+                        migrated_at_unix = r.migrated_at_unix,
+                        "local state was migrated from {} by an earlier start; \
+                         nothing to migrate",
+                        r.source.display()
+                    );
+                    Some(migration_report(r, false))
+                }
+                pliwee_linux::DataDirOrigin::Existing {
+                    migrated_from: None,
+                }
+                | pliwee_linux::DataDirOrigin::NoLegacyState => None,
+            };
+            (dirs.canonical, report)
+        }
+    };
+    // ---- systemd: an account still enabled under the OmniBridge name ------
+    // Read-only. The package ships omnibridged.service as an alias of
+    // pliweed.service, so such an account starts this daemon at login; what it
+    // cannot do is report itself enabled under the new name. Say so, once,
+    // with the one command that fixes it (ADR-0020; rebrand Wave 7, B5).
+    pliwee_linux::systemd_transition::log(&pliwee_linux::systemd_transition::classify(
+        &pliwee_linux::systemd_transition::wants_dir_from_env(),
+    ));
+
     // The Linux adapter composes the store: XDG paths, 0600/0700 modes,
-    // `Platform::Linux`, `/etc/hostname`. `omnibridge-core` decides the policy,
+    // `Platform::Linux`, `/etc/hostname`. `pliwee-core` decides the policy,
     // this decides where and how.
-    let store = omnibridge_linux::open_store(&data_dir)?;
+    let store = pliwee_linux::open_store(&data_dir)?;
 
     // A `--port` override applies to this run only. Silently rewriting the
     // user's stored configuration from a command-line flag is a surprise
@@ -136,7 +195,7 @@ async fn main() -> anyhow::Result<()> {
 
     // files.v1. Note what is NOT here: an entry in `auto_grant`. Writing a
     // file to someone's disk is a side effect, so the grant is explicit
-    // (`omnibridge grant <device> files.v1`) per ADR-0008.
+    // (`pliwee grant <device> files.v1`) per ADR-0008.
     let destination = match args.download_dir {
         Some(dir) => Destination::new(dir),
         None => Destination::default_location(),
@@ -146,7 +205,7 @@ async fn main() -> anyhow::Result<()> {
         max_file_bytes: args
             .max_file_mib
             .map(|mib| mib.saturating_mul(1024 * 1024))
-            .unwrap_or(omnibridge_capability_files::limits::DEFAULT_MAX_FILE_BYTES),
+            .unwrap_or(pliwee_capability_files::limits::DEFAULT_MAX_FILE_BYTES),
         ..FilesConfig::default()
     };
     if let Err(e) = destination.prepare() {
@@ -157,6 +216,7 @@ async fn main() -> anyhow::Result<()> {
         max_file_bytes = files_config.max_file_bytes,
         "files.v1 ready"
     );
+    let legacy_partial_files = find_legacy_partial_files(destination.dir());
 
     if args.accept_files_without_asking {
         tracing::warn!(
@@ -184,17 +244,17 @@ async fn main() -> anyhow::Result<()> {
     // that can write your clipboard can also read what you paste next, and
     // ADR-0008 requires a side effect that large to be granted by hand.
     //
-    // The backend is probed once here so that `omnibridge clipboard status` can
+    // The backend is probed once here so that `pliwee clipboard status` can
     // report what this session can actually do — including, on GNOME, that it
     // cannot report clipboard changes at all — instead of each command
     // discovering it separately.
-    let clipboard_backend = omnibridge_capability_clipboard::backend::detect();
+    let clipboard_backend = pliwee_capability_clipboard::backend::detect();
     if let Err(why) = clipboard_backend.watch_availability() {
         tracing::info!(
             reason = %why,
             "clipboard auto-send is unavailable on this session; sending by \
              hand reads the selection the same way and is usually unavailable \
-             too. Receiving is unaffected — `omnibridge clipboard status` has \
+             too. Receiving is unaffected — `pliwee clipboard status` has \
              the detail"
         );
     }
@@ -207,7 +267,7 @@ async fn main() -> anyhow::Result<()> {
     // ADR-0015 §4 requires that to be granted by hand.
     //
     // The two platform seams are probed once, here, so that
-    // `omnibridge notifications status` reports what this session can actually do
+    // `pliwee notifications status` reports what this session can actually do
     // instead of each command discovering it separately — and so that the
     // first role announcement is a fact rather than a hope.
     //
@@ -260,7 +320,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!(capabilities = ?registry.advertised(), "capabilities registered");
 
     // ---- TLS --------------------------------------------------------------
-    let tls_config = omnibridge_core::tls::server_config(store.identity())?;
+    let tls_config = pliwee_core::tls::server_config(store.identity())?;
     let acceptor = TlsAcceptor::from(tls_config);
 
     let state = Arc::new(
@@ -270,11 +330,15 @@ async fn main() -> anyhow::Result<()> {
             .with_notifications(Arc::clone(&notifications))
             .with_file_approval(Arc::clone(&approval)),
     );
+    state.set_local_state(LocalStateReport {
+        migrated_from,
+        legacy_partial_files,
+    });
 
     // The state is the authorizer: every grant question is answered from the
     // trust store, freshly, rather than from a set captured at handshake time.
     transfers
-        .set_authorizer(Arc::clone(&state) as Arc<dyn omnibridge_capability_files::FilesAuthorizer>)
+        .set_authorizer(Arc::clone(&state) as Arc<dyn pliwee_capability_files::FilesAuthorizer>)
         .await;
     let _reaper = transfers.spawn_reaper();
 
@@ -283,7 +347,7 @@ async fn main() -> anyhow::Result<()> {
     // captured at handshake time.
     clipboard
         .set_authorizer(
-            Arc::clone(&state) as Arc<dyn omnibridge_capability_clipboard::ClipboardAuthorizer>
+            Arc::clone(&state) as Arc<dyn pliwee_capability_clipboard::ClipboardAuthorizer>
         )
         .await;
     // Supervised, and idle until some peer actually asks for auto-send: with
@@ -297,8 +361,9 @@ async fn main() -> anyhow::Result<()> {
     // so after that point this is the only thing between a revoked device and
     // the screen.
     notifications
-        .set_authorizer(Arc::clone(&state)
-            as Arc<dyn omnibridge_capability_notifications::NotificationAuthorizer>)
+        .set_authorizer(
+            Arc::clone(&state) as Arc<dyn pliwee_capability_notifications::NotificationAuthorizer>
+        )
         .await;
     // The three platform signals: the desktop closing a notification, the
     // notification server appearing or going away, and the session locking.
@@ -318,11 +383,11 @@ async fn main() -> anyhow::Result<()> {
     // The control endpoint comes from the adapter, through the
     // `ControlTransport` seam. A failure to bind because another agent
     // already owns the endpoint is fatal and is *not* worked around by
-    // choosing a different name — see `omnibridge_control::transport`.
-    let transport = omnibridge_linux::UnixControlTransport::default_endpoint();
+    // choosing a different name — see `pliwee_control::transport`.
+    let transport = pliwee_linux::UnixControlTransport::default_endpoint();
     let control_listener = match ControlTransport::bind(&transport) {
         Ok(l) => l,
-        Err(e @ omnibridge_control::transport::BindError::AlreadyOwned { .. }) => {
+        Err(e @ pliwee_control::transport::BindError::AlreadyOwned { .. }) => {
             anyhow::bail!("{e}");
         }
         Err(e) => return Err(e.into()),
@@ -354,7 +419,7 @@ async fn main() -> anyhow::Result<()> {
     // an application in its system tray. The daemon owns it because the daemon
     // is the process that is always here: the GUI is two windows a person
     // opens and closes, and keeping one alive forever to hold an icon would
-    // have made OmniBridge a product with two resident processes.
+    // have made Pliwee a product with two resident processes.
     //
     // Held, never awaited, and deliberately **not** in the `select!` below.
     // Everything in that race is load-bearing — the network listener, the
@@ -369,13 +434,13 @@ async fn main() -> anyhow::Result<()> {
     // session, which is most of them — this publishes the item, finds no host,
     // says so once, and then waits event-driven for one to appear. It never
     // polls.
-    let _tray = omnibridge_linux::tray::spawn(omnibridge_linux::tray::ActivatorChoice::SessionBus);
+    let _tray = pliwee_linux::tray::spawn(pliwee_linux::tray::ActivatorChoice::SessionBus);
 
     // ---- D-Bus activation self-heal ---------------------------------------
     //
     // A package installs the GUI's D-Bus service file as root, and the user's
     // *already running* session bus does not read it until something says so.
-    // Until then the tray item above activates nothing: clicking OmniBridge on
+    // Until then the tray item above activates nothing: clicking Pliwee on
     // a correctly installed machine returns ServiceUnknown. Root cannot fix
     // that — it has no route to a user's session bus — but this process runs
     // as the user, in the session, and can. Audit §8.2.
@@ -385,8 +450,8 @@ async fn main() -> anyhow::Result<()> {
     // is slow to answer is not a reason for the listener below to start late,
     // and because there is nothing downstream that depends on the answer.
     tokio::spawn(async {
-        let outcome = omnibridge_linux::activation::self_heal_desktop_activation().await;
-        omnibridge_linux::activation::log(&outcome);
+        let outcome = pliwee_linux::activation::self_heal_desktop_activation().await;
+        pliwee_linux::activation::log(&outcome);
     });
 
     let net = tokio::spawn(listener::run(bound.listeners, acceptor, Arc::clone(&state)));
@@ -404,4 +469,74 @@ async fn main() -> anyhow::Result<()> {
     // is, and a named pipe has no file to unlink.
     transport.release();
     Ok(())
+}
+
+fn migration_report(
+    record: &pliwee_linux::MigrationRecord,
+    this_run: bool,
+) -> pliwee_daemon::control::MigrationReport {
+    pliwee_daemon::control::MigrationReport {
+        source: record.source.display().to_string(),
+        migrated_at_unix: record.migrated_at_unix,
+        this_run,
+    }
+}
+
+/// Interrupted OmniBridge transfers left in the download directory in use and
+/// in the one OmniBridge used. Reported by `status`; never removed.
+fn find_legacy_partial_files(current: &std::path::Path) -> Vec<String> {
+    use pliwee_capability_files::destination::{
+        default_download_dir, legacy_partial_files, LEGACY_DOWNLOAD_SUBDIR,
+    };
+    let legacy = default_download_dir().join(LEGACY_DOWNLOAD_SUBDIR);
+    let mut dirs = vec![current.to_path_buf()];
+    if legacy != current {
+        dirs.push(legacy);
+    }
+    let mut found = Vec::new();
+    for dir in dirs {
+        match legacy_partial_files(&dir) {
+            Ok(files) => found.extend(files.into_iter().map(|p| p.display().to_string())),
+            Err(e) => tracing::warn!(
+                dir = %dir.display(),
+                error = %e,
+                "could not look for interrupted OmniBridge transfers"
+            ),
+        }
+    }
+    if !found.is_empty() {
+        tracing::info!(
+            count = found.len(),
+            "interrupted OmniBridge transfers (.omnibridge-*.part) found; they \
+             are left in place — see `status`"
+        );
+    }
+    found
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Args;
+    use clap::CommandFactory;
+    use pliwee_capability_files::destination::{DOWNLOAD_SUBDIR, LEGACY_DOWNLOAD_SUBDIR};
+
+    /// `pliweed --help` states the download default the daemon really uses.
+    /// The text is prose, so it is checked against the constant rather than
+    /// trusted to follow it: W4 moved the folder and the help did not move.
+    #[test]
+    fn help_states_the_real_download_folder() {
+        let mut cmd = Args::command();
+        assert_eq!(cmd.get_name(), "pliweed");
+        let help = cmd.render_long_help().to_string();
+        let want = format!("<XDG downloads>/{DOWNLOAD_SUBDIR}");
+        assert!(help.contains(&want), "missing {want:?} in:\n{help}");
+        assert!(
+            !help.contains(LEGACY_DOWNLOAD_SUBDIR),
+            "the help still names the legacy folder:\n{help}"
+        );
+        assert_eq!(
+            cmd.render_version().trim_end(),
+            format!("pliweed {}", env!("CARGO_PKG_VERSION"))
+        );
+    }
 }

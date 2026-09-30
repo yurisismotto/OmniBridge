@@ -1,0 +1,3 @@
+clean  packaging/tests/pre-g8-manual-gates.sh
+clean  packaging/tests/pre-g8-manual-gates-selftests.sh
+clean  docs/reports/branding/pliwee-pre-g8-gate-hardening/realworld-repair-2026-09-25/mutations-realworld.sh

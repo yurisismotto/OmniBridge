@@ -1,0 +1,113 @@
+   Compiling pliwee-core v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.83s
+     Running tests/frozen_vectors.rs (target/debug/deps/frozen_vectors-3a839ecde628bb6e)
+
+running 3 tests
+test identity_a_der_is_byte_identical_to_the_frozen_vector ... ok
+test identity_b_der_is_byte_identical_to_the_frozen_vector ... ok
+test the_frozen_vectors_keep_their_historical_subject ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/identity_and_store.rs (target/debug/deps/identity_and_store-aab045a19ed88799)
+
+running 28 tests
+test a_new_identity_certificate_names_pliwee ... ok
+test a_newer_schema_version_is_refused_rather_than_misread ... ok
+test a_stored_device_name_survives_the_rename ... ok
+test certificate_carries_no_subject_alt_names ... ok
+test device_id_is_128_bits_of_hex ... ok
+test capability_grants_are_independent_of_what_a_peer_advertises ... ok
+test fingerprint_covers_the_public_key_not_the_whole_certificate ... ok
+test device_info_carries_the_fingerprint_not_an_address ... ok
+test fingerprint_hex_round_trips ... ok
+test fingerprint_is_stable_and_derived_from_the_certificate ... ok
+test fixture_certificates_have_the_expected_spki_fingerprints ... ok
+test generated_identities_are_distinct ... ok
+test malformed_fingerprints_are_rejected ... ok
+test identity_debug_never_leaks_the_private_key ... ok
+test private_key_is_written_with_restrictive_permissions ... ok
+test qr_payload_drops_unparseable_addresses_but_keeps_the_rest ... ok
+test peers_persist_across_restarts ... ok
+test qr_payload_handles_ipv6_addresses ... ok
+test qr_payload_rejects_a_tampered_fingerprint ... ok
+test qr_payload_rejects_hostile_input ... ok
+test qr_payload_round_trips ... ok
+test qr_scheme_matrix ... ok
+test revoking_an_unknown_peer_is_not_an_error ... ok
+test revocation_survives_a_restart_and_hides_the_peer ... ok
+test store_generates_an_identity_on_first_run_and_reloads_it ... ok
+test store_refuses_to_load_a_world_readable_private_key ... ok
+test store_never_persists_message_or_clipboard_content ... ok
+test the_placeholder_device_name_is_the_product_name ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/identity_seam.rs (target/debug/deps/identity_seam-0fdeac70eb9eb50b)
+
+running 8 tests
+test a_non_exportable_identity_completes_a_pinned_handshake_as_the_client ... ok
+test a_non_exportable_identity_completes_a_pinned_handshake_as_the_server ... ok
+test a_signer_that_fails_fails_the_handshake_rather_than_falling_back ... ok
+test both_ends_non_exportable_still_works ... ok
+test key_backing_says_honestly_whether_a_key_could_ever_be_exported ... ok
+test device_info_never_advertises_the_key_backing ... ok
+test the_seam_accepts_every_shape_a_caller_already_holds ... ok
+test pinning_still_rejects_a_different_identity_through_the_resolver_path ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/pairing.rs (target/debug/deps/pairing-f48391ae7ff47c9b)
+
+running 25 tests
+test a_proof_for_a_different_device_is_rejected ... ok
+test a_confirmation_from_the_other_profile_does_not_verify ... ok
+test a_proof_for_a_previous_nonce_is_rejected ... ok
+test a_proof_from_the_other_profile_is_rejected ... ok
+test a_token_cannot_be_used_twice ... ok
+test a_wrong_proof_is_rejected_and_counted ... ok
+test an_expired_token_is_rejected ... ok
+test a_valid_proof_is_accepted_once ... ok
+test brute_force_is_cut_off_after_a_few_attempts ... ok
+test field_boundaries_cannot_be_shifted ... ok
+test legacy_confirmation_matches_the_cross_language_known_answer ... ok
+test legacy_proof_matches_the_cross_language_known_answer ... ok
+test nonces_are_unique ... ok
+test pliwee_confirmation_matches_the_independent_known_answer ... ok
+test pliwee_proof_matches_the_independent_known_answer ... ok
+test proof_and_confirmation_are_domain_separated ... ok
+test proof_is_bound_to_the_initiator_identity ... ok
+test proof_is_bound_to_the_nonce ... ok
+test proof_is_bound_to_the_responder_identity ... ok
+test proof_is_deterministic_for_identical_inputs ... ok
+test token_debug_never_leaks_the_secret ... ok
+test token_has_the_expected_entropy_and_encoding ... ok
+test two_tokens_are_never_equal ... ok
+test verify_proof_rejects_wrong_length ... ok
+test expiry_uses_a_monotonic_clock_not_a_peer_timestamp ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/wire_identity.rs (target/debug/deps/wire_identity-be8e0183b11f4ace)
+
+running 18 tests
+test a_client_config_offers_exactly_one_alpn ... ok
+test a_legacy_only_server_refuses_a_canonical_client ... ok
+test control_alpn_is_pliwee_1 ... ok
+test data_alpn_is_pliwee_data_1 ... ok
+test each_alpn_selects_exactly_one_profile_and_kind ... ok
+test legacy_control_alpn_is_omnibridge_1 ... ok
+test legacy_data_alpn_is_omnibridge_data_1 ... ok
+test legacy_mdns_service_type_is_omnibridge_tcp ... ok
+test legacy_pairing_domains ... ok
+test legacy_qr_scheme_is_omnibridge1 ... ok
+test mdns_service_type_is_pliwee_tcp ... ok
+test no_pre_rename_identity_survives ... ok
+test pliwee_pairing_domains ... ok
+test profile_names_round_trip_and_nothing_else_parses ... ok
+test qr_scheme_is_pliwee1 ... ok
+test the_four_alpn_identifiers_are_distinct ... ok
+test the_listener_offers_canonical_first_in_the_approved_order ... ok
+test a_real_handshake_negotiates_the_offered_profile_and_nothing_else ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s

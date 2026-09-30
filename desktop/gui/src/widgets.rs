@@ -1,4 +1,4 @@
-//! The OmniBridge desktop component set.
+//! The Pliwee desktop component set.
 //!
 //! Every screen is assembled from these, so a card, a status or a button
 //! cannot look one way on the dashboard and another on the pairing page. The
@@ -108,8 +108,8 @@ impl Status {
     /// a session that has gone quiet is exactly the case where anything the
     /// device last told us is history, and showing it as live is the bug
     /// `DeviceState` was introduced to prevent.
-    pub fn from_device_state(state: omnibridge_control::DeviceState) -> Self {
-        use omnibridge_control::DeviceState as D;
+    pub fn from_device_state(state: pliwee_control::DeviceState) -> Self {
+        use pliwee_control::DeviceState as D;
         match state {
             D::Connected => Status::Connected,
             D::Stale => Status::Stale,
@@ -348,8 +348,8 @@ pub fn security_notice(title_text: &str, body_text: &str, caution: bool) -> gtk:
 
 /// Nothing here yet.
 ///
-/// Uses the OmniBridge mark rather than a stock illustration: the mark already
-/// means "one bridge, any device", which is what the person is being invited to
+/// Uses the Pliwee mark rather than a stock illustration: the mark already
+/// means "one flow, any device", which is what the person is being invited to
 /// create.
 pub fn empty_state(title_text: &str, subtitle_text: &str) -> gtk::Box {
     let b = column(space::SM);
@@ -383,24 +383,25 @@ pub fn empty_state(title_text: &str, subtitle_text: &str) -> gtk::Box {
     b
 }
 
-/// The OmniBridge mark.
+/// The Pliwee mark.
 ///
-/// One mark, everywhere: this is `docs/design/assets/omnibridge-mark.svg`, the
-/// same artwork the launcher icon wears on Android and the same one the tray and
-/// the application icon wear here. `desktop/gui/tests/brand_assets.rs` asserts
+/// One mark, everywhere: this is `docs/design/assets/pliwee-mark.svg`, the
+/// frozen Wave 0 master compiled in byte for byte — the same artwork the
+/// launcher icon wears on Android and the same one the tray and the
+/// application icon wear here. `desktop/gui/tests/brand_assets.rs` asserts
 /// that this is the file being drawn.
 ///
 /// There is no second, heavier cut for small sizes any more, and that is a
 /// property of the artwork rather than an omission. The mark the AnyFlow era
 /// drew was a *stroked* ribbon, so below about 24 px its 8-unit stroke fell
 /// under a pixel and a half and greyed out, which is why a thicker variant had
-/// to exist. The OmniBridge mark is filled, so it has no stroke to thin: it
+/// to exist. The Flow Monogram is filled, so it has no stroke to thin: it
 /// scales down as area, not as line weight, and one file answers for every size.
 /// The icon for "open Settings", everywhere it appears.
 ///
 /// A constant rather than a convention, because this action shows up in three
 /// unrelated places — the sidebar row, the Quick Panel header button and the
-/// Quick Panel's own "Open OmniBridge Settings" — and a fourth caller
+/// Quick Panel's own "Open Pliwee Settings" — and a fourth caller
 /// reaching for a different name is how one action ends up with two
 /// metaphors.
 ///
@@ -410,7 +411,7 @@ pub fn empty_state(title_text: &str, subtitle_text: &str) -> gtk::Box {
 pub const SETTINGS_ICON: &str = "applications-system-symbolic";
 
 pub fn brand_mark(size: i32) -> gtk::Image {
-    let i = gtk::Image::from_resource("/io/github/yurisismotto/omnibridge/omnibridge-mark.svg");
+    let i = gtk::Image::from_resource("/io/github/yurisismotto/pliwee/pliwee-mark.svg");
     // `set_pixel_size` is a *cap*; `set_size_request` — which this used to
     // use, on a `GtkPicture` — is a floor. A Picture given a 22px size
     // request and a header bar with room to spare takes the room: the mark

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# TEST ONLY — `podman image inspect --format '{{.Digest}}' IMAGE`.
+echo "podman $*" >> "${FAKE_BUILD:-/dev/null}.podman-calls"
+[ "${1:-} ${2:-}" = "image inspect" ] && { echo "sha256:0000fake"; exit 0; }
+exit 0

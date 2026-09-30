@@ -1,0 +1,12 @@
+run dir: /tmp/w5-loop-4RUt  profile: pliwee
+daemon emitted: pliwee1: (canonical only)
+sessions under pliwee/pliwee/1 naming f6fd896128adc0e4cfbf1767c040b97c: 2 (expected 2: pairing + reconnect)
+sessions under any other profile: 0 (expected 0)
+transfer dac640a4: stored, sha256 07913cf6ce3696c8dfd6e615c48911a9aeebf49d6c055111fa47d8f2ab0af41e matches; daemon lines naming it: 3
+--- daemon anchor lines
+ INFO pliwee_runtime::listener: session established device=f6fd896128adc0e4cfbf1767c040b97c peer=577F E31F 2569 B2A5 profile=pliwee alpn=pliwee/1 capabilities=["battery.v1"]
+ INFO pliwee_runtime::listener: session established device=f6fd896128adc0e4cfbf1767c040b97c peer=577F E31F 2569 B2A5 profile=pliwee alpn=pliwee/1 capabilities=["battery.v1", "files.v1"]
+ INFO pliwee_capability_files: incoming file offer transfer=dac640a4 peer=577F E31F 2569 B2A5 filename=sample.bin size=200000
+ WARN pliwee_runtime::approval: accepting a file without asking (--accept-files-without-asking) transfer=dac640a4 filename=sample.bin
+ INFO pliwee_capability_files: received, verified and stored transfer=dac640a4 filename=sample.bin bytes=200000
+PASS: pliwee

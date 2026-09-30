@@ -1,0 +1,1609 @@
+   Compiling pliwee-proto v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/proto)
+   Compiling pliwee-control v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/control)
+   Compiling pliwee-gui v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/gui)
+   Compiling pliwee-core v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/core)
+   Compiling pliwee-linux v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/platform-linux)
+   Compiling pliwee-capability-notifications v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/notifications)
+   Compiling pliwee-capability-clipboard v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/clipboard)
+   Compiling pliwee-capability-battery v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/battery)
+   Compiling pliwee-capability-files v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/files)
+   Compiling pliwee-runtime v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/runtime)
+   Compiling pliwee-daemon v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/daemon)
+   Compiling pliwee-cli v1.1.0 (/home/yuri/Sandbox/OmniBridge/desktop/cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 10s
+     Running unittests src/lib.rs (target/debug/deps/pliwee_capability_battery-4eecdb28e3ea5a3f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/battery_presence.rs (target/debug/deps/battery_presence-2267bb4c4ebb5661)
+
+running 23 tests
+test a_battery_less_machine_sends_no_frame ... ok
+test a_battery_less_machine_still_receives_the_peers_battery ... ok
+test a_flat_battery_is_still_announced ... ok
+test a_machine_with_a_battery_sends_on_connect ... ok
+test absence_does_not_depend_on_the_percentage ... ok
+test a_machine_with_no_source_still_receives ... ok
+test an_unreadable_source_sends_no_frame ... ok
+test battery_less_machine_reports_nothing ... ok
+test is_present_false_is_absent ... ok
+test non_battery_kinds_are_absent ... ok
+test no_local_source_sends_no_frame ... ok
+test non_finite_percentage_reports_nothing ... ok
+test percentages_are_clamped_to_the_wire_range ... ok
+test percentages_round_to_nearest ... ok
+test power_supply_false_is_absent ... ok
+test present_battery_at_zero_percent_is_still_a_battery ... ok
+test present_battery_charging_is_reported ... ok
+test present_battery_discharging_is_reported ... ok
+test present_battery_full ... ok
+test present_battery_pending_charge_is_not_charging ... ok
+test the_capability_is_advertised_either_way ... ok
+test present_battery_with_unknown_state_is_still_present ... ok
+test unknown_state_value_keeps_the_battery ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/real_upower.rs (target/debug/deps/real_upower-0eb85fb9f9a37bb1)
+
+running 1 test
+test probe_this_machine ... ignored, needs a live system bus; run explicitly during a physical regression
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_capability_clipboard-cd7e98cf06e4f44b)
+
+running 29 tests
+test backend::wayland::tests::a_backend_without_tools_reports_unavailable_rather_than_failing_late ... ok
+test backend::wayland::tests::a_backend_that_can_mark_sensitive_writes_the_flag_and_says_so ... ok
+test backend::wayland::tests::a_missing_watch_source_is_described_without_pretending_to_work ... ok
+test backend::wayland::tests::an_old_wl_copy_does_not_claim_it_can_mark_a_clip ... ok
+test backend::wayland::tests::an_old_wl_copy_refuses_a_sensitive_clip_and_names_the_remedy ... ok
+test backend::wayland::tests::an_unrunnable_wl_copy_is_reported_as_unsupported_not_as_supported ... ok
+test backend::wayland::tests::the_probe_reads_the_option_list_rather_than_a_version_number ... ok
+test backend::wayland::tests::which_finds_a_real_binary_and_rejects_a_fake_one ... ok
+test backend::x11::tests::a_missing_display_is_reported_precisely ... ok
+test backend::x11::tests::probe_reports_rather_than_panics ... ok
+test dedup::tests::a_new_event_is_admitted_once ... ok
+test dedup::tests::a_suppression_entry_expires_rather_than_swallowing_a_later_copy ... ok
+test dedup::tests::distinct_events_with_equal_content_are_both_admitted ... ok
+test dedup::tests::events_expire_by_age ... ok
+test dedup::tests::suppression_is_single_use ... ok
+test dedup::tests::suppression_matches_content_not_order ... ok
+test dedup::tests::the_event_cache_is_bounded_by_count ... ok
+test dedup::tests::the_suppression_cache_is_bounded ... ok
+test redact::tests::hex_is_lowercase_and_fixed_width ... ok
+test redact::tests::prefixes_are_short_and_survive_short_input ... ok
+test text::tests::ascii_round_trips_unchanged ... ok
+test text::tests::debug_never_prints_the_content ... ok
+test text::tests::empty_is_refused ... ok
+test text::tests::nul_is_refused_explicitly ... ok
+test text::tests::oversize_is_never_truncated ... ok
+test text::tests::the_hash_is_sha256_over_utf8_bytes ... ok
+test text::tests::the_size_limit_is_a_byte_limit_not_a_character_limit ... ok
+test text::tests::unicode_is_never_modified ... ok
+test backend::wayland::tests::an_ordinary_clip_is_unaffected_by_the_sensitive_verdict ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.00s
+
+     Running tests/logging.rs (target/debug/deps/logging-4433edfc8189045c)
+
+running 5 tests
+test a_backend_failure_logs_no_content ... ok
+test a_held_clip_logs_no_content_even_when_it_is_applied_later ... ok
+test no_public_type_renders_clipboard_content ... ok
+test the_test_backend_is_the_only_thing_that_keeps_content ... ok
+test a_full_inbound_flow_logs_no_clipboard_content ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/loops.rs (target/debug/deps/loops-f2be545a72675959)
+
+running 8 tests
+test a_desktop_between_two_phones_is_not_a_relay ... ok
+test a_clip_between_two_fully_automatic_peers_settles_after_one_round_trip ... ok
+test a_receive_only_peer_never_echoes ... ok
+test a_local_copy_reaches_every_peer_exactly_once ... ok
+test alternating_copies_on_both_sides_never_amplify ... ok
+test fifty_copies_of_identical_text_are_all_delivered ... ok
+test a_three_device_mesh_stays_quiet_over_a_hundred_copies ... ok
+test two_hundred_copies_produce_two_hundred_updates_and_no_storm ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/real_backend.rs (target/debug/deps/real_backend-07572df20bb03498)
+
+running 14 tests
+test a_bounded_helper_that_exits_reports_its_status ... ok
+test a_missing_program_is_distinguishable_from_a_locked_seat ... ok
+test a_sensitive_write_honours_this_backend_s_advertised_capability ... ignored, touches the real system clipboard; run with --ignored --test-threads=1
+test a_helper_that_never_returns_is_bounded_and_fails_deterministically ... ok
+test a_watch_can_be_stopped_and_restarted ... ignored, touches the real system clipboard; run with --ignored --test-threads=1
+test an_empty_clipboard_is_bounded_and_classified_never_an_unexplained_failure ... ignored, touches the real system clipboard; run with --ignored --test-threads=1
+test detection_describes_this_session_accurately ... ignored, inspects the real session; run with --ignored --test-threads=1
+test a_timed_out_helper_leaves_no_child_behind ... ok
+test the_real_clipboard_carries_a_maximum_sized_clip ... ignored, touches the real system clipboard; run with --ignored --test-threads=1
+test the_real_clipboard_preserves_unicode_and_multiline_text_byte_for_byte ... ignored, touches the real system clipboard; run with --ignored --test-threads=1
+test the_real_clipboard_round_trips_text ... ignored, touches the real system clipboard; run with --ignored --test-threads=1
+test the_watcher_is_silent_while_the_clipboard_is_unchanged ... ignored, touches the real system clipboard; run with --ignored --test-threads=1
+test the_watcher_reports_every_local_change ... ignored, touches the real system clipboard; run with --ignored --test-threads=1
+test the_bound_never_reports_the_content_it_was_given ... ok
+
+test result: ok. 5 passed; 0 failed; 9 ignored; 0 measured; 0 filtered out; finished in 0.41s
+
+     Running tests/security.rs (target/debug/deps/security-9bedad8744a40dbf)
+
+running 31 tests
+test a_backend_failure_is_reported_and_releases_the_suppression_entry ... ok
+test a_failed_apply_reports_the_backend_error_and_keeps_the_clip ... ok
+test a_held_clip_can_be_applied_after_the_backend_recovers ... ok
+test a_manager_with_no_authorizer_denies_everything ... ok
+test a_send_to_a_disconnected_peer_fails_cleanly ... ok
+test an_empty_clipboard_is_nothing_to_send_rather_than_an_error ... ok
+test clip_sec_01_an_ungranted_peer_is_refused ... ok
+test clip_sec_02_a_revoked_peer_is_refused_even_with_a_permissive_stored_policy ... ok
+test clip_sec_03_policy_follows_the_pinned_identity_not_the_claimed_device_id ... ok
+test clip_sec_05_an_event_id_replayed_through_a_second_peer_is_still_a_duplicate ... ok
+test clip_sec_04_and_05_a_replayed_event_is_idempotent ... ok
+test clip_sec_07_a_content_hash_that_does_not_match_is_refused ... ok
+test clip_sec_07_invalid_utf8_never_decodes_and_nul_is_refused ... ok
+test clip_sec_08_a_sensitive_clip_is_still_only_a_hint_never_an_acl ... ok
+test clip_sec_08_a_sensitive_hint_reaches_the_platform_as_a_hint ... ok
+test clip_sec_09_a_clip_from_one_peer_is_never_forwarded_to_another ... ok
+test clip_sec_10_a_genuine_re_copy_of_the_same_text_is_still_sent ... ok
+test clip_sec_10_applying_a_remote_clip_does_not_echo_it_back ... ok
+test clip_sec_11_allow_send_off_refuses_even_a_manual_send ... ok
+test clip_sec_11_auto_send_off_means_nothing_is_pushed ... ok
+test clip_sec_12_a_held_clip_cannot_be_applied_after_the_grant_is_withdrawn ... ok
+test clip_sec_12_auto_receive_off_holds_the_clip_instead_of_applying_it ... ok
+test clip_sec_06_an_oversized_clip_is_refused_and_never_truncated ... ok
+test clip_sec_12_receive_off_drops_the_clip_without_holding_it ... ok
+test clip_sec_13_no_inbound_message_can_widen_local_policy ... ok
+test clip_sec_14_no_debug_or_display_rendering_carries_content ... ok
+test clip_sec_15_a_pending_clip_expires_on_its_own ... ok
+test clip_sec_15_a_pending_clip_is_dropped_when_the_session_ends ... ok
+test clip_sec_16_revocation_stops_clipboard_traffic_on_a_live_session ... ok
+test clip_sec_18_malformed_payloads_are_refused_without_panicking ... ok
+test clip_sec_17_the_event_and_suppression_caches_stay_bounded_under_flood ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/sensitive_capability.rs (target/debug/deps/sensitive_capability-84f16fa4dd967eac)
+
+running 9 tests
+test a_missing_wl_copy_makes_the_whole_clipboard_backend_unavailable ... ok
+test a_missing_wl_paste_is_reported_truthfully_rather_than_as_a_working_clipboard ... ok
+test a_new_looking_version_without_the_flag_is_treated_as_unsupported ... ok
+test a_refused_sensitive_clip_reaches_no_process_at_all ... ok
+test a_supported_wl_copy_offers_both_ordinary_and_sensitive_clipboard ... ok
+test an_old_looking_version_that_has_the_flag_is_treated_as_supported ... ok
+test an_unsupported_wl_copy_keeps_the_ordinary_clipboard_and_refuses_sensitive_clips ... ok
+test the_sensitive_contract_holds_where_the_flag_exists ... ok
+test the_sensitive_contract_holds_where_the_flag_is_missing ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.88s
+
+     Running tests/truthfulness.rs (target/debug/deps/truthfulness-8583ccab05711fff)
+
+running 3 tests
+test f2_the_timeout_does_not_blame_a_lock_screen_it_has_not_observed ... ok
+test f2_the_timeout_still_explains_why_the_tools_wait ... ok
+test f2_no_shipped_message_claims_manual_send_works_when_the_watch_does_not ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_capability_files-3dcf2431bda43732)
+
+running 74 tests
+test auth::tests::a_challenge_must_be_exactly_thirty_two_bytes ... ok
+test auth::tests::a_challenge_never_prints_its_contents ... ok
+test auth::tests::a_correct_mac_verifies ... ok
+test auth::tests::a_different_challenge_does_not_verify ... ok
+test auth::tests::a_proof_cannot_be_replayed_by_a_different_dialer ... ok
+test auth::tests::a_mac_from_one_profile_does_not_verify_under_the_other ... ok
+test auth::tests::a_proof_for_one_transfer_does_not_authorize_another ... ok
+test auth::tests::a_proof_is_worthless_against_a_different_acceptor ... ok
+test auth::tests::generated_challenges_and_ids_differ_every_time ... ok
+test auth::tests::a_truncated_or_padded_mac_is_refused ... ok
+test auth::tests::the_domains_are_exactly_the_approved_ones ... ok
+test auth::tests::swapping_the_two_fingerprints_changes_the_mac ... ok
+test auth::tests::the_legacy_mac_matches_the_published_cross_language_vector ... ok
+test auth::tests::the_pliwee_mac_matches_the_independent_cross_language_vector ... ok
+test destination::tests::a_dotfile_keeps_its_leading_dot_when_numbered ... ok
+test destination::tests::a_double_extension_keeps_only_the_last_part ... ok
+test destination::tests::a_free_name_is_used_as_is ... ok
+test destination::tests::a_duplicate_name_is_numbered_and_never_overwrites ... ok
+test destination::tests::a_missing_directory_has_no_legacy_partial_files ... ok
+test destination::tests::a_name_with_no_extension_is_numbered_at_the_end ... ok
+test destination::tests::a_symlink_planted_in_the_directory_is_not_followed ... ok
+test destination::tests::a_temp_file_is_hidden_marked_partial_and_private ... ok
+test destination::tests::legacy_partial_files_are_listed_and_never_touched ... ok
+test destination::tests::promotion_is_a_rename_that_leaves_no_partial_file_behind ... ok
+test destination::tests::reserving_creates_the_file_so_a_racing_transfer_cannot_take_it ... ok
+test destination::tests::the_directory_is_created_private ... ok
+test destination::tests::the_default_location_is_derived_from_the_environment ... ok
+test destination::tests::the_pliwee_subdirectory_is_used ... ok
+test filename::tests::a_colon_cannot_survive_and_no_alternate_data_stream_can_be_named ... ok
+test destination::tests::the_temp_file_sits_beside_its_destination_so_the_rename_is_atomic ... ok
+test filename::tests::a_leading_dot_is_allowed ... ok
+test filename::tests::a_long_name_is_capped_on_a_character_boundary_keeping_the_extension ... ok
+test filename::tests::a_name_that_is_only_a_path_is_rejected ... ok
+test filename::tests::a_long_name_with_no_extension_is_still_capped ... ok
+test filename::tests::a_nul_byte_cannot_survive ... ok
+test filename::tests::a_right_to_left_override_cannot_disguise_an_extension ... ok
+test filename::tests::a_unix_traversal_keeps_only_the_basename ... ok
+test filename::tests::a_windows_traversal_keeps_only_the_basename ... ok
+test filename::tests::an_absolute_path_keeps_only_the_basename ... ok
+test filename::tests::an_ordinary_name_is_kept_verbatim ... ok
+test filename::tests::control_characters_are_stripped ... ok
+test filename::tests::an_absurd_extension_is_not_allowed_to_eat_the_whole_budget ... ok
+test filename::tests::dot_directories_are_rejected ... ok
+test filename::tests::every_bidi_control_goes_not_only_the_famous_one ... ok
+test filename::tests::invisible_format_characters_go_even_when_they_are_not_bidi ... ok
+test filename::tests::ordinary_unicode_is_untouched ... ok
+test filename::tests::the_console_handles_are_reserved_too ... ok
+test filename::tests::the_result_never_contains_a_separator ... ok
+test filename::tests::the_result_is_always_valid_utf8_and_carries_nothing_invisible ... ok
+test filename::tests::the_windows_illegal_set_is_stripped ... ok
+test filename::tests::trailing_dots_and_spaces_go ... ok
+test filename::tests::windows_device_names_are_rejected ... ok
+test stream::tests::a_frame_round_trips ... ok
+test stream::tests::a_stream_longer_than_its_offer_is_refused ... ok
+test stream::tests::a_truncated_stream_fails_rather_than_producing_a_short_file ... ok
+test stream::tests::a_zero_byte_file_is_a_valid_transfer ... ok
+test stream::tests::a_zero_length_frame_is_refused ... ok
+test stream::tests::an_oversized_length_prefix_is_refused_before_allocating ... ok
+test stream::tests::an_exact_transfer_hashes_what_it_wrote ... ok
+test stream::tests::cancelling_stops_the_copy ... ok
+test stream::tests::hashing_a_file_matches_hashing_its_bytes ... ok
+test stream::tests::progress_is_reported_as_the_copy_runs ... ok
+test transfer::tests::a_receiver_must_verify_before_completing ... ok
+test transfer::tests::a_transfer_cannot_go_backwards ... ok
+test transfer::tests::a_transfer_id_is_exactly_sixteen_bytes ... ok
+test stream::tests::the_send_half_refuses_to_ship_a_file_shorter_than_its_offer ... ok
+test transfer::tests::a_transfer_id_is_never_parsed_from_a_prefix_or_from_rubbish ... ok
+test transfer::tests::a_transfer_id_never_formats_in_full ... ok
+test transfer::tests::a_transfer_id_round_trips_through_hex ... ok
+test transfer::tests::every_failure_reason_has_a_distinct_machine_code ... ok
+test transfer::tests::giving_up_is_allowed_from_every_live_state ... ok
+test transfer::tests::no_failure_reason_can_leak_local_detail ... ok
+test transfer::tests::nothing_leaves_a_terminal_state ... ok
+test transfer::tests::reason_codes_round_trip_across_the_wire ... ok
+
+test result: ok. 74 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/filename_fuzz.rs (target/debug/deps/filename_fuzz-086163c3afac71d6)
+
+running 1 test
+test sec_fuzz_01_no_generated_filename_escapes_its_directory ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.71s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_capability_notifications-752626d6d84d0db9)
+
+running 55 tests
+test backend::dbus::tests::an_error_renders_as_a_class_and_never_as_its_message ... ok
+test backend::dbus::tests::an_io_error_means_the_server_is_gone_rather_than_refusing ... ok
+test backend::dbus::tests::the_default_expiry_is_the_servers_own ... ok
+test backend::logind::tests::an_error_renders_as_a_class_and_never_as_its_message ... ok
+test backend::tests::a_backend_that_says_nothing_claims_no_dismiss_reporting ... ok
+test backend::logind::tests::the_screensaver_names_appear_nowhere_in_this_module ... ok
+test backend::tests::a_lock_source_that_cannot_answer_reports_locked ... ok
+test backend::tests::an_unknown_lock_source_reports_locked ... ok
+test backend::tests::close_reasons_map_exactly_and_unknown_is_undefined ... ok
+test backend::tests::only_a_human_dismissal_is_a_human_dismissal ... ok
+test backend::tests::the_fake_desktop_reports_dismissals_like_gnome_does ... ok
+test backend::tests::urgency_has_no_critical_variant_to_reach_for ... ok
+test mirror::tests::a_close_signal_forgets_the_entry_by_its_server_id ... ok
+test mirror::tests::a_server_restart_drops_the_handles_and_keeps_the_identities ... ok
+test mirror::tests::an_update_replaces_in_place_and_frees_no_slot ... ok
+test mirror::tests::rendering_counts_and_never_prints_a_name ... ok
+test mirror::tests::reconciliation_names_only_what_the_snapshot_omitted ... ok
+test policy::tests::the_default_authorizer_denies ... ok
+test queue::tests::a_removal_supersedes_a_pending_upsert_but_is_itself_queued ... ok
+test mirror::tests::the_ceiling_evicts_the_oldest_and_hands_it_back_to_be_closed ... ok
+test queue::tests::a_storm_for_one_identity_occupies_one_slot_and_keeps_the_newest ... ok
+test queue::tests::a_terminal_drop_is_counted_rather_than_silent ... ok
+test queue::tests::coalescing_never_crosses_a_snapshot_marker ... ok
+test queue::tests::draining_preserves_order ... ok
+test queue::tests::a_removal_survives_a_full_queue_of_upserts ... ok
+test queue::tests::two_role_announcements_collapse_into_one ... ok
+test redact::tests::a_prefix_is_eight_characters_and_survives_short_input ... ok
+test redact::tests::hex_is_lowercase_and_fixed_width ... ok
+test roles::tests::a_backend_that_cannot_report_closes_announces_sink_alone ... ok
+test roles::tests::a_new_session_starts_the_epoch_again ... ok
+test roles::tests::a_reporting_desktop_announces_sink_and_dismiss_reporter ... ok
+test roles::tests::an_unchanged_set_produces_no_announcement ... ok
+test roles::tests::losing_dismiss_reporting_narrows_without_losing_the_sink ... ok
+test roles::tests::narrowing_and_widening_both_take_a_strictly_higher_epoch ... ok
+test roles::tests::no_server_means_no_roles_at_all ... ok
+test roles::tests::the_first_announcement_is_epoch_one ... ok
+test roles::tests::what_was_announced_can_be_read_back_and_starts_as_nothing ... ok
+test tests::a_denied_policy_suppresses_even_before_the_grant_is_consulted ... ok
+test tests::a_locked_session_follows_the_policy ... ok
+test tests::an_unknown_importance_resolves_to_normal_not_to_loud ... ok
+test tests::an_unlocked_session_presents_everything_whatever_the_lock_policy_says ... ok
+test tests::every_outcome_has_a_wire_value_and_a_name ... ok
+test tests::high_importance_never_becomes_critical ... ok
+test tests::only_the_messages_that_name_an_identity_can_be_answered ... ok
+test queue::tests::the_ceiling_evicts_the_oldest_non_terminal_item ... ok
+test text::tests::a_long_field_is_truncated_on_a_character_boundary_and_says_so ... ok
+test text::tests::a_server_without_body_markup_is_not_given_entities ... ok
+test text::tests::an_app_name_falls_back_to_the_package_and_never_to_a_placeholder ... ok
+test text::tests::an_app_name_is_sanitized_like_everything_else ... ok
+test text::tests::control_characters_go_but_a_body_keeps_its_newlines ... ok
+test text::tests::escaping_does_not_double_escape_its_own_ampersands ... ok
+test text::tests::every_bidi_control_goes_not_only_the_famous_one ... ok
+test text::tests::markup_is_escaped_not_interpreted ... ok
+test text::tests::presented_returns_both_halves ... ok
+test text::tests::escaping_happens_before_the_cap_so_the_cap_measures_what_is_sent ... ok
+
+test result: ok. 55 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/convergence.rs (target/debug/deps/convergence-c33d35aa3a22268a)
+
+running 14 tests
+test a_session_establishment_announces_roles_once ... ok
+test c_an_announcement_racing_an_attach_is_made_exactly_once ... ok
+test d_recomputing_an_unchanged_role_set_announces_nothing ... ok
+test e_a_real_change_crosses_the_live_session ... ok
+test f_a_stale_epoch_cannot_re_widen_a_narrowed_peer ... ok
+test b_an_announcement_with_nowhere_to_go_is_not_recorded ... ok
+test g_a_duplicate_epoch_changes_nothing ... ok
+test h_a_reconnect_starts_from_a_coherent_current_state ... ok
+test i_role_state_is_scoped_to_one_peer ... ok
+test j_a_peer_that_has_claimed_nothing_is_not_treated_as_a_source ... ok
+test l_roles_are_platform_state_not_authorization ... ok
+test k_epoch_zero_is_refused ... ok
+test n_an_unknown_peer_holds_no_state ... ok
+test m_every_peer_gets_its_own_first_announcement ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/dismiss.rs (target/debug/deps/dismiss-9736e82d77f74337)
+
+running 33 tests
+test a_backend_restart_makes_a_stale_close_harmless ... ok
+test a_close_for_an_id_this_desktop_never_used_generates_nothing ... ok
+test a_desktop_that_cannot_report_dismissals_announces_no_reporter_role ... ok
+test a_dismissal_after_an_update_names_the_same_identity ... ok
+test a_dismiss_request_carries_an_identity_and_nothing_else ... ok
+test a_dismissal_reaches_only_the_peer_that_sourced_the_notification ... ok
+test a_dismissal_for_a_departed_peer_is_dropped_and_not_queued ... ok
+test a_grant_revocation_generates_no_dismiss_request ... ok
+test a_duplicate_close_signal_sends_at_most_one_request ... ok
+test a_grant_revoked_after_the_upsert_stops_the_dismissal ... ok
+test a_human_dismissal_produces_exactly_one_dismiss_request ... ok
+test a_lock_suppression_generates_no_dismiss_request ... ok
+test a_never_displayed_mirror_cannot_be_humanly_dismissed ... ok
+test a_mirror_evicted_at_the_ceiling_generates_no_dismiss_request ... ok
+test a_peer_that_never_claimed_dismiss_target_is_never_asked ... ok
+test a_policy_refusal_from_the_source_is_counted ... ok
+test a_programmatic_close_never_dismisses_anything_on_the_source ... ok
+test a_role_narrowing_generates_no_dismiss_request ... ok
+test a_reposted_notification_dismisses_its_current_identity ... ok
+test a_snapshot_reconciliation_generates_no_dismiss_request ... ok
+test a_source_removal_generates_no_dismiss_request ... ok
+test a_source_that_refuses_a_dismissal_is_counted_as_a_refusal ... ok
+test a_successful_dismissal_is_not_counted_as_a_refusal ... ok
+test an_already_gone_answer_is_convergence_and_not_a_refusal ... ok
+test an_inbound_dismiss_from_an_ungranted_peer_is_not_authorized ... ok
+test an_inbound_dismiss_request_is_still_refused ... ok
+test an_expiry_never_dismisses_anything_on_the_source ... ok
+test an_undefined_close_reason_never_dismisses_anything ... ok
+test dismiss_sync_is_off_by_default_and_sends_nothing ... ok
+test mirroring_off_defeats_a_stale_dismiss_sync_flag ... ok
+test the_source_removal_after_a_dismissal_converges_silently ... ok
+test this_desktop_announces_reporter_and_never_target ... ok
+test only_one_of_the_four_close_reasons_can_dismiss ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/hardening.rs (target/debug/deps/hardening-55db873798cc2756)
+
+running 40 tests
+test a_close_for_a_stale_server_id_produces_no_dismiss_request ... ok
+test a_dead_outbound_channel_does_not_stall_the_worker ... ok
+test a_disconnect_longer_than_the_grace_closes_the_mirrors ... ok
+test a_dismissal_does_not_restore_content_that_was_reduced ... ok
+test a_display_failure_is_reported_and_leaves_no_mirror_behind ... ok
+test a_close_failure_still_converges_on_the_next_snapshot ... ok
+test a_human_dismissal_during_a_burst_still_reaches_the_source ... ok
+test a_lock_that_changed_while_disconnected_applies_to_the_new_session ... ok
+test a_malformed_snapshot_marker_does_not_wedge_the_worker ... ok
+test a_peer_that_never_returns_leaves_no_mirrors_and_no_content ... ok
+test a_peer_with_no_session_claims_no_roles ... ok
+test a_reconnect_inside_the_grace_keeps_every_mirror ... ok
+test a_removal_with_no_session_is_refused_and_the_grace_still_clears_it ... ok
+test a_genuine_disconnect_after_a_displacement_still_clears_the_screen ... ok
+test a_role_epoch_is_scoped_to_one_peer ... ok
+test a_sink_that_cannot_observe_closes_does_not_claim_dismiss_reporting ... ok
+test a_replaced_sessions_detach_cannot_close_the_live_sessions_mirrors ... ok
+test a_snapshot_after_a_burst_converges_on_what_it_names ... ok
+test a_snapshot_after_a_restart_converges_on_the_new_server ... ok
+test an_empty_snapshot_from_one_peer_closes_only_its_own_mirrors ... ok
+test a_snapshot_left_open_by_a_departed_peer_is_still_cleared_by_the_grace ... ok
+test an_unknown_lock_state_is_locked_whichever_way_it_was_reached ... ok
+test an_unknown_role_is_ignored_without_discarding_the_set ... ok
+test an_upsert_that_arrives_with_no_session_is_refused_and_changes_nothing ... ok
+test epoch_zero_is_refused_even_as_the_first_announcement ... ok
+test five_hundred_notifications_never_exceed_the_mirror_ceiling ... ok
+test an_expired_grace_from_an_old_session_cannot_close_the_new_ones_mirrors ... ok
+test losing_and_regaining_the_server_narrows_then_rewidens_with_a_new_epoch ... ok
+test no_failure_path_puts_content_in_a_report ... ok
+test no_wire_message_carries_a_timing_value ... ok
+test one_peers_policy_never_applies_to_another ... ok
+test re_widening_a_role_restores_no_content ... ok
+test reconnecting_one_peer_leaves_the_others_mirrors_alone ... ok
+test five_hundred_updates_to_one_identity_stay_one_mirror ... ok
+test revoking_one_peer_leaves_the_other_mirroring ... ok
+test the_counters_are_per_peer ... ok
+test the_epoch_table_holds_in_order ... ok
+test the_shipped_grace_is_greater_than_zero_and_finite ... ok
+test removals_under_pressure_converge_and_any_loss_is_counted ... ok
+test the_two_hundred_and_first_mirror_evicts_exactly_one ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.07s
+
+     Running tests/logging.rs (target/debug/deps/logging-ac0799134c6ed360)
+
+running 11 tests
+test a_backend_failure_logs_no_content ... ok
+test a_full_display_update_and_remove_flow_logs_no_content ... ok
+test a_refusal_logs_no_content ... ok
+test a_non_human_close_logs_its_reason_and_no_content ... ok
+test a_suppressing_lock_policy_logs_no_content ... ok
+test a_refused_dismissal_logs_a_reason_class_and_no_content ... ok
+test an_inbound_dismiss_refusal_logs_no_content ... ok
+test the_dismissal_path_logs_no_content ... ok
+test the_mirror_table_rendering_carries_no_content ... ok
+test the_lock_reduction_and_the_close_signal_log_no_content ... ok
+test the_snapshot_and_role_paths_log_no_content ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/real_dbus.rs (target/debug/deps/real_dbus-384543b0c44c2a9d)
+
+running 10 tests
+test a_body_reaches_the_server_escaped_and_nothing_is_left_behind ... ignored, talks to the real notification server; run with --ignored --test-threads=1
+test a_human_dismissal_end_to_end_produces_exactly_one_dismiss_request ... ignored, needs a person to dismiss a notification; set PLIWEE_HUMAN_DISMISS=1
+test a_human_dismissal_on_this_desktop_is_reported_as_reason_two ... ignored, needs a person to dismiss a notification; set PLIWEE_HUMAN_DISMISS=1
+test a_low_urgency_notification_is_accepted ... ignored, talks to the real notification server; run with --ignored --test-threads=1
+test a_notification_is_created_replaced_in_place_and_closed ... ignored, talks to the real notification server; run with --ignored --test-threads=1
+test a_thirty_minute_soak_stays_bounded_and_converges ... ignored, runs for 30 minutes against the real notification server; set PLIWEE_SOAK=1
+test closing_an_unknown_id_is_a_success ... ignored, talks to the real notification server; run with --ignored --test-threads=1
+test the_real_server_answers_and_says_what_it_can_do ... ignored, talks to the real notification server; run with --ignored --test-threads=1
+test the_real_session_can_report_human_dismissals ... ignored, talks to the real notification server; run with --ignored --test-threads=1
+test the_server_reports_our_own_close_with_reason_three ... ignored, talks to the real notification server; run with --ignored --test-threads=1
+
+test result: ok. 0 passed; 0 failed; 10 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/real_lock.rs (target/debug/deps/real_lock-838814413fa3ffae)
+
+running 2 tests
+test a_platform_with_no_lock_source_reports_locked ... ignored, reads the real logind session; run with --ignored
+test the_implementation_agrees_with_loginctl ... ignored, reads the real logind session; run with --ignored
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sink.rs (target/debug/deps/sink-23eb484f7311e0aa)
+
+running 60 tests
+test a_bad_width_identifier_is_refused_and_not_answered ... ok
+test a_backend_failure_is_reported_and_the_session_survives ... ok
+test a_dismiss_request_is_refused_because_this_device_sources_nothing ... ok
+test a_first_upsert_creates_one_desktop_notification ... ok
+test a_complete_snapshot_removes_what_it_did_not_name ... ok
+test a_full_policy_shows_everything_while_locked ... ok
+test a_locked_session_shows_the_app_name_and_no_body ... ok
+test a_malformed_payload_does_not_break_the_session ... ok
+test a_notification_with_no_title_is_headed_by_the_application ... ok
+test a_notification_server_restart_invalidates_the_stale_ids ... ok
+test a_nul_bearing_field_is_refused_non_fatally ... ok
+test a_peer_report_counts_rather_than_describes ... ok
+test a_peer_that_never_claimed_source_is_not_listened_to ... ok
+test a_peers_notification_is_never_forwarded_to_another_peer ... ok
+test a_peer_that_stops_being_a_source_has_its_mirrors_closed ... ok
+test a_reduced_mirror_shows_its_new_content_when_the_source_updates_it ... ok
+test a_progress_storm_produces_one_notification_and_no_duplicates ... ok
+test a_restarted_snapshot_removes_nothing_on_the_abandoned_one ... ok
+test a_secret_notification_is_never_displayed_even_though_the_source_should_not_send_one ... ok
+test a_server_without_body_markup_gets_the_text_unescaped ... ok
+test a_snapshot_for_one_peer_never_touches_another_peers_mirrors ... ok
+test a_snapshot_reconverges_after_a_server_restart ... ok
+test a_spoofed_origin_device_id_changes_nothing ... ok
+test a_snapshot_that_names_everything_removes_nothing_and_duplicates_nothing ... ok
+test a_stale_role_epoch_cannot_rewiden_a_narrowed_set ... ok
+test a_suppress_policy_displays_nothing_while_locked ... ok
+test a_timestamp_only_change_does_not_redisplay ... ok
+test an_absent_server_narrows_the_sink_role_without_a_reconnect ... ok
+test a_user_dismissal_drops_the_mapping_so_the_next_update_creates_afresh ... ok
+test an_end_with_no_begin_removes_nothing ... ok
+test an_end_for_a_different_snapshot_removes_nothing_and_leaves_the_real_one_open ... ok
+test an_expiry_is_recorded_as_an_expiry_and_not_as_a_dismissal ... ok
+test an_identical_resend_is_a_duplicate_and_touches_no_desktop ... ok
+test an_oversized_field_is_refused_rather_than_truncated_by_the_receiver ... ok
+test an_incomplete_snapshot_is_abandoned_and_removes_nothing ... ok
+test an_ungranted_peer_displays_nothing ... ok
+test an_unknown_lock_state_behaves_as_locked ... ok
+test an_unknown_privacy_value_is_treated_as_secret_and_not_displayed ... ok
+test an_unlocked_session_shows_the_whole_notification ... ok
+test an_update_replaces_the_same_notification_rather_than_adding_one ... ok
+test an_upsert_with_no_content_hash_is_always_displayed ... ok
+test bidi_overrides_and_control_characters_never_reach_the_desktop ... ok
+test high_importance_is_normal_urgency_not_critical ... ok
+test locking_reduces_what_is_already_on_the_screen_without_duplicating_it ... ok
+test low_importance_is_low_urgency ... ok
+test markup_in_a_body_is_escaped_before_it_reaches_a_body_markup_server ... ok
+test no_dismiss_request_is_ever_sent_to_a_peer ... ok
+test no_report_renders_any_notification_content ... ok
+test one_peer_cannot_remove_another_peers_mirror ... ok
+test locking_with_a_suppress_policy_takes_mirrors_off_the_screen ... ok
+test removal_is_idempotent ... ok
+test removing_a_known_mirror_closes_it ... ok
+test removing_an_unknown_mirror_converges_rather_than_failing ... ok
+test revoking_a_grant_stops_notifications_immediately_and_closes_the_mirrors ... ok
+test one_peers_flood_does_not_evict_another_peers_mirrors ... ok
+test the_sink_never_recomputes_content_hash ... ok
+test this_device_announces_the_two_sink_side_roles_and_no_others ... ok
+test two_peers_sending_the_same_identity_do_not_collide ... ok
+test unlocking_does_not_restore_content_the_sink_never_kept ... ok
+test the_mirror_table_is_bounded_per_peer ... ok
+
+test result: ok. 60 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src/main.rs (target/debug/deps/pliwee-9ec22d2e18259f47)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_control-31f3dc9863b4d38e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_core-6913e1c48ac0b9fc)
+
+running 25 tests
+test clipboard_policy::tests::denied_closes_every_direction ... ok
+test clipboard_policy::tests::automatic_directions_are_off_by_default ... ok
+test clipboard_policy::tests::describe_is_stable_and_carries_no_content ... ok
+test clipboard_policy::tests::missing_fields_deserialize_to_the_documented_defaults ... ok
+test clipboard_policy::tests::withdrawing_a_direction_defeats_a_stale_auto_flag ... ok
+test notification_policy::tests::an_unknown_lock_policy_spelling_is_refused_rather_than_guessed ... ok
+test notification_policy::tests::denied_closes_everything_including_the_lock_policy ... ok
+test notification_policy::tests::describe_is_stable_and_carries_no_content ... ok
+test notification_policy::tests::missing_fields_deserialize_to_the_documented_defaults ... ok
+test notification_policy::tests::the_defaults_are_the_documented_ones ... ok
+test notification_policy::tests::withdrawing_mirroring_defeats_a_stale_dismiss_flag ... ok
+test platform::unix_fs::tests::a_secret_name_can_never_escape_the_data_directory ... ok
+test platform::unix_fs::tests::a_loose_mode_is_a_hard_error_rather_than_a_warning ... ok
+test platform::unix_fs::tests::a_write_replaces_atomically_and_leaves_no_temp_behind ... ok
+test platform::unix_fs::tests::a_written_secret_reads_back_and_is_owner_only ... ok
+test platform::unix_fs::tests::an_absent_secret_is_none_and_not_an_error ... ok
+test platform::unix_fs::tests::an_unreadable_secret_is_permission_denied_and_never_absence ... ok
+test platform::unix_fs::tests::an_unreadable_state_file_is_permission_denied_and_never_absence ... ok
+test platform::unix_fs::tests::harden_makes_a_loose_directory_private ... ok
+test session::dispatch_tests::a_saturated_session_still_shuts_down ... ok
+test session::dispatch_tests::inbound_capability_messages_reach_the_handler_in_wire_order ... ok
+test session::dispatch_tests::a_handler_may_reply_more_times_than_the_outbound_queue_is_deep ... ok
+test session::dispatch_tests::inbound_dispatch_continues_while_the_outbound_queue_is_saturated ... ok
+test session::dispatch_tests::replies_keep_their_order_under_queue_pressure ... ok
+test session::dispatch_tests::outbound_pressure_on_one_session_does_not_affect_another ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.02s
+
+     Running tests/frozen_vectors.rs (target/debug/deps/frozen_vectors-980b48cd2d1f5d08)
+
+running 3 tests
+test identity_b_der_is_byte_identical_to_the_frozen_vector ... ok
+test identity_a_der_is_byte_identical_to_the_frozen_vector ... ok
+test the_frozen_vectors_keep_their_historical_subject ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/identity_and_store.rs (target/debug/deps/identity_and_store-d92b527f753e4212)
+
+running 28 tests
+test a_new_identity_certificate_names_pliwee ... ok
+test a_newer_schema_version_is_refused_rather_than_misread ... ok
+test a_stored_device_name_survives_the_rename ... ok
+test capability_grants_are_independent_of_what_a_peer_advertises ... ok
+test certificate_carries_no_subject_alt_names ... ok
+test device_id_is_128_bits_of_hex ... ok
+test device_info_carries_the_fingerprint_not_an_address ... ok
+test fingerprint_covers_the_public_key_not_the_whole_certificate ... ok
+test fingerprint_hex_round_trips ... ok
+test fingerprint_is_stable_and_derived_from_the_certificate ... ok
+test fixture_certificates_have_the_expected_spki_fingerprints ... ok
+test identity_debug_never_leaks_the_private_key ... ok
+test generated_identities_are_distinct ... ok
+test malformed_fingerprints_are_rejected ... ok
+test private_key_is_written_with_restrictive_permissions ... ok
+test qr_payload_drops_unparseable_addresses_but_keeps_the_rest ... ok
+test peers_persist_across_restarts ... ok
+test qr_payload_handles_ipv6_addresses ... ok
+test qr_payload_rejects_a_tampered_fingerprint ... ok
+test qr_payload_rejects_hostile_input ... ok
+test qr_payload_round_trips ... ok
+test qr_scheme_matrix ... ok
+test revoking_an_unknown_peer_is_not_an_error ... ok
+test revocation_survives_a_restart_and_hides_the_peer ... ok
+test store_generates_an_identity_on_first_run_and_reloads_it ... ok
+test store_refuses_to_load_a_world_readable_private_key ... ok
+test store_never_persists_message_or_clipboard_content ... ok
+test the_placeholder_device_name_is_the_product_name ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/identity_seam.rs (target/debug/deps/identity_seam-b8602cd949674c55)
+
+running 8 tests
+test a_non_exportable_identity_completes_a_pinned_handshake_as_the_server ... ok
+test a_non_exportable_identity_completes_a_pinned_handshake_as_the_client ... ok
+test a_signer_that_fails_fails_the_handshake_rather_than_falling_back ... ok
+test device_info_never_advertises_the_key_backing ... ok
+test key_backing_says_honestly_whether_a_key_could_ever_be_exported ... ok
+test both_ends_non_exportable_still_works ... ok
+test the_seam_accepts_every_shape_a_caller_already_holds ... ok
+test pinning_still_rejects_a_different_identity_through_the_resolver_path ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/identity_states.rs (target/debug/deps/identity_states-27c04468d397f14d)
+
+running 20 tests
+test a_directory_that_does_not_exist_yet_is_also_a_first_run ... ok
+test a_healthy_store_reports_available_and_reloads_the_same_identity ... ok
+test a_key_with_no_state_beside_it_is_fatal_rather_than_a_first_run ... ok
+test a_key_that_does_not_match_the_certificate_is_corrupted ... ok
+test a_malformed_state_file_is_corrupted_and_never_overwritten ... ok
+test a_missing_key_beside_an_existing_state_is_fatal ... ok
+test a_non_traversable_data_directory_refuses_to_start_and_never_regenerates ... ok
+test a_permission_failure_is_never_reported_as_absence ... ok
+test a_recorded_hardware_backing_this_build_cannot_open_is_fatal ... ok
+test a_schema_1_state_file_loads_and_reads_back_as_software ... ok
+test a_transient_io_failure_is_temporarily_unavailable_and_writes_nothing ... ok
+test an_empty_directory_is_not_created_and_may_generate ... ok
+test a_world_readable_key_is_refused_with_the_remedy_and_nothing_is_rewritten ... ok
+test an_unreadable_key_refuses_to_start_and_never_regenerates ... ok
+test an_unparseable_key_is_corrupted_and_never_replaced ... ok
+test key_backing_round_trips_through_state_json ... ok
+test only_not_created_may_create ... ok
+test the_software_backend_stores_its_material_under_the_documented_name ... ok
+test the_state_codes_are_the_ones_the_specification_names ... ok
+test every_fault_leaves_the_identity_intact_and_only_absence_creates ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/notifications_protocol.rs (target/debug/deps/notifications_protocol-e74b25b1ef50627e)
+
+running 47 tests
+test a_bad_width_identity_is_not_answered ... ok
+test a_bracketed_snapshot_completes_with_exactly_what_it_named ... ok
+test a_derived_id_satisfies_the_portable_contract ... ok
+test a_different_key_or_secret_derives_a_different_id ... ok
+test a_dismiss_for_a_third_devices_notification_is_representable_and_refusable ... ok
+test a_dismiss_request_names_only_an_opaque_notification ... ok
+test a_duplicate_item_inside_a_snapshot_is_idempotent ... ok
+test a_mismatched_sync_id_cannot_complete_a_snapshot ... ok
+test a_nested_begin_abandons_the_open_snapshot_without_applying_it ... ok
+test a_peer_with_the_capability_but_no_role_enables_no_direction ... ok
+test a_role_is_removed_by_not_naming_it ... ok
+test a_stale_epoch_cannot_re_widen_a_narrowed_set ... ok
+test a_sync_id_of_the_wrong_width_is_refused ... ok
+test absent_roles_mean_no_roles ... ok
+test an_abandoned_snapshot_never_becomes_authoritative ... ok
+test an_empty_announcement_narrows_to_nothing ... ok
+test an_empty_control_body_is_refused ... ok
+test an_unknown_future_role_is_ignored_not_granted ... ok
+test an_unspecified_phase_cannot_complete_a_snapshot ... ok
+test an_update_is_the_same_identity_with_different_content ... ok
+test dismissal_has_an_idempotent_answer ... ok
+test end_without_begin_is_refused ... ok
+test epoch_zero_is_unset_and_refused ... ok
+test identifiers_are_never_truncated_into_collisions ... ok
+test every_body_round_trips ... ok
+test identity_is_independent_of_content ... ok
+test invalid_utf8_never_decodes ... ok
+test limits_are_measured_in_bytes_not_characters ... ok
+test negotiation_semantics_are_unchanged_for_existing_capabilities ... ok
+test nothing_advertises_notifications_v1_after_n0 ... ok
+test nul_is_refused_in_every_string_field ... ok
+test optional_digests_are_absent_or_exact ... ok
+test origin_device_id_is_not_identity ... ok
+test roles_are_added_and_then_updated ... ok
+test text_fields_accept_exactly_the_limit_and_refuse_one_more ... ok
+test the_canonical_upsert_encodes_to_the_shared_vector ... ok
+test the_capability_id_is_the_canonical_one ... ok
+test the_group_id_derivation_matches_the_android_vector ... ok
+test the_length_prefix_makes_concatenation_unambiguous ... ok
+test the_message_ceiling_is_enforced_and_sits_below_the_frame_limit ... ok
+test the_notification_id_is_exactly_sixteen_bytes ... ok
+test the_notification_id_derivation_matches_the_android_vector ... ok
+test the_shared_vector_decodes_and_validates ... ok
+test the_snapshot_holds_no_content ... ok
+test there_is_no_wire_value_for_importance_none ... ok
+test unknown_enum_values_resolve_conservatively ... ok
+test upserts_outside_a_snapshot_are_live_traffic ... ok
+
+test result: ok. 47 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/pairing.rs (target/debug/deps/pairing-c5f1010cbd0463f2)
+
+running 25 tests
+test a_confirmation_from_the_other_profile_does_not_verify ... ok
+test a_proof_for_a_different_device_is_rejected ... ok
+test a_proof_for_a_previous_nonce_is_rejected ... ok
+test a_proof_from_the_other_profile_is_rejected ... ok
+test a_token_cannot_be_used_twice ... ok
+test a_wrong_proof_is_rejected_and_counted ... ok
+test a_valid_proof_is_accepted_once ... ok
+test an_expired_token_is_rejected ... ok
+test brute_force_is_cut_off_after_a_few_attempts ... ok
+test field_boundaries_cannot_be_shifted ... ok
+test legacy_confirmation_matches_the_cross_language_known_answer ... ok
+test legacy_proof_matches_the_cross_language_known_answer ... ok
+test nonces_are_unique ... ok
+test pliwee_confirmation_matches_the_independent_known_answer ... ok
+test pliwee_proof_matches_the_independent_known_answer ... ok
+test proof_and_confirmation_are_domain_separated ... ok
+test proof_is_bound_to_the_initiator_identity ... ok
+test proof_is_bound_to_the_nonce ... ok
+test proof_is_bound_to_the_responder_identity ... ok
+test proof_is_deterministic_for_identical_inputs ... ok
+test token_debug_never_leaks_the_secret ... ok
+test token_has_the_expected_entropy_and_encoding ... ok
+test two_tokens_are_never_equal ... ok
+test verify_proof_rejects_wrong_length ... ok
+test expiry_uses_a_monotonic_clock_not_a_peer_timestamp ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/parser_fuzz.rs (target/debug/deps/parser_fuzz-90639d1929591701)
+
+running 4 tests
+test sec_fuzz_01_a_zero_length_frame_is_refused ... ok
+test sec_fuzz_01_an_enormous_declared_length_is_refused_before_allocating ... ok
+test sec_fuzz_01_device_name_sanitising_returns_on_every_input ... ok
+test sec_fuzz_01_the_framing_parser_returns_on_every_input ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/portable_boundary.rs (target/debug/deps/portable_boundary-b5e34b3c8370e4a1)
+
+running 11 tests
+test each_desktop_module_exists_and_is_behind_the_linux_feature ... ok
+test every_declared_exception_still_exists ... ok
+test each_exception_is_actually_behind_a_feature ... ok
+test the_adapter_and_binary_crates_at_least_deny_unsafe_code ... ok
+test the_notification_seam_names_no_desktop_outside_its_two_backend_modules ... ok
+test the_portable_crates_declare_unsafe_code_forbidden ... ok
+test no_crate_actually_uses_unsafe_today ... ok
+test the_portable_crates_name_no_platform_outside_a_feature_gated_module ... ok
+test the_windows_feature_filter_selects_every_portable_crate ... ok
+test the_windows_job_builds_exactly_the_portable_crates ... ok
+test the_security_critical_files_carry_no_platform_arm_at_all ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/protocol.rs (target/debug/deps/protocol-577645eaea481d4c)
+
+running 12 tests
+test capability_payload_is_opaque_to_the_transport ... ok
+test envelope_round_trips ... ok
+test empty_stream_reports_closed ... ok
+test framing_reads_successive_frames ... ok
+test framing_round_trips ... ok
+test malformed_protobuf_body_is_refused ... ok
+test oversized_length_prefix_is_refused_without_allocating ... ok
+test unknown_enum_values_do_not_panic ... ok
+test truncated_frame_reports_closed_not_garbage ... ok
+test version_negotiation_picks_the_highest_common_version ... ok
+test version_negotiation_rejects_disjoint_ranges ... ok
+test zero_length_frame_is_refused ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/revoked_tombstone.rs (target/debug/deps/revoked_tombstone-41c973690b065d7f)
+
+running 16 tests
+test a_revoked_device_is_listed_until_it_is_removed_and_never_after ... ok
+test a_record_that_says_hidden_but_not_revoked_is_read_as_revoked ... ok
+test a_store_without_the_field_reads_every_revoked_device_as_visible ... ok
+test a_tombstone_grants_nothing_to_a_different_fingerprint ... ok
+test a_tombstone_is_still_a_record_and_still_revoked ... ok
+test a_tombstone_keeps_the_key_and_nothing_else ... ok
+test a_trusted_device_cannot_be_removed_from_the_list ... ok
+test a_tombstone_survives_a_restart ... ok
+test bulk_removal_with_nothing_revoked_writes_nothing ... ok
+test bulk_removal_touches_revoked_visible_devices_and_only_those ... ok
+test pairing_again_over_a_tombstone_restores_one_visible_trusted_record ... ok
+test removing_a_device_that_is_not_there_is_an_error_not_a_write ... ok
+test removing_a_tombstone_again_is_a_no_op ... ok
+test revoking_clears_the_grants_and_the_policies_that_go_with_them ... ok
+test removing_one_device_leaves_a_same_named_device_alone ... ok
+test the_schema_version_is_unchanged_because_the_field_is_additive ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/wire_identity.rs (target/debug/deps/wire_identity-c7ff6a93de358f94)
+
+running 18 tests
+test a_client_config_offers_exactly_one_alpn ... ok
+test a_legacy_only_server_refuses_a_canonical_client ... ok
+test control_alpn_is_pliwee_1 ... ok
+test data_alpn_is_pliwee_data_1 ... ok
+test each_alpn_selects_exactly_one_profile_and_kind ... ok
+test legacy_control_alpn_is_omnibridge_1 ... ok
+test legacy_data_alpn_is_omnibridge_data_1 ... ok
+test legacy_mdns_service_type_is_omnibridge_tcp ... ok
+test legacy_pairing_domains ... ok
+test legacy_qr_scheme_is_omnibridge1 ... ok
+test mdns_service_type_is_pliwee_tcp ... ok
+test no_pre_rename_identity_survives ... ok
+test pliwee_pairing_domains ... ok
+test profile_names_round_trip_and_nothing_else_parses ... ok
+test qr_scheme_is_pliwee1 ... ok
+test the_four_alpn_identifiers_are_distinct ... ok
+test the_listener_offers_canonical_first_in_the_approved_order ... ok
+test a_real_handshake_negotiates_the_offered_profile_and_nothing_else ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_daemon-66071b2f922eb07f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/pliweed-c7093c8af8674242)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/clipboard.rs (target/debug/deps/clipboard-b43f7d92b64225a9)
+
+running 21 tests
+test a_duplicate_event_id_is_idempotent_over_the_wire ... ok
+test a_burst_of_updates_is_answered_in_full_under_outbound_pressure ... ok
+test a_granted_peer_can_push_a_clip_and_is_told_what_happened ... ok
+test a_local_copy_is_pushed_when_auto_send_is_on ... ok
+test a_manual_send_works_without_auto_send ... ok
+test a_local_copy_is_not_pushed_when_auto_send_is_off ... ok
+test a_sensitive_manual_send_sets_the_hint_on_the_wire ... ok
+test a_pending_clip_does_not_survive_the_session_that_delivered_it ... ok
+test a_session_carrying_clipboard_traffic_still_shuts_down_promptly ... ok
+test an_oversized_clip_is_refused_over_the_wire ... ok
+test clipboard_content_never_reaches_the_trust_store ... ok
+test an_ungranted_peer_that_sends_clipboard_traffic_is_told_it_is_unsupported ... ok
+test clipboard_keeps_working_across_a_reconnect ... ok
+test clipboard_is_refused_until_it_is_explicitly_granted ... ok
+test clipboard_traffic_requires_the_pinned_identity_like_everything_else ... ok
+test inbound_clipboard_and_outbound_pushes_interleave_without_wedging ... ok
+test the_status_report_describes_clips_without_carrying_them ... ok
+test revoking_the_grant_stops_clipboard_traffic_without_dropping_the_session ... ok
+test unicode_and_multiline_text_survive_the_round_trip_byte_for_byte ... ok
+test unpairing_stops_clipboard_traffic ... ok
+test widening_a_grant_needs_a_reconnect_but_narrowing_does_not ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.00s
+
+     Running tests/control.rs (target/debug/deps/control-b7179ec181a037af)
+
+running 4 tests
+test a_live_session_is_reported_as_paired_and_connected ... ok
+test a_device_whose_session_ended_is_paired_but_not_connected ... ok
+test unpairing_reports_revoked_and_not_connected ... ok
+test a_quiet_but_answering_session_stays_connected ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests/e2e.rs (target/debug/deps/e2e-63a71dab4e12d92c)
+
+running 18 tests
+test a_captured_proof_cannot_be_replayed_by_another_device ... ok
+test a_declined_confirmation_does_not_pair ... ok
+test a_different_server_identity_is_rejected_by_the_client ... ok
+test a_capability_the_peer_was_not_granted_is_not_delivered ... ok
+test a_malformed_capability_payload_does_not_kill_the_session ... ok
+test a_paired_device_reconnects_without_pairing_again ... ok
+test a_revoked_device_can_pair_again_when_the_owner_opens_a_new_window ... ok
+test a_revoked_device_cannot_re_pair_without_a_new_token ... ok
+test a_revoked_device_is_refused_on_its_next_connection ... ok
+test a_token_cannot_pair_a_second_device ... ok
+test a_revoked_device_still_needs_the_right_token_and_a_human ... ok
+test a_wrong_pairing_token_is_rejected ... ok
+test an_out_of_range_battery_percentage_is_rejected ... ok
+test an_expired_pairing_window_rejects_a_valid_token ... ok
+test an_unpaired_device_cannot_use_the_protocol ... ok
+test an_unknown_capability_id_is_refused_without_closing_the_session ... ok
+test pairing_then_ping_pong_then_battery ... ok
+test several_pings_round_trip_on_one_connection ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.64s
+
+     Running tests/file_approval.rs (target/debug/deps/file_approval-5fafdf75bbd9b4ef)
+
+running 11 tests
+test a_decision_for_one_offer_never_resolves_another ... ok
+test a_decision_for_an_offer_the_provider_was_never_shown_is_ignored ... ok
+test a_decision_for_one_peer_never_resolves_anothers_offer ... ok
+test a_provider_that_hangs_up_mid_prompt_declines_rather_than_accepting ... ok
+test a_peer_that_disconnects_withdraws_the_prompt_and_a_late_accept_does_nothing ... ok
+test a_repeated_or_reversed_decision_changes_nothing ... ok
+test accepting_at_the_prompt_completes_the_transfer_through_the_existing_sink ... ok
+test attaching_a_provider_does_not_decide_anything_on_its_own ... ok
+test declining_at_the_prompt_leaves_no_file_and_tells_the_phone ... ok
+test with_no_provider_attached_the_desktop_still_declines ... ok
+test an_unanswered_prompt_expires_and_cannot_be_accepted_afterwards ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.53s
+
+     Running tests/file_log_privacy.rs (target/debug/deps/file_log_privacy-2212d159e1a4129f)
+
+running 2 tests
+test sec_log_03_the_filename_is_logged_and_that_is_a_recorded_finding ... ok
+test sec_log_03_file_content_never_reaches_the_log ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+     Running tests/files.rs (target/debug/deps/files-43ccba5f014e42b6)
+
+running 36 tests
+test a_data_stream_cannot_be_opened_before_the_transfer_is_agreed ... ok
+test a_data_stream_that_says_nothing_does_not_hold_a_connection_slot ... ok
+test a_filename_that_sanitizes_to_nothing_is_rejected ... ok
+test a_peer_that_floods_and_never_reads_cannot_wedge_the_daemon ... ok
+test a_file_much_larger_than_the_copy_buffer_transfers_intact ... ok
+test a_phone_sends_a_file_and_the_desktop_verifies_and_stores_it ... ok
+test a_second_file_with_the_same_name_is_numbered_not_overwritten ... ok
+test a_transfer_works_over_both_address_families ... ok
+test a_receiver_side_cancel_reaches_the_sender_as_a_cancellation ... ok
+test an_oversized_data_stream_frame_is_refused_before_allocating ... ok
+test f10_f12_a_truncated_stream_fails_and_leaves_nothing_behind ... ok
+test f11_a_stream_longer_than_its_offer_is_refused ... ok
+test f13_a_receiver_can_decline_an_offer_outright ... ok
+test f13_cancelling_mid_transfer_stops_it_and_deletes_the_partial_file ... ok
+test f14_losing_the_control_session_mid_transfer_fails_it_and_cleans_up ... ok
+test f15_a_transfer_whose_grant_disappears_is_reaped ... ok
+test f15_revoking_a_peer_mid_transfer_stops_it_immediately ... ok
+test f16_oversized_metadata_is_refused_without_allocating_for_it ... ok
+test f17_a_duplicate_file_complete_changes_nothing ... ok
+test f18_cancelling_one_transfer_does_not_disturb_another ... ok
+test f13_an_offer_nobody_answers_times_out_rather_than_hanging ... ok
+test f18_two_simultaneous_transfers_stay_isolated ... ok
+test f1_a_desktop_cannot_offer_to_a_peer_it_has_not_granted ... ok
+test f1_a_withdrawn_grant_is_enforced_by_the_receiver_within_the_session ... ok
+test f2_a_stranger_cannot_open_a_data_stream ... ok
+test f3_another_paired_device_cannot_attach_to_someone_elses_transfer ... ok
+test f1_an_offer_from_a_peer_without_a_grant_never_reaches_the_capability ... ok
+test f5_a_challenge_is_single_use_so_a_second_stream_is_refused ... ok
+test f4_a_guessed_transfer_id_is_not_a_bearer_token ... ok
+test f5_a_transfer_id_cannot_be_reused_for_a_second_offer ... ok
+test f7_f8_a_hostile_filename_cannot_escape_the_download_directory ... ok
+test f6_a_transfer_nobody_dialled_expires_and_stops_being_usable ... ok
+test f9_a_file_whose_hash_does_not_match_is_discarded_not_stored ... ok
+test files_is_advertised_but_never_granted_automatically ... ok
+test the_desktop_sends_a_file_and_the_phone_verifies_and_stores_it ... ok
+test too_many_transfers_at_once_are_refused ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.14s
+
+     Running tests/legacy_state_migration.rs (target/debug/deps/legacy_state_migration-c81dfa7a38edcb53)
+
+running 5 tests
+test a_fresh_home_is_a_first_run_under_the_pliwee_directory_only ... ok
+test captured_v1_0_0_state_is_carried_over ... ignored, needs state captured from a real OmniBridge 1.0.0 install
+test interrupted_omnibridge_transfers_are_reported_and_left_in_place ... ok
+test an_omnibridge_identity_is_carried_over_and_never_regenerated ... ok
+test unreadable_legacy_state_refuses_to_start_and_creates_no_identity ... ok
+
+test result: ok. 4 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.32s
+
+     Running tests/listen.rs (target/debug/deps/listen-0f067205018dc182)
+
+running 5 tests
+test an_ephemeral_bind_reports_the_port_it_actually_got ... ok
+test every_reported_family_accepts_a_connection ... ok
+test ipv4_is_always_served ... ok
+test ipv6_is_reported_exactly_when_the_host_has_it ... ok
+test a_phone_can_pair_over_ipv6 ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests/notification_log_privacy.rs (target/debug/deps/notification_log_privacy-4edf0d654e9eb7ac)
+
+running 1 test
+test the_mid_session_convergence_path_logs_no_notification_content ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.20s
+
+     Running tests/notifications.rs (target/debug/deps/notifications-503c78155d2a89d2)
+
+running 35 tests
+test a_broken_notification_sink_does_not_break_battery_or_the_clipboard ... ok
+test a_burst_of_settings_after_the_grant_causes_no_further_reconnect ... ok
+test a_dismiss_request_is_refused_over_the_real_transport ... ok
+test a_granted_peer_puts_a_notification_on_the_desktop ... ok
+test a_human_dismissal_travels_to_the_source_over_the_real_transport ... ok
+test a_locked_desktop_shows_the_application_and_nothing_else ... ok
+test a_malformed_notification_payload_does_not_close_the_session ... ok
+test a_peer_that_never_claimed_source_is_refused_over_the_real_transport ... ok
+test a_removal_never_overtakes_its_upsert_across_the_transport ... ok
+test a_reconnect_snapshot_converges_without_duplicating_the_screen ... ok
+test a_revoked_pairing_takes_the_notifications_off_the_screen ... ok
+test a_suppress_policy_refuses_over_the_transport ... ok
+test an_expiry_sends_nothing_over_the_real_transport ... ok
+test an_unknown_lock_state_withholds_the_body_over_the_transport ... ok
+test an_unpaired_snapshot_end_removes_nothing_over_the_transport ... ok
+test changing_a_notification_setting_never_touches_another_capability ... ok
+test an_update_replaces_and_a_removal_closes_over_the_real_transport ... ok
+test granting_mid_session_ends_the_session_that_cannot_use_the_grant ... ok
+test no_notification_content_is_written_to_disk ... ok
+test granting_while_the_peer_is_away_converges_on_its_own ... ok
+test pairing_alone_grants_nothing ... ok
+test pausing_from_the_desktop_closes_mirrors_and_resuming_restores_nothing ... ok
+test the_capability_is_advertised_by_the_daemon ... ok
+test regranting_a_capability_the_session_already_has_is_inert ... ok
+test the_convergence_is_not_specific_to_notifications ... ok
+test the_default_policy_sends_no_dismissal_over_the_real_transport ... ok
+test the_desktop_receive_switch_leaves_every_other_grant_alone ... ok
+test the_desktop_receive_switch_closes_the_mirrors_it_had_displayed ... ok
+test the_dismiss_sync_setting_changes_only_itself ... ok
+test the_reconnect_keeps_the_pairing_and_every_other_capability ... ok
+test the_role_narrows_and_widens_without_a_reconnect ... ok
+test the_status_the_desktop_ui_reads_carries_no_notification_content ... ok
+test the_session_the_reconnect_builds_can_actually_mirror ... ok
+test withdrawing_the_grant_stops_notifications_on_the_session_that_is_already_up ... ok
+test withdrawing_a_grant_never_rebuilds_the_session ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.05s
+
+     Running tests/profile_isolation.rs (target/debug/deps/profile_isolation-df4a913bc4317bc0)
+
+running 2 tests
+test a_pairing_proof_from_the_other_profile_is_rejected_by_the_daemon ... ok
+test a_data_stream_from_the_other_profile_is_refused_before_any_byte ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.68s
+
+     Running tests/revoked_cleanup.rs (target/debug/deps/revoked_cleanup-c3062f45b0cec5c2)
+
+running 12 tests
+test a_device_removed_from_the_list_is_still_refused_at_the_door ... ok
+test a_different_key_is_a_new_device_and_the_tombstone_gives_it_nothing ... ok
+test a_failed_pairing_leaves_the_tombstone_exactly_as_it_was ... ok
+test a_fresh_pairing_brings_a_removed_device_back_exactly_once ... ok
+test a_malformed_fingerprint_is_refused_without_touching_anything ... ok
+test a_live_session_does_not_survive_a_removal ... ok
+test a_revoked_device_is_listed_until_it_is_removed ... ok
+test a_tombstone_cannot_be_named_by_any_device_selector ... ok
+test a_trusted_device_cannot_be_removed_from_the_list ... ok
+test bulk_removal_with_nothing_revoked_says_so_and_changes_nothing ... ok
+test removing_one_device_leaves_a_same_named_device_listed ... ok
+test bulk_removal_takes_the_revoked_and_leaves_the_trusted ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.03s
+
+     Running tests/security_certification.rs (target/debug/deps/security_certification-6b106c1980dd95f0)
+
+running 7 tests
+test sec_auth_01_a_wrong_server_fingerprint_is_refused ... ok
+test sec_auth_01_an_unpaired_peer_cannot_establish_a_session ... ok
+test sec_tls_01_a_raw_tls12_client_hello_is_refused ... ok
+test sec_net_02_no_sensitive_value_crosses_the_socket_in_plaintext ... ok
+test sec_tls_01_tls12_is_not_compiled_in_and_both_configs_pin_tls13 ... ok
+test the_wire_search_finds_a_value_that_is_really_there ... ok
+test sec_tls_01_control_a_tls13_client_is_accepted ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running tests/sessions.rs (target/debug/deps/sessions-0330e6e20ef9d645)
+
+running 6 tests
+test a_session_that_ends_is_removed_from_the_registry ... ok
+test a_reconnection_replaces_the_previous_session_rather_than_duplicating_it ... ok
+test a_silent_peer_is_eventually_dropped_rather_than_left_connected ... ok
+test battery_telemetry_is_dropped_when_the_session_ends ... ok
+test revoking_a_device_leaves_no_session_behind ... ok
+test a_superseded_sessions_late_close_does_not_evict_the_live_one ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s
+
+     Running tests/wire.rs (target/debug/deps/wire-1bcf4b977d868a70)
+
+running 11 tests
+test a_client_without_a_certificate_is_rejected_during_the_handshake ... ok
+test a_hello_that_claims_someone_elses_fingerprint_is_refused ... ok
+test a_duplicate_message_id_terminates_the_session ... ok
+test a_non_increasing_sequence_number_terminates_the_session ... ok
+test a_replayed_envelope_terminates_the_session ... ok
+test an_unauthenticated_peer_cannot_skip_the_handshake ... ok
+test a_short_message_id_is_refused ... ok
+test an_unknown_peer_cannot_send_anything_but_a_pair_request ... ok
+test an_unsupported_protocol_version_is_reported_and_refused ... ok
+test the_daemon_negotiated_the_profile_this_run_names ... ok
+test changing_the_protocol_version_mid_connection_terminates_the_session ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.74s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_gui-4703a054cfc57cd2)
+
+running 143 tests
+test approval::tests::the_safe_response_is_the_default_and_the_close_response ... ok
+test approval::tests::sizes_are_rendered_for_a_human_to_weigh ... ok
+test panel::model::tests::a_completed_incoming_transfer_reads_as_received_from_the_peer ... ok
+test panel::model::tests::a_blocked_action_does_not_move_the_selection ... ok
+test panel::model::tests::a_completed_outgoing_transfer_reads_as_sent_to_the_peer ... ok
+test panel::model::tests::a_declined_transfer_reads_as_declined ... ok
+test panel::model::tests::a_display_name_collision_does_not_affect_routing ... ok
+test panel::model::tests::a_display_name_collision_does_not_affect_transfer_identity ... ok
+test panel::model::tests::a_display_name_never_chooses_the_destination ... ok
+test panel::model::tests::a_present_battery_at_zero_renders_as_a_real_zero ... ok
+test panel::model::tests::a_quick_action_carries_only_a_fingerprint_for_the_daemon_to_recheck ... ok
+test panel::model::tests::a_failed_transfer_reads_as_failed ... ok
+test panel::model::tests::a_recent_row_carries_no_content_hash_or_identifier ... ok
+test panel::model::tests::a_recent_transfer_does_not_change_the_selected_peer ... ok
+test panel::model::tests::a_revoked_device_is_not_in_the_panel_or_the_target_set ... ok
+test panel::model::tests::a_refusal_by_the_receiving_device_is_reported ... ok
+test panel::model::tests::a_row_announces_its_state_in_words ... ok
+test panel::model::tests::a_stale_choice_is_refused_rather_than_repointed ... ok
+test panel::model::tests::a_stale_choice_never_falls_back_to_another_peer ... ok
+test panel::model::tests::a_stale_session_marks_its_battery_reading_as_history ... ok
+test panel::model::tests::a_tombstoned_choice_reads_as_a_stale_choice_until_it_is_cleared ... ok
+test panel::model::tests::a_timeout_and_a_dropped_connection_are_named_apart ... ok
+test panel::model::tests::a_transfer_with_an_unrecognised_direction_is_not_shown ... ok
+test panel::model::tests::an_absent_battery_never_renders_as_zero ... ok
+test panel::model::tests::an_offline_peer_cannot_receive_a_quick_action ... ok
+test panel::model::tests::an_unanswered_first_poll_is_not_an_error ... ok
+test panel::model::tests::an_in_flight_transfer_is_not_duplicated_into_the_recent_list ... ok
+test panel::model::tests::an_unavailable_battery_is_distinct_from_an_absent_one ... ok
+test panel::model::tests::an_unreachable_daemon_produces_a_safe_state ... ok
+test panel::model::tests::both_actions_target_the_selected_fingerprint ... ok
+test panel::model::tests::at_most_three_recent_transfers_are_shown ... ok
+test panel::model::tests::d10_the_feedback_wording_decides_no_destination ... ok
+test panel::model::tests::clearing_the_choice_asks_again_rather_than_picking_a_survivor ... ok
+test panel::model::tests::d1_the_immediate_message_does_not_claim_delivery ... ok
+test panel::model::tests::d2_the_immediate_message_names_the_pending_state ... ok
+test panel::model::tests::d3_a_confirmed_verdict_reads_as_success ... ok
+test panel::model::tests::d4_a_not_authorized_verdict_is_explicit ... ok
+test panel::model::tests::d5_every_refusing_outcome_is_refused_including_unknown_ones ... ok
+test panel::model::tests::d6_no_verdict_produces_no_claim ... ok
+test panel::model::tests::d8_no_clipboard_content_appears_in_the_row ... ok
+test panel::model::tests::d7_a_verdict_for_another_device_does_not_reach_this_row ... ok
+test panel::model::tests::d9_the_existing_row_semantics_are_preserved ... ok
+test panel::model::tests::every_outcome_is_a_calm_word_rather_than_an_error_code ... ok
+test panel::model::tests::every_blocked_reason_is_a_sentence_not_an_error_code ... ok
+test panel::model::tests::list_ordering_never_chooses_the_destination ... ok
+test panel::model::tests::one_connected_peer_is_the_target_without_being_chosen ... ok
+test panel::model::tests::one_offline_peer_appears_but_offers_no_live_action ... ok
+test panel::model::tests::recent_transfers_are_newest_first ... ok
+test panel::model::tests::rows_are_ordered_for_reading_not_for_routing ... ok
+test panel::model::tests::several_peers_and_no_choice_asks_instead_of_guessing ... ok
+test panel::model::tests::switching_the_selected_peer_switches_the_destination ... ok
+test panel::model::tests::the_choice_maps_to_the_same_peer_in_any_order ... ok
+test panel::model::tests::the_clipboard_action_needs_every_precondition ... ok
+test panel::model::tests::the_clipboard_row_states_each_direction_truthfully ... ok
+test panel::model::tests::the_file_action_needs_a_live_authorized_capability ... ok
+test panel::model::tests::the_one_peer_convenience_stays_safe ... ok
+test panel::model::tests::the_notifications_row_reflects_grant_and_policy ... ok
+test panel::model::tests::the_recent_list_is_only_the_current_daemon_run ... ok
+test panel::model::tests::view_all_targets_the_settings_transfers_page ... ok
+test panel::model::tests::with_no_peer_there_is_no_send ... ok
+test panel::model::tests::zero_peers_produces_no_target_and_no_action ... ok
+test panel::tests::the_settings_action_uses_one_icon_everywhere ... ok
+test panel::model::tests::zero_terminal_transfers_shows_no_recent_section ... ok
+test selection::tests::a_corrupt_or_foreign_file_reads_as_no_choice ... ok
+test selection::tests::a_choice_survives_the_application_restarting ... ok
+test selection::tests::a_value_that_is_not_a_fingerprint_never_clears_a_choice ... ok
+test selection::tests::a_legacy_choice_is_carried_over_on_load ... ok
+test selection::tests::a_well_formed_file_yields_the_fingerprint ... ok
+test selection::tests::a_value_that_is_not_fingerprint_hex_is_refused ... ok
+test selection::tests::an_unreadable_legacy_choice_refuses_to_load_and_creates_nothing ... ok
+test selection::tests::clearing_the_choice_persists_too ... ok
+test selection::tests::forgetting_never_selects_anything ... ok
+test selection::tests::nothing_is_chosen_before_anyone_chooses ... ok
+test selection::tests::removing_another_device_leaves_the_choice_alone ... ok
+test selection::tests::removing_the_chosen_device_clears_the_choice ... ok
+test selection::tests::the_stored_file_holds_nothing_but_the_fingerprint ... ok
+test tests::a_bare_launch_still_opens_settings ... ok
+test tests::a_page_can_still_be_named ... ok
+test tests::the_activation_seam_has_stable_names ... ok
+test tests::the_old_trusted_peers_route_opens_devices ... ok
+test tests::the_panel_flag_is_not_order_dependent ... ok
+test tests::the_sidebar_has_one_devices_entry_and_no_trusted_peers ... ok
+test tests::the_quick_panel_is_reachable_from_the_command_line ... ok
+test theme::tests::every_literal_hex_in_the_stylesheet_is_a_known_token ... ok
+test theme::tests::every_text_accent_clears_aa_on_its_own_surface ... ok
+test theme::tests::the_brand_palette_matches_the_canonical_tokens ... ok
+test theme::tests::the_dark_surfaces_stay_ordered ... ok
+test theme::tests::the_corrected_accents_match_the_canonical_tokens ... ok
+test theme::tests::the_light_theme_is_anchored_by_the_brand ... ok
+test theme::tests::the_gradients_match_the_canonical_tokens ... ok
+test theme::tests::the_raw_brand_hues_are_known_to_fail_as_text ... ok
+test theme::tests::the_scales_match_the_canonical_tokens ... ok
+test theme::tests::the_stylesheet_cta_gradient_matches_the_token ... ok
+test theme::tests::white_stays_legible_across_the_whole_cta_gradient ... ok
+test theme::tests::the_stylesheet_only_uses_colours_the_theme_defines ... ok
+test views::clipboard::tests::a_disconnected_peer_is_told_to_connect ... ok
+test views::clipboard::tests::a_ready_peer_has_no_blocked_reason ... ok
+test views::clipboard::tests::a_working_clipboard_leads_with_plain_language ... ok
+test views::clipboard::tests::a_working_desktop_says_sensitive_clips_are_available ... ok
+test views::clipboard::tests::an_old_wl_copy_is_not_markable_rather_than_a_broken_clipboard ... ok
+test views::clipboard::tests::every_state_names_itself_in_words_and_explains_the_consequence ... ok
+test views::clipboard::tests::every_summary_state_explains_what_it_means_for_the_user ... ok
+test views::clipboard::tests::every_unsendable_combination_carries_a_reason ... ok
+test views::clipboard::tests::no_clipboard_at_all_outranks_the_narrower_fault ... ok
+test views::clipboard::tests::no_usable_clipboard_says_so_without_naming_a_helper ... ok
+test views::clipboard::tests::no_state_prescribes_a_package_manager ... ok
+test views::clipboard::tests::sending_turned_off_is_explained_rather_than_left_dead ... ok
+test views::clipboard::tests::sensitive_marking_is_independent_of_the_change_watch ... ok
+test views::clipboard::tests::the_more_specific_reason_wins_when_both_apply ... ok
+test views::clipboard::tests::the_primary_strings_carry_no_implementation_jargon ... ok
+test views::clipboard::tests::the_sensitive_state_is_still_reported_separately ... ok
+test views::clipboard::tests::the_summary_tracks_backend_available_and_nothing_else ... ok
+test views::clipboard::tests::the_unavailable_copy_reassures_about_ordinary_sharing_and_explains_the_refusal ... ok
+test views::devices::tests::a_revoked_device_cannot_be_granted_from_here ... ok
+test views::devices::tests::each_control_sends_the_request_trusted_peers_sent ... ok
+test views::devices::tests::every_destructive_control_is_confirmed ... ok
+test views::devices::tests::every_trusted_peers_control_exists_on_devices ... ok
+test views::devices::tests::no_capability_is_granted_by_default ... ok
+test views::devices::tests::remove_all_is_offered_only_for_more_than_one_revoked_device ... ok
+test views::display_gate::every_page_widget_tree ... ignored, needs a display: cargo test -p pliwee-gui -- --ignored
+test views::devices::tests::the_card_states_trust_and_what_is_granted ... ok
+test views::notifications::tests::a_configured_device_with_no_session_is_not_connected ... ok
+test views::notifications::tests::a_connected_device_that_claims_no_source_role_is_named_as_such ... ok
+test views::notifications::tests::a_desktop_that_cannot_report_closes_says_so_rather_than_blaming_the_device ... ok
+test views::notifications::tests::a_missing_notification_server_is_reported_once_and_not_per_device ... ok
+test views::notifications::tests::a_revoked_device_outranks_everything_including_a_dead_backend ... ok
+test views::notifications::tests::an_offline_device_is_not_connected_rather_than_unable ... ok
+test views::notifications::tests::an_ungranted_device_is_off_rather_than_broken ... ok
+test views::notifications::tests::dismiss_sync_is_off_in_the_state_a_fresh_grant_leaves_behind ... ok
+test views::notifications::tests::every_dismiss_state_says_what_it_means_and_what_it_does_to_the_phone ... ok
+test views::notifications::tests::every_gate_open_is_ready ... ok
+test views::notifications::tests::every_state_has_a_word_and_a_sentence ... ok
+test views::notifications::tests::mirroring_can_be_ready_while_dismissal_sync_is_not ... ok
+test views::notifications::tests::mirroring_switched_off_is_paused_and_not_off ... ok
+test views::notifications::tests::off_is_a_choice_and_never_needs_attention ... ok
+test views::notifications::tests::only_ready_claims_to_be_showing_notifications ... ok
+test views::notifications::tests::switching_it_on_with_everything_working_is_active ... ok
+test views::notifications::tests::the_default_lock_choice_is_app_only ... ok
+test views::notifications::tests::the_lock_choices_are_exactly_the_control_protocols_values ... ok
+test views::notifications::tests::turning_mirroring_off_makes_a_stale_dismiss_flag_read_as_off ... ok
+test widgets::tests::a_raw_hex_fingerprint_is_grouped_in_fours ... ok
+test widgets::tests::a_trailing_partial_group_is_kept ... ok
+test widgets::tests::an_already_grouped_fingerprint_is_left_alone ... ok
+
+test result: ok. 142 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/debug/deps/pliwee_gui-771c479ca8277667)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/brand_assets.rs (target/debug/deps/brand_assets-496655758562b3a1)
+
+running 27 tests
+test every_asset_is_a_self_contained_svg ... ok
+test every_derived_asset_carries_the_canonical_geometry ... ok
+test every_layer_asks_for_the_same_icon_name ... ok
+test every_paint_reference_resolves_inside_its_own_file ... ok
+test gradient_ids_are_unique_within_each_file ... ok
+test no_active_asset_carries_the_pre_rename_identity ... ok
+test no_asset_reaches_outside_itself ... ok
+test no_pliwee_master_carries_a_retired_identity ... ok
+test the_app_icon_is_the_canonical_mark_on_an_icon_grid ... ok
+test the_application_id_names_the_desktop_entry_and_its_icon ... ok
+test the_dbus_activation_entry_claims_the_application_id ... ok
+test the_dbus_activation_entry_starts_the_gui_in_service_mode ... ok
+test every_pliwee_master_is_a_self_contained_vector ... ok
+test the_desktop_compiles_in_the_pliwee_masters ... ok
+test the_desktop_entry_launches_this_binary ... ok
+test the_icon_is_compiled_in_at_an_icon_theme_path ... ok
+test the_desktop_app_icon_is_a_placement_of_the_pliwee_master ... ok
+test the_installer_handles_the_activation_entry_like_the_other_two ... ok
+test the_monochrome_cuts_inherit_their_colour ... ok
+test the_pliwee_lettering_uses_its_board_derived_inks ... ok
+test the_installer_is_safe_to_run_unprivileged ... ok
+test the_pliwee_lockup_carries_the_mark_geometry ... ok
+test the_pliwee_mark_geometry_is_the_approved_geometry ... ok
+test the_pliwee_mono_and_tonal_cuts_repaint_the_colour_geometry ... ok
+test the_pliwee_wordmark_is_outlined_and_shared_with_the_lockup ... ok
+test the_pliwee_mono_mark_is_a_single_ink ... ok
+test the_primary_application_icon_is_the_canonical_mark ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_linux-40edb82f51bd482b)
+
+running 46 tests
+test activation::tests::a_failed_recheck_is_reported_rather_than_guessed ... ok
+test activation::tests::a_bus_that_cannot_be_listed_is_not_reloaded ... ok
+test activation::tests::a_refused_reload_is_not_retried ... ok
+test activation::tests::already_visible_does_nothing_at_all ... ok
+test activation::tests::an_exact_match_is_found_wherever_it_sits_in_the_list ... ok
+test activation::tests::missing_then_reload_then_still_missing_stops ... ok
+test activation::tests::missing_then_reload_then_visible ... ok
+test activation::tests::the_name_must_match_exactly ... ok
+test legacy_migration::tests::a_broken_legacy_symlink_is_an_error_and_creates_nothing ... ok
+test legacy_migration::tests::a_corrupt_legacy_state_is_an_error_and_creates_nothing ... ok
+test legacy_migration::tests::a_crash_between_copy_and_rename_leaves_no_half_state_and_the_next_start_completes ... ok
+test legacy_migration::tests::a_failed_rename_into_a_non_empty_canonical_directory_refuses_and_leaves_no_key_copy ... ok
+test legacy_migration::tests::a_legacy_file_where_a_directory_belongs_is_an_error ... ok
+test legacy_migration::tests::a_legacy_gui_config_is_copied_once_and_left_in_place ... ok
+test legacy_migration::tests::a_legacy_directory_that_is_not_private_is_an_error_and_creates_nothing ... ok
+test legacy_migration::tests::a_non_traversable_canonical_directory_is_an_error_and_not_a_first_run ... ok
+test legacy_migration::tests::a_legacy_key_that_is_not_private_is_an_error_and_creates_nothing ... ok
+test legacy_migration::tests::a_populated_canonical_directory_wins_and_the_legacy_one_is_ignored ... ok
+test legacy_migration::tests::a_valid_legacy_identity_is_copied_and_keeps_its_fingerprint ... ok
+test legacy_migration::tests::an_empty_legacy_directory_holds_no_identity_and_is_a_first_run ... ok
+test legacy_migration::tests::an_incomplete_legacy_identity_is_an_error_and_creates_nothing ... ok
+test legacy_migration::tests::an_unreadable_legacy_directory_is_an_error_and_creates_nothing ... ok
+test legacy_migration::tests::an_unreadable_legacy_gui_config_is_an_error_and_creates_nothing ... ok
+test legacy_migration::tests::an_unreadable_legacy_key_is_an_error_and_creates_nothing ... ok
+test legacy_migration::tests::no_legacy_directory_is_a_first_run_and_writes_nothing ... ok
+test legacy_migration::tests::no_legacy_gui_config_writes_nothing ... ok
+test legacy_migration::tests::the_migration_record_round_trips ... ok
+test legacy_migration::tests::unset_or_relative_xdg_falls_back_to_home_for_both_directories ... ok
+test systemd_transition::tests::a_dangling_legacy_link_still_counts ... ok
+test systemd_transition::tests::a_missing_config_directory_is_canonical ... ok
+test systemd_transition::tests::both_links_are_reported_as_redundant ... ok
+test systemd_transition::tests::no_links_is_canonical_and_says_nothing ... ok
+test systemd_transition::tests::the_canonical_link_alone_is_canonical ... ok
+test systemd_transition::tests::the_instruction_is_exactly_reenable ... ok
+test systemd_transition::tests::the_legacy_link_alone_is_reported_with_its_path ... ok
+test tests::a_bound_socket_is_owner_only ... ok
+test tests::a_stale_socket_file_is_replaced_rather_than_refused ... ok
+test tests::binding_twice_reports_already_owned_and_not_a_generic_io_error ... ok
+test tests::release_removes_the_endpoint ... ok
+test tests::the_control_socket_path_follows_the_runtime_directory ... ok
+test tests::the_store_adapter_reports_this_platform_and_a_software_key ... ok
+test tests::without_a_runtime_directory_the_socket_falls_back_to_a_per_uid_tmp_path ... ok
+test tray::activate::tests::an_obviously_wrong_activation_token_is_not_forwarded ... ok
+test tray::activate::tests::the_object_path_is_the_application_id_mechanically ... ok
+test tray::item::tests::menu_object_path_is_valid ... ok
+test legacy_migration::tests::a_second_start_is_a_no_op ... ok
+
+test result: ok. 46 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/dbus_activation.rs (target/debug/deps/dbus_activation-ad92453f867a0ff7)
+
+running 12 tests
+test a_dead_bus_is_reported_and_not_fatal ... ok
+test a_machine_with_no_desktop_application_is_not_pretended_to_be_healthy ... ok
+test a_package_installed_into_a_live_session_is_healed ... ok
+test a_session_that_already_knows_the_name_is_left_alone ... ok
+test a_similar_name_on_the_bus_does_not_count_as_this_one ... ok
+test either_bus_implementation_ends_up_activatable_and_neither_is_misreported ... ok
+test one_reload_makes_an_installed_service_file_activatable ... ok
+test the_production_adapter_reuses_the_connection_it_is_given ... ok
+test the_real_session_bus_heals_a_freshly_installed_name ... ignored, needs a real desktop session bus
+test the_self_heal_asks_for_the_name_the_service_file_declares ... ok
+test this_crate_never_opens_the_system_bus ... ok
+test the_real_name_is_found_even_beside_a_near_miss ... ok
+
+test result: ok. 11 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/tray_dbus.rs (target/debug/deps/tray_dbus-0d872d29ae645f93)
+
+running 19 tests
+test an_activation_token_is_forwarded_once_and_then_forgotten ... ok
+test an_activation_that_always_fails_changes_nothing_about_the_tray ... ok
+test d12_an_invented_menu_id_or_event_does_nothing_at_all ... ok
+test d14_the_source_contains_no_timer_at_all ... ok
+test d13_a_shell_that_announces_itself_repeatedly_is_registered_with_once ... ok
+test d15_every_string_on_the_tray_objects_is_one_of_eight_constants ... ok
+test d1_registers_when_the_watcher_is_already_there ... ok
+test d2_an_absent_watcher_is_not_an_error ... ok
+test d3_a_watcher_that_appears_later_gets_a_registration ... ok
+test d4_the_watcher_going_away_does_not_take_the_item_with_it ... ok
+test d5_a_shell_that_comes_back_gets_exactly_one_new_registration ... ok
+test d6_the_watcher_sees_exactly_one_omnibridge_item ... ok
+test d7_the_item_properties_have_the_types_and_values_the_spec_requires ... ok
+test d8_a_left_click_asks_for_the_quick_panel_and_nothing_else ... ok
+test d9_d10_d11_each_menu_row_opens_the_surface_it_names ... ok
+test the_menu_answers_the_rest_of_the_protocol_plasma_uses ... ok
+test the_menu_interface_is_the_one_plasmas_importer_is_generated_from ... ok
+test the_status_notifier_item_interface_is_the_one_kde_declares ... ok
+test d14_with_no_watcher_the_item_sends_nothing_at_all ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.85s
+
+     Running tests/tray_gnome.rs (target/debug/deps/tray_gnome-1c1844a309af79ae)
+
+running 18 tests
+test n11_every_menu_property_has_the_type_the_extension_mandates ... ok
+test n10_the_two_phase_menu_fetch_returns_the_three_rows ... ok
+test n12_each_row_opens_the_surface_it_names_and_the_rest_do_nothing ... ok
+test n13_looking_at_the_menu_and_closing_it_opens_no_window ... ok
+test n14_a_middle_click_provides_a_token_and_then_does_nothing ... ok
+test n16_nothing_the_extension_reads_is_private ... ok
+test n17_no_tray_backend_dependency_was_added ... ok
+test n15_the_menu_is_reachable_without_contextmenu_ever_being_called ... ok
+test n1_a_host_that_is_already_there_registers_the_item_exactly_once ... ok
+test n18_after_registering_the_item_says_nothing_further ... ok
+test n2_a_host_that_appears_later_gets_exactly_one_registration ... ok
+test n3_a_host_that_is_replaced_is_registered_with_exactly_once ... ok
+test n4_the_host_going_away_leaves_the_daemon_and_the_item_alone ... ok
+test n5_a_repeated_registration_never_becomes_a_second_icon ... ok
+test n6_the_item_is_ready_and_visible_by_the_extensions_own_rules ... ok
+test n7_feature_detection_finds_activate_and_no_ayatana_secondary ... ok
+test n8_the_icon_is_a_theme_name_with_no_path_and_no_pixels ... ok
+test n9_the_brute_force_scan_finds_the_item_and_not_a_second_one ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.24s
+
+     Running tests/tray_identity.rs (target/debug/deps/tray_identity-1c53d68a584bad97)
+
+running 5 tests
+test every_tray_action_is_an_action_the_gui_exports ... ok
+test the_tray_activates_a_bus_name_the_session_bus_can_start ... ok
+test the_tray_icon_name_is_the_one_the_desktop_entry_declares ... ok
+test the_tray_names_the_application_the_gui_actually_is ... ok
+test the_daemon_starts_the_tray_and_does_not_race_it_against_anything ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/tray_model.rs (target/debug/deps/tray_model-58d5c804f79dec00)
+
+running 15 tests
+test t10_the_layout_is_deterministic_and_is_not_derived_from_position ... ok
+test t11_nothing_on_the_public_tray_object_is_about_a_person_or_a_file ... ok
+test t12_the_icon_and_the_item_id_are_the_application_id ... ok
+test t14_scroll_and_the_other_unspecified_gestures_have_empty_bodies ... ok
+test t15_nothing_about_the_menu_depends_on_an_activation_having_worked ... ok
+test t13_the_status_is_active_and_never_asks_for_attention ... ok
+test t1_a_primary_click_is_the_quick_panel_and_only_that ... ok
+test t2_t3_t4_each_menu_row_maps_to_the_surface_it_names ... ok
+test t5_an_unknown_menu_id_resolves_to_no_action_at_all ... ok
+test t6_only_a_click_is_a_decision ... ok
+test t16_no_tray_decision_is_made_by_a_name_or_a_position ... ok
+test t8_menu_ids_are_unique_and_none_of_them_is_the_root ... ok
+test t9_menu_ids_are_the_values_they_have_always_been ... ok
+test the_menu_is_exactly_the_three_rows_the_sprint_specified ... ok
+test t7_the_action_type_has_no_room_for_a_name_from_the_bus ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_proto-935de55ee1a64cc5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/namespace.rs (target/debug/deps/namespace-96d00570e6f19506)
+
+running 5 tests
+test capability_schemas_are_in_the_capabilities_package ... ok
+test every_file_declares_a_pliwee_package ... ok
+test no_pre_rename_namespace_survives ... ok
+test the_field_table_is_identical_to_the_pre_rename_snapshot ... ok
+test the_java_package_tracks_the_proto_package ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/notifications_schema.rs (target/debug/deps/notifications_schema-27dfcd1d04734bbc)
+
+running 12 tests
+test enum_values_are_pinned ... ok
+test no_field_name_hints_at_a_prohibited_capability ... ok
+test no_field_number_has_been_retired_or_reused ... ok
+test no_message_carries_an_open_ended_container ... ok
+test notification_upsert_has_exactly_the_approved_fields ... ok
+test field_numbers_are_pinned ... ok
+test the_control_envelope_has_no_escape_hatch ... ok
+test the_dismiss_primitive_has_no_remote_execution_path ... ok
+test the_message_set_is_exactly_the_approved_one ... ok
+test the_new_schema_changes_no_existing_file ... ok
+test the_only_bytes_fields_are_fixed_width_identifiers ... ok
+test the_small_messages_have_exactly_the_approved_fields ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_runtime-87a7c12f872ba957)
+
+running 28 tests
+test approval::tests::a_decision_for_one_offer_does_not_resolve_another ... ok
+test approval::tests::a_decision_for_one_peer_does_not_resolve_anothers_offer ... ok
+test approval::tests::a_provider_cannot_turn_the_override_off ... ok
+test approval::tests::a_provider_that_accepts_produces_an_acceptance ... ok
+test approval::tests::a_provider_that_declines_produces_a_decline ... ok
+test approval::tests::a_second_decision_on_the_same_offer_is_inert ... ok
+test approval::tests::a_stale_detach_does_not_unhook_the_live_provider ... ok
+test approval::tests::a_provider_that_stops_reading_declines_rather_than_queueing_forever ... ok
+test approval::tests::a_withdrawn_offer_declines_and_cannot_be_accepted_afterwards ... ok
+test approval::tests::an_unknown_transfer_id_answers_nothing ... ok
+test approval::tests::detaching_a_provider_declines_what_it_was_being_asked ... ok
+test approval::tests::replacing_a_provider_declines_the_old_ones_questions ... ok
+test approval::tests::the_explicit_override_still_accepts_without_asking ... ok
+test approval::tests::with_no_provider_attached_an_offer_is_declined ... ok
+test renegotiate::tests::a_replacement_session_is_judged_on_its_own_capabilities ... ok
+test renegotiate::tests::a_widening_past_the_session_requests_exactly_one_reconnect ... ok
+test renegotiate::tests::b_a_burst_of_writes_produces_one_reconnect ... ok
+test renegotiate::tests::c_a_session_already_asked_is_not_asked_again ... ok
+test renegotiate::tests::d_no_session_means_no_request_and_no_retry ... ok
+test renegotiate::tests::decision_names_are_distinct_and_carry_nothing ... ok
+test renegotiate::tests::e_withdrawing_a_grant_never_reconnects ... ok
+test renegotiate::tests::f_rapid_toggling_is_bounded_by_the_reconnects_it_causes ... ok
+test renegotiate::tests::g_a_grant_the_session_already_negotiated_is_inert ... ok
+test renegotiate::tests::requests_are_per_peer ... ok
+test server::vocabulary::both_directions_are_named ... ok
+test server::vocabulary::every_failure_reason_is_a_token_the_control_protocol_names ... ok
+test server::vocabulary::every_transfer_state_is_a_token_the_control_protocol_names ... ok
+test approval::tests::dropping_the_question_removes_it_so_a_late_accept_finds_nothing ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+   Doc-tests pliwee_capability_battery
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pliwee_capability_clipboard
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pliwee_capability_files
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pliwee_capability_notifications
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pliwee_control
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pliwee_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pliwee_daemon
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pliwee_gui
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pliwee_linux
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pliwee_proto
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests pliwee_runtime
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

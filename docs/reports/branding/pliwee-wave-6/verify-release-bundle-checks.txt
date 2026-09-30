@@ -1,0 +1,18 @@
+## V1 default --expect-cert (Pliwee upload certificate not yet provisioned) -> must STOP
+STOP: expected certificate /home/yuri/Sandbox/OmniBridge/android/signing/certs/upload-certificate.pem is missing (the Pliwee upload
+      certificate is committed there after provisioning — ADR-0019 addendum)
+rc=2
+
+## V2 --expect-cert = retired OmniBridge upload certificate -> must STOP
+STOP: signing/certs/legacy-omnibridge/upload-certificate.pem is the retired OmniBridge certificate upload-certificate.pem; a Pliwee bundle is never verified against it
+rc=2
+
+## V3 --expect-cert = retired OmniBridge app signing certificate -> must STOP
+STOP: signing/certs/legacy-omnibridge/app-signing-certificate.pem is the retired OmniBridge certificate app-signing-certificate.pem; a Pliwee bundle is never verified against it
+rc=2
+
+## V4 the verifier's package + permission contract vs bundletool's manifest of this R8 bundle
+Picked up JAVA_TOOL_OPTIONS:  -Xmx2g
+manifest bytes: 8100
+PASS  package io.github.yurisismotto.pliwee (verifier expects io.github.yurisismotto.pliwee)
+PASS  permissions: bundle 9 == verifier 9

@@ -74,7 +74,7 @@ pub enum WatchSource {
     ///
     /// Receiving is unaffected — writing a clip with `wl-copy` needs no
     /// data-control protocol. The reason is shown in
-    /// `omnibridge clipboard status`, which reports `auto-send`, `manual send`
+    /// `pliwee clipboard status`, which reports `auto-send`, `manual send`
     /// and `receiving` separately for exactly this distinction.
     None(String),
 }
@@ -130,7 +130,7 @@ pub struct WaylandBackend {
 impl WaylandBackend {
     /// Probes the session once, at construction.
     ///
-    /// Probing here rather than per call means `omnibridge clipboard status` can
+    /// Probing here rather than per call means `pliwee clipboard status` can
     /// tell the user what will and will not work *before* they try it, and
     /// that the answer does not change under them mid-session.
     pub fn detect() -> Self {
@@ -138,7 +138,7 @@ impl WaylandBackend {
         // and stops there. It used to end `(Fedora: sudo dnf install
         // wl-clipboard)`, which was the only string in the whole product that
         // named a distribution — and it is wrong for every user who is not on
-        // one. OmniBridge does not know which package manager this machine has,
+        // one. Pliwee does not know which package manager this machine has,
         // and guessing wrong is worse than not guessing: the package is called
         // `wl-clipboard` on Fedora, Ubuntu and Debian alike, so naming it once
         // is both shorter and true everywhere. Package-manager commands belong
@@ -303,7 +303,7 @@ impl ClipboardBackend for WaylandBackend {
         // Two MIME types, in order, and both are needed.
         //
         // `wl-copy` offers `text/plain` *and* `text/plain;charset=utf-8`, so
-        // either works against a clip OmniBridge itself wrote. Other
+        // either works against a clip Pliwee itself wrote. Other
         // applications are not so obliging: some offer only the
         // charset-qualified form, and asking for bare `text/plain` against
         // one of those fails with "Clipboard content is not available as
@@ -543,7 +543,7 @@ fn probe_sensitive_from_output(help: Option<String>) -> SensitiveSupport {
     // Distro-neutral, and deliberately careful about the version number.
     // `--sensitive` appeared in upstream wl-clipboard 2.3.0, which is worth
     // telling the user — but the number is guidance for choosing a build, not
-    // the test OmniBridge applies, and the wording must not imply otherwise:
+    // the test Pliwee applies, and the wording must not imply otherwise:
     // Fedora's `2.2.1^git20251124` carries a backport of the flag and passes
     // this probe, while Ubuntu's and Debian's plain 2.2.1 do not. The probe
     // above is the authority. No package-manager command appears here.
@@ -680,7 +680,7 @@ mod tests {
         // `sh` exists on every system this daemon runs on. (We never execute
         // it — this only exercises PATH resolution.)
         assert!(which("sh"));
-        assert!(!which("omnibridge-definitely-not-a-real-binary"));
+        assert!(!which("pliwee-definitely-not-a-real-binary"));
     }
 
     #[tokio::test]
@@ -746,7 +746,7 @@ mod tests {
 
     #[test]
     fn an_old_wl_copy_does_not_claim_it_can_mark_a_clip() {
-        // The capability must not lie about what it supports: `omnibridge
+        // The capability must not lie about what it supports: `pliwee
         // clipboard status` has to be able to tell the user before they turn
         // anything on.
         let backend = WaylandBackend::with_sensitive_support(SensitiveSupport::Unsupported(

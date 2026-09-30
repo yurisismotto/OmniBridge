@@ -29,9 +29,9 @@ mod common;
 use std::time::Duration;
 
 use common::*;
-use omnibridge_capability_notifications::backend::{CloseReason, MemorySink, SinkError};
-use omnibridge_capability_notifications::{LockPolicy, NotificationPolicy};
-use omnibridge_proto::v1::capabilities as pb;
+use pliwee_capability_notifications::backend::{CloseReason, MemorySink, SinkError};
+use pliwee_capability_notifications::{LockPolicy, NotificationPolicy};
+use pliwee_proto::v1::capabilities as pb;
 
 /// Short enough to cross inside a test, long enough that the worker is not
 /// racing it.
@@ -158,7 +158,7 @@ async fn a_peer_that_never_returns_leaves_no_mirrors_and_no_content() {
 /// goes with it. Resetting it only on the *next* `attach_session` was almost
 /// enough and left one real gap: a session rebuilt without this capability
 /// negotiated never calls `attach_session`, so the previous session's roles
-/// survived it and `omnibridge notifications status` went on reporting "the
+/// survived it and `pliwee notifications status` went on reporting "the
 /// device can source notifications (epoch 2)" for a peer that had no channel
 /// to say so on. Observed on hardware during the N5 §5 gate.
 ///

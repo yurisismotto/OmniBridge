@@ -1,0 +1,3 @@
+logo_pliwee_mark.xml vs pliwee-mark.svg at 1104px: mean |d| 0.038/255, pixels with any channel |d|>16: 2 of 1126080 (666098 ink pixels in the master)
+ic_launcher_foreground.xml vs master placed at scale 0.2147 translate (21.979,26.24), 864px: mean |d| 0.012/255, pixels with any channel |d|>16: 16 of 746496 (127448 ink)
+NEGATIVE CONTROL: paint-loop-1 rotation 71.8 -> 0 (1 group): mean |d| 1.015/255, pixels |d|>16: 100690 of 1126080

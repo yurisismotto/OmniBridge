@@ -12,10 +12,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use common::{TestClient, TestServer};
-use omnibridge_core::framing;
-use omnibridge_core::session::PROTOCOL_VERSION_MAX;
-use omnibridge_core::Error;
-use omnibridge_proto::v1;
+use pliwee_core::framing;
+use pliwee_core::session::PROTOCOL_VERSION_MAX;
+use pliwee_core::Error;
+use pliwee_proto::v1;
 use tokio::io::{AsyncRead, AsyncWrite};
 
 const TTL: Duration = Duration::from_secs(30);
@@ -364,7 +364,7 @@ async fn an_unknown_peer_cannot_send_anything_but_a_pair_request() {
 
     let ack = read_ack(&mut tls).await;
     assert_eq!(ack.status, v1::HelloStatus::PairingRequired as i32);
-    assert_eq!(ack.pairing_nonce.len(), omnibridge_core::pairing::NONCE_LEN);
+    assert_eq!(ack.pairing_nonce.len(), pliwee_core::pairing::NONCE_LEN);
 
     // A PING instead of the expected PAIR_REQUEST.
     framing::write_envelope(
@@ -449,7 +449,7 @@ async fn a_client_without_a_certificate_is_rejected_during_the_handshake() {
     let server = TestServer::start().await;
     common::init_crypto();
 
-    let verifier = omnibridge_core::tls::PinnedServerCertVerifier::new(server.fingerprint);
+    let verifier = pliwee_core::tls::PinnedServerCertVerifier::new(server.fingerprint);
     let config = rustls::ClientConfig::builder_with_provider(Arc::new(
         rustls::crypto::ring::default_provider(),
     ))
@@ -477,4 +477,44 @@ async fn a_client_without_a_certificate_is_rejected_during_the_handshake() {
         result.is_err(),
         "a certificate-less client must not be able to use the session"
     );
+}
+
+/// The anchor for the Wave 5 "run twice, once per profile" requirement.
+///
+/// This suite runs under `PLIWEE_TEST_PROFILE` (see `common::test_profile`).
+/// Here the **daemon's** view is observed, not the client's: the session the
+/// listener registered must carry the profile the run names, and the ALPN the
+/// daemon negotiated must be that profile's. A run that silently fell back to
+/// the canonical profile fails here.
+#[tokio::test]
+async fn the_daemon_negotiated_the_profile_this_run_names() {
+    let profile = common::test_profile();
+    let server = TestServer::start().await;
+    let client = TestClient::new("phone");
+    let token = server.open_pairing(Duration::from_secs(30)).await;
+    let session = client
+        .connect(server.addr, server.fingerprint, Some(&token))
+        .await
+        .expect("pairing");
+
+    common::wait_until(Duration::from_secs(10), || async {
+        server
+            .state
+            .session_for(&client.fingerprint)
+            .await
+            .is_some()
+    })
+    .await;
+    let handle = server
+        .state
+        .session_for(&client.fingerprint)
+        .await
+        .expect("the daemon registered the session");
+    assert_eq!(handle.profile(), profile);
+    println!(
+        "EVIDENCE run-profile={profile} daemon-session-profile={} alpn={}",
+        handle.profile(),
+        String::from_utf8_lossy(handle.profile().control_alpn())
+    );
+    session.close().await;
 }

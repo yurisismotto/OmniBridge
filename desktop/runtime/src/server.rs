@@ -4,14 +4,14 @@
 //! [`ControlListener`] and speaks newline-delimited JSON over whatever byte
 //! stream that yields — which is what makes a Windows named pipe a drop-in
 //! rather than a rewrite. The Unix-domain implementation lives in
-//! `omnibridge-linux`.
+//! `pliwee-linux`.
 
 use std::sync::Arc;
 use std::time::Duration;
 
-use omnibridge_control::transport::ControlListener;
-use omnibridge_core::qr::QrPayload;
-use omnibridge_core::store::HideOutcome;
+use pliwee_control::transport::ControlListener;
+use pliwee_core::qr::QrPayload;
+use pliwee_core::store::HideOutcome;
 use tokio::io::{AsyncBufReadExt, AsyncWrite, AsyncWriteExt, BufReader};
 
 use crate::control::{
@@ -34,7 +34,7 @@ pub async fn run<L: ControlListener>(listener: L, state: Arc<DaemonState>) -> an
     }
 }
 
-async fn serve_client<S: omnibridge_control::transport::ControlStream>(
+async fn serve_client<S: pliwee_control::transport::ControlStream>(
     stream: S,
     state: Arc<DaemonState>,
 ) -> anyhow::Result<()> {
@@ -175,7 +175,7 @@ async fn send<W: AsyncWriteExt + Unpin, T: serde::Serialize>(
 /// reading as though it were current.
 fn battery_report(
     state: &Arc<DaemonState>,
-    peer: &omnibridge_core::Fingerprint,
+    peer: &pliwee_core::Fingerprint,
 ) -> Option<BatteryReport> {
     state.battery.get(peer).map(|b| {
         let age_secs = b.received_at.elapsed().as_secs();
@@ -197,7 +197,7 @@ fn battery_report(
 /// arrived in an hour, while a half-open socket is dead however recently its
 /// last reading came in. `Stale` here means at least one probe has gone
 /// unanswered, which is the real early warning.
-fn live_state(handle: &omnibridge_core::session::SessionHandle) -> DeviceState {
+fn live_state(handle: &pliwee_core::session::SessionHandle) -> DeviceState {
     if handle.is_stale() {
         DeviceState::Stale
     } else {
@@ -207,7 +207,7 @@ fn live_state(handle: &omnibridge_core::session::SessionHandle) -> DeviceState {
 
 async fn build_status(state: &Arc<DaemonState>) -> StatusReport {
     let info = state.device_info();
-    let fingerprint = omnibridge_core::Fingerprint::from_hex(&info.identity_fingerprint).ok();
+    let fingerprint = pliwee_core::Fingerprint::from_hex(&info.identity_fingerprint).ok();
 
     let mut connections = Vec::new();
     for handle in state.session_handles().await {
@@ -227,6 +227,7 @@ async fn build_status(state: &Arc<DaemonState>) -> StatusReport {
     let devices = build_devices(state).await;
     let listen_port = state.listen_port().await;
     let listen_families = state.listen_families();
+    let local_state = state.local_state();
     let store = state.store.lock().await;
     StatusReport {
         device_name: store.settings().device_name.clone(),
@@ -238,13 +239,15 @@ async fn build_status(state: &Arc<DaemonState>) -> StatusReport {
         key_backing: store.key_backing().to_string(),
         listen_port,
         listen_families,
-        protocol_version_min: omnibridge_core::session::PROTOCOL_VERSION_MIN,
-        protocol_version_max: omnibridge_core::session::PROTOCOL_VERSION_MAX,
+        protocol_version_min: pliwee_core::session::PROTOCOL_VERSION_MIN,
+        protocol_version_max: pliwee_core::session::PROTOCOL_VERSION_MAX,
         capabilities: state.registry.advertised(),
         paired_devices: store.listed_peers().filter(|p| !p.revoked).count(),
         connections,
         devices,
         pairing_active: state.pairing_remaining().await.is_some(),
+        migrated_from: local_state.migrated_from,
+        legacy_partial_files: local_state.legacy_partial_files,
     }
 }
 
@@ -292,9 +295,9 @@ async fn build_devices(state: &Arc<DaemonState>) -> Vec<DeviceReport> {
         out.push(DeviceReport {
             device_id: p.device_id.clone(),
             device_name: p.device_name.clone(),
-            platform: match omnibridge_proto::v1::Platform::try_from(p.platform) {
-                Ok(omnibridge_proto::v1::Platform::Android) => "android".into(),
-                Ok(omnibridge_proto::v1::Platform::Linux) => "linux".into(),
+            platform: match pliwee_proto::v1::Platform::try_from(p.platform) {
+                Ok(pliwee_proto::v1::Platform::Android) => "android".into(),
+                Ok(pliwee_proto::v1::Platform::Linux) => "linux".into(),
                 _ => "unknown".into(),
             },
             fingerprint: p.fingerprint.to_hex(),
@@ -373,7 +376,7 @@ async fn do_unpair(state: &Arc<DaemonState>, device: &str) -> Response {
 /// already), but because the alternative is a second, subtly different kill
 /// path, and "which of the two ran?" is not a question a revocation should
 /// ever raise.
-async fn enforce_revocation(state: &Arc<DaemonState>, fingerprint: &omnibridge_core::Fingerprint) {
+async fn enforce_revocation(state: &Arc<DaemonState>, fingerprint: &pliwee_core::Fingerprint) {
     // Revocation must take effect now, not at the next reconnect: tear down
     // any live session with that device.
     //
@@ -386,7 +389,7 @@ async fn enforce_revocation(state: &Arc<DaemonState>, fingerprint: &omnibridge_c
         transfers
             .cancel_peer(
                 fingerprint,
-                omnibridge_capability_files::transfer::FailureReason::Revoked,
+                pliwee_capability_files::transfer::FailureReason::Revoked,
             )
             .await;
     }
@@ -414,7 +417,7 @@ async fn enforce_revocation(state: &Arc<DaemonState>, fingerprint: &omnibridge_c
 /// device id or name left to match on, and identity here must be the pinned
 /// key rather than anything two devices could share.
 async fn do_hide_revoked(state: &Arc<DaemonState>, fingerprint: &str) -> Response {
-    let Ok(fingerprint) = omnibridge_core::Fingerprint::from_hex(fingerprint.trim()) else {
+    let Ok(fingerprint) = pliwee_core::Fingerprint::from_hex(fingerprint.trim()) else {
         return Response::Error {
             message: "that is not a device fingerprint".into(),
         };
@@ -500,7 +503,7 @@ async fn do_hide_all_revoked(state: &Arc<DaemonState>) -> Response {
 /// Renders one transfer for the CLI.
 async fn transfer_report(
     state: &Arc<DaemonState>,
-    snapshot: &omnibridge_capability_files::TransferSnapshot,
+    snapshot: &pliwee_capability_files::TransferSnapshot,
 ) -> TransferReport {
     let device_name = {
         let store = state.store.lock().await;
@@ -560,7 +563,7 @@ pub async fn do_grant(
 
     // Only a capability this build actually implements can be granted.
     // Storing a grant for an unknown id would produce a permission that looks
-    // real in `omnibridge devices` and does nothing.
+    // real in `pliwee devices` and does nothing.
     if !state.registry.supports(capability) {
         return Response::Error {
             message: format!("this daemon does not implement '{capability}'"),
@@ -588,11 +591,11 @@ pub async fn do_grant(
     // under a permission the user has just taken away.
     if !granted {
         if let Some(transfers) = state.transfers.clone() {
-            if capability == omnibridge_capability_files::CAPABILITY_ID {
+            if capability == pliwee_capability_files::CAPABILITY_ID {
                 transfers
                     .cancel_peer(
                         &fingerprint,
-                        omnibridge_capability_files::transfer::FailureReason::Revoked,
+                        pliwee_capability_files::transfer::FailureReason::Revoked,
                     )
                     .await;
             }
@@ -603,7 +606,7 @@ pub async fn do_grant(
     // pushing to, so both are reported. Inbound authorization needs no
     // notification — it is re-read from the store per message — but the
     // outbound watcher is a running task and has to be told.
-    if capability == omnibridge_capability_clipboard::CAPABILITY_ID {
+    if capability == pliwee_capability_clipboard::CAPABILITY_ID {
         state.notify_clipboard_policy_changed();
     }
 
@@ -612,7 +615,7 @@ pub async fn do_grant(
     // it is re-read per message — but a mirror already displayed is state this
     // daemon put there, and a revocation that left it up would only apply to
     // notifications that had not arrived yet.
-    if !granted && capability == omnibridge_capability_notifications::CAPABILITY_ID {
+    if !granted && capability == pliwee_capability_notifications::CAPABILITY_ID {
         state.notify_notifications_revoked(&fingerprint).await;
     }
 
@@ -698,7 +701,7 @@ async fn do_cancel_transfer(state: &Arc<DaemonState>, selector: &str) -> Respons
 // clipboard.v1
 // ---------------------------------------------------------------------------
 
-/// Everything `omnibridge clipboard status` shows.
+/// Everything `pliwee clipboard status` shows.
 ///
 /// Deliberately assembled from three independent sources — the backend's
 /// probed capability, the trust store's grants, and the manager's live state
@@ -733,7 +736,7 @@ async fn build_clipboard_status(state: &Arc<DaemonState>) -> ClipboardStatusRepo
     let (event_cache_entries, suppression_cache_entries) = clipboard.cache_sizes().await;
     let last_results = clipboard.last_results().await;
 
-    let rows: Vec<omnibridge_core::store::TrustedPeer> = {
+    let rows: Vec<pliwee_core::store::TrustedPeer> = {
         let store = state.store.lock().await;
         store.listed_peers().cloned().collect()
     };
@@ -744,7 +747,7 @@ async fn build_clipboard_status(state: &Arc<DaemonState>) -> ClipboardStatusRepo
             device_id: p.device_id.clone(),
             device_name: p.device_name.clone(),
             fingerprint_short: p.fingerprint.to_display_short(),
-            granted: p.allows(omnibridge_capability_clipboard::CAPABILITY_ID),
+            granted: p.allows(pliwee_capability_clipboard::CAPABILITY_ID),
             revoked: p.revoked,
             connected: state.session_for(&p.fingerprint).await.is_some(),
             allow_send: p.clipboard_policy.allow_send,
@@ -872,7 +875,7 @@ async fn do_clipboard_policy(
                 message: "that device is not paired (or its pairing was revoked)".into(),
             };
         };
-        let granted = peer.allows(omnibridge_capability_clipboard::CAPABILITY_ID);
+        let granted = peer.allows(pliwee_capability_clipboard::CAPABILITY_ID);
         let mut policy = peer.clipboard_policy;
         match flag {
             ClipboardFlag::Send => policy.allow_send = enabled,
@@ -899,8 +902,8 @@ async fn do_clipboard_policy(
     } else {
         format!(
             "\nNote: {} is not granted for this device, so clipboard policy \
-             has no effect yet. Run: omnibridge grant {} clipboard.v1",
-            omnibridge_capability_clipboard::CAPABILITY_ID,
+             has no effect yet. Run: pliwee grant {} clipboard.v1",
+            pliwee_capability_clipboard::CAPABILITY_ID,
             device
         )
     };
@@ -1028,7 +1031,7 @@ async fn run_send_session(
 /// This is the missing product surface from U2: an Android device offers a
 /// file, `files.v1` asks [`FileApproval`], `FileApproval` asks whoever is on
 /// the other end of this socket, and the answer comes back down it. The
-/// daemon depends on no toolkit to do it — a GTK window, a `omnibridge` command
+/// daemon depends on no toolkit to do it — a GTK window, a `pliwee` command
 /// and a test are all the same client from here.
 ///
 /// The provider's attachment lives exactly as long as this connection. When
@@ -1071,7 +1074,7 @@ async fn run_file_approval_session(
     // Which offers this provider has been shown and not yet answered. Kept so
     // a transfer that ends underneath a prompt produces exactly one
     // withdrawal, for a prompt that is actually on screen.
-    let mut open: std::collections::BTreeSet<omnibridge_capability_files::transfer::TransferId> =
+    let mut open: std::collections::BTreeSet<pliwee_capability_files::transfer::TransferId> =
         std::collections::BTreeSet::new();
 
     let outcome = loop {
@@ -1126,7 +1129,7 @@ async fn run_file_approval_session(
             // question about something that no longer exists.
             event = events.recv() => {
                 match event {
-                    Ok(omnibridge_capability_files::TransferEvent(snapshot)) => {
+                    Ok(pliwee_capability_files::TransferEvent(snapshot)) => {
                         if snapshot.state.is_terminal() && open.remove(&snapshot.id) {
                             approval.withdraw(snapshot.id);
                             send(&mut write, &Event::FileOfferWithdrawn {
@@ -1167,15 +1170,15 @@ async fn run_file_approval_session(
 ///
 /// The `open` check is not belt and braces over the seam's own keying: it is
 /// what stops a client from answering a question it was never asked, on a
-/// transfer it learned about from `omnibridge transfers`.
+/// transfer it learned about from `pliwee transfers`.
 fn apply_file_decision(
     approval: &crate::approval::FileApproval,
-    open: &mut std::collections::BTreeSet<omnibridge_capability_files::transfer::TransferId>,
+    open: &mut std::collections::BTreeSet<pliwee_capability_files::transfer::TransferId>,
     transfer: &str,
     accept: bool,
 ) {
     // Exact, never a prefix. See `TransferId::from_hex`.
-    let Some(id) = omnibridge_capability_files::transfer::TransferId::from_hex(transfer) else {
+    let Some(id) = pliwee_capability_files::transfer::TransferId::from_hex(transfer) else {
         return;
     };
     if !open.remove(&id) {
@@ -1197,7 +1200,7 @@ fn apply_file_decision(
 /// another of your devices changes nothing about what this says.
 async fn file_offer_request(
     state: &Arc<DaemonState>,
-    offer: &omnibridge_capability_files::IncomingOffer,
+    offer: &pliwee_capability_files::IncomingOffer,
 ) -> FileOfferRequest {
     let device_name = {
         let store = state.store.lock().await;
@@ -1234,7 +1237,7 @@ async fn run_pair_session(
 ) -> anyhow::Result<()> {
     let ttl = ttl_secs
         .map(Duration::from_secs)
-        .unwrap_or(omnibridge_core::pairing::DEFAULT_TOKEN_TTL);
+        .unwrap_or(pliwee_core::pairing::DEFAULT_TOKEN_TTL);
 
     let (confirm_tx, mut confirm_rx) = tokio::sync::mpsc::channel(1);
     let token_b32 = match state.begin_pairing(ttl, confirm_tx).await {
@@ -1255,8 +1258,8 @@ async fn run_pair_session(
     let port = state.listen_port().await;
     let addresses = local_addresses(port);
 
-    let fingerprint = omnibridge_core::Fingerprint::from_hex(&info.identity_fingerprint)?;
-    let token = omnibridge_core::pairing::PairingToken::from_base32(&token_b32)?;
+    let fingerprint = pliwee_core::Fingerprint::from_hex(&info.identity_fingerprint)?;
+    let token = pliwee_core::pairing::PairingToken::from_base32(&token_b32)?;
     let payload = QrPayload::encode(&fingerprint, &token, &info.device_id, &addresses);
     drop(token);
 
@@ -1295,7 +1298,7 @@ async fn run_pair_session(
             Some(request) = confirm_rx.recv() => {
                 let short = request.fingerprint.to_display_short();
                 send(&mut write, &Event::ConfirmRequest {
-                    device_name: omnibridge_core::discovery::sanitize_device_name(
+                    device_name: pliwee_core::discovery::sanitize_device_name(
                         &request.device.device_name,
                     ),
                     device_id: request.device.device_id.clone(),
@@ -1423,7 +1426,7 @@ async fn build_notifications_status(state: &Arc<DaemonState>) -> NotificationsSt
     let capabilities = notifications.capabilities().clone();
     let reports = notifications.peer_reports().await;
 
-    let rows: Vec<omnibridge_core::store::TrustedPeer> = {
+    let rows: Vec<pliwee_core::store::TrustedPeer> = {
         let store = state.store.lock().await;
         store.listed_peers().cloned().collect()
     };
@@ -1435,7 +1438,7 @@ async fn build_notifications_status(state: &Arc<DaemonState>) -> NotificationsSt
             device_id: p.device_id.clone(),
             device_name: p.device_name.clone(),
             fingerprint_short: p.fingerprint.to_display_short(),
-            granted: p.allows(omnibridge_capability_notifications::CAPABILITY_ID),
+            granted: p.allows(pliwee_capability_notifications::CAPABILITY_ID),
             revoked: p.revoked,
             connected: state.session_for(&p.fingerprint).await.is_some(),
             allow_mirror: p.notification_policy.allow_mirror,
@@ -1476,7 +1479,7 @@ async fn build_notifications_status(state: &Arc<DaemonState>) -> NotificationsSt
 
 /// Changes one per-peer notification setting.
 ///
-/// The grant is a separate command (`omnibridge grant <device>
+/// The grant is a separate command (`pliwee grant <device>
 /// notifications.v1`) and is deliberately not settable from here: a policy
 /// edit must not be able to hand out the permission the policy is scoped by.
 ///
@@ -1512,7 +1515,7 @@ pub async fn do_notifications_policy(
             format!("mirror={}", if *enabled { "on" } else { "off" })
         }
         NotificationSetting::WhenLocked { policy } => {
-            match omnibridge_core::notification_policy::LockPolicy::parse(policy) {
+            match pliwee_core::notification_policy::LockPolicy::parse(policy) {
                 Some(parsed) => {
                     updated.when_sink_locked = parsed;
                     format!("when-locked={}", parsed.as_str())
@@ -1564,22 +1567,22 @@ pub async fn do_notifications_policy(
 
 /// Pins the two halves of the transfer vocabulary to each other.
 ///
-/// `omnibridge-capability-files` owns the state machine and the failure enum;
-/// `omnibridge-control` names the tokens a front end is allowed to branch on.
+/// `pliwee-capability-files` owns the state machine and the failure enum;
+/// `pliwee-control` names the tokens a front end is allowed to branch on.
 /// Neither crate can see the other, and this one sees both — so this is the
 /// only place the correspondence can be checked, and it is checked
 /// exhaustively rather than by spot-checking the interesting variants.
 #[cfg(test)]
 mod vocabulary {
-    use omnibridge_capability_files::transfer::{FailureReason, TransferState};
-    use omnibridge_control::{transfer_direction, transfer_failure, transfer_state};
+    use pliwee_capability_files::transfer::{FailureReason, TransferState};
+    use pliwee_control::{transfer_direction, transfer_failure, transfer_state};
 
     #[test]
     fn every_failure_reason_is_a_token_the_control_protocol_names() {
         for reason in FailureReason::ALL {
             assert!(
                 transfer_failure::ALL.contains(&reason.code()),
-                "{:?} produces {:?}, which omnibridge-control does not name — \
+                "{:?} produces {:?}, which pliwee-control does not name — \
                  a front end branching on it would see an unknown token and \
                  fall back to a generic label",
                 reason,
@@ -1592,7 +1595,7 @@ mod vocabulary {
         for token in transfer_failure::ALL {
             assert!(
                 produced.contains(&token),
-                "omnibridge-control names {token:?}, which no FailureReason produces"
+                "pliwee-control names {token:?}, which no FailureReason produces"
             );
         }
     }
@@ -1619,7 +1622,7 @@ mod vocabulary {
         ] {
             assert!(
                 named.contains(&state.as_str()),
-                "{:?} serialises as {:?}, which omnibridge-control does not name",
+                "{:?} serialises as {:?}, which pliwee-control does not name",
                 state,
                 state.as_str()
             );
@@ -1636,7 +1639,7 @@ mod vocabulary {
 
     #[test]
     fn both_directions_are_named() {
-        use omnibridge_capability_files::transfer::Direction;
+        use pliwee_capability_files::transfer::Direction;
         assert_eq!(Direction::Sending.as_str(), transfer_direction::SENDING);
         assert_eq!(Direction::Receiving.as_str(), transfer_direction::RECEIVING);
     }

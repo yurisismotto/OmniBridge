@@ -1,0 +1,68 @@
+== A. crates and binaries
+ok    exactly 12 member manifests (12)
+ok    all 12 packages are pliwee-* (12)
+ok    no package is still omnibridge-*
+ok    the binaries are exactly omnibridge, omnibridge-gui, omnibridged (W7 owns them)
+ok    the GUI library target is pliwee_gui
+== B. protobuf tree
+ok    exactly 6 schemas, all under protocol/proto/pliwee/v1
+ok    no schema left under protocol/proto/omnibridge
+ok    6 package lines, all pliwee.v1[.capabilities]
+ok    6 java_package lines, all io.github.yurisismotto.pliwee.proto[.capabilities]
+ok    the schema diff touches only package, java_package and import lines
+ok    protocol/testdata (frozen DER vectors, D10) is unchanged
+ok    the descriptor snapshot is present
+== C. census of omnibridge[_-] in desktop/**/*.rs
+ok    census: W5 wire constant: 6 (expected 6)
+ok    census: W4 path: 4 (expected 4)
+ok    census: W0/W6/W7 asset or resource name: 24 (expected 24)
+ok    census: W7 binary / process name: 45 (expected 45)
+ok    census: W7 tray item id: 1 (expected 1)
+ok    census: unexplained: 0
+ok    census: total 80 (expected 80)
+== D. wire (W5) and Android identity (W6) unchanged
+ok    desktop wire literal b"omnibridge/1"
+ok    desktop wire literal b"omnibridge-data/1"
+ok    desktop wire literal "_omnibridge._tcp.local."
+ok    desktop wire literal "omnibridge1"
+ok    desktop wire literal b"omnibridge/pairing-proof/v1"
+ok    desktop wire literal b"omnibridge/pairing-confirm/v1"
+ok    desktop wire literal b"omnibridge/files.v1/data-stream/v1"
+ok    desktop wire literal format!("omnibridge:{device_id}")
+ok    Android wire literal "omnibridge/1"
+ok    Android wire literal "omnibridge-data/1"
+ok    Android wire literal "_omnibridge._tcp."
+ok    Android wire literal "omnibridge1"
+ok    Android wire literal omnibridge/pairing-proof/v1
+ok    Android wire literal omnibridge/pairing-confirm/v1
+ok    Android wire literal omnibridge/files.v1/data-stream/v1
+ok    Android wire literal omnibridge/notifications.v1/id/v1
+ok    applicationId still io.github.yurisismotto.omnibridge (W6)
+ok    namespace still io.github.yurisismotto.omnibridge (W6)
+ok    manifest component .notifications.OmniBridgeNotificationListener unchanged (W6)
+ok    manifest component .ui.ClipboardTileService unchanged (W6)
+ok    manifest component .ui.MainActivity unchanged (W6)
+ok    manifest component .ui.SendActivity unchanged (W6)
+ok    the Kotlin package directory did not move (W6)
+ok    no desktop APP_ID moved (W7)
+== E. harness patterns
+ok    L16 anchors on the renamed tracing target pliwee_capability_notifications
+ok    no harness still looks for omnibridge_capability_notifications
+ok    L16 anchors on the renamed fixture tag PliweeFixture
+ok    the fixture logs under PliweeFixture
+ok    nothing still logs or looks for OmniBridgeFixture
+ok    the logging canary reads the renamed tags
+ok    the logging canary requires a line from its tags before an absence counts
+ok    desktop/daemon/tests/file_log_privacy.rs anchors on the pliwee_ tracing target
+ok    desktop/daemon/tests/notification_log_privacy.rs anchors on the pliwee_ tracing target
+ok    no Kotlin type OmniBridge* remains except the W6 listener component
+ok    no Kotlin source imports the old proto package
+== F. per-suite test counts, before and after
+ok    Rust: 72 suites; 1053 -> 1055 (+2 added by this wave)
+ok    Android: 56 suites; 833 -> 833 (+0 added by this wave)
+== G. portable Windows workflow
+ok    the -like filter carries the pliwee- prefix
+ok    the -like filter is followed by the exact-7 selection assertion
+ok    no workflow or packaging -p argument names an omnibridge crate
+
+G3 static gate: PASS

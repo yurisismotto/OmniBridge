@@ -1,3 +1,17 @@
+pliwee (1.1.0-1) unstable; urgency=medium
+
+  * OmniBridge is now Pliwee (ADR-0020). Source and binary packages pliwee and
+    pliwee-gui; binaries pliwee, pliweed and pliwee-gui; user unit
+    pliweed.service; application id io.github.yurisismotto.pliwee.
+  * Transitional omnibridge and omnibridge-gui packages, so that `apt upgrade`
+    moves an OmniBridge 1.0.0 install to Pliwee in place.
+  * omnibridged.service ships as an alias of pliweed.service through
+    Pliwee 1.x, so an account that enabled the old name keeps its daemon.
+  * No maintainer script touches ~/.local/share/pliwee or
+    ~/.local/share/omnibridge, on any path, including purge.
+
+ -- Yuri Converso Sismotto <yuri.sismotto@gmail.com>  Fri, 25 Sep 2026 00:00:00 +0000
+
 omnibridge (1.0.0-1) unstable; urgency=medium
 
   * First general-availability release. No product, protocol or packaging

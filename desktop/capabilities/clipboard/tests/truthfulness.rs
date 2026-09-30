@@ -6,8 +6,8 @@
 //! selection and `loginctl show-session … LockedHint` reading `no` **before and
 //! after** the call:
 //!
-//! * `omnibridge clipboard status` said *"Clipboard auto-send cannot run;
-//!   **manual send still works**"* — and `omnibridge clipboard send` failed;
+//! * `pliwee clipboard status` said *"Clipboard auto-send cannot run;
+//!   **manual send still works**"* — and `pliwee clipboard send` failed;
 //! * the failure said *"this **normally means the session is locked**"* — and
 //!   the session was not locked, and Xwayland was running.
 //!
@@ -28,7 +28,7 @@
 //! what it could do and wrong about what it *said*, and the only place that can
 //! regress is the wording. So the wording is what is pinned.
 
-use omnibridge_capability_clipboard::backend::BackendError;
+use pliwee_capability_clipboard::backend::BackendError;
 
 /// The timeout message must not assert a locked session as *the* cause.
 ///

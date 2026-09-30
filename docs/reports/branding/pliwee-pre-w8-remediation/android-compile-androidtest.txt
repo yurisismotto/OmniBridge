@@ -1,0 +1,61 @@
+$ ./gradlew --offline --max-workers=2 -Dorg.gradle.parallel=false :app:compileDebugAndroidTestKotlin :fixture:compileDebugKotlin
+Picked up JAVA_TOOL_OPTIONS: -Xmx2g
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:extractDebugProto UP-TO-DATE
+> Task :app:extractIncludeDebugProto UP-TO-DATE
+> Task :app:extractProto UP-TO-DATE
+> Task :app:generateDebugProto UP-TO-DATE
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:compileDebugKotlin FROM-CACHE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac FROM-CACHE
+> Task :app:extractAndroidTestDebugProto UP-TO-DATE
+> Task :app:extractAndroidTestProto UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:checkDebugAndroidTestAarMetadata UP-TO-DATE
+> Task :app:extractIncludeDebugAndroidTestProto
+> Task :app:generateDebugAndroidTestProto NO-SOURCE
+> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :app:mapDebugAndroidTestSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugAndroidTestResources UP-TO-DATE
+> Task :app:mergeDebugAndroidTestResources UP-TO-DATE
+> Task :app:processDebugAndroidTestManifest UP-TO-DATE
+> Task :app:processDebugAndroidTestResources UP-TO-DATE
+> Task :fixture:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :fixture:preBuild UP-TO-DATE
+> Task :fixture:preDebugBuild UP-TO-DATE
+> Task :fixture:checkDebugAarMetadata UP-TO-DATE
+> Task :fixture:generateDebugResValues UP-TO-DATE
+> Task :fixture:mapDebugSourceSetPaths
+> Task :fixture:generateDebugResources
+> Task :fixture:mergeDebugResources
+> Task :fixture:packageDebugResources
+> Task :fixture:parseDebugLocalResources UP-TO-DATE
+> Task :fixture:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :fixture:extractDeepLinksDebug UP-TO-DATE
+> Task :fixture:processDebugMainManifest
+> Task :fixture:processDebugManifest
+> Task :fixture:processDebugManifestForPackage
+> Task :fixture:processDebugResources
+> Task :fixture:compileDebugKotlin
+> Task :app:compileDebugAndroidTestKotlin
+
+BUILD SUCCESSFUL in 4s
+46 actionable tasks: 12 executed, 2 from cache, 32 up-to-date
+wall 4.35 s
+exit=0

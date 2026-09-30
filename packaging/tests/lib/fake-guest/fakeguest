@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+"""TEST ONLY — the guest's programs, for lib/fake-guest/virsh. One script,
+dispatched on the name it is called by (the self-test links rpm, dnf,
+systemctl, loginctl, journalctl, pgrep, id, runuser, omnibridge, pliwee,
+firewall-cmd, systemd-run and busctl to it).
+
+State is $FAKE_GUEST_ROOT/.state.json; files live under $FAKE_GUEST_ROOT with
+guest paths. It models what the G7-UP upgrade stage and U2 read and change:
+the installed packages; the user's systemd manager, its environment and its
+daemon; logind sessions (the graphical one, and GDM's greeter after a
+terminate-user, which does not autologin again — as lifecycle-gates.sh L19
+measured — until the display manager restarts); the user journal with
+cursors; the daemon's data-directory migration on the next login; and
+pliwee-gui's Selection::load, which carries ~/.config/omnibridge/gui.json to
+~/.config/pliwee/gui.json with the contract of
+desktop/platform-linux/src/legacy_migration.rs migrate_config_file (0700
+directory, 0600 file created new and renamed into place, the source only read,
+nothing done when the destination exists) and logs the line
+desktop/gui/src/selection.rs prints. That the real code keeps this contract is
+proved by the Rust tests; here it is the guest the harness drives.
+
+Faults, as a comma-separated $FAKE_GUEST_FAULTS:
+  gui-no-migrate      pliwee-gui copies nothing
+  gui-alter           it copies different bytes
+  gui-mode-644        it leaves the copy 0644
+  gui-quiet           it migrates without logging
+  gui-remigrate       a second start copies again (new file, logs again)
+  gui-touch-legacy    it rewrites the source's timestamp
+  gui-no-bus          it never owns its application id (never comes up)
+  gui-hangs           it survives being stopped
+  no-autologin        restarting the display manager brings no session back
+  daemon-writes-gui   the daemon's migration also writes ~/.config/pliwee/gui.json
+"""
+import json, os, re, shutil, sys, hashlib, time
+
+ROOT = os.environ["FAKE_GUEST_ROOT"]
+FAULTS = set(filter(None, os.environ.get("FAKE_GUEST_FAULTS", "").split(",")))
+STATE = os.path.join(ROOT, ".state.json")
+APP_ID = "io.github.yurisismotto.pliwee"
+GONE_PID = 9999999            # above any pid_max: `kill -0` fails for it
+name = os.path.basename(sys.argv[0]); argv = sys.argv[1:]
+
+def load(): return json.load(open(STATE))
+def save(s): json.dump(s, open(STATE + ".new", "w"), indent=1); os.replace(STATE + ".new", STATE)
+def g(p): return ROOT + p                      # a guest path, on this host
+def log(s, msg, unit=None): s["journal"].append({"unit": unit, "msg": msg})
+def user(s): return s["user"]
+def home(s): return "/home/" + user(s)
+def out(text, code=0): sys.stdout.write(text); sys.exit(code)
+def sha(p): return hashlib.sha256(open(p, "rb").read()).hexdigest()
+
+s = load()
+
+if name == "runuser":
+    i = argv.index("--"); os.execvp(argv[i + 1], argv[i + 1:])
+
+elif name == "id":
+    if argv == ["-u"]: out("0\n")
+    who = argv[-1]; u = s["users"].get(who)
+    if u is None: out("", 1)
+    out("%d\n" % (u["uid"] if argv[0] == "-u" else u["gid"]))
+
+elif name == "pgrep":
+    count = "-c" in argv; exact = uid = pat = None; i = 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "-x": exact = argv[i + 1]; i += 2; continue
+        if a == "-u": uid = argv[i + 1]; i += 2; continue
+        if a == "-f": pat = argv[i + 1]; i += 2; continue
+        i += 1
+    procs = []
+    if s["daemon"]: procs.append((s["daemon"], s["daemon_pid"], "/usr/bin/" + s["daemon"]))
+    if s["manager"]: procs.append(("systemd", 4242, "/usr/lib/systemd/systemd --user"))
+    me = s["users"][user(s)]
+    hits = [p for p in procs if (exact is None or p[0] == exact) and (pat is None or re.search(pat, p[2]))
+            and (uid is None or uid in (user(s), str(me["uid"])))]
+    if count: out("%d\n" % len(hits), 0 if hits else 1)
+    out("".join("%d\n" % p[1] for p in hits), 0 if hits else 1)
+
+elif name in ("omnibridge", "pliwee"):
+    sub = " ".join(argv); p = s["peer"]; fpr = p["fpr"]
+    short = " ".join(fpr[i:i + 4] for i in range(0, 16, 4)).upper()
+    if sub == "status":
+        out("  device       %s\n  fingerprint  %s\n  paired       1 device(s)\n" % (s["local_name"], s["local_fpr"]))
+    if sub == "devices":
+        out("%s  %s\n   platform    android\n   fingerprint %s\n   paired      yes\n   connected   yes\n"
+            "   state       live\n   granted     %s\n" % (p["name"], p["id"], short, ", ".join(p["grants"])))
+    if sub == "clipboard status":
+        out("clipboard\n    %s (%s)\n      policy  %s\n" % (p["name"], p["id"], p["clipboard"]))
+    if sub == "notifications status":
+        out("notifications\n    %s (%s)\n      when locked  %s\n" % (p["name"], short, p["when_locked"]))
+    out("%s: fake: unsupported '%s'\n" % (name, sub), 2)
+
+elif name == "rpm":
+    pk = s["pkgs"]
+    if argv[0] == "-qa":
+        out("".join(n + "\n" for n in sorted(pk) if any(re.fullmatch(a.replace("*", ".*"), n) for a in argv[1:])))
+    if argv[:2] == ["-q", "--qf"]:
+        fmt = argv[2].replace("\\n", "\n"); lines = []; code = 0
+        for n in argv[3:]:
+            if n in pk:
+                v, r = pk[n].split("-", 1)
+                lines.append(fmt.replace("%{NAME}", n).replace("%{VERSION}", v).replace("%{RELEASE}", r))
+            else:
+                lines.append("package %s is not installed\n" % n); code = 1
+        out("".join(lines), code)
+    if argv[0] == "-q":
+        n = argv[1]
+        out(("%s-%s.x86_64\n" % (n, pk[n])) if n in pk else "package %s is not installed\n" % n, 0 if n in pk else 1)
+
+elif name == "dnf":
+    if argv[0] == "upgrade":
+        s["pkgs"] = {"omnibridge": "1.1.0-1.fc44", "pliwee": "1.1.0-1.fc44", "pliwee-gui": "1.1.0-1.fc44"}
+        unit = g("/usr/lib/systemd/user/omnibridged.service")
+        os.makedirs(os.path.dirname(unit), exist_ok=True)
+        if os.path.lexists(unit): os.remove(unit)
+        os.symlink("pliweed.service", unit)
+        save(s); out("Upgrading: pliwee pliwee-gui omnibridge\nObsoleting: omnibridge-gui\nComplete!\n")
+    out("dnf: fake: unsupported\n", 2)
+
+elif name == "firewall-cmd":
+    if "--list-services" in argv: out("ssh omnibridge\n")
+    if any(a.startswith("--info-service") for a in argv): out("omnibridge\n  ports: 55432/tcp\n")
+    out("success\n")
+
+elif name == "loginctl":
+    sub = argv[0]
+    if sub == "terminate-user":
+        s["sessions"] = [x for x in s["sessions"] if x["user"] != argv[1]]
+        s["manager"] = False; s["daemon"] = None; s["env"] = {}; s["greeter"] = True
+        for u in s["units"].values(): u["active"] = False
+        s["bus"] = {}; save(s); out("")
+    if sub == "list-sessions":
+        lines = ["c1 42 gdm seat0 tty1\n"] if s["greeter"] else []
+        lines += ["%s %d %s seat0 tty2\n" % (x["id"], s["users"][x["user"]]["uid"], x["user"]) for x in s["sessions"]]
+        out("".join(lines))
+    if sub == "show-session":
+        x = [x for x in s["sessions"] if x["id"] == argv[1]]
+        if not x: out("", 1)
+        prop = argv[argv.index("-p") + 1]
+        out({"Type": x[0]["type"], "Active": "yes"}.get(prop, "") + "\n")
+    if sub == "show-user":
+        prop = argv[argv.index("-p") + 1]
+        out({"Linger": "no", "Display": (s["sessions"][0]["id"] if s["sessions"] else "")}.get(prop, "") + "\n")
+    out("", 1)
+
+elif name == "journalctl":
+    j = s["journal"]
+    if "--show-cursor" in argv: out("-- cursor: s=%d\n" % len(j))
+    if "--after-cursor" in argv:
+        n = int(argv[argv.index("--after-cursor") + 1].strip("'").split("=")[1])
+        out("".join(e["msg"] + "\n" for e in j[n:]))
+    if "-u" in argv:
+        u = argv[argv.index("-u") + 1]
+        out("".join(e["msg"] + "\n" for e in j if e["unit"] == u))
+    out("")
+
+elif name == "busctl":
+    pid = s["bus"].get(argv[-1])
+    if pid is None: out("", 1)
+    out("PID=%d\nComm=pliwee-gui\n" % pid)
+
+elif name == "systemd-run":
+    unit = [a.split("=", 1)[1] for a in argv if a.startswith("--unit=")][0]
+    script = argv[-1]
+    m = re.search(r'echo "([^"]*)"', script)
+    if m: log(s, m.group(1), unit)
+    if "exec pliwee-gui" not in script:
+        save(s); out("")
+    # pliwee-gui's run(): Selection::load first, before any window.
+    h = home(s); canon, legacy = h + "/.config/pliwee/gui.json", h + "/.config/omnibridge/gui.json"
+    migrate = False
+    if os.path.lexists(g(canon)):
+        migrate = "gui-remigrate" in FAULTS
+    elif os.path.lexists(g(legacy)):
+        migrate = "gui-no-migrate" not in FAULTS
+    if migrate:
+        data = open(g(legacy), "rb").read()
+        if "gui-alter" in FAULTS: data = data.replace(b"\n}", b"\n }")
+        d = os.path.dirname(g(canon)); os.makedirs(d, exist_ok=True); os.chmod(d, 0o700)
+        tmp = os.path.join(d, ".gui.json.migrating-%d" % os.getpid())
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600); os.write(fd, data); os.close(fd)
+        os.rename(tmp, g(canon))
+        if "gui-mode-644" in FAULTS: os.chmod(g(canon), 0o644)
+        if "gui-quiet" not in FAULTS:
+            log(s, "pliwee: migrated from %s: device choice copied to %s; the source was not modified" % (legacy, canon), unit)
+    if "gui-touch-legacy" in FAULTS and os.path.exists(g(legacy)):
+        t = time.time() + 5; os.utime(g(legacy), (t, t))
+    pid = int(os.environ.get("FAKE_GUEST_LIVE_PID", GONE_PID)) if "gui-hangs" in FAULTS else GONE_PID - len(s["units"]) - 1
+    s["units"][unit] = {"active": True, "pid": pid}
+    if "gui-no-bus" not in FAULTS: s["bus"][APP_ID] = pid
+    s["gui_starts"] = s.get("gui_starts", 0) + 1
+    save(s); out("")
+
+elif name == "systemctl":
+    if argv[:2] == ["--user", "show-environment"]:
+        if not s["manager"]: out("", 1)
+        out("".join("%s=%s\n" % kv for kv in sorted(s["env"].items())))
+    if argv[:2] == ["--user", "is-enabled"]: out("enabled\n")
+    if argv[:2] == ["--user", "is-active"]:
+        u = s["units"].get(argv[2]); out(("active" if u and u["active"] else "inactive") + "\n", 0 if u and u["active"] else 3)
+    if argv[:2] == ["--user", "show"]:
+        u = s["units"].get(argv[-1]); out("%d\n" % (u["pid"] if u and u["active"] else 0))
+    if argv[:2] == ["--user", "stop"]:
+        u = s["units"].get(argv[2])
+        if u and u["active"]:
+            u["active"] = False; s["bus"] = {k: v for k, v in s["bus"].items() if v != u["pid"]}
+            log(s, "%s.service: Deactivated successfully." % argv[2], argv[2])
+        save(s); out("")
+    if argv[:2] == ["--user", "restart"] and argv[2] == "pliweed.service":
+        s["daemon"] = "pliweed"; s["daemon_pid"] += 1; save(s); out("")
+    if argv[:2] == ["--user", "enable"]: out("")
+    def start_manager(s):
+        # The user's systemd manager starting, as a login starts it.
+        s["manager"] = True
+        if "pliwee" in s["pkgs"]:
+            h = home(s); src, dst = g(h + "/.local/share/omnibridge"), g(h + "/.local/share/pliwee")
+            if not os.path.exists(dst):
+                os.makedirs(dst, mode=0o700)
+                for f in ("identity.key", "state.json"): shutil.copy2(os.path.join(src, f), os.path.join(dst, f))
+                with open(os.path.join(dst, "MIGRATED_FROM"), "w") as f:
+                    f.write("source=%s/.local/share/omnibridge\nsha256.identity.key=%s\nsha256.state.json=%s\n"
+                            % (h, sha(os.path.join(src, "identity.key")), sha(os.path.join(src, "state.json"))))
+                log(s, "pliweed: migrated from %s/.local/share/omnibridge to %s/.local/share/pliwee" % (h, h))
+                log(s, "pliweed: this account enabled omnibridged.service; run once: systemctl --user reenable pliweed.service")
+                if "daemon-writes-gui" in FAULTS:
+                    os.makedirs(g(h + "/.config/pliwee"), mode=0o700, exist_ok=True)
+                    shutil.copy(g(h + "/.config/omnibridge/gui.json"), g(h + "/.config/pliwee/gui.json"))
+            s["daemon"] = "pliweed"; s["daemon_pid"] += 1
+        else:
+            s["daemon"] = "omnibridged"
+    if argv[0] == "start" and argv[1].startswith("user@"):
+        # systemd 259 (Fedora 44) times the user manager out when no login
+        # session exists; measured 2026-09-30 on pliwee-g8-f44-chain.
+        out("Job for %s failed because a timeout was exceeded.\n" % argv[1], 1)
+    if argv[:2] == ["restart", "gdm"] or argv[:2] == ["restart", "gdm.service"]:
+        if "no-autologin" not in FAULTS:
+            if not s["manager"]: start_manager(s)
+            s["greeter"] = False; s["manager"] = True
+            s["sessions"].append({"id": str(10 + len(s["journal"])), "user": user(s), "type": "wayland"})
+            s["env"] = {"WAYLAND_DISPLAY": "wayland-0", "DISPLAY": ":0", "XDG_SESSION_TYPE": "wayland"}
+        save(s); out("")
+    if argv[:2] == ["restart", "gdm3"]: out("Failed to restart gdm3.service: Unit gdm3.service not found.\n", 5)
+    out("systemctl: fake: unsupported %s\n" % argv, 2)
+
+else:
+    out("fakeguest: not a program: %s\n" % name, 127)

@@ -2,6 +2,8 @@
 
 **Status:** Accepted · 2026-08-30
 
+> **Superseding note — 2026-09-24, Pliwee rebrand Wave 5 (branch `feature/pliwee-rebrand-wave5`), [ADR-0020](ADR-0020-rename-to-pliwee.md) §D4.** The canonical data stream is `pliwee-data/1` with the domain `pliwee/files.v1/data-stream/v1`. `omnibridge-data/1` and `omnibridge/files.v1/data-stream/v1` below are the legacy profile's values, and a data stream must negotiate the same profile as the control session that issued its challenge. The original text below is left as it was decided.
+
 ## Context
 
 [ADR-0012](ADR-0012-bulk-transfer-and-frame-limit.md) decided that bulk

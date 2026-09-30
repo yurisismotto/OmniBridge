@@ -1,0 +1,5 @@
+# Each line: one hand-made defect, cargo test -p pliwee-gui --test brand_assets, then the file restored (sha256 re-checked).
+B1 icon placement stretched: rc=101; FAILED: the_desktop_app_icon_is_a_placement_of_the_pliwee_master | test result: FAILED. 26 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+B2 icon gradient stop edited: rc=101; FAILED: the_desktop_app_icon_is_a_placement_of_the_pliwee_master | test result: FAILED. 26 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+B3 brand_mark draws the OmniBridge mark: rc=101; FAILED: the_desktop_compiles_in_the_pliwee_masters | test result: FAILED. 26 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+B4 build.rs derives from the OmniBridge icon: rc=101; FAILED: the_primary_application_icon_is_the_canonical_mark | test result: FAILED. 26 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s

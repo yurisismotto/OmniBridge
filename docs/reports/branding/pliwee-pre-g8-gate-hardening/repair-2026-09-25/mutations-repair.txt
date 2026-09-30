@@ -1,0 +1,37 @@
+CAUGHT     M1 the audited bypass: no prerequisite check before execution      80 passed, 15 failed
+             not ok  BYPASS: a not-executed U10 is still refused while SECLOG is undecided
+             not ok  …and the downgrade stage was never invoked
+             not ok  …U10 shows its prerequisite, not its own record, as the reason
+CAUGHT     M2 status() reports a gate's own record before its prerequisites   94 passed, 1 failed
+             not ok  …U10 shows its prerequisite, not its own record, as the reason
+CAUGHT     M3 SECLOG ignores that U10 started                                 84 passed, 11 failed
+             not ok  SECLOG is refused once upgrade-gates.sh's U10-STARTED marker exists
+             not ok  …and security-log-evidence.sh was never invoked
+             not ok  not-executed with a reason is BLOCKED, never PASS
+CAUGHT     M4 upgrade-gates.sh's U10-STARTED marker ignored                   89 passed, 6 failed
+             not ok  SECLOG is refused once upgrade-gates.sh's U10-STARTED marker exists
+             not ok  …and security-log-evidence.sh was never invoked
+             not ok  not-executed with a reason is BLOCKED, never PASS
+CAUGHT     M5 U6 may be retried after U10                                     93 passed, 2 failed
+             not ok  a U6 retry after U10 is refused: its FAIL record does not waive the upgraded guest
+             not ok  …and peer-u6 was not invoked again
+CAUGHT     M6 U10 may run a second time                                       92 passed, 3 failed
+             not ok  a second U10 (--rerun) is refused before the harness: the guest is already on 1.0.0
+             not ok  …the downgrade stage ran exactly once
+             not ok  the stages ran in the order peer-u6, then downgrade
+CAUGHT     M7 --not-executed replaces a measured FAIL                         87 passed, 8 failed
+             not ok  --not-executed over a measured FAIL is refused
+             not ok  …the FAIL record is byte-identical afterwards
+             not ok  …the gate is still FAIL
+CAUGHT     M8 --not-executed replaces a run that started                      92 passed, 3 failed
+             not ok  an interrupted run cannot be recorded not-executed (it was executed, at least in part)
+             not ok  --next resumes the interrupted gate before any new one
+             not ok  …and it completes as PASS
+CAUGHT     M9 a new attempt overwrites the previous record                    89 passed, 6 failed
+             not ok  …and its earlier not-executed record was kept in state/history/, not overwritten
+             not ok  …with the interrupted attempt's record kept in state/history/
+             not ok  …the original FAIL record is preserved, byte-identical, in state/history/
+CAUGHT     M10 --next resumes an interruption whose prerequisites fail        94 passed, 1 failed
+             not ok  …--next moves on to the first runnable gate instead (W2-GNOME)
+
+10 of 10 mutations caught

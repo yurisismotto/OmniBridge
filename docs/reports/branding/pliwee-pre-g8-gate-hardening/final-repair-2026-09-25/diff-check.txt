@@ -1,0 +1,50 @@
+# 2026-09-25T17:40:52Z, HEAD e68f332 + working tree
+$ packaging/tests/evidence-whitespace-check.sh    # default: the report and pliwee-pre-g8-gate-hardening/
+scanned 28 text file(s), skipped 0 binary; 0 line(s) with trailing horizontal whitespace
+PASS
+rc=0
+
+$ packaging/tests/evidence-whitespace-check.sh $(git ls-files --others --exclude-standard)   # every untracked file of this branch, 32 paths:
+#   docs/reports/branding/PLIWEE-PRE-G8-GATE-HARDENING.md
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/assertion-preservation.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/bash-n.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/final-repair-2026-09-25/bash-n.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/final-repair-2026-09-25/harness-selftests.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/final-repair-2026-09-25/mutations-final.sh
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/final-repair-2026-09-25/mutations-final.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/final-repair-2026-09-25/mutations-repair-rerun.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/final-repair-2026-09-25/pre-g8-selftests.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/final-repair-2026-09-25/run-rcs.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/final-repair-2026-09-25/whitespace-guard-selftest.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/final-repair-2026-09-25/whitespace-normalization.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/harness-selftests.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/mutations.sh
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/mutations.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/packaging-checks-static.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/pre-g8-selftests.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/bash-n.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/diff-check.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/frozen-digests.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/harness-selftests.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/mutations-original-rerun.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/mutations-repair.sh
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/mutations-repair.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/packaging-checks-static.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/pre-g8-selftests.txt
+#   docs/reports/branding/pliwee-pre-g8-gate-hardening/repair-2026-09-25/run-rcs.txt
+#   packaging/tests/evidence-whitespace-check.sh
+#   packaging/tests/lib/g7up-evidence.sh
+#   packaging/tests/lib/g7up-fixture.sh
+#   packaging/tests/pre-g8-manual-gates-selftests.sh
+#   packaging/tests/pre-g8-manual-gates.sh
+scanned 32 text file(s), skipped 0 binary; 0 line(s) with trailing horizontal whitespace
+PASS
+rc=0
+
+$ packaging/tests/evidence-whitespace-check.sh $(git diff --name-only)   # every tracked file this branch changed
+scanned 6 text file(s), skipped 0 binary; 0 line(s) with trailing horizontal whitespace
+PASS
+rc=0
+
+$ git diff --check
+rc=0

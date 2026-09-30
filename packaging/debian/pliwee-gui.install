@@ -1,0 +1,4 @@
+usr/bin/pliwee-gui
+usr/share/applications/io.github.yurisismotto.pliwee.desktop
+usr/share/dbus-1/services/io.github.yurisismotto.pliwee.service
+usr/share/metainfo/io.github.yurisismotto.pliwee.metainfo.xml

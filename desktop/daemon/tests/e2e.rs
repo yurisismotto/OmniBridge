@@ -10,14 +10,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use common::{wait_until, TestClient, TestServer};
-use omnibridge_capability_battery::{BatteryCapability, BatteryReading};
-use omnibridge_core::error::PairingError;
-use omnibridge_core::identity::LocalIdentity;
-use omnibridge_core::pairing::PairingToken;
-use omnibridge_core::session::{PeerStatus, SessionHost};
-use omnibridge_core::Error;
-use omnibridge_proto::v1;
-use omnibridge_proto::v1::capabilities::ChargingState;
+use pliwee_capability_battery::{BatteryCapability, BatteryReading};
+use pliwee_core::error::PairingError;
+use pliwee_core::identity::LocalIdentity;
+use pliwee_core::pairing::PairingToken;
+use pliwee_core::session::{PeerStatus, SessionHost};
+use pliwee_core::Error;
+use pliwee_proto::v1;
+use pliwee_proto::v1::capabilities::ChargingState;
 
 const TTL: Duration = Duration::from_secs(30);
 
@@ -264,7 +264,7 @@ async fn a_revoked_device_is_refused_on_its_next_connection() {
     session.close().await;
     server.state.end_pairing().await;
 
-    // The user runs `omnibridge unpair`.
+    // The user runs `pliwee unpair`.
     {
         let mut store = server.state.store.lock().await;
         assert!(store.revoke_peer(&phone.fingerprint).expect("revoke"));
@@ -311,7 +311,7 @@ async fn a_revoked_device_cannot_re_pair_without_a_new_token() {
     );
 }
 
-/// Revocation must be reversible by the owner, or `omnibridge unpair` is a
+/// Revocation must be reversible by the owner, or `pliwee unpair` is a
 /// permanent brick rather than a control.
 ///
 /// The defect this covers was found on real hardware during G17: a revoked
@@ -346,7 +346,7 @@ async fn a_revoked_device_can_pair_again_when_the_owner_opens_a_new_window() {
         .expect_err("a revoked device must be refused with no window open");
     assert!(matches!(err, Error::NotAuthorized), "{err:?}");
 
-    // The owner runs `omnibridge pair` again and confirms at the terminal.
+    // The owner runs `pliwee pair` again and confirms at the terminal.
     let fresh = server.open_pairing(TTL).await;
     let session = phone
         .connect(server.addr, server.fingerprint, Some(&fresh))
@@ -613,7 +613,7 @@ async fn an_unknown_capability_id_is_refused_without_closing_the_session() {
     assert!(
         session
             .handle
-            .send_capability(omnibridge_core::capability::OutboundMessage {
+            .send_capability(pliwee_core::capability::OutboundMessage {
                 capability_id: "clipboard.v1".into(),
                 payload: b"secret".to_vec(),
             })
@@ -642,7 +642,7 @@ async fn a_malformed_capability_payload_does_not_kill_the_session() {
     assert!(
         session
             .handle
-            .send_capability(omnibridge_core::capability::OutboundMessage {
+            .send_capability(pliwee_core::capability::OutboundMessage {
                 capability_id: "battery.v1".into(),
                 payload: vec![0xff; 32],
             })

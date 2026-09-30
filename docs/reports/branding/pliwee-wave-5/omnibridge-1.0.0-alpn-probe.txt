@@ -1,0 +1,5 @@
+target: packaged omnibridge-1.0.0-1.fc44.x86_64 at 127.0.0.1:55432 (2026-09-24T23:38:53-03:00); client: openssl s_client -tls1_3, throwaway P-256 cert, one ALPN per attempt, no application data sent
+offered=pliwee/1 -> No ALPN negotiated alert no application protocol
+offered=pliwee-data/1 -> No ALPN negotiated alert no application protocol
+offered=omnibridge/1 -> ALPN protocol: omnibridge/1
+offered=omnibridge-data/1 -> ALPN protocol: omnibridge-data/1

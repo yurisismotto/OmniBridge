@@ -7,8 +7,8 @@
 //!
 //! # Why it is its own crate
 //!
-//! Before Wave 0, `omnibridge-cli` and `omnibridge-gui` both depended on
-//! `omnibridge-daemon` (with `default-features = false`) purely to reuse these
+//! Before Wave 0, `pliwee-cli` and `pliwee-gui` both depended on
+//! `pliwee-daemon` (with `default-features = false`) purely to reuse these
 //! `serde` structs. Sharing them is right — the GUI must not be able to drift
 //! from the socket contract — but the cost was that a GTK application
 //! inherited every Linux dependency of the daemon, including the capability
@@ -313,7 +313,7 @@ pub struct TransferReport {
     /// and never a list index.
     ///
     /// `#[serde(default)]` for the reason the clipboard report's fields are:
-    /// a version skew between `omnibridge` and the agent must not fail to parse
+    /// a version skew between `pliwee` and the agent must not fail to parse
     /// a whole status report over one display field.
     #[serde(default)]
     pub seq: u64,
@@ -351,7 +351,7 @@ pub struct TransferReport {
 
 /// The tokens [`TransferReport::failure_code`] can carry.
 ///
-/// One per `FailureReason` in `omnibridge-capability-files`, which owns the enum
+/// One per `FailureReason` in `pliwee-capability-files`, which owns the enum
 /// and produces these from `FailureReason::code()`. They are named here
 /// because this crate is the contract between the agent and its front ends,
 /// and a front end may not depend on the capability crate to learn them. The
@@ -394,7 +394,7 @@ pub mod transfer_failure {
 /// Named here for the same reason as [`transfer_failure`]: a front end deciding
 /// whether a transfer is still moving must not have to keep its own guess at
 /// the state machine's vocabulary. The set is exactly
-/// `omnibridge-capability-files`' `TransferState`, and `desktop/runtime` pins the
+/// `pliwee-capability-files`' `TransferState`, and `desktop/runtime` pins the
 /// correspondence.
 pub mod transfer_state {
     pub const OFFERED: &str = "offered";
@@ -456,7 +456,7 @@ pub struct ClipboardStatusReport {
     /// not, or claim sensitive clips will be written, which they will not.
     ///
     /// `#[serde(default)]` for the same reason as the field below: a version
-    /// skew between `omnibridge` and the agent must not fail to parse a status
+    /// skew between `pliwee` and the agent must not fail to parse a status
     /// report over a display field.
     ///
     /// [`sensitive_available`]: Self::sensitive_available
@@ -474,7 +474,7 @@ pub struct ClipboardStatusReport {
     /// capability does not have to lie about what it supports — `wl-copy`
     /// gained `--sensitive` only in wl-clipboard 2.3.0.
     ///
-    /// `#[serde(default)]` because an older `omnibridge` binary talking to a
+    /// `#[serde(default)]` because an older `pliwee` binary talking to a
     /// newer agent, or the reverse, must not fail to parse a status report
     /// over a display field.
     #[serde(default = "default_true")]
@@ -695,6 +695,30 @@ pub struct StatusReport {
     /// paired-but-offline device instead of silently omitting it.
     pub devices: Vec<DeviceReport>,
     pub pairing_active: bool,
+    /// Where this device's identity came from, when it was carried over from
+    /// an OmniBridge install (ADR-0020 D9). `None` for an identity that was
+    /// created here.
+    ///
+    /// `#[serde(default)]` so a client and a daemon of different builds still
+    /// understand each other: an older daemon simply has nothing to report.
+    #[serde(default)]
+    pub migrated_from: Option<MigrationReport>,
+    /// Interrupted OmniBridge transfers (`.omnibridge-*.part`) still in a
+    /// download directory. Listed so a person can decide about them; the
+    /// daemon never removes them (ADR-0020 D9).
+    #[serde(default)]
+    pub legacy_partial_files: Vec<String>,
+}
+
+/// An identity copied from an OmniBridge data directory.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MigrationReport {
+    /// The legacy directory. It was not modified.
+    pub source: String,
+    pub migrated_at_unix: u64,
+    /// True when the copy happened during this daemon run, false when an
+    /// earlier run made it and this one only found the record.
+    pub this_run: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

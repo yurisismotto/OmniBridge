@@ -1,0 +1,44 @@
+CAUGHT     downgrade stage skips the U6 evidence check                  STAGE refuses --stage downgrade on another domain than the one U6 measured — exit 3, virsh calls: -c qemu:///system dominfo g7-other, output:  == U0 — preconditions and tools == guest-agent: FATAL: domain 'g7-other' is not defined on qemu:///system  PRECONDITION FAILED: guest agent in 'g7-other' does
+             not ok  STAGE refuses --stage downgrade with no evidence at all — exit 3, virsh calls: none, output:  PRECONDITION FAILED: U10 ref
+             not ok  STAGE refuses --stage downgrade after the upgrade but before U6 — exit 3, virsh calls: -c qemu:///system dominfo g7-f44, o
+CAUGHT     g7up_verify_u6 accepts everything                            the coordinator's self-tests FAILED:
+             not ok  REJECTS U10 with no U6 at all (the old order: upgrade, then straight to the downgrade) — returned 0; the harness would hav
+             not ok  REJECTS an empty U6-RESULT file — returned 0; the harness would have passed on nothing
+CAUGHT     U6 log anchors not required                                  REJECTS a clipboard that went one way only (n/a is not a round-trip) — returned 0; the harness would have passed on nothing
+             not ok  REJECTS a U6 that re-paired the phone (U6 is 'reconnects WITHOUT re-pairing') — returned 0; the harness would have passed
+             not ok  REJECTS a clipboard that went one way only (n/a is not a round-trip) — returned 0; the harness would have passed on nothin
+CAUGHT     U6 identity record not bound to distro                       STAGE refuses --stage downgrade over a U6 that measured another distribution — exit 3, virsh calls: -c qemu:///system dominfo g7-f44, output:  == U0 — preconditions and tools == guest-agent: FATAL: domain 'g7-f44' is not defined on qemu:///system  PRECONDITION FAILED: guest agent in 'g7-f44' does not
+             not ok  REJECTS a U6 whose peer gates measured another distribution — returned 0; the harness would have passed on nothing
+             not ok  STAGE refuses --stage downgrade over a U6 that measured another distribution — exit 3, virsh calls: -c qemu:///system domi
+CAUGHT     peer-u6 runs without a checkpoint                            STAGE refuses --stage peer-u6 before the upgrade stage completed — exit 3, virsh calls: none, output:  PRECONDITION FAILED: U6 refused: the upgrade stage recorded  failed check(s); G7-UP is already FAIL for this run, and U6 would measure a broken transition
+             not ok  STAGE refuses --stage peer-u6 before the upgrade stage completed — exit 3, virsh calls: none, output:  PRECONDITION FAILED
+CAUGHT     U10 put back into the upgrade stage                          STATIC the upgrade stage still contains a U10 section, lacks the checkpoint, or could not be read
+             not ok  STATIC the upgrade stage still contains a U10 section, lacks the checkpoint, or could not be read
+CAUGHT     coordinator trusts the U6 harness's exit code              94 passed, 1 failed
+             not ok  …and the RECORD says FAIL too, not only the status re-check
+CAUGHT     coordinator never re-verifies a recorded PASS              93 passed, 2 failed
+             not ok  a U6 log altered after its PASS turns the gate into FAIL
+             not ok  …and says why
+CAUGHT     U10 does not wait for the security-log gate                93 passed, 2 failed
+             not ok  BYPASS: a not-executed U10 is still refused while SECLOG is undecided
+             not ok  …U10 shows its prerequisite, not its own record, as the reason
+CAUGHT     U10 has no prerequisites in the coordinator                81 passed, 14 failed
+             not ok  U10 on a fresh directory is refused
+             not ok  U10 is BLOCKED while U6 has not passed
+CAUGHT     self-test records count in a real run                      94 passed, 1 failed
+             not ok  a REAL --status over these self-test records counts none of them as PASS
+CAUGHT     signing output teed into the evidence directory            94 passed, 1 failed
+             not ok  the password is in NO file under the evidence directory
+CAUGHT     --next ignores an interrupted gate                         92 passed, 3 failed
+             not ok  --next resumes the interrupted gate before any new one
+             not ok  …and it completes as PASS
+CAUGHT     confirmation accepts anything                              87 passed, 8 failed
+             not ok  a declined INSTALL exits 5
+             not ok  …and did not run it
+CAUGHT     missing domain is guessed instead of refused               52 passed, 43 failed
+             not ok  INSTALL without a configured domain is refused
+             not ok  …and nothing was run
+CAUGHT     not-executed accepted without a reason                     94 passed, 1 failed
+             not ok  not-executed without a reason is refused
+
+16 of 16 mutations caught

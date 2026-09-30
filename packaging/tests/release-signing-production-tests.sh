@@ -9,7 +9,7 @@
 # needs no production key and no artifact download, so it runs on every PR.
 #
 # It cannot answer the question this file answers. "Does verification reject a
-# tampered OmniBridge release, signed by the production identity, over the
+# tampered Pliwee release, signed by the production identity, over the
 # artifacts GitHub Actions actually built?" is a different claim, and a fixture
 # cannot make it. The four conditions on the production-signing gate --
 # RELEASE-SIGNING-FOUNDATION-V1.md §8.9 -- name the real set explicitly:
@@ -112,7 +112,7 @@ nsec="$(find "$SCAN/private-keys-v1.d" -type f -name '*.key' 2>/dev/null | wc -l
 gpgconf --homedir "$SCAN" --kill gpg-agent >/dev/null 2>&1 || true
 rm -rf "$SCAN"
 
-WORK="$(mktemp -d -t omnibridge-prod-signing.XXXXXXXX)" || die "no temp dir"
+WORK="$(mktemp -d -t pliwee-prod-signing.XXXXXXXX)" || die "no temp dir"
 trap 'rm -rf "$WORK"' EXIT INT TERM
 printf 'work: %s\n' "$WORK"
 
@@ -121,7 +121,7 @@ printf 'work: %s\n' "$WORK"
 realsum() { find "$DIR" -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1; }
 REAL_BEFORE="$(realsum)"
 
-# A throwaway identity that has nothing to do with OmniBridge, for NEG-03.
+# A throwaway identity that has nothing to do with Pliwee, for NEG-03.
 STRANGER="$WORK/stranger-home"; mkdir -p "$STRANGER"; chmod 700 "$STRANGER"
 gpg --homedir "$STRANGER" --batch --quiet --pinentry-mode loopback --passphrase '' \
     --quick-generate-key "Unrelated Key — not OmniBridge" ed25519 sign never >/dev/null 2>&1 \
@@ -281,13 +281,13 @@ fi
 section "SIGN-NEG-05 — an artifact is replaced, same filename, different bytes"
 # ---------------------------------------------------------------------------
 # The realistic substitution: another distribution's package of the SAME name.
-# All three DEB targets build 'omnibridge_<V>-1_amd64.deb', and the workflow
+# All three DEB targets build 'pliwee_<V>-1_amd64.deb', and the workflow
 # asserts the three differ -- so this swap is a genuinely different binary
 # under a filename SHA256SUMS already covers.
 T5="$WORK/neg05"; fresh_copy "$T5"
 ok "NEG-05 control: the untouched copy verifies"
-VICTIM="$(find "$T5/ubuntu2404" -name 'omnibridge_*_amd64.deb' -type f ! -name '*gui*' | sort | head -1)"
-DONOR="$(find "$T5/debian13"   -name 'omnibridge_*_amd64.deb' -type f ! -name '*gui*' | sort | head -1)"
+VICTIM="$(find "$T5/ubuntu2404" -name 'pliwee_*_amd64.deb' -type f ! -name '*gui*' | sort | head -1)"
+DONOR="$(find "$T5/debian13"   -name 'pliwee_*_amd64.deb' -type f ! -name '*gui*' | sort | head -1)"
 [ -n "$VICTIM" ] && [ -n "$DONOR" ] || die "NEG-05 needs a same-named .deb in ubuntu2404 and debian13"
 [ "$(basename "$VICTIM")" = "$(basename "$DONOR")" ] \
     || die "NEG-05's two packages are not same-named: $(basename "$VICTIM") vs $(basename "$DONOR")"

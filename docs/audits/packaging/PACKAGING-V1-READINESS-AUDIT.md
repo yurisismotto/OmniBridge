@@ -1097,6 +1097,15 @@ Nothing else. No port range, no outbound rule, no forwarding.
 
 ### 9.2 Fedora
 
+> **Superseding note — 2026-09-26, branch `feat/pre-g8-autopilot`,
+> [erratum](../../migrations/OMNIBRIDGE-1.0.0-FEDORA-FIREWALL-ERRATUM.md).** The
+> command order below, `--permanent --add-service=omnibridge` first, fails
+> right after the package is installed on a system whose firewalld is running:
+> `INVALID_SERVICE … 'omnibridge' not among existing services`, exit 101
+> (measured by `G7UP-fedora44-INSTALL`, Fedora 44, firewalld 2.4.4). The first
+> command must be `firewall-cmd --reload`, which makes firewalld read the new
+> service definition. The original text below is left as it was written.
+
 Ship `/usr/lib/firewalld/services/omnibridge.xml`, owned by the **core**
 package (the daemon listens, not the GUI):
 

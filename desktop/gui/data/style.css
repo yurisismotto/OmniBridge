@@ -1,5 +1,5 @@
 /*
- * OmniBridge desktop stylesheet.
+ * Pliwee desktop stylesheet.
  *
  * Colour tokens are injected ahead of this file as @define-color by
  * src/theme.rs, so the same rules serve light and dark and there is exactly
@@ -138,7 +138,7 @@ button.ob-card:active { background-color: @ob_surface_sunken; }
 /* ---- buttons ---------------------------------------------------------- */
 /*
  * The CTA wears the corrected accent sweep, not the identity one: white on
- * Bridge Cyan is 2.40:1 and this button always has a label on it. These three
+ * Flow Cyan is 2.40:1 and this button always has a label on it. These three
  * stops are the on_light accents, the same values @ob_cyan/@ob_blue/@ob_violet
  * carry in the light theme — spelled out because GTK CSS cannot interpolate
  * between two @colors in a gradient.

@@ -3,8 +3,14 @@
 //! # What goes in, and why
 //!
 //! ```text
-//! omnibridge1:<responder-fingerprint-hex>:<token-base32>:<device-id>:<addr>[,<addr>...]
+//! pliwee1:<responder-fingerprint-hex>:<token-base32>:<device-id>:<addr>[,<addr>...]
 //! ```
+//!
+//! The daemon emits `pliwee1:` only. The parser also accepts the legacy
+//! `omnibridge1:` scheme of an OmniBridge 1.0.0 desktop, and the scheme fixes
+//! the identity [`Profile`] of the pairing connection (ADR-0020 §D4). An
+//! OmniBridge build cannot scan a `pliwee1:` code; that is unsupported by
+//! decision, not worked around by emitting legacy codes.
 //!
 //! * **fingerprint** — the whole point. The scanning device pins this SPKI
 //!   fingerprint *before* it opens a socket, so the TLS handshake is
@@ -19,22 +25,34 @@
 //! No private key material, no persistent credential, no capability grants.
 //! A photographed QR is useless once the window closes or the token is used.
 //!
-//! The scheme carries a version tag (`b1`) so a future format can be
-//! recognised and rejected cleanly rather than misparsed.
+//! The scheme carries a version tag (the trailing `1`) so a future format —
+//! `pliwee2:`, or `omnibridge2:` — is recognised and rejected cleanly rather
+//! than misparsed (ADR-0011).
 
 use std::net::SocketAddr;
 
 use crate::error::{Error, Result};
 use crate::fingerprint::Fingerprint;
 use crate::pairing::PairingToken;
+use crate::profile::Profile;
 
-pub const QR_SCHEME: &str = "omnibridge1";
+/// The scheme this daemon emits (canonical profile).
+pub const QR_SCHEME: &str = "pliwee1";
+
+/// The legacy OmniBridge scheme. Parsed, never emitted.
+pub const LEGACY_QR_SCHEME: &str = "omnibridge1";
+
+/// Brand prefixes whose *other* versions are recognised and rejected.
+const KNOWN_SCHEME_BRANDS: [&str; 2] = ["pliwee", "omnibridge"];
 
 /// Cap on the encoded payload. Bounds what a malicious QR can push into the
 /// parser on the phone before any of it is interpreted.
 pub const MAX_QR_PAYLOAD_LEN: usize = 512;
 
 pub struct QrPayload {
+    /// Fixed by the scheme that was scanned. The pairing connection must
+    /// offer this profile's ALPN and prove under this profile's domain.
+    pub profile: Profile,
     pub fingerprint: Fingerprint,
     pub token_base32: String,
     pub device_id: String,
@@ -43,6 +61,8 @@ pub struct QrPayload {
 }
 
 impl QrPayload {
+    /// Encodes a payload. Always `pliwee1:` — the legacy scheme is never
+    /// emitted.
     pub fn encode(
         fingerprint: &Fingerprint,
         token: &PairingToken,
@@ -79,9 +99,7 @@ impl QrPayload {
         let mut parts = input.splitn(5, ':');
 
         let scheme = parts.next().unwrap_or_default();
-        if scheme != QR_SCHEME {
-            return Err(Error::Protocol("unknown QR scheme"));
-        }
+        let profile = profile_of_scheme(scheme)?;
 
         let fingerprint = Fingerprint::from_hex(parts.next().unwrap_or_default())?;
 
@@ -104,6 +122,7 @@ impl QrPayload {
             .collect();
 
         Ok(Self {
+            profile,
             fingerprint,
             token_base32,
             device_id,
@@ -113,6 +132,27 @@ impl QrPayload {
 
     pub fn token(&self) -> Result<PairingToken> {
         PairingToken::from_base32(&self.token_base32)
+    }
+}
+
+/// Which profile a scheme tag selects.
+///
+/// `pliwee1` and `omnibridge1` are accepted. Another version of either brand
+/// (`pliwee2`, `omnibridge0`, …) is a *recognised* format this build does not
+/// speak, and says so; anything else is not a pairing code at all.
+fn profile_of_scheme(scheme: &str) -> Result<Profile> {
+    if let Some(profile) = Profile::ALL.into_iter().find(|p| p.qr_scheme() == scheme) {
+        return Ok(profile);
+    }
+    let recognised = KNOWN_SCHEME_BRANDS.iter().any(|brand| {
+        scheme
+            .strip_prefix(brand)
+            .is_some_and(|v| !v.is_empty() && v.bytes().all(|b| b.is_ascii_digit()))
+    });
+    if recognised {
+        Err(Error::Protocol("unsupported QR payload version"))
+    } else {
+        Err(Error::Protocol("unknown QR scheme"))
     }
 }
 

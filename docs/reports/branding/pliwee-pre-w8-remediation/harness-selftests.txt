@@ -1,0 +1,67 @@
+$ bash packaging/tests/harness-selftests.sh
+
+== A missing executable  (Packaging v1: an absent runuser) ==
+ok    REJECTS a tool that is not installed — required tool(s) not installed: omnibridge-definitely-not-a-real-tool-4f9a
+ok    REJECTS one absent tool among several present ones — required tool(s) not installed: omnibridge-definitely-not-a-real-tool-4f9a
+ok    ACCEPTS tools that are installed
+
+== An empty capture  (Packaging v1: an empty tracing capture; L16: one line) ==
+ok    REJECTS an empty capture — the journal is empty; a search over it would prove nothing
+ok    REJECTS a whitespace-only capture — the journal is empty; a search over it would prove nothing
+ok    REJECTS a capture below the minimum — the journal holds 1 line(s), fewer than the 20 this gate needs to be non-vacuous
+ok    ACCEPTS a capture with real content
+ok    ACCEPTS a capture meeting an explicit minimum
+
+== A search that loses a match  (Evidence closure: 225 misses in 300 runs) ==
+ok    PREDICATE contains(), on a sentinel near the start of a 4000-line capture — answers true, as it must
+ok    PREDICATE contains(), on a string the capture does not hold — answers false, as it must
+ok    PREDICATE absent(), on a string that really is absent — answers true, as it must
+ok    PREDICATE absent(), on a string that is present — the privacy-gate direction — answers false, as it must
+ok    REGRESSION: 200/200 searches of a large capture found a present sentinel (the pipe form missed 75%)
+
+== A window that does not cover the operation  (defects 2, 9, 19) ==
+ok    REJECTS a window with no anchor for this operation — the journal does not contain 'transfer=abc12345', so the window does not cover the operation under test; 
+ok    REJECTS an empty window, before any anchor is even looked for — the journal is empty; a search over it would prove nothing
+ok    ACCEPTS a window carrying this operation's own anchor
+
+== A wrong artifact count  (Packaging v1: six built, one shipped) ==
+ok    REJECTS a count that is wrong — installed packages is 1, expected exactly 2
+ok    REJECTS a count that is zero — installed packages is 0, expected exactly 2
+ok    REJECTS a count that could not be read — installed packages is <unreadable>, expected exactly 2
+ok    ACCEPTS a count that is exactly right
+ok    ACCEPTS a count with the whitespace guests add
+
+== A glob that matched nothing  (Packaging v1: L17 skipped its group) ==
+ok    REJECTS a glob that matches nothing — expected exactly 2 file(s) matching '*.rpm' in /tmp/pliwee-selftest.supJc7cW/pkgs, found 0
+ok    REJECTS a glob that matches the wrong number — expected exactly 3 file(s) matching '*.deb' in /tmp/pliwee-selftest.supJc7cW/pkgs, found 2
+ok    REJECTS a directory that does not exist — need_glob: '/tmp/pliwee-selftest.supJc7cW/nope' is not a directory
+ok    ACCEPTS a glob that matches exactly the expected count
+
+== A relative mount path  (Packaging v1: read as a named volume) ==
+ok    REJECTS a relative path used as a mount source — --pkgdir must be an absolute path, got 'artifacts/fedora44' -- a relative path is read as a named volume 
+ok    REJECTS a bare name used as a mount source — --pkgdir must be an absolute path, got 'artifacts' -- a relative path is read as a named volume by podman
+ok    ACCEPTS an absolute mount source
+
+== A directory nothing can write to  (Packaging v1: the subuid case) ==
+ok    REJECTS a directory the harness cannot write to — cannot write to /tmp/pliwee-selftest.supJc7cW/ro; anything staged there would be silently absent
+ok    ACCEPTS a writable directory
+
+== An operation that never ran  (defects 10, 11: the session was torn down) ==
+ok    REJECTS a counter that did not move across the operation — mirrored did not change across the operation (3 -> 3); the operation under test did not run
+ok    REJECTS a before/after observation that is missing — mirrored: a before/after observation is missing, so nothing can be said about whether the operation ran
+ok    ACCEPTS a counter that moved
+
+== A delta that is not the one claimed  (defect 14: 'mirrored now' is not a total) ==
+ok    REJECTS no change where exactly one was expected — mirrored changed by 0, expected exactly 1 (3 -> 3)
+ok    REJECTS two arrivals counted as the one under test — mirrored changed by 2, expected exactly 1 (3 -> 5)
+ok    REJECTS a non-numeric observation — mirrored: before='three' after='4' are not both numbers
+ok    ACCEPTS exactly the expected delta
+ok    ACCEPTS a delta of one from a cleared baseline
+
+== A prompt with no stdin  (Packaging v1 bash -s; defect 4: silent decline) ==
+ok    ACCEPTS a command given a real answer on stdin
+ok    REJECTS a command whose stdin is closed — pliwee pair will read EOF from its prompt and take the default answer, which is usually 'no'
+
+-----------------------------------------------
+40 passed, 0 failed
+exit=0

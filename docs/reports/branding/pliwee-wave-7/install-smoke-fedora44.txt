@@ -1,0 +1,65 @@
+    upgrading from:
+      omnibridge-1.0.0-1.fc44.x86_64.rpm
+      omnibridge-gui-1.0.0-1.fc44.x86_64.rpm
+
+==> rpm packages, registry.fedoraproject.org/fedora:44
+    pliwee-1.1.0-1.fc44.x86_64.rpm
+    pliwee-gui-1.1.0-1.fc44.x86_64.rpm
+    omnibridge-1.1.0-1.fc44.noarch.rpm
+
+Install
+  ok    the packages installed (exit 0)
+  ok    no scriptlet error
+
+The files that must be there (audit §12, R8)
+  ok    installed: /usr/bin/pliweed
+  ok    installed: /usr/bin/pliwee
+  ok    installed: /usr/bin/pliwee-gui
+  ok    installed: /usr/lib/systemd/user/pliweed.service
+  ok    installed: /usr/lib/systemd/user/omnibridged.service
+  ok    installed: /usr/share/icons/hicolor/scalable/apps/io.github.yurisismotto.pliwee.svg
+  ok    installed: /usr/share/applications/io.github.yurisismotto.pliwee.desktop
+  ok    installed: /usr/share/dbus-1/services/io.github.yurisismotto.pliwee.service
+  ok    installed: /usr/share/metainfo/io.github.yurisismotto.pliwee.metainfo.xml
+
+Desktop metadata is valid on the installed system
+  ok    P5: the D-Bus Exec is the absolute installed path
+  ok    the D-Bus Exec target exists and is executable
+
+The systemd user unit (audit §4.3)
+  ok    the installed unit carries the S1/S2 directives and keeps ProtectSystem=strict
+  ok    omnibridged.service is a symlink to pliweed.service (an alias, not a second unit)
+  ok    R7: the unit is installed disabled
+
+Nothing runs, and nothing runs as root
+  ok    installing the package started no daemon
+
+%doc is documentation, not the evidence tree (R10)
+  ok    R10: no docs/ tree installed (0 file(s) under doc/)
+
+The firewall was shipped and not touched (audit §9)
+  ok    the firewalld service definition pliwee.xml is installed
+  ok    the firewalld service definition omnibridge.xml is installed
+
+Upgrade (gate L17, L13)
+  ok    L17: trust-store fixture planted before the upgrade
+  ok    L17: the older build installed (omnibridge 1.0.0-1.fc44)
+  ok    L17: upgraded to 1.1.0-1.fc44 (exit 0)
+  ok    L17: no scriptlet error during the upgrade
+  ok    L13/L17: the trust store is byte- and mode-identical across the upgrade
+  ok    L17: omnibridge was upgraded in place to the transitional 1.1.0
+  ok    L17: after the upgrade omnibridged.service is the alias of pliweed.service
+  ok    L17: the upgrade started no daemon (a root scriptlet cannot reach a user's service manager)
+
+User state survives remove and reinstall (audit §11, R6, gates L21-L23)
+  ok    trust-store fixture planted, owned by tester
+  ok    the before-fingerprint names the trust store
+  ok    remove succeeded (exit 0)
+  ok    L21/L23: the trust store is byte- and mode-identical after remove
+  ok    L25: no package-owned file survived removal
+  ok    L22: reinstall succeeded
+  ok    L22/L23: the trust store is unchanged after reinstall
+  ok    L26: every file in the user's state is owned by the user
+
+-----------------------------------------------
+36 passed, 0 failed

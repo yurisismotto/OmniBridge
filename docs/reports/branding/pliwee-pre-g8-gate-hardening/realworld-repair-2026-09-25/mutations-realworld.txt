@@ -1,0 +1,36 @@
+CAUGHT     RW1 the real defect: apk_fact's substring parser (.*name= matches compileSdkVersionCodename) — 170 passed, 28 failed
+             not ok  (b) no record, declined: nothing recorded and no device action
+             not ok  (b) no record, EOF at the confirmation: the same
+             not ok  N+1 not above N is refused before the confirmation
+CAUGHT     RW2 the real defect: N+1 through -Pandroid.injected.version.code, in the checkout — 186 passed, 12 failed
+             not ok  no APKs given: both built and verified, then the first confirmation declined moves nothing
+             not ok  …N was read as io.github.yurisismotto.pliwee versionCode 1
+             not ok  …N+1 as io.github.yurisismotto.pliwee versionCode 2
+CAUGHT     RW3 the scratch tree is not removed — 193 passed, 5 failed
+             not ok  …the scratch tree is gone
+             not ok  …and the scratch tree is gone, the checkout clean
+             not ok  …the scratch tree is gone
+CAUGHT     RW4 the edit accepts more than one versionCode assignment — 192 passed, 6 failed
+             not ok  two versionCode assignments are refused
+             not ok  …and the file is not edited
+             not ok  a committed source with two versionCode assignments is refused
+CAUGHT     RW5 the built N+1 is only checked to be higher, not to be the edited source — 191 passed, 7 failed
+             not ok  REGRESSION: a build that ignores the raised versionCode (N+1 = 1) is refused
+             not ok  an N+1 that is higher but is not N+1 (not the edited source) is refused
+             not ok  an N APK whose versionCode is not its source's is refused before the edit
+CAUGHT     RW6 uncommitted Android sources are not refused — 195 passed, 3 failed
+             not ok  uncommitted Android sources are refused: N+1 would differ from N in more than versionCode
+             not ok  …before anything is built
+             not ok  an untracked file among them is refused the same way
+CAUGHT     RW7 the known defect: every U2 attempt writes $ev/U2-operator.txt — 192 passed, 6 failed
+             not ok  U2's answers file is named for its attempt
+             not ok  …is read-only
+             not ok  …which the rerun left byte-identical
+CAUGHT     RW8 U2's answers digest is not re-verified — 197 passed, 1 failed
+             not ok  U2 answers altered after a PASS turn it into FAIL
+CAUGHT     RW9 the versionCode edit is made in the checkout, not the scratch copy — 188 passed, 10 failed
+             not ok  no APKs given: both built and verified, then the first confirmation declined moves nothing
+             not ok  …N was read as io.github.yurisismotto.pliwee versionCode 1
+             not ok  …N+1 as io.github.yurisismotto.pliwee versionCode 2
+
+9 of 9 mutations caught

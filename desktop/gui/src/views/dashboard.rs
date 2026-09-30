@@ -1,19 +1,91 @@
 //! The dashboard: what is here, and what can be done with it now.
 
 use adw::prelude::*;
-use omnibridge_control::{DeviceReport, Response};
+use pliwee_control::{DeviceReport, Response};
 
+use super::live::{Binder, Plan};
 use super::Pages;
 use crate::panel::model::{self, Action, PanelModel};
 use crate::widgets::{self, Status, SPACING_MD, SPACING_SM, SPACING_XS};
 use crate::{client, DaemonState};
 
-pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
+/// The devices this page draws a card for: the trusted ones.
+fn devices_of(state: &DaemonState) -> impl Iterator<Item = &DeviceReport> {
+    state
+        .devices
+        .as_deref()
+        .or(state.status.as_ref().map(|s| s.devices.as_slice()))
+        .unwrap_or(&[])
+        .iter()
+        .filter(|d| !d.revoked)
+}
+
+/// What decides which widgets the dashboard has. See [`super::live`].
+///
+/// The devices are compared [`super::without_ages`]: the one age this page
+/// shows — how old a stale battery reading is — is written into its label in
+/// place, and the others are not shown here at all.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct Key {
+    error: Option<String>,
+    devices: Vec<DeviceReport>,
+    /// Each card's fingerprint and whether it is the chosen device.
+    peers: Vec<(String, bool)>,
+    send_file: Action,
+    /// Filename, direction, device and state of the rows the activity card
+    /// shows. Not the byte counts, which this page does not draw.
+    activity: Vec<[String; 4]>,
+}
+
+impl Key {
+    pub(crate) fn of(state: &DaemonState, chosen: Option<&str>) -> Key {
+        let panel = PanelModel::build(state, chosen);
+        Key {
+            error: state.error.clone(),
+            devices: devices_of(state).map(super::without_ages).collect(),
+            peers: panel
+                .peers
+                .iter()
+                .map(|p| (p.fingerprint.clone(), p.selected))
+                .collect(),
+            send_file: panel.send_file,
+            activity: state
+                .transfers
+                .as_deref()
+                .unwrap_or(&[])
+                .iter()
+                .take(ACTIVITY_ROWS)
+                .map(|t| {
+                    [
+                        t.filename.clone(),
+                        t.direction.clone(),
+                        t.device_name.clone(),
+                        t.state.clone(),
+                    ]
+                })
+                .collect(),
+        }
+    }
+}
+
+/// How many transfers the activity card lists.
+const ACTIVITY_ROWS: usize = 5;
+
+pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) -> Plan {
+    pages.dashboard_surface.draw(
+        container,
+        Key::of(state, pages.selection.current().as_deref()),
+        state,
+        |binder| build(container, state, pages, binder),
+    )
+}
+
+fn build(container: &gtk::Box, state: &DaemonState, pages: &Pages, binder: &mut Binder) {
     widgets::clear(container);
 
     if let Some(error) = &state.error {
         container.append(&widgets::security_notice(
-            "The OmniBridge daemon is not reachable",
+            "The Pliwee daemon is not reachable",
             error,
             true,
         ));
@@ -27,6 +99,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
     spacer.set_hexpand(true);
     header.append(&spacer);
     let pair = widgets::secondary_button("Pair device", Some("list-add-symbolic"));
+    binder.focusable("pair", &pair);
     {
         let pages = pages.clone();
         pair.connect_clicked(move |b| {
@@ -37,14 +110,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
     container.append(&header);
 
     // --- devices ---------------------------------------------------------
-    let devices: Vec<&DeviceReport> = state
-        .devices
-        .as_deref()
-        .or(state.status.as_ref().map(|s| s.devices.as_slice()))
-        .unwrap_or(&[])
-        .iter()
-        .filter(|d| !d.revoked)
-        .collect();
+    let devices: Vec<&DeviceReport> = devices_of(state).collect();
 
     if devices.is_empty() {
         container.append(&widgets::empty_state(
@@ -53,6 +119,7 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
              Nothing leaves your network.",
         ));
         let cta = widgets::cta_button("Pair device", Some("camera-photo-symbolic"));
+        binder.focusable("pair", &cta);
         cta.set_halign(gtk::Align::Center);
         {
             let pages = pages.clone();
@@ -74,19 +141,24 @@ pub fn render(container: &gtk::Box, state: &DaemonState, pages: &Pages) {
     let panel = PanelModel::build(state, pages.selection.current().as_deref());
 
     for device in &devices {
-        container.append(&device_card(device, &panel, pages));
+        container.append(&device_card(device, &panel, pages, binder));
     }
 
     // --- activity and quick actions --------------------------------------
     let columns = widgets::row(SPACING_SM);
     columns.set_homogeneous(true);
     columns.append(&activity_card(state));
-    columns.append(&quick_actions_card(&panel));
+    columns.append(&quick_actions_card(&panel, binder));
     container.append(&columns);
 }
 
 /// One device, as the reference draws it.
-fn device_card(device: &DeviceReport, panel: &PanelModel, pages: &Pages) -> gtk::Box {
+fn device_card(
+    device: &DeviceReport,
+    panel: &PanelModel,
+    pages: &Pages,
+    binder: &mut Binder,
+) -> gtk::Box {
     let card = widgets::card();
 
     let top = widgets::row(SPACING_SM);
@@ -127,11 +199,22 @@ fn device_card(device: &DeviceReport, panel: &PanelModel, pages: &Pages) -> gtk:
         gauge.append(&bar);
         // A reading old enough to be history is labelled as such rather than
         // shown as though it were current.
-        gauge.append(&widgets::caption(&if battery.stale {
-            format!("last known · {}s ago", battery.age_secs)
-        } else {
-            battery.charging_state.replace('_', " ")
-        }));
+        let age = widgets::caption(&battery_caption(battery));
+        gauge.append(&age);
+        // The age moves on every poll; the label is updated rather than the
+        // card rebuilt.
+        let fingerprint = device.fingerprint.clone();
+        binder.live(move |state| {
+            let battery = devices_of(state)
+                .find(|d| d.fingerprint == fingerprint)
+                .and_then(|d| d.battery.as_ref());
+            if let Some(battery) = battery {
+                let text = battery_caption(battery);
+                if age.label() != text {
+                    age.set_label(&text);
+                }
+            }
+        });
         top.append(&gauge);
     }
     // Which device the quick actions mean. Stated on the card, and settable
@@ -161,6 +244,7 @@ fn device_card(device: &DeviceReport, panel: &PanelModel, pages: &Pages) -> gtk:
             "Use {} for quick actions",
             device.device_name
         ))]);
+        binder.focusable(format!("{}/use", device.fingerprint), &use_this);
         let fingerprint = device.fingerprint.clone();
         let pages = pages.clone();
         use_this.connect_clicked(move |_| pages.choose_peer(&fingerprint));
@@ -231,6 +315,14 @@ fn device_card(device: &DeviceReport, panel: &PanelModel, pages: &Pages) -> gtk:
     card
 }
 
+fn battery_caption(battery: &pliwee_control::BatteryReport) -> String {
+    if battery.stale {
+        format!("last known · {}s ago", battery.age_secs)
+    } else {
+        battery.charging_state.replace('_', " ")
+    }
+}
+
 fn platform_icon(platform: &str) -> &'static str {
     let p = platform.to_ascii_lowercase();
     if p.contains("android") || p.contains("ios") {
@@ -243,7 +335,7 @@ fn platform_icon(platform: &str) -> &'static str {
 /// What is moving right now.
 ///
 /// The reference calls this "Recent activity" and shows timestamps going back
-/// half an hour. OmniBridge keeps no such log: the daemon reports the transfers
+/// half an hour. Pliwee keeps no such log: the daemon reports the transfers
 /// of *this run* and nothing is written to disk. So this shows exactly that,
 /// and says so, rather than implying a history that does not exist.
 fn activity_card(state: &DaemonState) -> gtk::Box {
@@ -256,7 +348,7 @@ fn activity_card(state: &DaemonState) -> gtk::Box {
             "Nothing has moved since the daemon started.",
         ));
     } else {
-        for t in transfers.iter().take(5) {
+        for t in transfers.iter().take(ACTIVITY_ROWS) {
             let r = widgets::row(SPACING_XS);
             let sending = t.direction.eq_ignore_ascii_case("outgoing")
                 || t.direction.eq_ignore_ascii_case("sending");
@@ -290,7 +382,7 @@ fn activity_card(state: &DaemonState) -> gtk::Box {
         }
     }
     card.append(&widgets::caption(
-        "This run only. OmniBridge keeps no transfer history on disk.",
+        "This run only. Pliwee keeps no transfer history on disk.",
     ));
     card
 }
@@ -303,12 +395,13 @@ fn activity_card(state: &DaemonState) -> gtk::Box {
 /// front of it, and the trust store's order is not stable. The destination is
 /// now [`PanelModel::send_file`], the same value the Quick Panel's button
 /// carries, resolved from the fingerprint the person chose.
-fn quick_actions_card(panel: &PanelModel) -> gtk::Box {
+fn quick_actions_card(panel: &PanelModel, binder: &mut Binder) -> gtk::Box {
     let card = widgets::card();
     card.append(&widgets::section_label("Quick actions"));
 
     let send = widgets::secondary_button("Send a file…", Some("document-send-symbolic"));
     send.set_sensitive(panel.send_file.is_ready());
+    binder.focusable("send", &send);
     match &panel.send_file {
         Action::Ready { peer_name, .. } => {
             let text = format!("Send a file to {peer_name}");
@@ -354,7 +447,7 @@ fn choose_and_send_file(button: &gtk::Button, action: &Action) {
                 // dashboard picks the transfer up on its next refresh, so only an
                 // outright refusal needs reporting here.
                 if let Ok(Response::Error { message }) = reply {
-                    eprintln!("omnibridge-gui: could not offer the file: {message}");
+                    eprintln!("pliwee-gui: could not offer the file: {message}");
                 }
             });
         },

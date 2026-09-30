@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# TEST ONLY — serves https://fixture.invalid/PATH from $FAKE_WEB/PATH (a
+# directory URL from its index.html), like `curl -fsSL [-o OUT]`. Every
+# download is logged to $FAKE_WEB.calls; a missing file is curl's exit 22.
+out=""; url=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -o) out="$2"; shift 2 ;;
+        --retry|--retry-delay|--connect-timeout|--max-time|-C) shift 2 ;;
+        -*) shift ;;
+        *) url="$1"; shift ;;
+    esac
+done
+echo "$url" >> "$FAKE_WEB.calls"
+case "$url" in https://fixture.invalid/*) p="$FAKE_WEB/${url#https://fixture.invalid/}" ;; *) echo "curl: (6) not a fixture: $url" >&2; exit 6 ;; esac
+case "$p" in */) p="${p}index.html" ;; esac
+[ -f "$p" ] || { echo "curl: (22) The requested URL returned error: 404" >&2; exit 22; }
+if [ -n "$out" ]; then cp "$p" "$out"; else cat "$p"; fi

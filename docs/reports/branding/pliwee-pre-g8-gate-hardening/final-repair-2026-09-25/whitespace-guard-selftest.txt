@@ -1,0 +1,10 @@
+ok    ACCEPTS clean text, recursively, with a binary file beside it
+ok    REJECTS a line ending in a space
+ok    REJECTS a line ending in a tab
+ok    REJECTS a clean directory scanned together with a dirty one
+ok    REJECTS an empty directory: nothing scanned is not a pass
+ok    REJECTS a directory holding only binary files
+ok    REJECTS a path that does not exist
+ok    counts every offending line exactly, and names file and line
+
+8 passed, 0 failed

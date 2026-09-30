@@ -8,13 +8,13 @@
 
 use std::collections::BTreeSet;
 
-use omnibridge_core::capability::CapabilityRegistry;
-use omnibridge_core::notifications::{
+use pliwee_core::capability::CapabilityRegistry;
+use pliwee_core::notifications::{
     self as notif, PeerRoles, Rejection, Role, RolesRejection, Snapshot, SnapshotRejection,
     SnapshotStep,
 };
-use omnibridge_proto::v1::capabilities as pb;
-use omnibridge_proto::Message;
+use pliwee_proto::v1::capabilities as pb;
+use pliwee_proto::Message;
 
 const SYNTHETIC_DEVICE: &str = "0123456789abcdef0123456789abcdef";
 
@@ -74,7 +74,7 @@ fn the_capability_id_is_the_canonical_one() {
 
 /// N0 defines the id and registers nothing. The Android source (N1) and the
 /// Linux sink (N2) add the two implementations; until then the id must never
-/// reach a `HELLO`, or a peer would be told OmniBridge can mirror notifications
+/// reach a `HELLO`, or a peer would be told Pliwee can mirror notifications
 /// when no code exists to do it.
 #[test]
 fn nothing_advertises_notifications_v1_after_n0() {
@@ -297,7 +297,7 @@ fn every_body_round_trips() {
     }
 }
 
-/// Posted and Updated are one message on purpose: no platform OmniBridge targets
+/// Posted and Updated are one message on purpose: no platform Pliwee targets
 /// has a separate update operation, so the same identity carrying different
 /// content is the whole update mechanism.
 #[test]
@@ -563,9 +563,7 @@ fn optional_digests_are_absent_or_exact() {
 /// the ceiling is refused for being past the ceiling.
 #[test]
 fn the_message_ceiling_is_enforced_and_sits_below_the_frame_limit() {
-    assert!(
-        (notif::MAX_NOTIFICATION_BYTES as u64) < omnibridge_core::framing::MAX_FRAME_LEN as u64
-    );
+    assert!((notif::MAX_NOTIFICATION_BYTES as u64) < pliwee_core::framing::MAX_FRAME_LEN as u64);
 
     let control = pb::NotificationControl {
         body: Some(pb::notification_control::Body::Upsert(upsert(0x16))),
@@ -888,7 +886,7 @@ fn a_dismiss_for_a_third_devices_notification_is_representable_and_refusable() {
 ///
 /// If this changes, the wire format changed. That is a protocol decision, not
 /// a test to update — see ADR-0016 and the field-number pins in
-/// `omnibridge-proto`'s `notifications_schema` test.
+/// `pliwee-proto`'s `notifications_schema` test.
 pub const CANONICAL_UPSERT_HEX: &str = "\
 12bd010a10000102030405060708090a0b0c0d0e0f1220303132333435363738396162636465663031323334353637383961626364656\
 61a136578616d706c652e666978747572652e617070220b46697874757265204170702a0d46495854555245205449544c45320c464958\
@@ -953,7 +951,7 @@ fn the_shared_vector_decodes_and_validates() {
 //
 // ADR-0016 §12 puts the derivation in the **source platform adapter**, because
 // it needs that device's secret, and N1 implements it in Kotlin. Nothing here
-// implements Android source behaviour in portable code: `omnibridge_core::
+// implements Android source behaviour in portable code: `pliwee_core::
 // notifications` still defines only the type, the width and the validation,
 // and `NotificationId` is deliberately opaque.
 //
@@ -973,10 +971,18 @@ fn the_shared_vector_decodes_and_validates() {
 use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
 
-/// ADR-0016 §1. Pinned as a constant so a change to it is a visible diff.
-const ID_DOMAIN: &str = "omnibridge/notifications.v1/id/v1";
-/// [02 §6.5].
-const GROUP_DOMAIN: &str = "omnibridge/notifications.v1/group/v1";
+/// ADR-0016 §1, with ADR-0020 §D4's canonical domain. Pinned as a constant
+/// so a change to it is a visible diff.
+///
+/// Canonical only: notification ids are derived on the source device alone
+/// and are opaque to the desktop, so there is no legacy form to accept and
+/// none is built. The values below were computed independently by
+/// `docs/reports/branding/pliwee-wave-5/pliwee_domain_kats.py`; the
+/// pre-Wave-5 `omnibridge/…` values (3c8effce…, b9f8d940…, 3561179d…,
+/// e88bcb16…) are recorded in that wave's report.
+const ID_DOMAIN: &str = "pliwee/notifications.v1/id/v1";
+/// [02 §6.5], canonical domain (ADR-0020 §D4).
+const GROUP_DOMAIN: &str = "pliwee/notifications.v1/group/v1";
 
 /// The same 32 bytes `NotificationSecretTest` uses. Obviously not from a
 /// CSPRNG, and therefore obviously a test.
@@ -1025,7 +1031,7 @@ fn the_notification_id_derivation_matches_the_android_vector() {
             &fixture_secret(),
             FIXTURE_PLATFORM_KEY
         )),
-        "3c8effce6feb1582a65e100aeea1a810",
+        "c66b87d0c2045df6dda2925297262cb8",
     );
 }
 
@@ -1033,7 +1039,7 @@ fn the_notification_id_derivation_matches_the_android_vector() {
 fn the_group_id_derivation_matches_the_android_vector() {
     assert_eq!(
         to_hex(&derive_group_id("0|example.fixture.app|g:chat")),
-        "b9f8d940e134bccb",
+        "74935dada71d629f",
     );
 }
 
@@ -1051,11 +1057,11 @@ fn a_different_key_or_secret_derives_a_different_id() {
 
     assert_eq!(
         to_hex(&derive_notification_id(&secret, other_key)),
-        "3561179daf1a26a8a047f3f44758eaf3",
+        "889ab0ae9dd2c6ed9a4529e54f68ce1e",
     );
     assert_eq!(
         to_hex(&derive_notification_id(&other_secret, FIXTURE_PLATFORM_KEY)),
-        "e88bcb16b74b498c91090bc76fc3b2d9",
+        "4cf44891803581d358fe6043497e1d98",
     );
 }
 

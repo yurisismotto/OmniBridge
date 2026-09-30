@@ -112,8 +112,10 @@ impl Destination {
         Self(Arc::new(crate::destination::UnixDownloadSink::new(dir)))
     }
 
-    /// The platform-derived default: `<downloads>/OmniBridge`.
+    /// The platform-derived default: `<downloads>/Pliwee`.
     pub fn default_location() -> Self {
-        Self::new(crate::destination::default_download_dir().join("OmniBridge"))
+        Self::new(
+            crate::destination::default_download_dir().join(crate::destination::DOWNLOAD_SUBDIR),
+        )
     }
 }

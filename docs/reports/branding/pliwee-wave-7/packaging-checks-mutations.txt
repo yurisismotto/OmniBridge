@@ -1,0 +1,16 @@
+REJECTED  M1-core-obsoletes (rc=1): the core package declares Obsoletes:; an obsoleted omnibridge 1.0.0 runs remove-user-units ($1 = 0)
+REJECTED  M2-gui-bound (rc=1): pliwee-gui does not declare exactly 'Obsoletes: omnibridge-gui < 1.1.0'
+REJECTED  M3-no-alias-rpm (rc=1): the spec does not ship the omnibridged.service alias symlink (and list it in %files)
+REJECTED  M4-no-alias-deb (rc=1): debian/pliwee.links does not ship exactly the omnibridged.service alias
+REJECTED  M5-legacy-fw-edited (rc=1): omnibridge-firewalld.xml changed (sha256 da1ad051c0706555f4c0b710d0ab32340691a3a37cefe85951a56ac7badbd49e); it must stay as shipped
+REJECTED  M6-legacy-fw-port (rc=1): omnibridge-firewalld.xml declares 'tcp/55433'; Pliwee needs exactly tcp/55432
+REJECTED  M7-deb-breaks (rc=1): debian pliwee does not declare exactly 'Breaks: omnibridge (<< 1.1.0~)'
+REJECTED  M8-deb-provides (rc=1): debian pliwee Provides: omnibridge; the name belongs to the transitional package
+REJECTED  M9-deb-no-transitional (rc=1): debian transitional omnibridge-gui is missing, or does not depend on pliwee-gui
+REJECTED  M10-unit-runtime (rc=1): S2: RuntimeDirectory=pliwee is absent; the control socket has no directory
+REJECTED  M11-unit-alias-directive (rc=1): the unit declares Alias=; the alias is shipped as a symlink, and an Alias= would only act on enable
+REJECTED  M12-metainfo-replaces (rc=1): the metainfo does not <replace> io.github.yurisismotto.omnibridge
+REJECTED  M13-workspace-version (rc=1): the workspace version 1.0.0 is below the first Pliwee version 1.1.0
+REJECTED  M14-transitional-requires (rc=1): the transitional omnibridge package is missing or does not require the exact pliwee build
+final tree check:
+129 passed, 0 failed

@@ -2,7 +2,7 @@
 //!
 //! The companion to `core/tests/parser_fuzz.rs`, which covers framing, the
 //! protobuf decoder and device names. This is a separate file because
-//! `omnibridge-core` does not depend on a capability and must not start, so
+//! `pliwee-core` does not depend on a capability and must not start, so
 //! the generator below is duplicated rather than the crate layering bent to
 //! share a thirty-line test helper.
 //!
@@ -18,7 +18,7 @@
 //! fuzzing: `cargo-fuzz` needs a nightly toolchain and there is no `rustup` on
 //! the certification host. A failure prints its seed and reruns identically.
 
-use omnibridge_capability_files::filename;
+use pliwee_capability_files::filename;
 
 // ---------------------------------------------------------------------------
 // A deterministic generator
@@ -99,7 +99,7 @@ fn sec_fuzz_01_no_generated_filename_escapes_its_directory() {
                 // The property a traversal actually has to defeat: joining the
                 // accepted name to a base must stay under the base, and must
                 // add exactly one component.
-                let base = std::path::Path::new("/tmp/omnibridge-downloads");
+                let base = std::path::Path::new("/tmp/pliwee-downloads");
                 let joined = base.join(&safe);
                 assert!(
                     joined.starts_with(base),

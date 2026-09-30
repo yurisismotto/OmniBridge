@@ -2,7 +2,7 @@
 //!
 //! # Why this is not the envelope path
 //!
-//! Nothing here goes through `omnibridge_core::framing`, the replay guard, the
+//! Nothing here goes through `pliwee_core::framing`, the replay guard, the
 //! sequence counter or the capability dispatch table. That machinery exists
 //! for a low-rate stream of small control messages, and ADR-0012 records why
 //! pushing a multi-gigabyte transfer through it is the wrong shape. What is
@@ -20,7 +20,7 @@ use std::io;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
-use omnibridge_proto::Message;
+use pliwee_proto::Message;
 use sha2::{Digest, Sha256};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::sync::watch;
@@ -261,7 +261,7 @@ pub async fn hash_file(path: &std::path::Path) -> io::Result<(u64, [u8; 32])> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use omnibridge_proto::v1::capabilities as pb;
+    use pliwee_proto::v1::capabilities as pb;
 
     fn progress() -> Arc<AtomicU64> {
         Arc::new(AtomicU64::new(0))

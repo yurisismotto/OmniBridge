@@ -1,0 +1,12 @@
+# 2026-09-25T19:26:57Z  commit cba16616cb8d9f13c58080343c378e6e7d3cb3f0 + working tree
+$ packaging/tests/evidence-whitespace-check.sh   (defaults: the report and its evidence directory, this one included)
+scanned 36 text file(s), skipped 0 binary; 0 line(s) with trailing horizontal whitespace
+PASS
+exit 0
+$ git diff --check
+exit 0
+$ git status --porcelain
+ M docs/reports/branding/PLIWEE-PRE-G8-GATE-HARDENING.md
+ M packaging/tests/pre-g8-manual-gates-selftests.sh
+ M packaging/tests/pre-g8-manual-gates.sh
+?? docs/reports/branding/pliwee-pre-g8-gate-hardening/realworld-repair-2026-09-25/

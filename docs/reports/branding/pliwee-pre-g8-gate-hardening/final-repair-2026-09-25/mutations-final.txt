@@ -1,0 +1,17 @@
+CAUGHT     FM1 the audited defect: W6-COMPONENT-UPGRADE writes RUNNING before its first confirmation — 119 passed, 15 failed
+             not ok  (b) no record, declined: nothing recorded and no device action
+             not ok  …no record file exists
+             not ok  …and the gate is still PENDING
+CAUGHT     FM2 a preparation problem records a FAIL instead of refusing — 128 passed, 6 failed
+             not ok  N+1 not above N is refused before the confirmation
+             not ok  …and recorded nothing
+             not ok  a run whose shortcut was not pinned is a measured FAIL
+CAUGHT     FM3 a later declined confirmation claims the gate kept its previous state — 133 passed, 1 failed
+             not ok  …leaving THIS attempt's record open (RUNNING), and says so
+CAUGHT     FM4 any gate opens its attempt record before its gate function asks — 87 passed, 47 failed
+             not ok  …and the gate is still PENDING
+             not ok  U6 declined with no record: nothing recorded, nothing run
+             not ok  …and U6 is still PENDING
+
+4 of 4 mutations caught
+rc=0

@@ -7,11 +7,9 @@
 mod common;
 
 use common::*;
-use omnibridge_capability_notifications::backend::{
-    CloseReason, SinkCapabilities, SinkError, Urgency,
-};
-use omnibridge_capability_notifications::{limits, LockPolicy, NotificationPolicy};
-use omnibridge_proto::v1::capabilities as pb;
+use pliwee_capability_notifications::backend::{CloseReason, SinkCapabilities, SinkError, Urgency};
+use pliwee_capability_notifications::{limits, LockPolicy, NotificationPolicy};
+use pliwee_proto::v1::capabilities as pb;
 
 // ---------------------------------------------------------------------------
 // Create, update, remove
@@ -693,9 +691,9 @@ async fn a_server_without_body_markup_gets_the_text_unescaped() {
     // The capability set is read once at construction, so a fresh manager is
     // needed for the change to be the one under test. Rather than reaching
     // into the manager, this asserts the rule at the level it is decided.
-    let escaped = omnibridge_capability_notifications::text::body("tea & biscuits", false);
+    let escaped = pliwee_capability_notifications::text::body("tea & biscuits", false);
     assert_eq!(escaped, "tea & biscuits");
-    let escaped = omnibridge_capability_notifications::text::body("tea & biscuits", true);
+    let escaped = pliwee_capability_notifications::text::body("tea & biscuits", true);
     assert_eq!(escaped, "tea &amp; biscuits");
     let _ = &mut h;
 }
@@ -704,7 +702,7 @@ async fn a_server_without_body_markup_gets_the_text_unescaped() {
 async fn an_oversized_field_is_refused_rather_than_truncated_by_the_receiver() {
     let mut h = Harness::start().await;
     let mut message = upsert(1, "Ana", "x");
-    message.body = "y".repeat(omnibridge_core::notifications::MAX_BODY_BYTES + 1);
+    message.body = "y".repeat(pliwee_core::notifications::MAX_BODY_BYTES + 1);
 
     h.send_upsert(message).await;
     h.expect_outcome(pb::NotificationOutcome::TooLarge).await;

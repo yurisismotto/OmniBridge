@@ -31,6 +31,11 @@
 //! * Binding to a fresh server **nonce** means a proof cannot be replayed
 //!   even by the same device on a later connection.
 //!
+//! `domain_separator` comes from the connection's identity [`Profile`]:
+//! `pliwee/pairing-proof/v1` or, on a legacy connection,
+//! `omnibridge/pairing-proof/v1` (ADR-0020 §D4). A proof is verified under
+//! the negotiated profile's domain only; there is no fallback to the other.
+//!
 //! Length-prefixing every field prevents a concatenation ambiguity where two
 //! different field splits hash to the same message.
 //!
@@ -46,11 +51,9 @@ use subtle::ConstantTimeEq;
 
 use crate::error::{Error, PairingError, Result};
 use crate::fingerprint::Fingerprint;
+use crate::profile::Profile;
 
 type HmacSha256 = Hmac<Sha256>;
-
-const PROOF_DOMAIN: &[u8] = b"omnibridge/pairing-proof/v1";
-const CONFIRM_DOMAIN: &[u8] = b"omnibridge/pairing-confirm/v1";
 
 /// 160 bits. Comfortably beyond brute force even without rate limiting, and
 /// it still encodes to a QR code that a phone camera reads instantly.
@@ -123,25 +126,40 @@ impl std::fmt::Debug for PairingToken {
 
 /// Computes the pairing proof.
 ///
-/// `responder` is the device that displayed the QR (the desktop);
+/// `profile` is the negotiated profile of the connection the proof travels
+/// on; `responder` is the device that displayed the QR (the desktop);
 /// `initiator` is the device that scanned it (the phone).
 pub fn compute_proof(
+    profile: Profile,
     token: &PairingToken,
     responder: &Fingerprint,
     initiator: &Fingerprint,
     nonce: &[u8],
 ) -> [u8; 32] {
-    mac(PROOF_DOMAIN, token, responder, initiator, nonce)
+    mac(
+        profile.pairing_proof_domain(),
+        token,
+        responder,
+        initiator,
+        nonce,
+    )
 }
 
 /// Computes the responder's confirmation, proving it also knew the token.
 pub fn compute_confirmation(
+    profile: Profile,
     token: &PairingToken,
     responder: &Fingerprint,
     initiator: &Fingerprint,
     nonce: &[u8],
 ) -> [u8; 32] {
-    mac(CONFIRM_DOMAIN, token, responder, initiator, nonce)
+    mac(
+        profile.pairing_confirm_domain(),
+        token,
+        responder,
+        initiator,
+        nonce,
+    )
 }
 
 fn mac(
@@ -231,8 +249,14 @@ impl PairingSession {
     /// Every rejection path is checked *before* the MAC comparison so that an
     /// expired or exhausted session costs an attacker nothing to discover and
     /// gives them no oracle.
+    ///
+    /// `profile` is the profile the connection carrying the proof
+    /// negotiated. The proof is checked under that profile's domain and no
+    /// other; a proof computed under the other profile's domain is a failed
+    /// attempt like any wrong proof.
     pub fn verify_and_consume(
         &mut self,
+        profile: Profile,
         responder: &Fingerprint,
         initiator: &Fingerprint,
         nonce: &[u8],
@@ -248,7 +272,7 @@ impl PairingSession {
             return Err(PairingError::RateLimited);
         }
 
-        let expected = compute_proof(&self.token, responder, initiator, nonce);
+        let expected = compute_proof(profile, &self.token, responder, initiator, nonce);
         if !verify_proof(&expected, received_proof) {
             self.failed_attempts += 1;
             return Err(PairingError::BadProof);
@@ -256,6 +280,7 @@ impl PairingSession {
 
         self.consumed = true;
         Ok(compute_confirmation(
+            profile,
             &self.token,
             responder,
             initiator,

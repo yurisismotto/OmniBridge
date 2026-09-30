@@ -1,0 +1,168 @@
+   Compiling tokio v1.53.1
+   Compiling tokio-rustls v0.26.4
+   Compiling pliwee-core v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/core)
+   Compiling pliwee-capability-files v1.0.0 (/home/yuri/Sandbox/OmniBridge/desktop/capabilities/files)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.31s
+     Running unittests src/lib.rs (target/debug/deps/pliwee_capability_files-38b621fdc2c4b73b)
+
+running 74 tests
+test auth::tests::a_challenge_must_be_exactly_thirty_two_bytes ... ok
+test auth::tests::a_challenge_never_prints_its_contents ... ok
+test auth::tests::a_correct_mac_verifies ... ok
+test auth::tests::a_different_challenge_does_not_verify ... ok
+test auth::tests::a_mac_from_one_profile_does_not_verify_under_the_other ... ok
+test auth::tests::a_proof_cannot_be_replayed_by_a_different_dialer ... ok
+test auth::tests::a_proof_for_one_transfer_does_not_authorize_another ... ok
+test auth::tests::a_truncated_or_padded_mac_is_refused ... ok
+test auth::tests::a_proof_is_worthless_against_a_different_acceptor ... ok
+test auth::tests::generated_challenges_and_ids_differ_every_time ... ok
+test auth::tests::the_domains_are_exactly_the_approved_ones ... ok
+test auth::tests::swapping_the_two_fingerprints_changes_the_mac ... ok
+test auth::tests::the_legacy_mac_matches_the_published_cross_language_vector ... ok
+test auth::tests::the_pliwee_mac_matches_the_independent_cross_language_vector ... ok
+test destination::tests::a_double_extension_keeps_only_the_last_part ... ok
+test destination::tests::a_dotfile_keeps_its_leading_dot_when_numbered ... ok
+test destination::tests::a_free_name_is_used_as_is ... ok
+test destination::tests::a_missing_directory_has_no_legacy_partial_files ... ok
+test destination::tests::a_duplicate_name_is_numbered_and_never_overwrites ... ok
+test destination::tests::a_name_with_no_extension_is_numbered_at_the_end ... ok
+test destination::tests::a_symlink_planted_in_the_directory_is_not_followed ... ok
+test destination::tests::a_temp_file_is_hidden_marked_partial_and_private ... ok
+test destination::tests::promotion_is_a_rename_that_leaves_no_partial_file_behind ... ok
+test destination::tests::legacy_partial_files_are_listed_and_never_touched ... ok
+test destination::tests::the_default_location_is_derived_from_the_environment ... ok
+test destination::tests::reserving_creates_the_file_so_a_racing_transfer_cannot_take_it ... ok
+test destination::tests::the_directory_is_created_private ... ok
+test destination::tests::the_pliwee_subdirectory_is_used ... ok
+test destination::tests::the_temp_file_sits_beside_its_destination_so_the_rename_is_atomic ... ok
+test filename::tests::a_colon_cannot_survive_and_no_alternate_data_stream_can_be_named ... ok
+test filename::tests::a_leading_dot_is_allowed ... ok
+test filename::tests::a_long_name_is_capped_on_a_character_boundary_keeping_the_extension ... ok
+test filename::tests::a_name_that_is_only_a_path_is_rejected ... ok
+test filename::tests::a_nul_byte_cannot_survive ... ok
+test filename::tests::a_right_to_left_override_cannot_disguise_an_extension ... ok
+test filename::tests::a_long_name_with_no_extension_is_still_capped ... ok
+test filename::tests::a_unix_traversal_keeps_only_the_basename ... ok
+test filename::tests::a_windows_traversal_keeps_only_the_basename ... ok
+test filename::tests::an_absolute_path_keeps_only_the_basename ... ok
+test filename::tests::an_ordinary_name_is_kept_verbatim ... ok
+test filename::tests::control_characters_are_stripped ... ok
+test filename::tests::an_absurd_extension_is_not_allowed_to_eat_the_whole_budget ... ok
+test filename::tests::dot_directories_are_rejected ... ok
+test filename::tests::invisible_format_characters_go_even_when_they_are_not_bidi ... ok
+test filename::tests::every_bidi_control_goes_not_only_the_famous_one ... ok
+test filename::tests::ordinary_unicode_is_untouched ... ok
+test filename::tests::the_console_handles_are_reserved_too ... ok
+test filename::tests::the_result_never_contains_a_separator ... ok
+test filename::tests::the_result_is_always_valid_utf8_and_carries_nothing_invisible ... ok
+test filename::tests::the_windows_illegal_set_is_stripped ... ok
+test filename::tests::trailing_dots_and_spaces_go ... ok
+test filename::tests::windows_device_names_are_rejected ... ok
+test stream::tests::a_frame_round_trips ... ok
+test stream::tests::a_stream_longer_than_its_offer_is_refused ... ok
+test stream::tests::a_truncated_stream_fails_rather_than_producing_a_short_file ... ok
+test stream::tests::a_zero_byte_file_is_a_valid_transfer ... ok
+test stream::tests::a_zero_length_frame_is_refused ... ok
+test stream::tests::an_oversized_length_prefix_is_refused_before_allocating ... ok
+test stream::tests::an_exact_transfer_hashes_what_it_wrote ... ok
+test stream::tests::cancelling_stops_the_copy ... ok
+test stream::tests::progress_is_reported_as_the_copy_runs ... ok
+test stream::tests::the_send_half_refuses_to_ship_a_file_shorter_than_its_offer ... ok
+test transfer::tests::a_receiver_must_verify_before_completing ... ok
+test transfer::tests::a_transfer_cannot_go_backwards ... ok
+test transfer::tests::a_transfer_id_is_exactly_sixteen_bytes ... ok
+test transfer::tests::a_transfer_id_is_never_parsed_from_a_prefix_or_from_rubbish ... ok
+test transfer::tests::a_transfer_id_never_formats_in_full ... ok
+test transfer::tests::a_transfer_id_round_trips_through_hex ... ok
+test transfer::tests::every_failure_reason_has_a_distinct_machine_code ... ok
+test transfer::tests::giving_up_is_allowed_from_every_live_state ... ok
+test transfer::tests::no_failure_reason_can_leak_local_detail ... ok
+test transfer::tests::nothing_leaves_a_terminal_state ... ok
+test transfer::tests::reason_codes_round_trip_across_the_wire ... ok
+test stream::tests::hashing_a_file_matches_hashing_its_bytes ... ok
+
+test result: ok. 74 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/pliwee_core-1832083c7cfed464)
+
+running 25 tests
+test clipboard_policy::tests::automatic_directions_are_off_by_default ... ok
+test clipboard_policy::tests::denied_closes_every_direction ... ok
+test clipboard_policy::tests::describe_is_stable_and_carries_no_content ... ok
+test clipboard_policy::tests::withdrawing_a_direction_defeats_a_stale_auto_flag ... ok
+test clipboard_policy::tests::missing_fields_deserialize_to_the_documented_defaults ... ok
+test notification_policy::tests::an_unknown_lock_policy_spelling_is_refused_rather_than_guessed ... ok
+test notification_policy::tests::denied_closes_everything_including_the_lock_policy ... ok
+test notification_policy::tests::describe_is_stable_and_carries_no_content ... ok
+test notification_policy::tests::missing_fields_deserialize_to_the_documented_defaults ... ok
+test notification_policy::tests::withdrawing_mirroring_defeats_a_stale_dismiss_flag ... ok
+test notification_policy::tests::the_defaults_are_the_documented_ones ... ok
+test platform::unix_fs::tests::a_secret_name_can_never_escape_the_data_directory ... ok
+test platform::unix_fs::tests::a_loose_mode_is_a_hard_error_rather_than_a_warning ... ok
+test platform::unix_fs::tests::a_write_replaces_atomically_and_leaves_no_temp_behind ... ok
+test platform::unix_fs::tests::a_written_secret_reads_back_and_is_owner_only ... ok
+test platform::unix_fs::tests::an_absent_secret_is_none_and_not_an_error ... ok
+test platform::unix_fs::tests::an_unreadable_secret_is_permission_denied_and_never_absence ... ok
+test platform::unix_fs::tests::an_unreadable_state_file_is_permission_denied_and_never_absence ... ok
+test platform::unix_fs::tests::harden_makes_a_loose_directory_private ... ok
+test session::dispatch_tests::a_saturated_session_still_shuts_down ... ok
+test session::dispatch_tests::inbound_capability_messages_reach_the_handler_in_wire_order ... ok
+test session::dispatch_tests::a_handler_may_reply_more_times_than_the_outbound_queue_is_deep ... ok
+test session::dispatch_tests::inbound_dispatch_continues_while_the_outbound_queue_is_saturated ... ok
+test session::dispatch_tests::replies_keep_their_order_under_queue_pressure ... ok
+test session::dispatch_tests::outbound_pressure_on_one_session_does_not_affect_another ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.01s
+
+     Running tests/notifications_protocol.rs (target/debug/deps/notifications_protocol-3ed6a497d1c1e851)
+
+running 47 tests
+test a_bad_width_identity_is_not_answered ... ok
+test a_bracketed_snapshot_completes_with_exactly_what_it_named ... ok
+test a_derived_id_satisfies_the_portable_contract ... ok
+test a_different_key_or_secret_derives_a_different_id ... ok
+test a_dismiss_for_a_third_devices_notification_is_representable_and_refusable ... ok
+test a_dismiss_request_names_only_an_opaque_notification ... ok
+test a_mismatched_sync_id_cannot_complete_a_snapshot ... ok
+test a_duplicate_item_inside_a_snapshot_is_idempotent ... ok
+test a_peer_with_the_capability_but_no_role_enables_no_direction ... ok
+test a_role_is_removed_by_not_naming_it ... ok
+test a_nested_begin_abandons_the_open_snapshot_without_applying_it ... ok
+test a_stale_epoch_cannot_re_widen_a_narrowed_set ... ok
+test a_sync_id_of_the_wrong_width_is_refused ... ok
+test absent_roles_mean_no_roles ... ok
+test an_abandoned_snapshot_never_becomes_authoritative ... ok
+test an_empty_control_body_is_refused ... ok
+test an_empty_announcement_narrows_to_nothing ... ok
+test an_unknown_future_role_is_ignored_not_granted ... ok
+test an_unspecified_phase_cannot_complete_a_snapshot ... ok
+test an_update_is_the_same_identity_with_different_content ... ok
+test dismissal_has_an_idempotent_answer ... ok
+test end_without_begin_is_refused ... ok
+test epoch_zero_is_unset_and_refused ... ok
+test every_body_round_trips ... ok
+test identifiers_are_never_truncated_into_collisions ... ok
+test invalid_utf8_never_decodes ... ok
+test identity_is_independent_of_content ... ok
+test limits_are_measured_in_bytes_not_characters ... ok
+test negotiation_semantics_are_unchanged_for_existing_capabilities ... ok
+test nothing_advertises_notifications_v1_after_n0 ... ok
+test nul_is_refused_in_every_string_field ... ok
+test optional_digests_are_absent_or_exact ... ok
+test origin_device_id_is_not_identity ... ok
+test roles_are_added_and_then_updated ... ok
+test the_canonical_upsert_encodes_to_the_shared_vector ... ok
+test text_fields_accept_exactly_the_limit_and_refuse_one_more ... ok
+test the_capability_id_is_the_canonical_one ... ok
+test the_group_id_derivation_matches_the_android_vector ... ok
+test the_length_prefix_makes_concatenation_unambiguous ... ok
+test the_message_ceiling_is_enforced_and_sits_below_the_frame_limit ... ok
+test the_notification_id_is_exactly_sixteen_bytes ... ok
+test the_notification_id_derivation_matches_the_android_vector ... ok
+test the_snapshot_holds_no_content ... ok
+test the_shared_vector_decodes_and_validates ... ok
+test there_is_no_wire_value_for_importance_none ... ok
+test unknown_enum_values_resolve_conservatively ... ok
+test upserts_outside_a_snapshot_are_live_traffic ... ok
+
+test result: ok. 47 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

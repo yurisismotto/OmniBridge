@@ -1,0 +1,12 @@
+# mutation run: #B3E049FB->#B2E049FB in ic_launcher_foreground.xml; manifest listener renamed back to .notifications.OmniBridgeNotificationListener; both restored (cmp) afterwards
+> Task :app:testDebugUnitTest FAILED
+BrandingResourcesTest > the coloured layers carry every master gradient stop and radial transform FAILED
+    java.lang.AssertionError at BrandingResourcesTest.kt:425
+ManifestComponentsTest > every component resolves to a compiled class in the pliwee package FAILED
+    java.lang.AssertionError at ManifestComponentsTest.kt:103
+ManifestComponentsTest > the persisted roles are attached to the frozen components FAILED
+ManifestComponentsTest > the component snapshot is exactly the frozen set FAILED
+    java.lang.AssertionError at ManifestComponentsTest.kt:92
+18 tests completed, 4 failed
+BUILD FAILED in 11s
+exit=1

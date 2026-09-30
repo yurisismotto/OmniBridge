@@ -5,17 +5,17 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use omnibridge_capability_clipboard::{ClipboardAuthorizer, ClipboardManager, ClipboardPolicy};
-use omnibridge_capability_files::{FilesAuthorizer, TransferManager};
-use omnibridge_capability_notifications::{NotificationAuthorizer, NotificationManager};
-use omnibridge_core::capability::CapabilityRegistry;
-use omnibridge_core::error::{PairingError, Result};
-use omnibridge_core::notification_policy::NotificationPolicy;
-use omnibridge_core::pairing::PairingSession;
-use omnibridge_core::session::{PeerStatus, SessionHandle, SessionHost, SessionId};
-use omnibridge_core::store::{Store, TrustedPeer};
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1;
+use pliwee_capability_clipboard::{ClipboardAuthorizer, ClipboardManager, ClipboardPolicy};
+use pliwee_capability_files::{FilesAuthorizer, TransferManager};
+use pliwee_capability_notifications::{NotificationAuthorizer, NotificationManager};
+use pliwee_core::capability::CapabilityRegistry;
+use pliwee_core::error::{PairingError, Result};
+use pliwee_core::notification_policy::NotificationPolicy;
+use pliwee_core::pairing::PairingSession;
+use pliwee_core::session::{PeerStatus, SessionHandle, SessionHost, SessionId};
+use pliwee_core::store::{Store, TrustedPeer};
+use pliwee_core::Fingerprint;
+use pliwee_proto::v1;
 use tokio::sync::{oneshot, Mutex, RwLock};
 
 use crate::renegotiate::{Decision, LiveSession, Renegotiation};
@@ -30,7 +30,7 @@ pub struct ConfirmRequest {
 pub struct DaemonState {
     pub store: Mutex<Store>,
     pub registry: CapabilityRegistry,
-    pub battery: Arc<omnibridge_capability_battery::BatteryState>,
+    pub battery: Arc<pliwee_capability_battery::BatteryState>,
     /// `files.v1`, when the capability is enabled. `None` leaves the daemon
     /// with no file transfer at all rather than a half-wired one.
     pub transfers: Option<Arc<TransferManager>>,
@@ -52,7 +52,7 @@ pub struct DaemonState {
 
     /// The single open pairing window, if any.
     pairing: Mutex<Option<PairingSession>>,
-    /// Where to send confirmation questions. Present only while a `omnibridge
+    /// Where to send confirmation questions. Present only while a `pliwee
     /// pair` control session is attached: with no operator watching there is
     /// nobody to answer, and auto-accepting would defeat the whole point.
     confirm_tx: Mutex<Option<tokio::sync::mpsc::Sender<ConfirmRequest>>>,
@@ -77,13 +77,26 @@ pub struct DaemonState {
 
     /// The address families the listener really accepts on, for reporting.
     listen_families: std::sync::OnceLock<String>,
+
+    /// What startup found about where the local state came from. Set once by
+    /// the agent before it serves anything; reported by `status`.
+    local_state: std::sync::OnceLock<LocalStateReport>,
+}
+
+/// Facts about this machine's local state that only startup can know.
+#[derive(Debug, Clone, Default)]
+pub struct LocalStateReport {
+    /// The identity was carried over from an OmniBridge data directory.
+    pub migrated_from: Option<crate::control::MigrationReport>,
+    /// Leftover `.omnibridge-*.part` files. Listed, never removed.
+    pub legacy_partial_files: Vec<String>,
 }
 
 impl DaemonState {
     pub fn new(
         store: Store,
         registry: CapabilityRegistry,
-        battery: Arc<omnibridge_capability_battery::BatteryState>,
+        battery: Arc<pliwee_capability_battery::BatteryState>,
     ) -> Self {
         let device_info = store.identity().device_info();
         Self {
@@ -102,7 +115,18 @@ impl DaemonState {
             device_info,
             listen_port: std::sync::atomic::AtomicU16::new(0),
             listen_families: std::sync::OnceLock::new(),
+            local_state: std::sync::OnceLock::new(),
         }
+    }
+
+    /// Records what startup found about the local state. First call wins.
+    pub fn set_local_state(&self, report: LocalStateReport) {
+        let _ = self.local_state.set(report);
+    }
+
+    /// What startup found, or nothing to report.
+    pub fn local_state(&self) -> LocalStateReport {
+        self.local_state.get().cloned().unwrap_or_default()
     }
 
     /// Attaches the file-transfer manager.
@@ -146,7 +170,7 @@ impl DaemonState {
     /// attach a provider to an object nothing ever asks — so the daemon
     /// builds one and clones it.
     ///
-    /// [`TransferApproval`]: omnibridge_capability_files::TransferApproval
+    /// [`TransferApproval`]: pliwee_capability_files::TransferApproval
     pub fn with_file_approval(mut self, approval: Arc<crate::approval::FileApproval>) -> Self {
         self.file_approval = Some(approval);
         self
@@ -447,7 +471,7 @@ impl FilesAuthorizer for DaemonState {
         // that and the per-capability grant.
         store
             .trusted_peer(peer)
-            .is_some_and(|p| p.allows(omnibridge_capability_files::CAPABILITY_ID))
+            .is_some_and(|p| p.allows(pliwee_capability_files::CAPABILITY_ID))
     }
 }
 
@@ -466,9 +490,7 @@ impl ClipboardAuthorizer for DaemonState {
         match store.trusted_peer(peer) {
             // `trusted_peer` already excludes revoked devices; `allows`
             // re-checks that and the per-capability grant.
-            Some(p) if p.allows(omnibridge_capability_clipboard::CAPABILITY_ID) => {
-                p.clipboard_policy
-            }
+            Some(p) if p.allows(pliwee_capability_clipboard::CAPABILITY_ID) => p.clipboard_policy,
             _ => ClipboardPolicy::DENIED,
         }
     }
@@ -477,7 +499,7 @@ impl ClipboardAuthorizer for DaemonState {
         let store = self.store.lock().await;
         store
             .peers()
-            .filter(|p| p.allows(omnibridge_capability_clipboard::CAPABILITY_ID))
+            .filter(|p| p.allows(pliwee_capability_clipboard::CAPABILITY_ID))
             .filter(|p| p.clipboard_policy.may_auto_send())
             .map(|p| p.fingerprint)
             .collect()
@@ -504,7 +526,7 @@ impl NotificationAuthorizer for DaemonState {
         match store.trusted_peer(peer) {
             // `trusted_peer` already excludes revoked devices; `allows`
             // re-checks that and the per-capability grant.
-            Some(p) if p.allows(omnibridge_capability_notifications::CAPABILITY_ID) => {
+            Some(p) if p.allows(pliwee_capability_notifications::CAPABILITY_ID) => {
                 p.notification_policy
             }
             _ => NotificationPolicy::DENIED,
@@ -555,6 +577,7 @@ impl SessionHost for DaemonState {
 
     async fn verify_pairing_proof(
         &self,
+        profile: pliwee_core::Profile,
         initiator: &Fingerprint,
         nonce: &[u8],
         proof: &[u8],
@@ -567,7 +590,7 @@ impl SessionHost for DaemonState {
             return Err(PairingError::NotInPairingMode);
         };
 
-        let result = session.verify_and_consume(&responder, initiator, nonce, proof);
+        let result = session.verify_and_consume(profile, &responder, initiator, nonce, proof);
 
         // Once the window can no longer be used, drop it immediately so its
         // token is zeroed rather than lingering in memory.
@@ -614,7 +637,7 @@ impl SessionHost for DaemonState {
 
         let peer = TrustedPeer {
             device_id: device.device_id.clone(),
-            device_name: omnibridge_core::discovery::sanitize_device_name(&device.device_name),
+            device_name: pliwee_core::discovery::sanitize_device_name(&device.device_name),
             platform: device.platform,
             fingerprint: *fingerprint,
             paired_at_unix: SystemTime::now()

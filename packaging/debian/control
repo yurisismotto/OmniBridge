@@ -1,4 +1,4 @@
-Source: omnibridge
+Source: pliwee
 Section: net
 Priority: optional
 Maintainer: Yuri Converso Sismotto <yuri.sismotto@gmail.com>
@@ -41,7 +41,7 @@ Vcs-Browser: https://github.com/yurisismotto/omnibridge
 Vcs-Git: https://github.com/yurisismotto/omnibridge.git
 Rules-Requires-Root: no
 
-Package: omnibridge
+Package: pliwee
 Architecture: any
 # No Rust at runtime. rustc and cargo are build dependencies only; the
 # installed binaries need libc and, for the GUI, GTK — all resolved by
@@ -57,26 +57,74 @@ Recommends: upower
 # whichever number was picked. The daemon reports honestly what its backend
 # can do and works without it. Audit R5.
 Suggests: wl-clipboard
+# The OmniBridge -> Pliwee transition (ADR-0020). 1.1.0 is the first Pliwee
+# version (rebrand plan, decision B4: adopted in Wave 7, to be confirmed by
+# the owner before anything is published), written as a literal because it
+# describes the one upgrade path from OmniBridge and must not move with later
+# versions. The `~` admits a 1.1.0 pre-release as a Pliwee version too.
+#
+# Replaces: lets this package take over paths omnibridge 1.0.0 owned. Breaks:
+# makes apt remove or upgrade that omnibridge rather than leave it half there.
+# There is deliberately no Provides: omnibridge — the name is a real package
+# again below, the transitional one, and a virtual package with the same name
+# would give apt two answers to "install omnibridge".
+Replaces: omnibridge (<< 1.1.0~)
+Breaks: omnibridge (<< 1.1.0~)
 Description: local-first device continuity between Android and Linux
- OmniBridge connects an Android phone to this computer over the local network.
+ Pliwee connects an Android phone to this computer over the local network.
  It is local-first: there is no cloud service, no account and no telemetry.
  Devices authenticate each other with pinned public keys over TLS 1.3 after an
  explicit, human-confirmed pairing.
  .
- This package provides the user-session daemon and the omnibridge command-line
+ This package provides the user-session daemon and the pliwee command-line
  tool. The daemon runs unprivileged under systemd --user and never requires
- root. The desktop application ships separately, as omnibridge-gui.
+ root. The desktop application ships separately, as pliwee-gui.
+ .
+ Pliwee was called OmniBridge until 1.0.0. An OmniBridge install upgrades to
+ this package in place, keeping its device identity and every pairing.
 
-Package: omnibridge-gui
+Package: pliwee-gui
 Architecture: any
 # The exact build. The GUI speaks the daemon's control socket, so a version
 # skew between the two is a protocol skew.
-Depends: omnibridge (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: desktop application for OmniBridge
- The OmniBridge desktop application: pairing, the device list, transfers, the
+Depends: pliwee (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Replaces: omnibridge-gui (<< 1.1.0~)
+Breaks: omnibridge-gui (<< 1.1.0~)
+Description: desktop application for Pliwee
+ The Pliwee desktop application: pairing, the device list, transfers, the
  Quick Panel and per-capability grants.
  .
  It is not a resident process. It is started when a window is wanted - from the
  application menu, from the tray item the daemon publishes, or by the session
  bus through D-Bus activation - and it exits when the window is closed. The
- daemon remains the only long-lived OmniBridge process.
+ daemon remains the only long-lived Pliwee process.
+
+# --- transitional packages ---------------------------------------------------
+#
+# MEASURED (rebrand Wave 7 report, D1/D2, apt on Ubuntu 24.04): with Replaces:,
+# Breaks: and Provides: alone, `apt upgrade` on an OmniBridge 1.0.0 install
+# upgraded nothing — apt does not install a package that nothing depends on.
+# With these two, `apt upgrade` upgrades omnibridge and omnibridge-gui to
+# 1.1.0 and installs pliwee and pliwee-gui as their dependencies, and the old
+# packages' postrm runs with `upgrade`, not `remove`. `apt-get upgrade` keeps
+# them back (they add a dependency); `apt-get dist-upgrade` takes them.
+#
+# Both are empty and removable once Pliwee is installed. The ${binary:Version}
+# pin keeps each one moving in step with the package it points at.
+
+Package: omnibridge
+Architecture: all
+Section: oldlibs
+Depends: pliwee (>= ${binary:Version}), ${misc:Depends}
+Description: transitional package - OmniBridge is now Pliwee
+ OmniBridge was renamed Pliwee. This empty package upgrades an OmniBridge
+ install to Pliwee, and can be removed once pliwee is installed.
+
+Package: omnibridge-gui
+Architecture: all
+Section: oldlibs
+Depends: pliwee-gui (>= ${binary:Version}), ${misc:Depends}
+Description: transitional package - OmniBridge is now Pliwee (desktop application)
+ OmniBridge was renamed Pliwee. This empty package upgrades an OmniBridge
+ desktop application install to pliwee-gui, and can be removed once
+ pliwee-gui is installed.

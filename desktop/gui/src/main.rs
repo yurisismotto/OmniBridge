@@ -5,5 +5,5 @@
 //! testable surface rather than private details of a binary.
 
 fn main() -> gtk::glib::ExitCode {
-    omnibridge_gui::run()
+    pliwee_gui::run()
 }

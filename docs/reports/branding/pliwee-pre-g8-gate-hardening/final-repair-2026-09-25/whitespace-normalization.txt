@@ -1,0 +1,7 @@
+# 2026-09-25T17:15:48Z — trailing horizontal whitespace stripped from generated evidence text
+# command, per file:  sed -i 's/[ \t]*$//' FILE
+# columns: lines stripped | sha256 before (first 16 hex) | sha256 after (first 16 hex) | content equal once trailing whitespace is ignored | file
+2 | be7416aea5c68f8b | f1801d5fdb512f02 | yes | harness-selftests.txt
+4 | 513c2967ec3a6f02 | 37c2f64b2ff01638 | yes | mutations.txt
+2 | c73361b8e0160517 | 0a9b21c10d51d7fe | yes | repair-2026-09-25/harness-selftests.txt
+4 | 7cdd0907f5d941a4 | 415846ab56ce031d | yes | repair-2026-09-25/mutations-original-rerun.txt

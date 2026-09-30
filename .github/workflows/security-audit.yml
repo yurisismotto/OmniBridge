@@ -8,7 +8,7 @@
 # a vulnerability nobody has written up is invisible to everyone.
 #
 # It is **not** a substitute for the security certification. It does not read
-# code, does not run the product, and says nothing about OmniBridge's own
+# code, does not run the product, and says nothing about Pliwee's own
 # protocol, pairing or file handling.
 #
 # Why it exists
@@ -16,7 +16,7 @@
 # It found something the first time it was ever run. Security Certification v1
 # gate SEC-DEPS-01 ran `cargo audit` by hand and reported RUSTSEC-2026-0285 in
 # rustls 0.23.43 — "TLS 1.3 handshake messages incorrectly accepted across
-# encryption level boundaries". OmniBridge speaks TLS 1.3 and nothing else, so
+# encryption level boundaries". Pliwee speaks TLS 1.3 and nothing else, so
 # that advisory sat on the code path every peer session uses. It was fixed in
 # its own branch before the certification continued.
 #

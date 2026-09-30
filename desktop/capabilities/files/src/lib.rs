@@ -3,13 +3,18 @@
 //! # Two channels, and why
 //!
 //! ```text
-//!   control session  (ALPN "omnibridge/1")        data stream  (ALPN "omnibridge-data/1")
+//!   control session  (ALPN "pliwee/1")            data stream  (ALPN "pliwee-data/1")
 //!   ────────────────────────────────────       ──────────────────────────────────
 //!   FILE_OFFER      metadata, sha256, size     DataStreamAuth   transfer_id + MAC
 //!   FILE_ACCEPT     stream challenge           DataStreamReady  go / no
 //!   FILE_CANCEL     usable *during* a copy     <raw bytes>      exactly size_bytes
 //!   FILE_COMPLETE   receiver's verdict
 //! ```
+//!
+//! Both channels run under one identity profile (ADR-0020 §D4). A control
+//! session that negotiated the legacy `omnibridge/1` gets data streams on
+//! `omnibridge-data/1` only; a stream whose profile differs from its
+//! transfer's control session is refused before any byte moves.
 //!
 //! The split is ADR-0012's decision and this module is its implementation.
 //! `MAX_FRAME_LEN` stays at 64 KiB; no file byte ever enters an `Envelope`.
@@ -21,7 +26,7 @@
 //!
 //! | Property | Enforced by |
 //! | --- | --- |
-//! | only a paired device can speak at all | TLS 1.3 + SPKI pinning (`omnibridge_core::tls`) |
+//! | only a paired device can speak at all | TLS 1.3 + SPKI pinning (`pliwee_core::tls`) |
 //! | only a *granted* device may transfer | [`FilesAuthorizer`], re-checked per offer, per stream, and periodically |
 //! | a stream belongs to one transfer and one peer | [`auth`] — HMAC over a single-use challenge |
 //! | a filename cannot escape the download directory | [`filename::sanitize`] + [`destination`] |
@@ -48,11 +53,11 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::sync::{broadcast, mpsc, watch, Mutex, RwLock};
 use tokio::time::{Duration, Instant};
 
-use omnibridge_core::capability::{Capability, CapabilityContext, OutboundMessage};
-use omnibridge_core::error::{Error, Result};
-use omnibridge_core::Fingerprint;
-use omnibridge_proto::v1::capabilities as pb;
-use omnibridge_proto::Message;
+use pliwee_core::capability::{Capability, CapabilityContext, OutboundMessage};
+use pliwee_core::error::{Error, Result};
+use pliwee_core::{Fingerprint, Profile};
+use pliwee_proto::v1::capabilities as pb;
+use pliwee_proto::Message;
 
 use auth::StreamChallenge;
 use limits::*;
@@ -115,7 +120,10 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> DataStreamIo for T {}
 /// and does not implement this.
 #[async_trait::async_trait]
 pub trait DataStreamDialer: Send + Sync {
-    async fn dial(&self, peer: &Fingerprint) -> Result<Box<dyn DataStreamIo>>;
+    /// Opens a data stream to `peer` under `profile` — the profile of the
+    /// control session that negotiated the transfer. The stream must offer
+    /// that profile's data ALPN and no other.
+    async fn dial(&self, peer: &Fingerprint, profile: Profile) -> Result<Box<dyn DataStreamIo>>;
 }
 
 /// Which end of a data stream this device is.
@@ -271,6 +279,10 @@ struct TransferRecord {
     /// (F14) — the data stream is a *separate* TCP connection and would
     /// otherwise happily keep running after the control link died.
     session: mpsc::Sender<OutboundMessage>,
+    /// Identity profile of that control session (ADR-0020 §D4). The data
+    /// stream must negotiate the same one, and its MAC is keyed to this
+    /// profile's domain only. Held in memory; never persisted.
+    profile: Profile,
     /// When the current state stops being acceptable.
     deadline: Instant,
     /// True while a data stream is actually moving bytes for this transfer.
@@ -316,9 +328,9 @@ pub struct TransferManager {
     dialer: RwLock<Option<Arc<dyn DataStreamDialer>>>,
     events: broadcast::Sender<TransferEvent>,
     /// The control channel of each connected peer, so a transfer can be
-    /// started from outside a session — `omnibridge send`, or a tap in the
+    /// started from outside a session — `pliwee send`, or a tap in the
     /// phone's UI — rather than only in reply to an inbound message.
-    sessions: RwLock<BTreeMap<Fingerprint, mpsc::Sender<OutboundMessage>>>,
+    sessions: RwLock<BTreeMap<Fingerprint, (mpsc::Sender<OutboundMessage>, Profile)>>,
 }
 
 impl TransferManager {
@@ -367,9 +379,15 @@ impl TransferManager {
     /// Records a peer's control channel when its session becomes usable.
     ///
     /// A reconnection replaces the entry, which is what we want: the newest
-    /// session is the one a new transfer should use.
-    pub async fn attach_session(&self, peer: Fingerprint, session: mpsc::Sender<OutboundMessage>) {
-        self.sessions.write().await.insert(peer, session);
+    /// session is the one a new transfer should use. `profile` is that
+    /// session's negotiated profile, which every transfer it carries inherits.
+    pub async fn attach_session(
+        &self,
+        peer: Fingerprint,
+        session: mpsc::Sender<OutboundMessage>,
+        profile: Profile,
+    ) {
+        self.sessions.write().await.insert(peer, (session, profile));
     }
 
     /// The live control channel for a peer, if there is one.
@@ -380,10 +398,13 @@ impl TransferManager {
     /// disconnect — so removing by fingerprint there would evict the live
     /// session. Checking whether the channel is actually closed cannot make
     /// that mistake.
-    pub async fn session_for(&self, peer: &Fingerprint) -> Option<mpsc::Sender<OutboundMessage>> {
+    pub async fn session_for(
+        &self,
+        peer: &Fingerprint,
+    ) -> Option<(mpsc::Sender<OutboundMessage>, Profile)> {
         let mut sessions = self.sessions.write().await;
         match sessions.get(peer) {
-            Some(tx) if !tx.is_closed() => Some(tx.clone()),
+            Some((tx, profile)) if !tx.is_closed() => Some((tx.clone(), *profile)),
             Some(_) => {
                 sessions.remove(peer);
                 None
@@ -638,7 +659,7 @@ impl TransferManager {
         if !self.authorized(&peer).await {
             return Err(Error::NotAuthorized);
         }
-        let session = self
+        let (session, profile) = self
             .session_for(&peer)
             .await
             .ok_or(Error::Protocol("that device is not connected"))?;
@@ -685,6 +706,7 @@ impl TransferManager {
             failure: None,
             cancel,
             session: session.clone(),
+            profile,
             deadline: Instant::now() + config.deadline_for(TransferState::Offered),
             stream_active: false,
         };
@@ -777,6 +799,7 @@ impl TransferManager {
         peer: Fingerprint,
         peer_device_id: String,
         session: mpsc::Sender<OutboundMessage>,
+        profile: Profile,
         payload: &[u8],
     ) -> Result<()> {
         let control = pb::FileControl::decode(payload)?;
@@ -786,7 +809,8 @@ impl TransferManager {
 
         match body {
             pb::file_control::Body::Offer(offer) => {
-                self.on_offer(peer, peer_device_id, session, offer).await
+                self.on_offer(peer, peer_device_id, session, profile, offer)
+                    .await
             }
             pb::file_control::Body::Accept(accept) => self.on_accept(peer, accept).await,
             pb::file_control::Body::Ready(ready) => self.on_ready(peer, ready).await,
@@ -829,6 +853,7 @@ impl TransferManager {
         peer: Fingerprint,
         peer_device_id: String,
         session: mpsc::Sender<OutboundMessage>,
+        profile: Profile,
         offer: pb::FileOffer,
     ) -> Result<()> {
         let Some(id) = TransferId::from_bytes(&offer.transfer_id) else {
@@ -900,6 +925,7 @@ impl TransferManager {
             failure: None,
             cancel,
             session: session.clone(),
+            profile,
             deadline: Instant::now() + config.deadline_for(TransferState::WaitingAccept),
             stream_active: false,
         };
@@ -1297,12 +1323,20 @@ impl TransferManager {
     /// 3. the peer still holds a `files.v1` grant (F1, F15);
     /// 4. an unconsumed challenge is present (F5 — a second stream for one
     ///    transfer finds none);
-    /// 5. the MAC verifies (F4 — a guessed id proves nothing).
+    /// 5. the stream negotiated the same identity profile as the control
+    ///    session that issued the challenge (ADR-0020 §D4 — a mismatch is
+    ///    refused, never translated);
+    /// 6. the MAC verifies under that profile's domain (F4 — a guessed id
+    ///    proves nothing).
+    ///
+    /// `profile`, like `peer`, must come from this connection's own
+    /// handshake: it is the profile of the data ALPN it negotiated.
     pub async fn accept_data_stream(
         self: &Arc<Self>,
         peer: Fingerprint,
         mut io: Box<dyn DataStreamIo>,
         protocol_version: u32,
+        profile: Profile,
     ) -> Result<()> {
         let auth_frame: pb::DataStreamAuth =
             tokio::time::timeout(STREAM_AUTH_TIMEOUT, stream::read_frame(&mut io))
@@ -1318,7 +1352,7 @@ impl TransferManager {
             return Err(Error::Protocol("data stream with a malformed transfer id"));
         };
 
-        let reason = self.check_stream(id, peer, &auth_frame.mac).await;
+        let reason = self.check_stream(id, peer, profile, &auth_frame.mac).await;
         if let Err(reason) = reason {
             // The refusal is generic on the wire. A dialer that guessed an id
             // learns only that it did not work, not whether the id existed,
@@ -1362,6 +1396,7 @@ impl TransferManager {
         &self,
         id: TransferId,
         peer: Fingerprint,
+        profile: Profile,
         mac: &[u8],
     ) -> std::result::Result<(), FailureReason> {
         // Authorization is asked before the record is touched, so a revoked
@@ -1389,7 +1424,27 @@ impl TransferManager {
             return Err(FailureReason::UnknownTransfer);
         };
 
-        let expected = auth::compute_stream_mac(challenge, &self.local_fingerprint, &peer, &id);
+        // One connection, one identity: a stream under the other profile is
+        // refused before its MAC is looked at, and the MAC is then verified
+        // under the session's own domain only — never "under both".
+        if record.profile != profile {
+            tracing::warn!(
+                transfer = %id,
+                peer = %peer.to_display_short(),
+                session_profile = %record.profile,
+                stream_profile = %profile,
+                "refused a data stream whose profile differs from its control session"
+            );
+            return Err(FailureReason::NotAuthorized);
+        }
+
+        let expected = auth::compute_stream_mac(
+            record.profile,
+            challenge,
+            &self.local_fingerprint,
+            &peer,
+            &id,
+        );
         if !auth::verify_stream_mac(&expected, mac) {
             return Err(FailureReason::NotAuthorized);
         }
@@ -1408,7 +1463,7 @@ impl TransferManager {
             return;
         };
 
-        let (peer, challenge_mac) = {
+        let (peer, profile, challenge_mac) = {
             let mut transfers = self.transfers.lock().await;
             let Some(record) = transfers.get_mut(&id) else {
                 return;
@@ -1419,12 +1474,17 @@ impl TransferManager {
             let Some(challenge) = record.challenge.take() else {
                 return;
             };
-            let mac =
-                auth::compute_stream_mac(&challenge, &record.peer, &self.local_fingerprint, &id);
-            (record.peer, mac)
+            let mac = auth::compute_stream_mac(
+                record.profile,
+                &challenge,
+                &record.peer,
+                &self.local_fingerprint,
+                &id,
+            );
+            (record.peer, record.profile, mac)
         };
 
-        let mut io = match dialer.dial(&peer).await {
+        let mut io = match dialer.dial(&peer, profile).await {
             Ok(io) => io,
             Err(e) => {
                 tracing::warn!(transfer = %id, error = %e, "could not open a data stream");
@@ -1434,7 +1494,7 @@ impl TransferManager {
         };
 
         let auth_frame = pb::DataStreamAuth {
-            protocol_version: omnibridge_core::session::PROTOCOL_VERSION_MAX,
+            protocol_version: pliwee_core::session::PROTOCOL_VERSION_MAX,
             transfer_id: id.to_vec(),
             mac: challenge_mac.to_vec(),
         };
@@ -1853,6 +1913,7 @@ impl Capability for FilesCapability {
                 ctx.peer,
                 ctx.peer_device_id.clone(),
                 ctx.outbound.clone(),
+                ctx.profile,
                 payload,
             )
             .await
@@ -1861,10 +1922,10 @@ impl Capability for FilesCapability {
     async fn on_peer_connected(&self, ctx: &CapabilityContext) -> Result<()> {
         // Recorded so a transfer can be started from outside a session. This
         // runs only when `files.v1` was both mutually supported and granted,
-        // so an ungranted peer never gets an entry and `omnibridge send` to it
+        // so an ungranted peer never gets an entry and `pliwee send` to it
         // fails with "not connected" rather than silently doing nothing.
         self.manager
-            .attach_session(ctx.peer, ctx.outbound.clone())
+            .attach_session(ctx.peer, ctx.outbound.clone(), ctx.profile)
             .await;
         Ok(())
     }

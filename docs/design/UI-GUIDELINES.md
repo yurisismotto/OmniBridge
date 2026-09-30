@@ -1,4 +1,4 @@
-# OmniBridge — UI guidelines
+# Pliwee — UI guidelines
 
 How the [brand](BRAND.md) is applied on each platform, and the rules that are
 not negotiable.
@@ -18,13 +18,13 @@ is true right now.
 
 Every status is **a dot, an icon and a word**, and the word carries the
 meaning. Both platforms declare the vocabulary in one place —
-`OmniBridgeStatus` (Kotlin) and `widgets::Status` (Rust) — with all three
+`PliweeStatus` (Kotlin) and `widgets::Status` (Rust) — with all three
 required by the type, so a status cannot be added as a colour and nothing
 else.
 
 ### 2. Text uses the corrected accents, never the brand hues
 
-Bridge Cyan is 2.40 : 1 on white. See [the two-family rule](BRAND.md#the-two-family-rule).
+Flow Cyan is 2.40 : 1 on white. See [the two-family rule](BRAND.md#the-two-family-rule).
 Tests on both platforms fail if a text accent drops below AA — on the
 background as well as on a card, and on the elevated dark surface as well as
 the plain one, because those are the harder of each pair and were the ones
@@ -39,14 +39,14 @@ full, in monospace, selectable, grouped in fours. Aesthetics do not get a vote.
 ### 4. Nothing is stored to make a screen look better
 
 The reference shows a **clipboard history** panel and a persistent transfer
-**History** tab. OmniBridge has neither, by design: clipboard text never reaches
+**History** tab. Pliwee has neither, by design: clipboard text never reaches
 disk and the control socket carries no clip content at all — a pending clip is
 size, hash prefix and age.
 
 Both were removed rather than faked. What replaced them says plainly what is
 and is not kept:
 
-> *"OmniBridge keeps no clipboard history. A received clip waits in memory with a
+> *"Pliwee keeps no clipboard history. A received clip waits in memory with a
 > five-minute expiry and is gone once applied, dismissed or expired."*
 
 Transfers are listed for the current daemon run, under a line saying so.
@@ -58,7 +58,8 @@ says:
 
 > **Secure connection** · *Direct connection · TLS 1.3, pinned · local network*
 
-with the detail in a tooltip: TLS 1.3 with ALPN `omnibridge/1`, mutually
+with the detail in a tooltip: TLS 1.3 with ALPN `pliwee/1` (`omnibridge/1` for an
+OmniBridge 1.0.0 device), mutually
 authenticated, pinned to the key approved at pairing, no relay and no cloud.
 That is precise and checkable. Reaching for a phrase whose meaning does not
 exactly match is how a security claim quietly becomes untrue.
@@ -98,25 +99,29 @@ Two distinctions worth keeping:
 
 ## Components
 
-Both platforms carry the same vocabulary under the same names.
+Both platforms carry the same vocabulary under the same names. The Kotlin
+names below carry the `Pliwee` prefix; the code-naming wave (W3 of the
+[rebrand plan](../research/pliwee-rebrand/PLIWEE-REBRAND-IMPLEMENTATION-PLAN.md))
+renamed them from their earlier `OmniBridge` prefix. They are identifiers, not
+copy.
 
 | Concept | Android (`ui/components`) | Desktop (`gui/src/widgets.rs`) |
 |---|---|---|
-| Card | `OmniBridgeCard` | `card()` |
-| Section heading | `OmniBridgeSectionLabel` | `section_label()` |
-| Status | `OmniBridgeStatusBadge` | `status_badge()` |
-| Primary action | `OmniBridgePrimaryButton` | `cta_button()` |
-| Secondary action | `OmniBridgeSecondaryButton` | `secondary_button()` |
-| Destructive action | `OmniBridgeDestructiveButton` | `destructive_button()` |
-| Permission row | `OmniBridgeCapabilityRow` | `policy_switch()` |
-| Device | `OmniBridgeDeviceCard` | `device_card()` |
-| Transfer | `OmniBridgeTransferCard` | `transfer_card()` |
-| Security notice | `OmniBridgeSecurityNotice` | `security_notice()` |
-| Empty state | `OmniBridgeEmptyState` | `empty_state()` |
-| Tinted icon | `OmniBridgeIconTile` | `icon_tile()` |
-| Fingerprint | `OmniBridgeFingerprint` | `fingerprint()` |
-| Brand mark | `OmniBridgeGradientMark` / `OmniBridgeBrandMark` | `brand_mark()` / `brand_logo()` |
-| Progress | `OmniBridgeProgressBar` | `progress()` |
+| Card | `PliweeCard` | `card()` |
+| Section heading | `PliweeSectionLabel` | `section_label()` |
+| Status | `PliweeStatusBadge` | `status_badge()` |
+| Primary action | `PliweePrimaryButton` | `cta_button()` |
+| Secondary action | `PliweeSecondaryButton` | `secondary_button()` |
+| Destructive action | `PliweeDestructiveButton` | `destructive_button()` |
+| Permission row | `PliweeCapabilityRow` | `policy_switch()` |
+| Device | `PliweeDeviceCard` | `device_card()` |
+| Transfer | `PliweeTransferCard` | `transfer_card()` |
+| Security notice | `PliweeSecurityNotice` | `security_notice()` |
+| Empty state | `PliweeEmptyState` | `empty_state()` |
+| Tinted icon | `PliweeIconTile` | `icon_tile()` |
+| Fingerprint | `PliweeFingerprint` | `fingerprint()` |
+| Brand mark | `PliweeGradientMark` / `PliweeBrandMark` | `brand_mark()` / `brand_logo()` |
+| Progress | `PliweeProgressBar` | `progress()` |
 
 ### Connection state has one home per screen
 
@@ -207,9 +212,19 @@ platform's own widgets.
 the mark + wordmark) → `AdwNavigationSplitView` (sidebar + content) → a
 `GtkStack` of pages, with a status strip pinned along the bottom.
 
-**Navigation.** Dashboard · Files · Clipboard · Devices · Trusted peers ·
+**Navigation.** Dashboard · Files · Clipboard · Notifications · Devices ·
 Settings. The selected row is a tinted rounded rectangle in the corrected
 blue.
+
+**Devices.** One page for every known device and the trust store behind it.
+Trusted peers used to be a page of its own, and Pliwee Wave 2 folded it in
+(ADR-0020, P4). Each card always shows name, platform, live status, trust state
+(*Trusted* or *Revoked*) and a summary of granted capabilities. Its **Details
+and controls** disclosure holds the capability switches, the full fingerprint,
+the device id, connection facts, **Revoke this device** and, on a revoked card,
+**Remove from list**. **Remove all revoked devices** stays at page level. Revoked
+devices stay listed and marked. Every destructive action is confirmed, with
+Cancel as the default. `--page peers` still opens this page.
 
 **Sidebar footer.** Network state and this computer's own name and short
 fingerprint. The fingerprint is there, not buried in Settings, because it is
@@ -232,8 +247,8 @@ be a filter over the light one.
 
 ## Android — Compose / Material 3
 
-Material semantics are kept, not replaced. OmniBridge should look like
-**OmniBridge on Android**, not like a foreign design language pasted onto the
+Material semantics are kept, not replaced. Pliwee should look like
+**Pliwee on Android**, not like a foreign design language pasted onto the
 platform: a `Switch` still behaves and reads as an Android switch, a dialog
 still sits where Android puts one.
 
@@ -304,7 +319,7 @@ together.
 
 | | Rule |
 |---|---|
-| **Android** | `Modifier.omniBridgeContentColumn()` — fills below 640 dp, caps and centres above it. A modifier rather than a wrapper, so it applies to a `LazyColumn` without making it eager. |
+| **Android** | `Modifier.pliweeContentColumn()` — fills below 640 dp, caps and centres above it. A modifier rather than a wrapper, so it applies to a `LazyColumn` without making it eager. |
 | **Desktop** | `AdwBreakpoint` at 700 sp collapses the split view rather than squeezing the content. Minimum window 360 × 420. |
 
 The cap is a layout constraint and nothing else. Neither platform branches on

@@ -1,0 +1,75 @@
+# 2026-09-25T10:27:06-03:00, debug build of the working tree (base 6723e76)
+$ pliwee --version
+pliwee 1.1.0
+exit=0
+
+$ pliwee --help
+Pliwee control
+
+Usage: pliwee <COMMAND>
+
+Commands:
+  status            Daemon status, identity and live connections
+  devices           List paired devices
+  pair              Open a pairing window and show a QR code
+  unpair            Revoke a pairing, by device id or fingerprint prefix
+  ping              Round-trip a PING over the live session with a device
+  remove-from-list  Take a revoked device out of the device list, keeping the revocation
+  grant             Allow a device to use a capability
+  revoke            Withdraw a capability from a device. Takes effect immediately, including on a transfer that is already running
+  send              Send a file to a paired device
+  transfers         List transfers this daemon has seen since it started
+  cancel            Cancel a running transfer, by id or by an unambiguous id prefix
+  clipboard         Share text clipboards with a paired device
+  notifications     Show a paired device's notifications on this desktop
+  help              Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+exit=0
+
+$ pliweed --version
+pliweed 1.1.0
+exit=0
+
+$ pliweed --help
+Pliwee daemon
+
+Usage: pliweed [OPTIONS]
+
+Options:
+      --data-dir <DATA_DIR>
+          Data directory (identity and trust store)
+
+      --port <PORT>
+          TCP port to listen on. Overrides the stored setting
+
+      --no-mdns
+          Do not advertise over mDNS. The daemon still accepts connections from peers that already know an address
+
+      --log <LOG>
+          Log filter, e.g. `info`, `pliwee_core=debug`
+          
+          [default: info]
+
+      --download-dir <DOWNLOAD_DIR>
+          Directory for received files.
+          
+          Defaults to `<XDG downloads>/Pliwee`. Peers can never influence this: an offer carries a filename and no path at all.
+
+      --max-file-mib <MAX_FILE_MIB>
+          Largest single file this machine will accept, in mebibytes
+
+      --accept-files-without-asking
+          Accept incoming files without asking.
+          
+          Off by default and deliberately awkward to turn on: it removes the human from the loop, and the human is the last check on a paired but misbehaving device. Intended for unattended test rigs, not for daily use — a per-device "always allow" setting is the right answer for that, and does not exist yet.
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+exit=0
+

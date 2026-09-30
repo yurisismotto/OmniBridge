@@ -1,0 +1,259 @@
+file <root>/v1/core.proto package=<root>.v1
+  java_package=io.github.yurisismotto.<root>.proto outer=CoreProto multiple=true
+  enum <root>.v1.Platform.PLATFORM_UNSPECIFIED = 0
+  enum <root>.v1.Platform.PLATFORM_ANDROID = 1
+  enum <root>.v1.Platform.PLATFORM_LINUX = 2
+  enum <root>.v1.HelloStatus.HELLO_STATUS_UNSPECIFIED = 0
+  enum <root>.v1.HelloStatus.HELLO_STATUS_TRUSTED = 1
+  enum <root>.v1.HelloStatus.HELLO_STATUS_PAIRING_REQUIRED = 2
+  enum <root>.v1.HelloStatus.HELLO_STATUS_VERSION_UNSUPPORTED = 3
+  enum <root>.v1.HelloStatus.HELLO_STATUS_REJECTED = 4
+  enum <root>.v1.PairStatus.PAIR_STATUS_UNSPECIFIED = 0
+  enum <root>.v1.PairStatus.PAIR_STATUS_ACCEPTED = 1
+  enum <root>.v1.PairStatus.PAIR_STATUS_REJECTED = 2
+  enum <root>.v1.PairStatus.PAIR_STATUS_DECLINED_BY_USER = 3
+  enum <root>.v1.PairStatus.PAIR_STATUS_NOT_IN_PAIRING_MODE = 4
+  enum <root>.v1.PairStatus.PAIR_STATUS_RATE_LIMITED = 5
+  enum <root>.v1.ErrorCode.ERROR_CODE_UNSPECIFIED = 0
+  enum <root>.v1.ErrorCode.ERROR_CODE_PROTOCOL_VIOLATION = 1
+  enum <root>.v1.ErrorCode.ERROR_CODE_UNSUPPORTED_VERSION = 2
+  enum <root>.v1.ErrorCode.ERROR_CODE_UNSUPPORTED_CAPABILITY = 3
+  enum <root>.v1.ErrorCode.ERROR_CODE_NOT_AUTHORIZED = 4
+  enum <root>.v1.ErrorCode.ERROR_CODE_MALFORMED = 5
+  enum <root>.v1.ErrorCode.ERROR_CODE_INTERNAL = 6
+  enum <root>.v1.ErrorCode.ERROR_CODE_RATE_LIMITED = 7
+message <root>.v1.DeviceInfo
+  field <root>.v1.DeviceInfo.device_id = 1 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.DeviceInfo.device_name = 2 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.DeviceInfo.platform = 3 label=Optional type=Enum type_name=.<root>.v1.Platform oneof=None proto3_optional=false
+  field <root>.v1.DeviceInfo.identity_fingerprint = 4 label=Optional type=String type_name= oneof=None proto3_optional=false
+message <root>.v1.Hello
+  field <root>.v1.Hello.device = 1 label=Optional type=Message type_name=.<root>.v1.DeviceInfo oneof=None proto3_optional=false
+  field <root>.v1.Hello.min_protocol_version = 2 label=Optional type=Uint32 type_name= oneof=None proto3_optional=false
+  field <root>.v1.Hello.max_protocol_version = 3 label=Optional type=Uint32 type_name= oneof=None proto3_optional=false
+  field <root>.v1.Hello.capabilities = 4 label=Repeated type=String type_name= oneof=None proto3_optional=false
+message <root>.v1.HelloAck
+  field <root>.v1.HelloAck.device = 1 label=Optional type=Message type_name=.<root>.v1.DeviceInfo oneof=None proto3_optional=false
+  field <root>.v1.HelloAck.status = 2 label=Optional type=Enum type_name=.<root>.v1.HelloStatus oneof=None proto3_optional=false
+  field <root>.v1.HelloAck.negotiated_protocol_version = 3 label=Optional type=Uint32 type_name= oneof=None proto3_optional=false
+  field <root>.v1.HelloAck.capabilities = 4 label=Repeated type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.HelloAck.pairing_nonce = 5 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+message <root>.v1.PairRequest
+  field <root>.v1.PairRequest.proof = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+message <root>.v1.PairResponse
+  field <root>.v1.PairResponse.status = 1 label=Optional type=Enum type_name=.<root>.v1.PairStatus oneof=None proto3_optional=false
+  field <root>.v1.PairResponse.confirmation = 2 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+message <root>.v1.CapabilityAnnounce
+  field <root>.v1.CapabilityAnnounce.capabilities = 1 label=Repeated type=String type_name= oneof=None proto3_optional=false
+message <root>.v1.Ping
+  field <root>.v1.Ping.payload = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+message <root>.v1.Pong
+  field <root>.v1.Pong.payload = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+message <root>.v1.Error
+  field <root>.v1.Error.code = 1 label=Optional type=Enum type_name=.<root>.v1.ErrorCode oneof=None proto3_optional=false
+  field <root>.v1.Error.message = 2 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.Error.fatal = 3 label=Optional type=Bool type_name= oneof=None proto3_optional=false
+file <root>/v1/envelope.proto package=<root>.v1
+  import <root>/v1/core.proto
+  java_package=io.github.yurisismotto.<root>.proto outer=EnvelopeProto multiple=true
+message <root>.v1.Envelope
+  field <root>.v1.Envelope.protocol_version = 1 label=Optional type=Uint32 type_name= oneof=None proto3_optional=false
+  field <root>.v1.Envelope.message_id = 2 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.Envelope.sequence = 3 label=Optional type=Uint64 type_name= oneof=None proto3_optional=false
+  field <root>.v1.Envelope.timestamp_unix_ms = 4 label=Optional type=Int64 type_name= oneof=None proto3_optional=false
+  field <root>.v1.Envelope.correlation_id = 5 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.Envelope.hello = 16 label=Optional type=Message type_name=.<root>.v1.Hello oneof=Some(0) proto3_optional=false
+  field <root>.v1.Envelope.hello_ack = 17 label=Optional type=Message type_name=.<root>.v1.HelloAck oneof=Some(0) proto3_optional=false
+  field <root>.v1.Envelope.pair_request = 18 label=Optional type=Message type_name=.<root>.v1.PairRequest oneof=Some(0) proto3_optional=false
+  field <root>.v1.Envelope.pair_response = 19 label=Optional type=Message type_name=.<root>.v1.PairResponse oneof=Some(0) proto3_optional=false
+  field <root>.v1.Envelope.capability_announce = 20 label=Optional type=Message type_name=.<root>.v1.CapabilityAnnounce oneof=Some(0) proto3_optional=false
+  field <root>.v1.Envelope.ping = 21 label=Optional type=Message type_name=.<root>.v1.Ping oneof=Some(0) proto3_optional=false
+  field <root>.v1.Envelope.pong = 22 label=Optional type=Message type_name=.<root>.v1.Pong oneof=Some(0) proto3_optional=false
+  field <root>.v1.Envelope.error = 23 label=Optional type=Message type_name=.<root>.v1.Error oneof=Some(0) proto3_optional=false
+  field <root>.v1.Envelope.capability_message = 24 label=Optional type=Message type_name=.<root>.v1.CapabilityMessage oneof=Some(0) proto3_optional=false
+  oneof <root>.v1.Envelope.body
+message <root>.v1.CapabilityMessage
+  field <root>.v1.CapabilityMessage.capability_id = 1 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.CapabilityMessage.payload = 2 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+file <root>/v1/capabilities/battery_v1.proto package=<root>.v1.capabilities
+  java_package=io.github.yurisismotto.<root>.proto.capabilities outer=BatteryV1Proto multiple=true
+  enum <root>.v1.capabilities.ChargingState.CHARGING_STATE_UNSPECIFIED = 0
+  enum <root>.v1.capabilities.ChargingState.CHARGING_STATE_DISCHARGING = 1
+  enum <root>.v1.capabilities.ChargingState.CHARGING_STATE_CHARGING = 2
+  enum <root>.v1.capabilities.ChargingState.CHARGING_STATE_FULL = 3
+  enum <root>.v1.capabilities.ChargingState.CHARGING_STATE_NOT_CHARGING = 4
+message <root>.v1.capabilities.BatteryState
+  field <root>.v1.capabilities.BatteryState.percentage = 1 label=Optional type=Uint32 type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.BatteryState.charging_state = 2 label=Optional type=Enum type_name=.<root>.v1.capabilities.ChargingState oneof=None proto3_optional=false
+  field <root>.v1.capabilities.BatteryState.timestamp_unix_ms = 3 label=Optional type=Int64 type_name= oneof=None proto3_optional=false
+file <root>/v1/capabilities/files_v1.proto package=<root>.v1.capabilities
+  java_package=io.github.yurisismotto.<root>.proto.capabilities outer=FilesV1Proto multiple=true
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_UNSPECIFIED = 0
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_DECLINED_BY_USER = 1
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_NOT_AUTHORIZED = 2
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_TOO_MANY_TRANSFERS = 3
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_TOO_LARGE = 4
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_BAD_METADATA = 5
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_TIMED_OUT = 6
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_INTEGRITY = 7
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_STORAGE = 8
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_TRANSPORT = 9
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_CANCELLED_BY_USER = 10
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_REVOKED = 11
+  enum <root>.v1.capabilities.TransferFailureReason.TRANSFER_FAILURE_REASON_UNKNOWN_TRANSFER = 12
+  enum <root>.v1.capabilities.DataStreamStatus.DATA_STREAM_STATUS_UNSPECIFIED = 0
+  enum <root>.v1.capabilities.DataStreamStatus.DATA_STREAM_STATUS_READY = 1
+  enum <root>.v1.capabilities.DataStreamStatus.DATA_STREAM_STATUS_REJECTED = 2
+message <root>.v1.capabilities.FileOffer
+  field <root>.v1.capabilities.FileOffer.transfer_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.FileOffer.filename = 2 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.FileOffer.size_bytes = 3 label=Optional type=Uint64 type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.FileOffer.mime_type = 4 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.FileOffer.sha256 = 5 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.FileOffer.timestamp_unix_ms = 6 label=Optional type=Int64 type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.FileAccept
+  field <root>.v1.capabilities.FileAccept.transfer_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.FileAccept.stream_challenge = 2 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.FileReady
+  field <root>.v1.capabilities.FileReady.transfer_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.FileReady.stream_challenge = 2 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.FileReject
+  field <root>.v1.capabilities.FileReject.transfer_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.FileReject.reason = 2 label=Optional type=Enum type_name=.<root>.v1.capabilities.TransferFailureReason oneof=None proto3_optional=false
+message <root>.v1.capabilities.FileCancel
+  field <root>.v1.capabilities.FileCancel.transfer_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.FileCancel.reason = 2 label=Optional type=Enum type_name=.<root>.v1.capabilities.TransferFailureReason oneof=None proto3_optional=false
+message <root>.v1.capabilities.FileComplete
+  field <root>.v1.capabilities.FileComplete.transfer_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.FileFailed
+  field <root>.v1.capabilities.FileFailed.transfer_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.FileFailed.reason = 2 label=Optional type=Enum type_name=.<root>.v1.capabilities.TransferFailureReason oneof=None proto3_optional=false
+message <root>.v1.capabilities.FileControl
+  field <root>.v1.capabilities.FileControl.offer = 1 label=Optional type=Message type_name=.<root>.v1.capabilities.FileOffer oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.FileControl.accept = 2 label=Optional type=Message type_name=.<root>.v1.capabilities.FileAccept oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.FileControl.reject = 3 label=Optional type=Message type_name=.<root>.v1.capabilities.FileReject oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.FileControl.cancel = 4 label=Optional type=Message type_name=.<root>.v1.capabilities.FileCancel oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.FileControl.complete = 5 label=Optional type=Message type_name=.<root>.v1.capabilities.FileComplete oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.FileControl.failed = 6 label=Optional type=Message type_name=.<root>.v1.capabilities.FileFailed oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.FileControl.ready = 7 label=Optional type=Message type_name=.<root>.v1.capabilities.FileReady oneof=Some(0) proto3_optional=false
+  oneof <root>.v1.capabilities.FileControl.body
+message <root>.v1.capabilities.DataStreamAuth
+  field <root>.v1.capabilities.DataStreamAuth.protocol_version = 1 label=Optional type=Uint32 type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.DataStreamAuth.transfer_id = 2 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.DataStreamAuth.mac = 3 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.DataStreamReady
+  field <root>.v1.capabilities.DataStreamReady.status = 1 label=Optional type=Enum type_name=.<root>.v1.capabilities.DataStreamStatus oneof=None proto3_optional=false
+  field <root>.v1.capabilities.DataStreamReady.reason = 2 label=Optional type=Enum type_name=.<root>.v1.capabilities.TransferFailureReason oneof=None proto3_optional=false
+file <root>/v1/capabilities/clipboard_v1.proto package=<root>.v1.capabilities
+  java_package=io.github.yurisismotto.<root>.proto.capabilities outer=ClipboardV1Proto multiple=true
+  enum <root>.v1.capabilities.ClipboardOutcome.CLIPBOARD_OUTCOME_UNSPECIFIED = 0
+  enum <root>.v1.capabilities.ClipboardOutcome.CLIPBOARD_OUTCOME_APPLIED = 1
+  enum <root>.v1.capabilities.ClipboardOutcome.CLIPBOARD_OUTCOME_PENDING_USER = 2
+  enum <root>.v1.capabilities.ClipboardOutcome.CLIPBOARD_OUTCOME_DUPLICATE = 3
+  enum <root>.v1.capabilities.ClipboardOutcome.CLIPBOARD_OUTCOME_NOT_AUTHORIZED = 4
+  enum <root>.v1.capabilities.ClipboardOutcome.CLIPBOARD_OUTCOME_REJECTED_POLICY = 5
+  enum <root>.v1.capabilities.ClipboardOutcome.CLIPBOARD_OUTCOME_REJECTED_SENSITIVE = 6
+  enum <root>.v1.capabilities.ClipboardOutcome.CLIPBOARD_OUTCOME_TOO_LARGE = 7
+  enum <root>.v1.capabilities.ClipboardOutcome.CLIPBOARD_OUTCOME_INVALID_TEXT = 8
+  enum <root>.v1.capabilities.ClipboardOutcome.CLIPBOARD_OUTCOME_FAILED = 9
+message <root>.v1.capabilities.ClipboardUpdate
+  field <root>.v1.capabilities.ClipboardUpdate.event_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.ClipboardUpdate.origin_device_id = 2 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.ClipboardUpdate.text_utf8 = 3 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.ClipboardUpdate.content_hash = 4 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.ClipboardUpdate.sensitive_hint = 5 label=Optional type=Bool type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.ClipboardUpdate.timestamp_unix_ms = 6 label=Optional type=Int64 type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.ClipboardResult
+  field <root>.v1.capabilities.ClipboardResult.event_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.ClipboardResult.outcome = 2 label=Optional type=Enum type_name=.<root>.v1.capabilities.ClipboardOutcome oneof=None proto3_optional=false
+message <root>.v1.capabilities.ClipboardControl
+  field <root>.v1.capabilities.ClipboardControl.update = 1 label=Optional type=Message type_name=.<root>.v1.capabilities.ClipboardUpdate oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.ClipboardControl.result = 2 label=Optional type=Message type_name=.<root>.v1.capabilities.ClipboardResult oneof=Some(0) proto3_optional=false
+  oneof <root>.v1.capabilities.ClipboardControl.body
+file <root>/v1/capabilities/notifications_v1.proto package=<root>.v1.capabilities
+  java_package=io.github.yurisismotto.<root>.proto.capabilities outer=NotificationsV1Proto multiple=true
+  enum <root>.v1.capabilities.NotificationRole.NOTIFICATION_ROLE_UNSPECIFIED = 0
+  enum <root>.v1.capabilities.NotificationRole.NOTIFICATION_ROLE_SOURCE = 1
+  enum <root>.v1.capabilities.NotificationRole.NOTIFICATION_ROLE_SINK = 2
+  enum <root>.v1.capabilities.NotificationRole.NOTIFICATION_ROLE_DISMISS_TARGET = 3
+  enum <root>.v1.capabilities.NotificationRole.NOTIFICATION_ROLE_DISMISS_REPORTER = 4
+  enum <root>.v1.capabilities.NotificationImportance.NOTIFICATION_IMPORTANCE_UNSPECIFIED = 0
+  enum <root>.v1.capabilities.NotificationImportance.NOTIFICATION_IMPORTANCE_LOW = 1
+  enum <root>.v1.capabilities.NotificationImportance.NOTIFICATION_IMPORTANCE_NORMAL = 2
+  enum <root>.v1.capabilities.NotificationImportance.NOTIFICATION_IMPORTANCE_HIGH = 3
+  enum <root>.v1.capabilities.NotificationPrivacy.NOTIFICATION_PRIVACY_UNSPECIFIED = 0
+  enum <root>.v1.capabilities.NotificationPrivacy.NOTIFICATION_PRIVACY_PUBLIC = 1
+  enum <root>.v1.capabilities.NotificationPrivacy.NOTIFICATION_PRIVACY_PRIVATE = 2
+  enum <root>.v1.capabilities.NotificationPrivacy.NOTIFICATION_PRIVACY_SECRET = 3
+  enum <root>.v1.capabilities.NotificationCategory.NOTIFICATION_CATEGORY_UNSPECIFIED = 0
+  enum <root>.v1.capabilities.NotificationCategory.NOTIFICATION_CATEGORY_MESSAGE = 1
+  enum <root>.v1.capabilities.NotificationCategory.NOTIFICATION_CATEGORY_CALL = 2
+  enum <root>.v1.capabilities.NotificationCategory.NOTIFICATION_CATEGORY_ALARM = 3
+  enum <root>.v1.capabilities.NotificationCategory.NOTIFICATION_CATEGORY_PROGRESS = 4
+  enum <root>.v1.capabilities.NotificationCategory.NOTIFICATION_CATEGORY_TRANSPORT = 5
+  enum <root>.v1.capabilities.NotificationCategory.NOTIFICATION_CATEGORY_SYSTEM = 6
+  enum <root>.v1.capabilities.NotificationCategory.NOTIFICATION_CATEGORY_OTHER = 7
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_UNSPECIFIED = 0
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_DISPLAYED = 1
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_REMOVED = 2
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_DUPLICATE = 3
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_NOT_AUTHORIZED = 4
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_REJECTED_POLICY = 5
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_REJECTED_ROLE = 6
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_REJECTED_FILTER = 7
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_NOT_DISMISSIBLE = 8
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_UNKNOWN_NOTIFICATION = 9
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_TOO_LARGE = 10
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_INVALID = 11
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_RATE_LIMITED = 12
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_UNAVAILABLE = 13
+  enum <root>.v1.capabilities.NotificationOutcome.NOTIFICATION_OUTCOME_FAILED = 14
+message <root>.v1.capabilities.NotificationRoles
+  field <root>.v1.capabilities.NotificationRoles.roles = 1 label=Repeated type=Enum type_name=.<root>.v1.capabilities.NotificationRole oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationRoles.epoch = 2 label=Optional type=Uint32 type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.Progress
+  field <root>.v1.capabilities.Progress.current = 1 label=Optional type=Uint32 type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.Progress.max = 2 label=Optional type=Uint32 type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.Progress.indeterminate = 3 label=Optional type=Bool type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.NotificationUpsert
+  field <root>.v1.capabilities.NotificationUpsert.notification_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.origin_device_id = 2 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.app_id = 3 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.app_label = 4 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.title = 5 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.body = 6 label=Optional type=String type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.posted_at_unix_ms = 7 label=Optional type=Int64 type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.importance = 8 label=Optional type=Enum type_name=.<root>.v1.capabilities.NotificationImportance oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.privacy = 9 label=Optional type=Enum type_name=.<root>.v1.capabilities.NotificationPrivacy oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.category = 10 label=Optional type=Enum type_name=.<root>.v1.capabilities.NotificationCategory oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.progress = 11 label=Optional type=Message type_name=.<root>.v1.capabilities.Progress oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.ongoing = 12 label=Optional type=Bool type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.dismissible = 13 label=Optional type=Bool type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.group_id = 14 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.group_summary = 15 label=Optional type=Bool type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.secondary_profile = 16 label=Optional type=Bool type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.redacted = 17 label=Optional type=Bool type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationUpsert.content_hash = 18 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.NotificationRemove
+  field <root>.v1.capabilities.NotificationRemove.notification_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationRemove.origin_device_id = 2 label=Optional type=String type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.DismissRequest
+  field <root>.v1.capabilities.DismissRequest.notification_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.DismissRequest.origin_device_id = 2 label=Optional type=String type_name= oneof=None proto3_optional=false
+message <root>.v1.capabilities.NotificationResult
+  field <root>.v1.capabilities.NotificationResult.notification_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.NotificationResult.outcome = 2 label=Optional type=Enum type_name=.<root>.v1.capabilities.NotificationOutcome oneof=None proto3_optional=false
+message <root>.v1.capabilities.SyncMarker
+  field <root>.v1.capabilities.SyncMarker.sync_id = 1 label=Optional type=Bytes type_name= oneof=None proto3_optional=false
+  field <root>.v1.capabilities.SyncMarker.phase = 2 label=Optional type=Enum type_name=.<root>.v1.capabilities.SyncMarker.Phase oneof=None proto3_optional=false
+  enum <root>.v1.capabilities.SyncMarker.Phase.PHASE_UNSPECIFIED = 0
+  enum <root>.v1.capabilities.SyncMarker.Phase.PHASE_BEGIN = 1
+  enum <root>.v1.capabilities.SyncMarker.Phase.PHASE_END = 2
+message <root>.v1.capabilities.NotificationControl
+  field <root>.v1.capabilities.NotificationControl.roles = 1 label=Optional type=Message type_name=.<root>.v1.capabilities.NotificationRoles oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.NotificationControl.upsert = 2 label=Optional type=Message type_name=.<root>.v1.capabilities.NotificationUpsert oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.NotificationControl.remove = 3 label=Optional type=Message type_name=.<root>.v1.capabilities.NotificationRemove oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.NotificationControl.dismiss = 4 label=Optional type=Message type_name=.<root>.v1.capabilities.DismissRequest oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.NotificationControl.result = 5 label=Optional type=Message type_name=.<root>.v1.capabilities.NotificationResult oneof=Some(0) proto3_optional=false
+  field <root>.v1.capabilities.NotificationControl.sync = 6 label=Optional type=Message type_name=.<root>.v1.capabilities.SyncMarker oneof=Some(0) proto3_optional=false
+  oneof <root>.v1.capabilities.NotificationControl.body

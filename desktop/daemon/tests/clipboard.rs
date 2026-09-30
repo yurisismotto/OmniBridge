@@ -12,9 +12,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use common::*;
-use omnibridge_capability_clipboard::{limits, ClipboardPolicy, CAPABILITY_ID};
-use omnibridge_core::capability::OutboundMessage;
-use omnibridge_proto::Message;
+use pliwee_capability_clipboard::{limits, ClipboardPolicy, CAPABILITY_ID};
+use pliwee_core::capability::OutboundMessage;
+use pliwee_proto::Message;
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
