@@ -286,8 +286,10 @@ check "…with the full fingerprint, digest, metadata and path" \
     test -n "$(grep -x "selected_peer=$FPR" "$EV/O1-gui.txt")" -a -n "$(grep -x "sha256=$(lgs_sha "$FPR")" "$EV/O1-gui.txt")" \
          -a -n "$(grep -x "legacy_path=$GUI" "$EV/O1-gui.txt")" -a -n "$(grep -x 'mode=644' "$EV/O1-gui.txt")"
 check "O2: no Pliwee gui.json before pliwee-gui started" has "$OUT" "ok    O2: before pliwee-gui starts there is no $H/.config/pliwee/gui.json"
-check "O2: the graphical session U4 ended was brought back by restarting the display manager" \
-    contains_re "$OUT" '^ok    O2: no graphical session after U4 .* the display manager was restarted for one autologin'
+check "U4: the next login is a real one (display manager autologin), and pliweed started in it" \
+    has "$OUT" "ok    U4: pliweed started at the next login"
+check "O2: pliwee-gui runs in the graphical session U4's login created" \
+    contains_re "$OUT" '^ok    O2: [a-z]+ has a graphical session: '
 check "O2: pliwee-gui was started twice, each as its own transient unit in the user's manager" \
     test "$(jq -r '.units | keys[]' "$R/.state.json" | grep -cE '^g7up-pliwee-gui-[12]-')" = 2 -a "$(jq .gui_starts "$R/.state.json")" = 2
 check "O2: it came up (application id owned by its process) and was closed" \

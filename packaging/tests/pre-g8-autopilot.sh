@@ -304,15 +304,18 @@ ap_prepare_gate() {
                 ap_guest_revert "$GUEST" ap-fresh "$g needs a guest no gate has used (last used by $(ap_rec_get "$(ap_guest_rec "$GUEST")" used_by 2>/dev/null))"
             fi ;;
         UPGRADE)
-            if [ "$own" = RUNNING ]; then
+            # A FAILed upgrade being retried left the guest upgraded, exactly as
+            # an interrupted one does: its files are evidence, and the retry
+            # starts again from the U2 state (the snapshot is taken only once).
+            if [ "$own" = RUNNING ] || [ "${#RERUN[@]}" -gt 0 ]; then
                 [ ! -e "$EVIDENCE/g7up/$d/UPGRADE-CHECKPOINT" ] \
                     || ap_stop "$g was interrupted AFTER its checkpoint was written" \
                         "The coordinator never recorded the result, and upgrade-gates.sh refuses a second upgrade in the same chain." \
                         "This cannot be resumed automatically. Decide: inspect $EVIDENCE/g7up/$d, then start the $d chain over with" \
                         "  pre-g8-manual-gates.sh --config $CFG --reset-distro $d   (moves it aside; nothing deleted)" \
                         "and resume the autopilot (it reverts $GUEST to ap-fresh before INSTALL)."
-                ap_preserve "$g" "$EVIDENCE/g7up/$d"
-                ap_guest_revert "$GUEST" ap-pre-upgrade "$g was interrupted; the upgrade starts again from the U2 state"
+                ap_preserve "$g" "$EVIDENCE/g7up/$d" "$([ "${#RERUN[@]}" -gt 0 ] && echo "the FAILed attempt" || echo "the interrupted attempt")"
+                ap_guest_revert "$GUEST" ap-pre-upgrade "$g was $([ "${#RERUN[@]}" -gt 0 ] && echo "FAILed and is retried" || echo interrupted); the upgrade starts again from the U2 state"
             else
                 ap_guest_snapshot "$GUEST" ap-pre-upgrade "pre-g8-autopilot: after U2 PASS, before the first UPGRADE"
             fi ;;

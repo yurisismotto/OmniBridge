@@ -210,7 +210,8 @@ elif name == "systemctl":
     if argv[:2] == ["--user", "restart"] and argv[2] == "pliweed.service":
         s["daemon"] = "pliweed"; s["daemon_pid"] += 1; save(s); out("")
     if argv[:2] == ["--user", "enable"]: out("")
-    if argv[0] == "start" and argv[1].startswith("user@"):
+    def start_manager(s):
+        # The user's systemd manager starting, as a login starts it.
         s["manager"] = True
         if "pliwee" in s["pkgs"]:
             h = home(s); src, dst = g(h + "/.local/share/omnibridge"), g(h + "/.local/share/pliwee")
@@ -228,9 +229,13 @@ elif name == "systemctl":
             s["daemon"] = "pliweed"; s["daemon_pid"] += 1
         else:
             s["daemon"] = "omnibridged"
-        save(s); out("")
+    if argv[0] == "start" and argv[1].startswith("user@"):
+        # systemd 259 (Fedora 44) times the user manager out when no login
+        # session exists; measured 2026-09-30 on pliwee-g8-f44-chain.
+        out("Job for %s failed because a timeout was exceeded.\n" % argv[1], 1)
     if argv[:2] == ["restart", "gdm"] or argv[:2] == ["restart", "gdm.service"]:
         if "no-autologin" not in FAULTS:
+            if not s["manager"]: start_manager(s)
             s["greeter"] = False; s["manager"] = True
             s["sessions"].append({"id": str(10 + len(s["journal"])), "user": user(s), "type": "wayland"})
             s["env"] = {"WAYLAND_DISPLAY": "wayland-0", "DISPLAY": ":0", "XDG_SESSION_TYPE": "wayland"}

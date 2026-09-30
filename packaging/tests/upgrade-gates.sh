@@ -451,7 +451,12 @@ section "U4 — the next login"
 gx "loginctl terminate-user $GUEST_USER" >/dev/null 2>&1
 ga_wait_for "$DOMAIN" 60 "! pgrep -u $GUEST_USER -x omnibridged >/dev/null && ! pgrep -u $GUEST_USER -x pliweed >/dev/null" \
     || abort "the session did not end; the next login cannot be measured"
-gx "systemctl start user@$GUEST_UID.service" >/dev/null 2>&1
+# The next login is a real one: the display manager restarted for one
+# autologin, as O2 and lifecycle-gates.sh L19 do. `systemctl start user@UID`
+# with no session is not a login, and systemd 259 (Fedora 44) times it out
+# (measured 2026-09-30, pliwee-g8-f44-chain), which failed U4 over a login
+# that never happened.
+gx 'systemctl restart gdm3 2>/dev/null || systemctl restart gdm 2>/dev/null' >/dev/null 2>&1
 ga_wait_for "$DOMAIN" 120 "pgrep -u $GUEST_USER -x pliweed >/dev/null" \
     && ok "U4: pliweed started at the next login" || notok "U4: pliweed did not start at the next login"
 jnl="$(gu "journalctl --user --after-cursor '$cursor' --no-pager -o cat 2>/dev/null")"
