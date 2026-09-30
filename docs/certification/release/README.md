@@ -5,6 +5,7 @@ opposed to whether any one piece of it works.
 
 | Doc | What it is | Verdict |
 | --- | --- | --- |
+| [Pliwee rebrand closure](PLIWEE-REBRAND-CLOSURE.md) | the objective check that replaces the exhaustive G8 for the OmniBridge → Pliwee rename: suites, packages, the real Fedora 44 migration with the physical tablet, residual identifiers | **CLOSURE: PASS**, backlog in its §4 |
 | [v1.0.0 GA Release](V1.0.0-GA-RELEASE.md) | the released version itself — promoted, tagged, built from an immutable commit, signed, published and verified again from the public release | **OMNIBRIDGE V1.0.0 GA: RELEASED WITH EXPLICIT NON-BLOCKING DEBTS** |
 | [RC Certification v1](RC-CERTIFICATION-V1.md) | the release candidate itself — one immutable commit, built, signed, verified and installed | **RC V1: CERTIFIED WITH EXPLICIT NON-BLOCKING DEBTS** |
 | [Release Readiness v1 — final](RELEASE-READINESS-V1-FINAL.md) | the current verdict over the thirteen RC conditions | **READY FOR RC WITH EXPLICIT NON-BLOCKING DEBTS** — 13/13 |
